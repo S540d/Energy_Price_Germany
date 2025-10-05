@@ -82,10 +82,19 @@ export default function App() {
     async function loadData() {
       try {
         setLoading(true);
+
+        // DEBUG: Temporär rohe Preisdaten anzeigen
+        const now = Date.now();
+        const priceRes = await fetch(`https://api.energy-charts.info/price?country=de&_t=${now}`);
+        const priceData = await priceRes.json();
+        console.log('DEBUG: Raw price data:', JSON.stringify(priceData, null, 2));
+        alert('Price API Response: ' + JSON.stringify(priceData).substring(0, 500));
+
         const data = await fetchEnergyData();
         setEnergyData(data);
       } catch (error) {
         console.error('Failed to load energy data:', error);
+        alert('ERROR: ' + error.message);
         // Fallback to empty data
         setEnergyData([]);
       } finally {
