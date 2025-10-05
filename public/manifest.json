@@ -1,0 +1,22 @@
+{
+  "short_name": "1x1 Trainer",
+  "name": "1x1 Trainer - Lerne das Einmaleins",
+  "description": "Übe das kleine Einmaleins mit verschiedenen Spielmodi",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#6200EE",
+  "background_color": "#ffffff",
+  "orientation": "portrait"
+}

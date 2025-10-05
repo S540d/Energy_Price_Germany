@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "EnergyPriceGermany",
-    "slug": "EnergyPriceGermany",
+    "name": "Energy Prices Germany",
+    "slug": "Energy_Price_Germany",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,18 +13,22 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.sven4321.energypricegermany"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "package": "com.sven4321.energypricegermany",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "baseUrl": "/Energy_Price_Germany"
     }
   }
 }
