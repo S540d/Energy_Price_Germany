@@ -1,7 +1,18 @@
 {
   "name": "energypricegermany",
   "version": "1.0.0",
+  "description": "Energy price visualization for Germany with market data and renewable energy share",
   "main": "index.ts",
+  "homepage": "https://s540d.github.io/Energy_Price_Germany/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/S540d/Energy_Price_Germany.git"
+  },
+  "bugs": {
+    "url": "https://github.com/S540d/Energy_Price_Germany/issues"
+  },
+  "license": "MIT",
+  "author": "S540d",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
