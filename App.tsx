@@ -15,13 +15,36 @@ import { ActivityIndicator } from 'react-native';
 
 type Theme = 'light' | 'dark' | 'system';
 
-// Fetch real data from Energy Charts API
+// Cache für API-Daten (3 Stunden)
+const CACHE_KEY = 'energyData';
+const CACHE_TIMESTAMP_KEY = 'energyDataTimestamp';
+const CACHE_DURATION = 3 * 60 * 60 * 1000; // 3 Stunden in Millisekunden
+
+// Fetch real data from Energy Charts API with caching
 async function fetchEnergyData() {
+  // Prüfe Cache
+  const cachedData = localStorage.getItem(CACHE_KEY);
+  const cachedTimestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+
+  if (cachedData && cachedTimestamp) {
+    const age = Date.now() - parseInt(cachedTimestamp, 10);
+    if (age < CACHE_DURATION) {
+      console.log('Using cached energy data (age: ' + Math.round(age / 1000 / 60) + ' minutes)');
+      return JSON.parse(cachedData);
+    }
+  }
+
+  // Daten von API abrufen
+  console.log('Fetching fresh energy data from API...');
   const now = Date.now();
   const [priceRes, renewableRes] = await Promise.all([
     fetch(`https://api.energy-charts.info/price?country=de&_t=${now}`),
     fetch(`https://api.energy-charts.info/ren_share_forecast?country=de&_t=${now}`)
   ]);
+
+  if (!priceRes.ok || !renewableRes.ok) {
+    throw new Error('API request failed');
+  }
 
   const priceData = await priceRes.json();
   const renewableData = await renewableRes.json();
@@ -36,7 +59,14 @@ async function fetchEnergyData() {
     else dataMap.set(ts * 1000, { timestamp: ts * 1000, marketPrice: null, renewableShare: renewableData.ren_share[i] });
   });
 
-  return Array.from(dataMap.values()).sort((a, b) => a.timestamp - b.timestamp);
+  const result = Array.from(dataMap.values()).sort((a, b) => a.timestamp - b.timestamp);
+
+  // Speichere in Cache
+  localStorage.setItem(CACHE_KEY, JSON.stringify(result));
+  localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+  console.log('Cached fresh energy data');
+
+  return result;
 }
 
 export default function App() {

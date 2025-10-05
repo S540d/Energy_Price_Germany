@@ -33,8 +33,12 @@ if (fs.existsSync(indexPath)) {
   // Fix service worker registration path
   html = html.replace(/\.register\('\/service-worker\.js'\)/, ".register('./service-worker.js')");
 
+  // Fix title and meta tags
+  html = html.replace(/<title>.*?<\/title>/, '<title>Energy Prices Germany</title>');
+  html = html.replace(/name="apple-mobile-web-app-title" content=".*?"/, 'name="apple-mobile-web-app-title" content="Energy Prices Germany"');
+
   fs.writeFileSync(indexPath, html);
-  console.log('✓ Fixed paths in index.html for subpath deployment');
+  console.log('✓ Fixed paths and title in index.html for subpath deployment');
 }
 
 console.log('✓ PWA files copied successfully!');
