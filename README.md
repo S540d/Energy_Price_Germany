@@ -43,10 +43,10 @@ npm run build:web
 
 ## 📊 Datenquelle
 
-**SMARD.de** (Bundesnetzagentur)
+**Energy Charts API** (Fraunhofer ISE)
 - Lizenz: CC BY 4.0
-- Aktuell: Demo-Daten (Mock)
-- Für echte Daten: API-Integration erforderlich
+- Live-Daten von api.energy-charts.info
+- Marktpreise und Erneuerbare-Energien-Anteil in Echtzeit
 
 ## 🎨 Technologie-Stack
 
@@ -83,11 +83,11 @@ Das Projekt ist für automatisches Deployment konfiguriert:
 
 ## 📝 Lizenz
 
-Datenquelle SMARD.de: CC BY 4.0 (Bundesnetzagentur)
+Datenquelle Energy Charts: CC BY 4.0 (Fraunhofer ISE)
 
 ## 🔮 Nächste Schritte
 
-- [ ] SMARD API Integration (echte Daten)
+- [x] Energy Charts API Integration (Live-Daten)
 - [ ] Erweiterte Chart-Bibliothek (Victory Native)
 - [ ] Offline-Datenspeicherung
 - [ ] Push-Benachrichtigungen für Preiswarnungen

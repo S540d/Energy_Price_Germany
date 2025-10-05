@@ -11,32 +11,59 @@ import {
   Dimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-
-// Mock Data Generator
-const generateMockData = () => {
-  const data = [];
-  const now = Date.now();
-  // Last 6 hours + next 18 hours
-  for (let i = -6; i <= 18; i++) {
-    const timestamp = now + i * 3600000;
-    data.push({
-      timestamp,
-      marketPrice: 30 + Math.random() * 40 + Math.sin(i / 3) * 15,
-      renewableShare: 40 + Math.random() * 30 + Math.cos(i / 4) * 20,
-    });
-  }
-  return data;
-};
+import { ActivityIndicator } from 'react-native';
 
 type Theme = 'light' | 'dark' | 'system';
 
+// Fetch real data from Energy Charts API
+async function fetchEnergyData() {
+  const now = Date.now();
+  const [priceRes, renewableRes] = await Promise.all([
+    fetch(`https://api.energy-charts.info/price?country=de&_t=${now}`),
+    fetch(`https://api.energy-charts.info/ren_share_forecast?country=de&_t=${now}`)
+  ]);
+
+  const priceData = await priceRes.json();
+  const renewableData = await renewableRes.json();
+
+  const dataMap = new Map();
+  priceData.unix_seconds.forEach((ts: number, i: number) => {
+    dataMap.set(ts * 1000, { timestamp: ts * 1000, marketPrice: priceData.price[i], renewableShare: null });
+  });
+  renewableData.unix_seconds.forEach((ts: number, i: number) => {
+    const existing = dataMap.get(ts * 1000);
+    if (existing) existing.renewableShare = renewableData.ren_share[i];
+    else dataMap.set(ts * 1000, { timestamp: ts * 1000, marketPrice: null, renewableShare: renewableData.ren_share[i] });
+  });
+
+  return Array.from(dataMap.values()).sort((a, b) => a.timestamp - b.timestamp);
+}
+
 export default function App() {
-  const [energyData] = useState(generateMockData());
+  const [energyData, setEnergyData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<Theme>('system');
   const [menuVisible, setMenuVisible] = useState(false);
   const systemTheme = useColorScheme();
 
   const isDark = theme === 'dark' || (theme === 'system' && systemTheme === 'dark');
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        const data = await fetchEnergyData();
+        setEnergyData(data);
+      } catch (error) {
+        console.error('Failed to load energy data:', error);
+        // Fallback to empty data
+        setEnergyData([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
   const colors = isDark
     ? {
@@ -92,6 +119,20 @@ export default function App() {
       URL.revokeObjectURL(url);
     }
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.text }]}>
+            Lade Energiedaten...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -162,59 +203,76 @@ export default function App() {
 
       {/* Main Content */}
       <ScrollView style={styles.scrollView}>
-        <SimpleChart
-          title="Marktpreis (EUR/MWh)"
-          data={energyData.map(d => d.marketPrice)}
-          color={colors.chartLine}
-          backgroundColor={colors.surface}
-          textColor={colors.text}
-          gridColor={colors.gridLine}
-        />
+        {energyData.length > 0 ? (
+          <>
+            <SimpleChart
+              title="Marktpreis (EUR/MWh)"
+              data={energyData.map(d => d.marketPrice).filter(v => v !== null)}
+              color={colors.chartLine}
+              backgroundColor={colors.surface}
+              textColor={colors.text}
+              gridColor={colors.gridLine}
+            />
 
-        <SimpleChart
-          title="Anteil Erneuerbarer Energien (%)"
-          data={energyData.map(d => d.renewableShare)}
-          color={colors.chartLine2}
-          backgroundColor={colors.surface}
-          textColor={colors.text}
-          gridColor={colors.gridLine}
-        />
-
-        <View style={[styles.card, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>
-            Korrelation: Preis vs. Erneuerbare
-          </Text>
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                Durchschnittlicher Preis
-              </Text>
-              <Text style={[styles.statValue, { color: colors.text }]}>
-                {(energyData.reduce((sum, d) => sum + d.marketPrice, 0) / energyData.length).toFixed(2)} €/MWh
-              </Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                Ø Erneuerbare
-              </Text>
-              <Text style={[styles.statValue, { color: colors.text }]}>
-                {(energyData.reduce((sum, d) => sum + d.renewableShare, 0) / energyData.length).toFixed(1)} %
-              </Text>
-            </View>
+            <SimpleChart
+              title="Anteil Erneuerbarer Energien (%)"
+              data={energyData.map(d => d.renewableShare).filter(v => v !== null)}
+              color={colors.chartLine2}
+              backgroundColor={colors.surface}
+              textColor={colors.text}
+              gridColor={colors.gridLine}
+            />
+          </>
+        ) : (
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>
+              Keine Daten verfügbar
+            </Text>
+            <Text style={[styles.infoText, { color: colors.textSecondary }]}>
+              Die Energiedaten konnten nicht geladen werden. Bitte versuchen Sie es später erneut.
+            </Text>
           </View>
-          <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-            💡 Höherer Anteil erneuerbarer Energien korreliert oft mit niedrigeren Preisen
-          </Text>
-        </View>
+        )}
+
+        {energyData.length > 0 && (
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>
+              Korrelation: Preis vs. Erneuerbare
+            </Text>
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                  Durchschnittlicher Preis
+                </Text>
+                <Text style={[styles.statValue, { color: colors.text }]}>
+                  {(energyData.filter(d => d.marketPrice !== null).reduce((sum, d) => sum + d.marketPrice, 0) /
+                    energyData.filter(d => d.marketPrice !== null).length).toFixed(2)} €/MWh
+                </Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                  Ø Erneuerbare
+                </Text>
+                <Text style={[styles.statValue, { color: colors.text }]}>
+                  {(energyData.filter(d => d.renewableShare !== null).reduce((sum, d) => sum + d.renewableShare, 0) /
+                    energyData.filter(d => d.renewableShare !== null).length).toFixed(1)} %
+                </Text>
+              </View>
+            </View>
+            <Text style={[styles.infoText, { color: colors.textSecondary }]}>
+              💡 Höherer Anteil erneuerbarer Energien korreliert oft mit niedrigeren Preisen
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
       {/* Footer */}
       <View style={[styles.footer, { backgroundColor: colors.surface }]}>
         <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-          Datenquelle: SMARD.de (Bundesnetzagentur) • CC BY 4.0
+          Datenquelle: Energy Charts (Fraunhofer ISE) • CC BY 4.0
         </Text>
         <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-          Demo-Daten • Für Produktionsdaten API-Integration erforderlich
+          Live-Daten von api.energy-charts.info
         </Text>
       </View>
     </SafeAreaView>
@@ -324,6 +382,15 @@ function SimpleChart({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
   },
   topBar: {
     flexDirection: 'row',
