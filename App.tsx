@@ -29,24 +29,17 @@ async function fetchEnergyData() {
     return cachedData;
   }
 
-  // Daten von API abrufen
+  // Daten von API abrufen (via CORS-Proxy)
   console.log('Fetching fresh energy data from API...');
   const now = Date.now();
 
+  // CORS-Proxy um die API-Blockierung zu umgehen
+  const CORS_PROXY = 'https://corsproxy.io/?';
+
   try {
     const [priceRes, renewableRes] = await Promise.all([
-      fetch(`https://api.energy-charts.info/price?country=de&_t=${now}`, {
-        mode: 'cors',
-        headers: {
-          'Accept': 'application/json',
-        }
-      }),
-      fetch(`https://api.energy-charts.info/ren_share_forecast?country=de&_t=${now}`, {
-        mode: 'cors',
-        headers: {
-          'Accept': 'application/json',
-        }
-      })
+      fetch(`${CORS_PROXY}${encodeURIComponent(`https://api.energy-charts.info/price?country=de&_t=${now}`)}`),
+      fetch(`${CORS_PROXY}${encodeURIComponent(`https://api.energy-charts.info/ren_share_forecast?country=de&_t=${now}`)}`)
     ]);
 
     console.log('Price API status:', priceRes.status, priceRes.statusText);
