@@ -56,24 +56,6 @@ npm run build:web
 - **TypeScript** - Type Safety
 - **PWA** - Progressive Web App Support
 
-## 📋 Pflichtenheft
-
-Das Projekt basiert auf einem detaillierten [Pflichtenheft](PFLICHTENHEFT.md) mit folgenden Anforderungen:
-
-### Funktional
-- F1: Datenabruf von SMARD API
-- F2: Drei verschiedene Chart-Typen
-- F3: CSV/JSON Export
-- F4: Theme-Verwaltung (Hell/Dunkel/System)
-- F5: Fehlerbehandlung
-- F6: Ladezustände
-
-### Nicht-Funktional
-- Material Design 3
-- MVVM-ähnliche Architektur
-- 60 fps Performance
-- Responsive Design
-
 ## 🔄 Migration vom Android-Projekt
 
 Ursprünglich als natives Android-Projekt (Kotlin + Jetpack Compose) entwickelt.
