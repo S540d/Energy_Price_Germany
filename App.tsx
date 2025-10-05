@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator } from 'react-native';
+import Svg, { Rect, Circle, Line } from 'react-native-svg';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -204,6 +205,95 @@ export default function App() {
       {/* Dropdown Menu */}
       {menuVisible && (
         <View style={[styles.menu, { backgroundColor: colors.surface }]}>
+          {/* Theme Slider */}
+          <View style={styles.menuItem}>
+            <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Theme</Text>
+            <View style={styles.themeToggle}>
+              <TouchableOpacity
+                style={[
+                  styles.themeButton,
+                  theme === 'dark' && styles.themeButtonActive,
+                  { backgroundColor: theme === 'dark' ? colors.primary : colors.gridLine }
+                ]}
+                onPress={() => setTheme('dark')}
+              >
+                <Text style={{ color: theme === 'dark' ? '#fff' : colors.text, fontSize: 12 }}>🌙 Dunkel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.themeButton,
+                  theme === 'system' && styles.themeButtonActive,
+                  { backgroundColor: theme === 'system' ? colors.primary : colors.gridLine }
+                ]}
+                onPress={() => setTheme('system')}
+              >
+                <Text style={{ color: theme === 'system' ? '#fff' : colors.text, fontSize: 12 }}>📱 System</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+          {/* Legenden */}
+          <View style={styles.menuItem}>
+            <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Erneuerbare Energien</Text>
+            <View style={{ gap: 5 }}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendBox, { backgroundColor: '#4CAF50' }]} />
+                <Text style={[styles.legendText, { color: colors.textSecondary }]}>Hoch (&gt;80%)</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendBox, { backgroundColor: '#FFC107' }]} />
+                <Text style={[styles.legendText, { color: colors.textSecondary }]}>Mittel (50-80%)</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendBox, { backgroundColor: '#F44336' }]} />
+                <Text style={[styles.legendText, { color: colors.textSecondary }]}>Niedrig (&lt;50%)</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+          <View style={styles.menuItem}>
+            <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Strompreis</Text>
+            <View style={{ gap: 5 }}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendBox, { backgroundColor: '#4CAF50' }]} />
+                <Text style={[styles.legendText, { color: colors.textSecondary }]}>Niedrig (&lt;25 ¢/kWh)</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendBox, { backgroundColor: '#FFC107' }]} />
+                <Text style={[styles.legendText, { color: colors.textSecondary }]}>Mittel (25-35 ¢/kWh)</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendBox, { backgroundColor: '#F44336' }]} />
+                <Text style={[styles.legendText, { color: colors.textSecondary }]}>Hoch (&gt;35 ¢/kWh)</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendBox, { backgroundColor: '#757575', opacity: 0.6 }]} />
+                <Text style={[styles.legendText, { color: colors.textSecondary }]}>Netzentgelte (~20 ¢/kWh)</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+          <View style={styles.menuItem}>
+            <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Datenquelle</Text>
+            <Text style={[styles.legendText, { color: colors.textSecondary }]}>
+              Energy Charts (Fraunhofer ISE)
+            </Text>
+            <Text style={[styles.legendText, { color: colors.textSecondary }]}>
+              Lizenz: CC BY 4.0
+            </Text>
+            <Text style={[styles.legendText, { color: colors.textSecondary }]}>
+              api.energy-charts.info
+            </Text>
+          </View>
+
+          <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => {
@@ -211,7 +301,7 @@ export default function App() {
               setMenuVisible(false);
             }}
           >
-            <Text style={{ color: colors.text }}>📥 Export als CSV</Text>
+            <Text style={{ color: colors.text }}>💾 Export als CSV</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.menuItem}
@@ -220,35 +310,7 @@ export default function App() {
               setMenuVisible(false);
             }}
           >
-            <Text style={{ color: colors.text }}>📥 Export als JSON</Text>
-          </TouchableOpacity>
-          <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => {
-              setTheme('light');
-              setMenuVisible(false);
-            }}
-          >
-            <Text style={{ color: colors.text }}>☀️ Hell</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => {
-              setTheme('dark');
-              setMenuVisible(false);
-            }}
-          >
-            <Text style={{ color: colors.text }}>🌙 Dunkel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => {
-              setTheme('system');
-              setMenuVisible(false);
-            }}
-          >
-            <Text style={{ color: colors.text }}>📱 System</Text>
+            <Text style={{ color: colors.text }}>📄 Export als JSON</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -257,22 +319,33 @@ export default function App() {
       <ScrollView style={styles.scrollView}>
         {energyData.length > 0 ? (
           <>
-            <SimpleChart
-              title="Marktpreis (EUR/MWh)"
-              data={energyData.map(d => d.marketPrice).filter(v => v !== null)}
-              color={colors.chartLine}
+            <RenewableBarChart
+              title="Anteil Erneuerbarer Energien (%)"
+              data={energyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
               gridColor={colors.gridLine}
+              averageValue={(energyData.filter(d => d.renewableShare !== null).reduce((sum, d) => sum + d.renewableShare!, 0) /
+                energyData.filter(d => d.renewableShare !== null).length).toFixed(1) + '%'}
             />
 
-            <SimpleChart
-              title="Anteil Erneuerbarer Energien (%)"
-              data={energyData.map(d => d.renewableShare).filter(v => v !== null)}
-              color={colors.chartLine2}
+            <PriceBarChart
+              title="Strompreis (Cent/kWh)"
+              data={energyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
               gridColor={colors.gridLine}
+              averageValue={(energyData.filter(d => d.marketPrice !== null).reduce((sum, d) => sum + d.marketPrice! * 0.1, 0) /
+                energyData.filter(d => d.marketPrice !== null).length).toFixed(2) + ' ¢'}
+            />
+
+            <CorrelationScatterChart
+              title="Korrelation: Preis vs. Erneuerbare"
+              data={energyData}
+              backgroundColor={colors.surface}
+              textColor={colors.text}
+              gridColor={colors.gridLine}
+              pointColor={colors.primary}
             />
           </>
         ) : (
@@ -285,53 +358,758 @@ export default function App() {
             </Text>
           </View>
         )}
-
-        {energyData.length > 0 && (
-          <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>
-              Korrelation: Preis vs. Erneuerbare
-            </Text>
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                  Durchschnittlicher Preis
-                </Text>
-                <Text style={[styles.statValue, { color: colors.text }]}>
-                  {(energyData.filter(d => d.marketPrice !== null).reduce((sum, d) => sum + d.marketPrice, 0) /
-                    energyData.filter(d => d.marketPrice !== null).length).toFixed(2)} €/MWh
-                </Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                  Ø Erneuerbare
-                </Text>
-                <Text style={[styles.statValue, { color: colors.text }]}>
-                  {(energyData.filter(d => d.renewableShare !== null).reduce((sum, d) => sum + d.renewableShare, 0) /
-                    energyData.filter(d => d.renewableShare !== null).length).toFixed(1)} %
-                </Text>
-              </View>
-            </View>
-            <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-              💡 Höherer Anteil erneuerbarer Energien korreliert oft mit niedrigeren Preisen
-            </Text>
-          </View>
-        )}
       </ScrollView>
 
       {/* Footer */}
       <View style={[styles.footer, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-          Datenquelle: Energy Charts (Fraunhofer ISE) • CC BY 4.0
-        </Text>
-        <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-          Live-Daten von api.energy-charts.info
-        </Text>
+        <TouchableOpacity onPress={() => {
+          if (Platform.OS === 'web') {
+            window.open('https://buymeacoffee.com/sven4321', '_blank');
+          }
+        }}>
+          <Text style={[styles.footerLink, { color: colors.primary }]}>
+            ☕ Support me
+          </Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
 
-// Simple Line Chart Component
+// Renewable Bar Chart mit Farbcodierung
+function RenewableBarChart({
+  title,
+  data,
+  backgroundColor,
+  textColor,
+  gridColor,
+  averageValue,
+}: {
+  title: string;
+  data: Array<{ timestamp: number; marketPrice: number | null; renewableShare: number | null }>;
+  backgroundColor: string;
+  textColor: string;
+  gridColor: string;
+  averageValue: string;
+}) {
+  const chartWidth = Dimensions.get('window').width - 64;
+  const chartHeight = 200;
+  const padding = 40;
+  const bottomPadding = 50;
+
+  const values = data.map(d => d.renewableShare).filter(v => v !== null) as number[];
+  const max = Math.max(...values);
+  const min = Math.min(...values, 0);
+  const range = max - min;
+
+  const now = Date.now();
+  const timestamps = data.map(d => d.timestamp);
+  const minTime = Math.min(...timestamps);
+  const maxTime = Math.max(...timestamps);
+  const timeRange = maxTime - minTime;
+
+  // Farbcodierung: hoch = grün, mittel = gelb, niedrig = rot (invertiert zu Preis)
+  const getColor = (renewablePercent: number) => {
+    if (renewablePercent > 80) return '#4CAF50'; // Grün (hoch)
+    if (renewablePercent > 50) return '#FFC107'; // Gelb (mittel)
+    return '#F44336'; // Rot (niedrig)
+  };
+
+  return (
+    <View style={[styles.card, { backgroundColor }]}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <Text style={[styles.cardTitle, { color: textColor, marginBottom: 0 }]}>{title}</Text>
+        <Text style={{ color: textColor, fontSize: 14, fontWeight: '600' }}>Ø {averageValue}</Text>
+      </View>
+      <View style={{ height: chartHeight + bottomPadding, width: chartWidth }}>
+        {/* Grid Lines */}
+        {[0, 1, 2, 3, 4].map(i => {
+          const y = padding + (i / 4) * (chartHeight - padding);
+          return (
+            <View
+              key={`grid-${i}`}
+              style={{
+                position: 'absolute',
+                left: padding,
+                top: y,
+                width: chartWidth - padding,
+                height: 1,
+                backgroundColor: gridColor,
+                opacity: 0.3,
+              }}
+            />
+          );
+        })}
+
+        {/* Bars */}
+        <Svg width={chartWidth} height={chartHeight + bottomPadding}>
+          {data.map((d, index) => {
+            const value = d.renewableShare;
+            if (value === null) return null;
+
+            const x = padding + ((d.timestamp - minTime) / timeRange) * (chartWidth - padding);
+            const barWidth = ((chartWidth - padding) / data.length) * 0.8;
+            const barHeight = ((value - min) / range) * (chartHeight - padding);
+            const y = chartHeight - barHeight;
+
+            return (
+              <Rect
+                key={index}
+                x={x - barWidth / 2}
+                y={y}
+                width={barWidth}
+                height={barHeight}
+                fill={getColor(value)}
+                opacity={0.9}
+              />
+            );
+          })}
+
+          {/* "Jetzt" Markierung */}
+          {now >= minTime && now <= maxTime && (
+            <Line
+              x1={padding + ((now - minTime) / timeRange) * (chartWidth - padding)}
+              y1={padding}
+              x2={padding + ((now - minTime) / timeRange) * (chartWidth - padding)}
+              y2={chartHeight}
+              stroke="red"
+              strokeWidth="2"
+              strokeDasharray="5,5"
+            />
+          )}
+        </Svg>
+
+        {/* Y-axis labels */}
+        {[0, 1, 2, 3, 4].map(i => {
+          const value = max - (i / 4) * range;
+          const y = padding + (i / 4) * (chartHeight - padding);
+          return (
+            <Text
+              key={`ylabel-${i}`}
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: y - 8,
+                fontSize: 10,
+                color: textColor,
+                opacity: 0.6,
+              }}
+            >
+              {value.toFixed(0)}%
+            </Text>
+          );
+        })}
+
+        {/* X-axis labels (alle 3 Stunden) */}
+        {(() => {
+          const labels = [];
+          const startDate = new Date(minTime);
+          const endDate = new Date(maxTime);
+
+          const startHour = Math.ceil(startDate.getHours() / 3) * 3;
+          const current = new Date(startDate);
+          current.setHours(startHour, 0, 0, 0);
+
+          while (current <= endDate) {
+            const timestamp = current.getTime();
+            const x = padding + ((timestamp - minTime) / timeRange) * (chartWidth - padding);
+            const hour = current.getHours();
+
+            labels.push(
+              <Text
+                key={`xlabel-${timestamp}`}
+                style={{
+                  position: 'absolute',
+                  left: x - 10,
+                  top: chartHeight + 5,
+                  fontSize: 10,
+                  color: textColor,
+                  opacity: 0.6,
+                }}
+              >
+                {hour}h
+              </Text>
+            );
+
+            current.setHours(current.getHours() + 3);
+          }
+
+          return labels;
+        })()}
+
+        {/* "Jetzt" Label */}
+        {now >= minTime && now <= maxTime && (
+          <Text
+            style={{
+              position: 'absolute',
+              left: padding + ((now - minTime) / timeRange) * (chartWidth - padding) - 15,
+              top: chartHeight + 20,
+              fontSize: 10,
+              color: 'red',
+              fontWeight: 'bold',
+            }}
+          >
+            Jetzt
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+// Price Bar Chart mit Farbcodierung und Netzentgelten
+function PriceBarChart({
+  title,
+  data,
+  backgroundColor,
+  textColor,
+  gridColor,
+  averageValue,
+}: {
+  title: string;
+  data: Array<{ timestamp: number; marketPrice: number | null; renewableShare: number | null }>;
+  backgroundColor: string;
+  textColor: string;
+  gridColor: string;
+  averageValue: string;
+}) {
+  const chartWidth = Dimensions.get('window').width - 64;
+  const chartHeight = 200;
+  const padding = 40;
+  const bottomPadding = 50;
+
+  // Konvertiere EUR/MWh zu Cent/kWh: 1 EUR/MWh = 0.1 Cent/kWh
+  const pricesInCent = data.map(d => d.marketPrice !== null ? d.marketPrice * 0.1 : null);
+
+  // Netzentgelte, Steuern und Abgaben (ca. 20 Cent/kWh als Durchschnitt)
+  const GRID_FEES_AND_TAXES = 20; // Cent/kWh
+
+  const validPrices = pricesInCent.filter(p => p !== null) as number[];
+  const maxMarketPrice = Math.max(...validPrices);
+  const maxTotal = maxMarketPrice + GRID_FEES_AND_TAXES;
+  const min = Math.min(...validPrices, 0);
+  const range = maxTotal - min;
+
+  const now = Date.now();
+  const timestamps = data.map(d => d.timestamp);
+  const minTime = Math.min(...timestamps);
+  const maxTime = Math.max(...timestamps);
+  const timeRange = maxTime - minTime;
+
+  // Farbcodierung basierend auf Gesamtpreis
+  const getColor = (totalPrice: number) => {
+    if (totalPrice < 25) return '#4CAF50'; // Grün (niedrig)
+    if (totalPrice < 35) return '#FFC107'; // Gelb (mittel)
+    return '#F44336'; // Rot (hoch)
+  };
+
+  return (
+    <View style={[styles.card, { backgroundColor }]}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <Text style={[styles.cardTitle, { color: textColor, marginBottom: 0 }]}>{title}</Text>
+        <Text style={{ color: textColor, fontSize: 14, fontWeight: '600' }}>Ø {averageValue}</Text>
+      </View>
+      <View style={{ height: chartHeight + bottomPadding, width: chartWidth }}>
+        {/* Grid Lines */}
+        {[0, 1, 2, 3, 4].map(i => {
+          const y = padding + (i / 4) * (chartHeight - padding);
+          return (
+            <View
+              key={`grid-${i}`}
+              style={{
+                position: 'absolute',
+                left: padding,
+                top: y,
+                width: chartWidth - padding,
+                height: 1,
+                backgroundColor: gridColor,
+                opacity: 0.3,
+              }}
+            />
+          );
+        })}
+
+        {/* Bars */}
+        <Svg width={chartWidth} height={chartHeight + bottomPadding}>
+          {data.map((d, index) => {
+            const marketPrice = d.marketPrice !== null ? d.marketPrice * 0.1 : null;
+            if (marketPrice === null) return null;
+
+            const totalPrice = marketPrice + GRID_FEES_AND_TAXES;
+            const x = padding + ((d.timestamp - minTime) / timeRange) * (chartWidth - padding);
+            const barWidth = ((chartWidth - padding) / data.length) * 0.8;
+
+            // Marktpreis-Balken (farbcodiert)
+            const marketBarHeight = ((marketPrice - min) / range) * (chartHeight - padding);
+            const marketY = chartHeight - marketBarHeight;
+
+            // Netzentgelte-Balken (grau, darüber)
+            const gridBarHeight = (GRID_FEES_AND_TAXES / range) * (chartHeight - padding);
+            const gridY = marketY - gridBarHeight;
+
+            return (
+              <React.Fragment key={index}>
+                {/* Marktpreis (farbcodiert) */}
+                <Rect
+                  x={x - barWidth / 2}
+                  y={marketY}
+                  width={barWidth}
+                  height={marketBarHeight}
+                  fill={getColor(totalPrice)}
+                  opacity={0.9}
+                />
+                {/* Netzentgelte & Steuern (grau) */}
+                <Rect
+                  x={x - barWidth / 2}
+                  y={gridY}
+                  width={barWidth}
+                  height={gridBarHeight}
+                  fill="#757575"
+                  opacity={0.6}
+                />
+              </React.Fragment>
+            );
+          })}
+
+          {/* "Jetzt" Markierung */}
+          {now >= minTime && now <= maxTime && (
+            <Line
+              x1={padding + ((now - minTime) / timeRange) * (chartWidth - padding)}
+              y1={padding}
+              x2={padding + ((now - minTime) / timeRange) * (chartWidth - padding)}
+              y2={chartHeight}
+              stroke="red"
+              strokeWidth="2"
+              strokeDasharray="5,5"
+            />
+          )}
+        </Svg>
+
+        {/* Y-axis labels */}
+        {[0, 1, 2, 3, 4].map(i => {
+          const value = maxTotal - (i / 4) * range;
+          const y = padding + (i / 4) * (chartHeight - padding);
+          return (
+            <Text
+              key={`ylabel-${i}`}
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: y - 8,
+                fontSize: 10,
+                color: textColor,
+                opacity: 0.6,
+              }}
+            >
+              {value.toFixed(1)}
+            </Text>
+          );
+        })}
+
+        {/* X-axis labels (alle 3 Stunden) */}
+        {(() => {
+          const labels = [];
+          const startDate = new Date(minTime);
+          const endDate = new Date(maxTime);
+
+          const startHour = Math.ceil(startDate.getHours() / 3) * 3;
+          const current = new Date(startDate);
+          current.setHours(startHour, 0, 0, 0);
+
+          while (current <= endDate) {
+            const timestamp = current.getTime();
+            const x = padding + ((timestamp - minTime) / timeRange) * (chartWidth - padding);
+            const hour = current.getHours();
+
+            labels.push(
+              <Text
+                key={`xlabel-${timestamp}`}
+                style={{
+                  position: 'absolute',
+                  left: x - 10,
+                  top: chartHeight + 5,
+                  fontSize: 10,
+                  color: textColor,
+                  opacity: 0.6,
+                }}
+              >
+                {hour}h
+              </Text>
+            );
+
+            current.setHours(current.getHours() + 3);
+          }
+
+          return labels;
+        })()}
+
+        {/* "Jetzt" Label */}
+        {now >= minTime && now <= maxTime && (
+          <Text
+            style={{
+              position: 'absolute',
+              left: padding + ((now - minTime) / timeRange) * (chartWidth - padding) - 15,
+              top: chartHeight + 20,
+              fontSize: 10,
+              color: 'red',
+              fontWeight: 'bold',
+            }}
+          >
+            Jetzt
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+// Time Series Bar Chart Component mit Zeitachse
+function TimeSeriesBarChart({
+  title,
+  data,
+  valueKey,
+  color,
+  backgroundColor,
+  textColor,
+  gridColor,
+}: {
+  title: string;
+  data: Array<{ timestamp: number; marketPrice: number | null; renewableShare: number | null }>;
+  valueKey: 'marketPrice' | 'renewableShare';
+  color: string;
+  backgroundColor: string;
+  textColor: string;
+  gridColor: string;
+}) {
+  const chartWidth = Dimensions.get('window').width - 64;
+  const chartHeight = 200;
+  const padding = 40;
+  const bottomPadding = 50;
+
+  const values = data.map(d => d[valueKey]).filter(v => v !== null) as number[];
+  const max = Math.max(...values);
+  const min = Math.min(...values, 0);
+  const range = max - min;
+
+  const now = Date.now();
+  const timestamps = data.map(d => d.timestamp);
+  const minTime = Math.min(...timestamps);
+  const maxTime = Math.max(...timestamps);
+  const timeRange = maxTime - minTime;
+
+  return (
+    <View style={[styles.card, { backgroundColor }]}>
+      <Text style={[styles.cardTitle, { color: textColor }]}>{title}</Text>
+      <View style={{ height: chartHeight + bottomPadding, width: chartWidth }}>
+        {/* Grid Lines */}
+        {[0, 1, 2, 3, 4].map(i => {
+          const y = padding + (i / 4) * (chartHeight - padding);
+          return (
+            <View
+              key={`grid-${i}`}
+              style={{
+                position: 'absolute',
+                left: padding,
+                top: y,
+                width: chartWidth - padding,
+                height: 1,
+                backgroundColor: gridColor,
+                opacity: 0.3,
+              }}
+            />
+          );
+        })}
+
+        {/* Bars */}
+        <Svg width={chartWidth} height={chartHeight + bottomPadding}>
+          {data.map((d, index) => {
+            const value = d[valueKey];
+            if (value === null) return null;
+
+            const x = padding + ((d.timestamp - minTime) / timeRange) * (chartWidth - padding);
+            const barWidth = ((chartWidth - padding) / data.length) * 0.8;
+            const barHeight = ((value - min) / range) * (chartHeight - padding);
+            const y = chartHeight - barHeight;
+
+            return (
+              <Rect
+                key={index}
+                x={x - barWidth / 2}
+                y={y}
+                width={barWidth}
+                height={barHeight}
+                fill={color}
+                opacity={0.8}
+              />
+            );
+          })}
+
+          {/* "Jetzt" Markierung */}
+          {now >= minTime && now <= maxTime && (
+            <>
+              <Line
+                x1={padding + ((now - minTime) / timeRange) * (chartWidth - padding)}
+                y1={padding}
+                x2={padding + ((now - minTime) / timeRange) * (chartWidth - padding)}
+                y2={chartHeight}
+                stroke="red"
+                strokeWidth="2"
+                strokeDasharray="5,5"
+              />
+            </>
+          )}
+        </Svg>
+
+        {/* Y-axis labels */}
+        {[0, 1, 2, 3, 4].map(i => {
+          const value = max - (i / 4) * range;
+          const y = padding + (i / 4) * (chartHeight - padding);
+          return (
+            <Text
+              key={`ylabel-${i}`}
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: y - 8,
+                fontSize: 10,
+                color: textColor,
+                opacity: 0.6,
+              }}
+            >
+              {value.toFixed(0)}
+            </Text>
+          );
+        })}
+
+        {/* X-axis labels (alle 3 Stunden) */}
+        {(() => {
+          const labels = [];
+          const startDate = new Date(minTime);
+          const endDate = new Date(maxTime);
+
+          // Runde auf nächste 3-Stunden-Marke
+          const startHour = Math.ceil(startDate.getHours() / 3) * 3;
+          const current = new Date(startDate);
+          current.setHours(startHour, 0, 0, 0);
+
+          while (current <= endDate) {
+            const timestamp = current.getTime();
+            const x = padding + ((timestamp - minTime) / timeRange) * (chartWidth - padding);
+            const hour = current.getHours();
+
+            labels.push(
+              <Text
+                key={`xlabel-${timestamp}`}
+                style={{
+                  position: 'absolute',
+                  left: x - 10,
+                  top: chartHeight + 5,
+                  fontSize: 10,
+                  color: textColor,
+                  opacity: 0.6,
+                }}
+              >
+                {hour}h
+              </Text>
+            );
+
+            current.setHours(current.getHours() + 3);
+          }
+
+          return labels;
+        })()}
+
+        {/* "Jetzt" Label */}
+        {now >= minTime && now <= maxTime && (
+          <Text
+            style={{
+              position: 'absolute',
+              left: padding + ((now - minTime) / timeRange) * (chartWidth - padding) - 15,
+              top: chartHeight + 20,
+              fontSize: 10,
+              color: 'red',
+              fontWeight: 'bold',
+            }}
+          >
+            Jetzt
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+// Correlation Scatter Chart Component
+function CorrelationScatterChart({
+  title,
+  data,
+  backgroundColor,
+  textColor,
+  gridColor,
+  pointColor,
+}: {
+  title: string;
+  data: Array<{ timestamp: number; marketPrice: number | null; renewableShare: number | null }>;
+  backgroundColor: string;
+  textColor: string;
+  gridColor: string;
+  pointColor: string;
+}) {
+  const chartWidth = Dimensions.get('window').width - 64;
+  const chartHeight = 250;
+  const padding = 50;
+
+  // Filter nur Datenpunkte wo beide Werte vorhanden sind
+  const validData = data.filter(d => d.marketPrice !== null && d.renewableShare !== null);
+
+  // Konvertiere Preis zu Cent/kWh
+  const priceInCentValues = validData.map(d => (d.marketPrice as number) * 0.1);
+  const renewableValues = validData.map(d => d.renewableShare as number);
+
+  // Fixe Skalierung: Preis 0-60 Cent/kWh, Erneuerbare 0-100%
+  const minPrice = 0;
+  const maxPrice = 60;
+  const priceRange = maxPrice - minPrice;
+
+  const minRenewable = 0;
+  const maxRenewable = 100;
+  const renewableRange = maxRenewable - minRenewable;
+
+  return (
+    <View style={[styles.card, { backgroundColor }]}>
+      <Text style={[styles.cardTitle, { color: textColor }]}>{title}</Text>
+      <View style={{ height: chartHeight, width: chartWidth }}>
+        {/* Grid Lines */}
+        {[0, 1, 2, 3, 4].map(i => {
+          const y = padding + (i / 4) * (chartHeight - 2 * padding);
+          return (
+            <View
+              key={`hgrid-${i}`}
+              style={{
+                position: 'absolute',
+                left: padding,
+                top: y,
+                width: chartWidth - 2 * padding,
+                height: 1,
+                backgroundColor: gridColor,
+                opacity: 0.3,
+              }}
+            />
+          );
+        })}
+
+        {[0, 1, 2, 3, 4].map(i => {
+          const x = padding + (i / 4) * (chartWidth - 2 * padding);
+          return (
+            <View
+              key={`vgrid-${i}`}
+              style={{
+                position: 'absolute',
+                left: x,
+                top: padding,
+                width: 1,
+                height: chartHeight - 2 * padding,
+                backgroundColor: gridColor,
+                opacity: 0.3,
+              }}
+            />
+          );
+        })}
+
+        {/* Scatter Points */}
+        <Svg width={chartWidth} height={chartHeight}>
+          {validData.map((d, index) => {
+            const priceInCent = (d.marketPrice! * 0.1);
+            const x = padding + ((d.renewableShare! - minRenewable) / renewableRange) * (chartWidth - 2 * padding);
+            const y = chartHeight - padding - ((priceInCent - minPrice) / priceRange) * (chartHeight - 2 * padding);
+
+            return (
+              <Circle
+                key={index}
+                cx={x}
+                cy={y}
+                r={4}
+                fill={pointColor}
+                opacity={0.6}
+              />
+            );
+          })}
+        </Svg>
+
+        {/* Y-axis labels (Preis) */}
+        {[0, 1, 2, 3, 4].map(i => {
+          const value = maxPrice - (i / 4) * priceRange;
+          const y = padding + (i / 4) * (chartHeight - 2 * padding);
+          return (
+            <Text
+              key={`ylabel-${i}`}
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: y - 8,
+                fontSize: 10,
+                color: textColor,
+                opacity: 0.6,
+              }}
+            >
+              {value.toFixed(0)}
+            </Text>
+          );
+        })}
+
+        {/* X-axis labels (Erneuerbare %) */}
+        {[0, 1, 2, 3, 4].map(i => {
+          const value = minRenewable + (i / 4) * renewableRange;
+          const x = padding + (i / 4) * (chartWidth - 2 * padding);
+          return (
+            <Text
+              key={`xlabel-${i}`}
+              style={{
+                position: 'absolute',
+                left: x - 15,
+                top: chartHeight - 30,
+                fontSize: 10,
+                color: textColor,
+                opacity: 0.6,
+              }}
+            >
+              {value.toFixed(0)}%
+            </Text>
+          );
+        })}
+
+        {/* Axis Labels */}
+        <Text
+          style={{
+            position: 'absolute',
+            left: chartWidth / 2 - 60,
+            bottom: 5,
+            fontSize: 11,
+            color: textColor,
+            fontWeight: '600',
+          }}
+        >
+          Erneuerbare (%)
+        </Text>
+        <Text
+          style={{
+            position: 'absolute',
+            left: 5,
+            top: chartHeight / 2 - 50,
+            fontSize: 11,
+            color: textColor,
+            fontWeight: '600',
+            transform: [{ rotate: '-90deg' }],
+          }}
+        >
+          Preis (¢/kWh)
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+// Simple Line Chart Component (wird nicht mehr verwendet)
 function SimpleChart({
   title,
   data,
@@ -482,6 +1260,37 @@ const styles = StyleSheet.create({
   menuItem: {
     padding: 16,
   },
+  menuSectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  themeToggle: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  themeButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  themeButtonActive: {
+    // Additional styling for active state if needed
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  legendBox: {
+    width: 12,
+    height: 12,
+    marginRight: 8,
+  },
+  legendText: {
+    fontSize: 12,
+  },
   separator: {
     height: 1,
     marginVertical: 4,
@@ -532,5 +1341,11 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 11,
     textAlign: 'center',
+  },
+  footerLink: {
+    fontSize: 12,
+    marginTop: 8,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });
