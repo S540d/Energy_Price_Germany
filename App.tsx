@@ -9,6 +9,7 @@ import {
   useColorScheme,
   Platform,
   Dimensions,
+  Pressable,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator } from 'react-native';
@@ -127,7 +128,7 @@ export default function App() {
         primary: '#90CAF9',
         chartLine: '#90CAF9',
         chartLine2: '#CE93D8',
-        gridLine: '#555',
+        gridLine: '#888888',
       }
     : {
         background: '#FFFFFF',
@@ -239,8 +240,12 @@ export default function App() {
             <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Erneuerbare Energien</Text>
             <View style={{ gap: 5 }}>
               <View style={styles.legendItem}>
+                <View style={[styles.legendBox, { backgroundColor: '#90A4AE' }]} />
+                <Text style={[styles.legendText, { color: colors.textSecondary }]}>Überschuss (nur &gt;100%, Rest grün)</Text>
+              </View>
+              <View style={styles.legendItem}>
                 <View style={[styles.legendBox, { backgroundColor: '#4CAF50' }]} />
-                <Text style={[styles.legendText, { color: colors.textSecondary }]}>Hoch (&gt;80%)</Text>
+                <Text style={[styles.legendText, { color: colors.textSecondary }]}>Hoch (80-100%)</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendBox, { backgroundColor: '#FFC107' }]} />
@@ -320,7 +325,7 @@ export default function App() {
         {energyData.length > 0 ? (
           <>
             <RenewableBarChart
-              title="Anteil Erneuerbarer Energien an der Last (%)"
+              title="Anteil Erneuerbarer Energien an der Last"
               data={energyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
@@ -345,7 +350,6 @@ export default function App() {
               backgroundColor={colors.surface}
               textColor={colors.text}
               gridColor={colors.gridLine}
-              pointColor={colors.primary}
             />
           </>
         ) : (
@@ -392,8 +396,10 @@ function RenewableBarChart({
   gridColor: string;
   averageValue: string;
 }) {
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
   const screenWidth = Dimensions.get('window').width;
-  const chartHeight = 200;
+  const chartHeight = 180;
   const padding = 40;
   const bottomPadding = 50;
   // Breite max 3,5x Höhe, aber auch nicht breiter als Bildschirm - 48px (margins)
@@ -405,22 +411,73 @@ function RenewableBarChart({
   const min = Math.min(...values, 0);
   const range = max - min;
 
+  // Durchschnittswert berechnen
+  const avgValue = values.reduce((sum, v) => sum + v, 0) / values.length;
+
   const now = Date.now();
   const timestamps = data.map(d => d.timestamp);
   const minTime = Math.min(...timestamps);
   const maxTime = Math.max(...timestamps);
   const timeRange = maxTime - minTime;
 
-  // Farbcodierung: hoch = grün, mittel = gelb, niedrig = rot (invertiert zu Preis)
+  const handlePress = (event: any) => {
+    const { locationX } = event.nativeEvent;
+    const barWidth = (chartWidth - padding) / data.length;
+    const index = Math.floor((locationX - padding) / barWidth);
+    if (index >= 0 && index < data.length) {
+      setSelectedIndex(index === selectedIndex ? null : index);
+    }
+  };
+
+  // Farbcodierung mit fließenden Übergängen: >100% = blau (Überschuss), hoch = grün, mittel = gelb, niedrig = rot
   const getColor = (renewablePercent: number) => {
-    if (renewablePercent > 80) return '#4CAF50'; // Grün (hoch)
-    if (renewablePercent > 50) return '#FFC107'; // Gelb (mittel)
-    return '#F44336'; // Rot (niedrig)
+    // Hilfsfunktion für Farbinterpolation
+    const interpolateColor = (color1: number[], color2: number[], factor: number) => {
+      const r = Math.round(color1[0] + (color2[0] - color1[0]) * factor);
+      const g = Math.round(color1[1] + (color2[1] - color1[1]) * factor);
+      const b = Math.round(color1[2] + (color2[2] - color1[2]) * factor);
+      return `rgb(${r}, ${g}, ${b})`;
+    };
+
+    // Farben als RGB Arrays
+    const red = [244, 67, 54];      // #F44336
+    const yellow = [255, 193, 7];   // #FFC107
+    const green = [76, 175, 80];    // #4CAF50
+    const blue = [33, 150, 243];    // #2196F3
+
+    if (renewablePercent > 100) {
+      // Über 100%: von grün zu blau
+      const factor = Math.min((renewablePercent - 100) / 20, 1);
+      return interpolateColor(green, blue, factor);
+    } else if (renewablePercent > 80) {
+      // 80-100%: grün bleiben
+      return '#4CAF50';
+    } else if (renewablePercent > 50) {
+      // 50-80%: von gelb zu grün
+      const factor = (renewablePercent - 50) / 30;
+      return interpolateColor(yellow, green, factor);
+    } else {
+      // 0-50%: von rot zu gelb
+      const factor = renewablePercent / 50;
+      return interpolateColor(red, yellow, factor);
+    }
   };
 
   return (
-    <View style={[styles.card, { backgroundColor }]}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+    <View style={[styles.card, { backgroundColor, alignSelf: 'flex-start' }]}>
+      {selectedIndex !== null && data[selectedIndex]?.renewableShare !== null && (
+        <View style={{ paddingVertical: 4, paddingHorizontal: 8, backgroundColor: textColor + '20', borderRadius: 4, marginBottom: 4, position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
+          <Text style={{ color: textColor, fontSize: 12 }}>
+            {new Date(data[selectedIndex].timestamp).toLocaleString('de-DE', {
+              day: '2-digit',
+              month: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}: {data[selectedIndex].renewableShare!.toFixed(1)}%
+          </Text>
+        </View>
+      )}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
         <Text style={[styles.cardTitle, { color: textColor, marginBottom: 0 }]}>{title}</Text>
         <Text style={{ color: textColor, fontSize: 14, fontWeight: '600' }}>Ø {averageValue}</Text>
       </View>
@@ -455,6 +512,37 @@ function RenewableBarChart({
             const barHeight = ((value - min) / range) * (chartHeight - padding);
             const y = chartHeight - barHeight;
 
+            // Wenn Wert über 100%, Balken zweiteilen
+            if (value > 100) {
+              const baseHeight = ((100 - min) / range) * (chartHeight - padding);
+              const overHeight = ((value - 100) / range) * (chartHeight - padding);
+              const baseY = chartHeight - baseHeight;
+              const overY = baseY - overHeight;
+
+              return (
+                <React.Fragment key={index}>
+                  {/* Basis bis 100% - mit normaler Farbcodierung */}
+                  <Rect
+                    x={x - barWidth / 2}
+                    y={baseY}
+                    width={barWidth}
+                    height={baseHeight}
+                    fill={getColor(100)}
+                    opacity={0.9}
+                  />
+                  {/* Überschuss über 100% - grau */}
+                  <Rect
+                    x={x - barWidth / 2}
+                    y={overY}
+                    width={barWidth}
+                    height={overHeight}
+                    fill="#90A4AE"
+                    opacity={0.9}
+                  />
+                </React.Fragment>
+              );
+            }
+
             return (
               <Rect
                 key={index}
@@ -467,6 +555,18 @@ function RenewableBarChart({
               />
             );
           })}
+
+          {/* Durchschnittslinie */}
+          <Line
+            x1={padding}
+            y1={chartHeight - ((avgValue - min) / range) * (chartHeight - padding)}
+            x2={chartWidth}
+            y2={chartHeight - ((avgValue - min) / range) * (chartHeight - padding)}
+            stroke={textColor}
+            strokeWidth="2"
+            strokeDasharray="8,4"
+            opacity={0.5}
+          />
 
           {/* "Jetzt" Markierung */}
           {now >= minTime && now <= maxTime && (
@@ -481,6 +581,21 @@ function RenewableBarChart({
             />
           )}
         </Svg>
+
+        {/* Durchschnittslinie Label */}
+        <Text
+          style={{
+            position: 'absolute',
+            left: chartWidth - 48,
+            top: chartHeight - ((avgValue - min) / range) * (chartHeight - padding) - 12,
+            fontSize: 10,
+            color: textColor,
+            fontWeight: '600',
+            opacity: 0.7,
+          }}
+        >
+          Ø {avgValue.toFixed(1)}%
+        </Text>
 
         {/* Y-axis labels */}
         {[0, 1, 2, 3, 4].map(i => {
@@ -555,7 +670,8 @@ function RenewableBarChart({
             Jetzt
           </Text>
         )}
-      </View>
+        </View>
+      </Pressable>
     </View>
   );
 }
@@ -577,7 +693,7 @@ function PriceBarChart({
   averageValue: string;
 }) {
   const screenWidth = Dimensions.get('window').width;
-  const chartHeight = 200;
+  const chartHeight = 180;
   const padding = 40;
   const bottomPadding = 50;
   // Breite max 3,5x Höhe, aber auch nicht breiter als Bildschirm - 48px (margins)
@@ -596,22 +712,50 @@ function PriceBarChart({
   const min = Math.min(...validPrices, 0);
   const range = maxTotal - min;
 
+  // Durchschnittswert berechnen (nur Marktpreis)
+  const avgMarketPrice = validPrices.reduce((sum, v) => sum + v, 0) / validPrices.length;
+
   const now = Date.now();
   const timestamps = data.map(d => d.timestamp);
   const minTime = Math.min(...timestamps);
   const maxTime = Math.max(...timestamps);
   const timeRange = maxTime - minTime;
 
-  // Farbcodierung basierend auf Gesamtpreis
+  // Farbcodierung mit fließenden Übergängen basierend auf Gesamtpreis
   const getColor = (totalPrice: number) => {
-    if (totalPrice < 25) return '#4CAF50'; // Grün (niedrig)
-    if (totalPrice < 35) return '#FFC107'; // Gelb (mittel)
-    return '#F44336'; // Rot (hoch)
+    // Hilfsfunktion für Farbinterpolation
+    const interpolateColor = (color1: number[], color2: number[], factor: number) => {
+      const r = Math.round(color1[0] + (color2[0] - color1[0]) * factor);
+      const g = Math.round(color1[1] + (color2[1] - color1[1]) * factor);
+      const b = Math.round(color1[2] + (color2[2] - color1[2]) * factor);
+      return `rgb(${r}, ${g}, ${b})`;
+    };
+
+    // Farben als RGB Arrays
+    const green = [76, 175, 80];    // #4CAF50 (niedrig)
+    const yellow = [255, 193, 7];   // #FFC107 (mittel)
+    const red = [244, 67, 54];      // #F44336 (hoch)
+
+    if (totalPrice < 25) {
+      // 0-25: grün bleiben
+      return '#4CAF50';
+    } else if (totalPrice < 35) {
+      // 25-35: von grün zu gelb
+      const factor = (totalPrice - 25) / 10;
+      return interpolateColor(green, yellow, factor);
+    } else if (totalPrice < 50) {
+      // 35-50: von gelb zu rot
+      const factor = (totalPrice - 35) / 15;
+      return interpolateColor(yellow, red, factor);
+    } else {
+      // >50: rot bleiben
+      return '#F44336';
+    }
   };
 
   return (
-    <View style={[styles.card, { backgroundColor }]}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+    <View style={[styles.card, { backgroundColor, alignSelf: 'flex-start' }]}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
         <Text style={[styles.cardTitle, { color: textColor, marginBottom: 0 }]}>{title}</Text>
         <Text style={{ color: textColor, fontSize: 14, fontWeight: '600' }}>Ø {averageValue}</Text>
       </View>
@@ -677,6 +821,18 @@ function PriceBarChart({
             );
           })}
 
+          {/* Durchschnittslinie (nur Marktpreis) */}
+          <Line
+            x1={padding}
+            y1={chartHeight - ((avgMarketPrice - min) / range) * (chartHeight - padding)}
+            x2={chartWidth}
+            y2={chartHeight - ((avgMarketPrice - min) / range) * (chartHeight - padding)}
+            stroke={textColor}
+            strokeWidth="2"
+            strokeDasharray="8,4"
+            opacity={0.5}
+          />
+
           {/* "Jetzt" Markierung */}
           {now >= minTime && now <= maxTime && (
             <Line
@@ -690,6 +846,21 @@ function PriceBarChart({
             />
           )}
         </Svg>
+
+        {/* Durchschnittslinie Label */}
+        <Text
+          style={{
+            position: 'absolute',
+            left: chartWidth - 60,
+            top: chartHeight - ((avgMarketPrice - min) / range) * (chartHeight - padding) - 12,
+            fontSize: 10,
+            color: textColor,
+            fontWeight: '600',
+            opacity: 0.7,
+          }}
+        >
+          Ø {avgMarketPrice.toFixed(2)} ¢
+        </Text>
 
         {/* Y-axis labels */}
         {[0, 1, 2, 3, 4].map(i => {
@@ -952,17 +1123,15 @@ function CorrelationScatterChart({
   backgroundColor,
   textColor,
   gridColor,
-  pointColor,
 }: {
   title: string;
   data: Array<{ timestamp: number; marketPrice: number | null; renewableShare: number | null }>;
   backgroundColor: string;
   textColor: string;
   gridColor: string;
-  pointColor: string;
 }) {
   const screenWidth = Dimensions.get('window').width;
-  const chartHeight = 250;
+  const chartHeight = 180;
   const padding = 50;
   // Breite max 3,5x Höhe, aber auch nicht breiter als Bildschirm - 48px (margins)
   const maxChartWidth = Math.min(chartHeight * 3.5, screenWidth - 48);
@@ -975,18 +1144,52 @@ function CorrelationScatterChart({
   const priceInCentValues = validData.map(d => (d.marketPrice as number) * 0.1);
   const renewableValues = validData.map(d => d.renewableShare as number);
 
-  // Fixe Skalierung: Preis 0-60 Cent/kWh, Erneuerbare 0-100%
-  const minPrice = 0;
-  const maxPrice = 60;
+  // Dynamische Skalierung mit Mindestbereich
+  const minPrice = Math.min(0, ...priceInCentValues);
+  const maxPrice = Math.max(60, ...priceInCentValues); // Mindestens 60, aber mehr wenn Daten höher sind
   const priceRange = maxPrice - minPrice;
 
-  const minRenewable = 0;
-  const maxRenewable = 100;
+  const minRenewable = Math.min(0, ...renewableValues);
+  const maxRenewable = Math.max(100, ...renewableValues); // Mindestens 100, aber mehr wenn Daten höher sind
   const renewableRange = maxRenewable - minRenewable;
 
+  // Lineare Regression für Trendlinie berechnen
+  const n = validData.length;
+  const sumX = renewableValues.reduce((sum, v) => sum + v, 0);
+  const sumY = priceInCentValues.reduce((sum, v) => sum + v, 0);
+  const sumXY = renewableValues.reduce((sum, v, i) => sum + v * priceInCentValues[i], 0);
+  const sumX2 = renewableValues.reduce((sum, v) => sum + v * v, 0);
+
+  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
+
+  // Funktion um Farbe basierend auf Tageszeit zu bestimmen
+  const getTimeColor = (timestamp: number) => {
+    const hour = new Date(timestamp).getHours();
+    // Nacht: 22-6 Uhr = Blau
+    // Tag: 6-22 Uhr = Gelb/Orange
+    if (hour >= 22 || hour < 6) {
+      return '#2196F3'; // Blau für Nacht
+    } else {
+      return '#FFA726'; // Orange für Tag
+    }
+  };
+
   return (
-    <View style={[styles.card, { backgroundColor }]}>
-      <Text style={[styles.cardTitle, { color: textColor }]}>{title}</Text>
+    <View style={[styles.card, { backgroundColor, alignSelf: 'flex-start', marginRight: 12 }]}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+        <Text style={[styles.cardTitle, { color: textColor, marginBottom: 0 }]}>{title}</Text>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFA726' }} />
+            <Text style={{ fontSize: 10, color: textColor, opacity: 0.7 }}>Tag</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2196F3' }} />
+            <Text style={{ fontSize: 10, color: textColor, opacity: 0.7 }}>Nacht</Text>
+          </View>
+        </View>
+      </View>
       <View style={{ height: chartHeight, width: chartWidth }}>
         {/* Grid Lines */}
         {[0, 1, 2, 3, 4].map(i => {
@@ -1027,6 +1230,18 @@ function CorrelationScatterChart({
 
         {/* Scatter Points */}
         <Svg width={chartWidth} height={chartHeight}>
+          {/* Trendlinie */}
+          <Line
+            x1={padding}
+            y1={chartHeight - padding - ((intercept + slope * minRenewable - minPrice) / priceRange) * (chartHeight - 2 * padding)}
+            x2={chartWidth - padding}
+            y2={chartHeight - padding - ((intercept + slope * maxRenewable - minPrice) / priceRange) * (chartHeight - 2 * padding)}
+            stroke={textColor}
+            strokeWidth="2"
+            strokeDasharray="8,4"
+            opacity={0.4}
+          />
+
           {validData.map((d, index) => {
             const priceInCent = (d.marketPrice! * 0.1);
             const x = padding + ((d.renewableShare! - minRenewable) / renewableRange) * (chartWidth - 2 * padding);
@@ -1038,8 +1253,8 @@ function CorrelationScatterChart({
                 cx={x}
                 cy={y}
                 r={4}
-                fill={pointColor}
-                opacity={0.6}
+                fill={getTimeColor(d.timestamp)}
+                opacity={0.7}
               />
             );
           })}
@@ -1320,7 +1535,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   statsContainer: {
     flexDirection: 'row',
