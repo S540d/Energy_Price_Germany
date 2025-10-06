@@ -127,7 +127,7 @@ export default function App() {
         primary: '#90CAF9',
         chartLine: '#90CAF9',
         chartLine2: '#CE93D8',
-        gridLine: '#333',
+        gridLine: '#555',
       }
     : {
         background: '#FFFFFF',
@@ -142,7 +142,7 @@ export default function App() {
 
   const exportAsCSV = () => {
     const csv = [
-      'Zeitstempel,Marktpreis (EUR/MWh),Anteil Erneuerbarer (%)',
+      'Zeitstempel,Börsenstrompreis (EUR/MWh),Anteil Erneuerbarer (%)',
       ...energyData.map(d =>
         `${new Date(d.timestamp).toISOString()},${d.marketPrice.toFixed(2)},${d.renewableShare.toFixed(2)}`
       ),
@@ -256,7 +256,7 @@ export default function App() {
           <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
           <View style={styles.menuItem}>
-            <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Strompreis</Text>
+            <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Börsenstrompreis</Text>
             <View style={{ gap: 5 }}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendBox, { backgroundColor: '#4CAF50' }]} />
@@ -320,7 +320,7 @@ export default function App() {
         {energyData.length > 0 ? (
           <>
             <RenewableBarChart
-              title="Anteil Erneuerbarer Energien (%)"
+              title="Anteil Erneuerbarer Energien an der Last (%)"
               data={energyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
@@ -330,7 +330,7 @@ export default function App() {
             />
 
             <PriceBarChart
-              title="Strompreis (Cent/kWh)"
+              title="Börsenstrompreis (Cent/kWh)"
               data={energyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
@@ -392,10 +392,13 @@ function RenewableBarChart({
   gridColor: string;
   averageValue: string;
 }) {
-  const chartWidth = Dimensions.get('window').width - 64;
+  const screenWidth = Dimensions.get('window').width;
   const chartHeight = 200;
   const padding = 40;
   const bottomPadding = 50;
+  // Breite max 3,5x Höhe, aber auch nicht breiter als Bildschirm - 48px (margins)
+  const maxChartWidth = Math.min(chartHeight * 3.5, screenWidth - 48);
+  const chartWidth = maxChartWidth;
 
   const values = data.map(d => d.renewableShare).filter(v => v !== null) as number[];
   const max = Math.max(...values);
@@ -417,7 +420,7 @@ function RenewableBarChart({
 
   return (
     <View style={[styles.card, { backgroundColor }]}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
         <Text style={[styles.cardTitle, { color: textColor, marginBottom: 0 }]}>{title}</Text>
         <Text style={{ color: textColor, fontSize: 14, fontWeight: '600' }}>Ø {averageValue}</Text>
       </View>
@@ -573,10 +576,13 @@ function PriceBarChart({
   gridColor: string;
   averageValue: string;
 }) {
-  const chartWidth = Dimensions.get('window').width - 64;
+  const screenWidth = Dimensions.get('window').width;
   const chartHeight = 200;
   const padding = 40;
   const bottomPadding = 50;
+  // Breite max 3,5x Höhe, aber auch nicht breiter als Bildschirm - 48px (margins)
+  const maxChartWidth = Math.min(chartHeight * 3.5, screenWidth - 48);
+  const chartWidth = maxChartWidth;
 
   // Konvertiere EUR/MWh zu Cent/kWh: 1 EUR/MWh = 0.1 Cent/kWh
   const pricesInCent = data.map(d => d.marketPrice !== null ? d.marketPrice * 0.1 : null);
@@ -605,7 +611,7 @@ function PriceBarChart({
 
   return (
     <View style={[styles.card, { backgroundColor }]}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
         <Text style={[styles.cardTitle, { color: textColor, marginBottom: 0 }]}>{title}</Text>
         <Text style={{ color: textColor, fontSize: 14, fontWeight: '600' }}>Ø {averageValue}</Text>
       </View>
@@ -955,9 +961,12 @@ function CorrelationScatterChart({
   gridColor: string;
   pointColor: string;
 }) {
-  const chartWidth = Dimensions.get('window').width - 64;
+  const screenWidth = Dimensions.get('window').width;
   const chartHeight = 250;
   const padding = 50;
+  // Breite max 3,5x Höhe, aber auch nicht breiter als Bildschirm - 48px (margins)
+  const maxChartWidth = Math.min(chartHeight * 3.5, screenWidth - 48);
+  const chartWidth = maxChartWidth;
 
   // Filter nur Datenpunkte wo beide Werte vorhanden sind
   const validData = data.filter(d => d.marketPrice !== null && d.renewableShare !== null);
@@ -1299,8 +1308,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   card: {
-    margin: 16,
-    padding: 16,
+    margin: 12,
+    padding: 12,
     borderRadius: 12,
     elevation: 2,
     shadowColor: '#000',
@@ -1311,7 +1320,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   statsContainer: {
     flexDirection: 'row',
