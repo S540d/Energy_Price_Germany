@@ -325,23 +325,19 @@ export default function App() {
         {energyData.length > 0 ? (
           <>
             <RenewableBarChart
-              title="Anteil Erneuerbarer Energien an der Last"
+              title="Anteil Erneuerbarer Energien an der Last (%)"
               data={energyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
               gridColor={colors.gridLine}
-              averageValue={(energyData.filter(d => d.renewableShare !== null).reduce((sum, d) => sum + d.renewableShare!, 0) /
-                energyData.filter(d => d.renewableShare !== null).length).toFixed(1) + '%'}
             />
 
             <PriceBarChart
-              title="Börsenstrompreis (Cent/kWh)"
+              title="Börsen- und Endkundenstrompreis (Cent/kWh)"
               data={energyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
               gridColor={colors.gridLine}
-              averageValue={(energyData.filter(d => d.marketPrice !== null).reduce((sum, d) => sum + d.marketPrice! * 0.1, 0) /
-                energyData.filter(d => d.marketPrice !== null).length).toFixed(2) + ' ¢'}
             />
 
             <CorrelationScatterChart
@@ -387,14 +383,12 @@ function RenewableBarChart({
   backgroundColor,
   textColor,
   gridColor,
-  averageValue,
 }: {
   title: string;
   data: Array<{ timestamp: number; marketPrice: number | null; renewableShare: number | null }>;
   backgroundColor: string;
   textColor: string;
   gridColor: string;
-  averageValue: string;
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -477,10 +471,7 @@ function RenewableBarChart({
           </Text>
         </View>
       )}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-        <Text style={[styles.cardTitle, { color: textColor, marginBottom: 0 }]}>{title}</Text>
-        <Text style={{ color: textColor, fontSize: 14, fontWeight: '600' }}>Ø {averageValue}</Text>
-      </View>
+      <Text style={[styles.cardTitle, { color: textColor, marginBottom: 2 }]}>{title}</Text>
       <View style={{ height: chartHeight + bottomPadding, width: chartWidth }}>
         {/* Grid Lines */}
         {[0, 1, 2, 3, 4].map(i => {
@@ -682,14 +673,12 @@ function PriceBarChart({
   backgroundColor,
   textColor,
   gridColor,
-  averageValue,
 }: {
   title: string;
   data: Array<{ timestamp: number; marketPrice: number | null; renewableShare: number | null }>;
   backgroundColor: string;
   textColor: string;
   gridColor: string;
-  averageValue: string;
 }) {
   const screenWidth = Dimensions.get('window').width;
   const chartHeight = 180;
@@ -754,10 +743,7 @@ function PriceBarChart({
 
   return (
     <View style={[styles.card, { backgroundColor, alignSelf: 'flex-start' }]}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-        <Text style={[styles.cardTitle, { color: textColor, marginBottom: 0 }]}>{title}</Text>
-        <Text style={{ color: textColor, fontSize: 14, fontWeight: '600' }}>Ø {averageValue}</Text>
-      </View>
+      <Text style={[styles.cardTitle, { color: textColor, marginBottom: 2 }]}>{title}</Text>
       <View style={{ height: chartHeight + bottomPadding, width: chartWidth }}>
         {/* Grid Lines */}
         {[0, 1, 2, 3, 4].map(i => {
@@ -1143,14 +1129,18 @@ function CorrelationScatterChart({
   const priceInCentValues = validData.map(d => (d.marketPrice as number) * 0.1);
   const renewableValues = validData.map(d => d.renewableShare as number);
 
-  // Dynamische Skalierung mit Mindestbereich
-  const minPrice = Math.min(0, ...priceInCentValues);
-  const maxPrice = Math.max(60, ...priceInCentValues); // Mindestens 60, aber mehr wenn Daten höher sind
-  const priceRange = maxPrice - minPrice;
-
-  const minRenewable = Math.min(0, ...renewableValues);
+  // Dynamische Skalierung: X-Achse 0-100% (oder höher), Y-Achse komplett dynamisch
+  const minRenewable = 0;
   const maxRenewable = Math.max(100, ...renewableValues); // Mindestens 100, aber mehr wenn Daten höher sind
   const renewableRange = maxRenewable - minRenewable;
+
+  // Y-Achse: Vollständig dynamisch mit 5% Padding für optimale Raumnutzung
+  const minPriceData = Math.min(...priceInCentValues);
+  const maxPriceData = Math.max(...priceInCentValues);
+  const pricePadding = (maxPriceData - minPriceData) * 0.05;
+  const minPrice = Math.max(0, minPriceData - pricePadding);
+  const maxPrice = maxPriceData + pricePadding;
+  const priceRange = maxPrice - minPrice;
 
   // Lineare Regression für Trendlinie berechnen
   const n = validData.length;
