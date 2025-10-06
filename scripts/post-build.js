@@ -41,4 +41,14 @@ if (fs.existsSync(indexPath)) {
   console.log('✓ Fixed paths and title in index.html for subpath deployment');
 }
 
+// Update cache version in service worker with timestamp
+const swPath = path.join(__dirname, '..', 'dist', 'service-worker.js');
+if (fs.existsSync(swPath)) {
+  let swContent = fs.readFileSync(swPath, 'utf8');
+  const cacheVersion = `energy-price-germany-v${Date.now()}`;
+  swContent = swContent.replace(/const CACHE_NAME = '[^']+';/, `const CACHE_NAME = '${cacheVersion}';`);
+  fs.writeFileSync(swPath, swContent);
+  console.log(`✓ Updated service worker cache version to: ${cacheVersion}`);
+}
+
 console.log('✓ PWA files copied successfully!');
