@@ -670,8 +670,7 @@ function RenewableBarChart({
             Jetzt
           </Text>
         )}
-        </View>
-      </Pressable>
+      </View>
     </View>
   );
 }
