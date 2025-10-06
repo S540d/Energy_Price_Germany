@@ -81,11 +81,14 @@ async function fetchEnergyData() {
   }
 }
 
+type View = 'charts' | 'metrics';
+
 export default function App() {
   const [energyData, setEnergyData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<Theme>('system');
   const [menuVisible, setMenuVisible] = useState(false);
+  const [currentView, setCurrentView] = useState<View>('charts');
   const systemTheme = useColorScheme();
 
   const isDark = theme === 'dark' || (theme === 'system' && systemTheme === 'dark');
@@ -195,12 +198,42 @@ export default function App() {
       {/* Top Bar */}
       <View style={[styles.topBar, { backgroundColor: colors.surface }]}>
         <Text style={[styles.title, { color: colors.text }]}>Energy Prices Germany</Text>
-        <TouchableOpacity
-          onPress={() => setMenuVisible(!menuVisible)}
-          style={styles.menuButton}
-        >
-          <Text style={[styles.menuIcon, { color: colors.text }]}>⋮</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={() => setCurrentView('charts')}
+            style={[
+              styles.tabButton,
+              currentView === 'charts' && { backgroundColor: colors.primary }
+            ]}
+          >
+            <Text style={[
+              styles.tabButtonText,
+              { color: currentView === 'charts' ? '#fff' : colors.text }
+            ]}>
+              📊 Diagramme
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setCurrentView('metrics')}
+            style={[
+              styles.tabButton,
+              currentView === 'metrics' && { backgroundColor: colors.primary }
+            ]}
+          >
+            <Text style={[
+              styles.tabButtonText,
+              { color: currentView === 'metrics' ? '#fff' : colors.text }
+            ]}>
+              📈 Metrik
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setMenuVisible(!menuVisible)}
+            style={styles.menuButton}
+          >
+            <Text style={[styles.menuIcon, { color: colors.text }]}>⋮</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Dropdown Menu */}
@@ -322,7 +355,7 @@ export default function App() {
 
       {/* Main Content */}
       <ScrollView style={styles.scrollView}>
-        {energyData.length > 0 ? (
+        {currentView === 'charts' && energyData.length > 0 ? (
           <>
             <RenewableBarChart
               title="Anteil Erneuerbarer Energien an der Last (%)"
@@ -348,7 +381,120 @@ export default function App() {
               gridColor={colors.gridLine}
             />
           </>
-        ) : (
+        ) : null}
+
+        {currentView === 'metrics' && energyData.length > 0 ? (
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.cardTitle, { color: colors.text, marginBottom: 16 }]}>
+              Metriken
+            </Text>
+
+            {/* Zeitraum */}
+            <View style={{ marginBottom: 20 }}>
+              <Text style={{ color: colors.text, fontSize: 14, fontWeight: '600', marginBottom: 8 }}>
+                Zeitraum
+              </Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+                {new Date(Math.min(...energyData.map(d => d.timestamp))).toLocaleString('de-DE', {
+                  day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                })}
+                {' bis '}
+                {new Date(Math.max(...energyData.map(d => d.timestamp))).toLocaleString('de-DE', {
+                  day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                })}
+              </Text>
+            </View>
+
+            {/* Erneuerbare Energien */}
+            <View style={{ marginBottom: 20 }}>
+              <Text style={{ color: colors.text, fontSize: 14, fontWeight: '600', marginBottom: 8 }}>
+                Anteil Erneuerbarer Energien (%)
+              </Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Durchschnitt</Text>
+                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
+                    {(energyData.filter(d => d.renewableShare !== null)
+                      .reduce((sum, d) => sum + d.renewableShare!, 0) /
+                      energyData.filter(d => d.renewableShare !== null).length).toFixed(1)}%
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Minimum</Text>
+                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
+                    {Math.min(...energyData.filter(d => d.renewableShare !== null).map(d => d.renewableShare!)).toFixed(1)}%
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Maximum</Text>
+                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
+                    {Math.max(...energyData.filter(d => d.renewableShare !== null).map(d => d.renewableShare!)).toFixed(1)}%
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Börsenstrompreis */}
+            <View style={{ marginBottom: 20 }}>
+              <Text style={{ color: colors.text, fontSize: 14, fontWeight: '600', marginBottom: 8 }}>
+                Börsenstrompreis (Cent/kWh)
+              </Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Durchschnitt</Text>
+                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
+                    {(energyData.filter(d => d.marketPrice !== null)
+                      .reduce((sum, d) => sum + d.marketPrice! * 0.1, 0) /
+                      energyData.filter(d => d.marketPrice !== null).length).toFixed(2)} ¢
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Minimum</Text>
+                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
+                    {(Math.min(...energyData.filter(d => d.marketPrice !== null).map(d => d.marketPrice!)) * 0.1).toFixed(2)} ¢
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Maximum</Text>
+                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
+                    {(Math.max(...energyData.filter(d => d.marketPrice !== null).map(d => d.marketPrice!)) * 0.1).toFixed(2)} ¢
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Endkundenstrompreis (inkl. Netzentgelte) */}
+            <View>
+              <Text style={{ color: colors.text, fontSize: 14, fontWeight: '600', marginBottom: 8 }}>
+                Endkundenstrompreis (Cent/kWh)
+              </Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Durchschnitt</Text>
+                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
+                    {(energyData.filter(d => d.marketPrice !== null)
+                      .reduce((sum, d) => sum + d.marketPrice! * 0.1, 0) /
+                      energyData.filter(d => d.marketPrice !== null).length + 20).toFixed(2)} ¢
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Minimum</Text>
+                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
+                    {((Math.min(...energyData.filter(d => d.marketPrice !== null).map(d => d.marketPrice!)) * 0.1) + 20).toFixed(2)} ¢
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Maximum</Text>
+                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
+                    {((Math.max(...energyData.filter(d => d.marketPrice !== null).map(d => d.marketPrice!)) * 0.1) + 20).toFixed(2)} ¢
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        ) : null}
+
+        {energyData.length === 0 && (
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>
               Keine Daten verfügbar
@@ -472,6 +618,20 @@ function RenewableBarChart({
         </View>
       )}
       <Text style={[styles.cardTitle, { color: textColor, marginBottom: 2 }]}>{title}</Text>
+      {/* Y-Achsen-Label */}
+      <Text
+        style={{
+          position: 'absolute',
+          left: 5,
+          top: chartHeight / 2 + 40,
+          fontSize: 11,
+          color: textColor,
+          fontWeight: '600',
+          transform: [{ rotate: '-90deg' }],
+        }}
+      >
+        {title}
+      </Text>
       <View style={{ height: chartHeight + bottomPadding, width: chartWidth }}>
         {/* Grid Lines */}
         {[0, 1, 2, 3, 4].map(i => {
@@ -744,6 +904,20 @@ function PriceBarChart({
   return (
     <View style={[styles.card, { backgroundColor, alignSelf: 'flex-start' }]}>
       <Text style={[styles.cardTitle, { color: textColor, marginBottom: 2 }]}>{title}</Text>
+      {/* Y-Achsen-Label */}
+      <Text
+        style={{
+          position: 'absolute',
+          left: 5,
+          top: chartHeight / 2 + 40,
+          fontSize: 11,
+          color: textColor,
+          fontWeight: '600',
+          transform: [{ rotate: '-90deg' }],
+        }}
+      >
+        {title}
+      </Text>
       <View style={{ height: chartHeight + bottomPadding, width: chartWidth }}>
         {/* Grid Lines */}
         {[0, 1, 2, 3, 4].map(i => {
@@ -1155,12 +1329,15 @@ function CorrelationScatterChart({
   // Funktion um Farbe basierend auf Tageszeit zu bestimmen
   const getTimeColor = (timestamp: number) => {
     const hour = new Date(timestamp).getHours();
-    // Nacht: 22-6 Uhr = Blau
-    // Tag: 6-22 Uhr = Gelb/Orange
+    // Nacht: 22:00-5:59 = Blau
+    // Morgens/Abends: 6:00-9:59 und 18:00-21:59 = Orange
+    // Tags: 10:00-17:59 = Gelb
     if (hour >= 22 || hour < 6) {
       return '#2196F3'; // Blau für Nacht
+    } else if ((hour >= 6 && hour < 10) || (hour >= 18 && hour < 22)) {
+      return '#FF9800'; // Orange für Morgens/Abends
     } else {
-      return '#FFA726'; // Orange für Tag
+      return '#FFEB3B'; // Gelb für Tags
     }
   };
 
@@ -1168,14 +1345,18 @@ function CorrelationScatterChart({
     <View style={[styles.card, { backgroundColor, alignSelf: 'flex-start', marginRight: 12 }]}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
         <Text style={[styles.cardTitle, { color: textColor, marginBottom: 0 }]}>{title}</Text>
-        <View style={{ flexDirection: 'row', gap: 12 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFA726' }} />
-            <Text style={{ fontSize: 10, color: textColor, opacity: 0.7 }}>Tag</Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
             <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2196F3' }} />
-            <Text style={{ fontSize: 10, color: textColor, opacity: 0.7 }}>Nacht</Text>
+            <Text style={{ fontSize: 9, color: textColor, opacity: 0.7 }}>Nacht</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF9800' }} />
+            <Text style={{ fontSize: 9, color: textColor, opacity: 0.7 }}>M/A</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFEB3B' }} />
+            <Text style={{ fontSize: 9, color: textColor, opacity: 0.7 }}>Tag</Text>
           </View>
         </View>
       </View>
@@ -1456,6 +1637,16 @@ const styles = StyleSheet.create({
   menuIcon: {
     fontSize: 24,
     fontWeight: 'bold',
+  },
+  tabButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: 'transparent',
+  },
+  tabButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   menu: {
     position: 'absolute',
