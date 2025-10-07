@@ -1,7 +1,7 @@
 name: Fetch aWATTar market data
 on:
   schedule:
-    - cron: '0 * * * *'   # Läuft jede volle Stunde
+    - cron: '0 * * * *'   # jede volle Stunde
   workflow_dispatch:
 
 permissions:
@@ -24,7 +24,6 @@ jobs:
         id: compare
         run: |
           if [ -f data/marketdata.json ]; then
-            # Extrahiere den letzten Timestamp beider Dateien
             OLD_TS=$(jq '[.data[].start_timestamp] | max' data/marketdata.json)
             NEW_TS=$(jq '[.data[].start_timestamp] | max' data/marketdata_new.json)
             echo "OLD_TS=$OLD_TS"
@@ -36,18 +35,21 @@ jobs:
               echo "new_data=false" >> $GITHUB_OUTPUT
             fi
           else
-            # Es gibt noch keine alte Datei → erste Speicherung erzwingen
             echo "new_data=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Replace and commit if changed
+      - name: Archive and commit if changed
         if: steps.compare.outputs.new_data == 'true'
         run: |
+          mkdir -p data/archive
+          ts=$(date -u +"%Y-%m-%dT%H")
+          cp data/marketdata_new.json "data/archive/marketdata_${ts}.json"
           mv data/marketdata_new.json data/marketdata.json
+
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          git add data/marketdata.json
-          git commit -m "Update marketdata.json (new data from aWATTar)"
+          git add data/marketdata.json data/archive/marketdata_${ts}.json
+          git commit -m "Update marketdata.json (new data from aWATTar @ ${ts} UTC)"
           git push
 
       - name: Skip commit if no change
