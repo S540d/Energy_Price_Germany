@@ -1,96 +1,78 @@
-// Energy Charts API Integration
-// Source: https://api.energy-charts.info/
+// Cache für API-Daten (3 Stunden) - in-memory cache
+let cachedData: any = null;
+let cacheTimestamp: number = 0;
+const CACHE_DURATION = 3 * 60 * 60 * 1000; // 3 Stunden in Millisekunden
 
-interface PriceResponse {
-  unix_seconds: number[];
-  price: number[];
-}
-
-interface RenewableShareResponse {
-  unix_seconds: number[];
-  ren_share: number[];
-  solar_share?: number[];
-  wind_onshore_share?: number[];
-  wind_offshore_share?: number[];
-}
-
-export interface EnergyDataPoint {
-  timestamp: number; // milliseconds
-  marketPrice: number | null;
-  renewableShare: number | null;
-}
-
-const API_BASE = 'https://api.energy-charts.info';
-
-export async function fetchEnergyData(): Promise<EnergyDataPoint[]> {
-  try {
-    const now = Date.now();
-
-    // Fetch price data
-    const priceResponse = await fetch(`${API_BASE}/price?country=de&_t=${now}`);
-    const priceData: PriceResponse = await priceResponse.json();
-
-    // Fetch renewable share forecast
-    const renewableResponse = await fetch(`${API_BASE}/ren_share_forecast?country=de&_t=${now}`);
-    const renewableData: RenewableShareResponse = await renewableResponse.json();
-
-    // Merge data by timestamp
-    const dataMap = new Map<number, EnergyDataPoint>();
-
-    // Add price data
-    priceData.unix_seconds.forEach((unixSeconds, index) => {
-      const timestamp = unixSeconds * 1000; // convert to milliseconds
-      dataMap.set(timestamp, {
-        timestamp,
-        marketPrice: priceData.price[index] || null,
-        renewableShare: null,
-      });
-    });
-
-    // Add renewable data
-    renewableData.unix_seconds.forEach((unixSeconds, index) => {
-      const timestamp = unixSeconds * 1000;
-      const existing = dataMap.get(timestamp);
-      if (existing) {
-        existing.renewableShare = renewableData.ren_share[index] || null;
-      } else {
-        dataMap.set(timestamp, {
-          timestamp,
-          marketPrice: null,
-          renewableShare: renewableData.ren_share[index] || null,
-        });
-      }
-    });
-
-    // Convert to array and sort by timestamp
-    const result = Array.from(dataMap.values()).sort((a, b) => a.timestamp - b.timestamp);
-
-    // Filter to relevant time window (last 6 hours + next 18 hours)
-    const sixHoursAgo = now - 6 * 3600000;
-    const eighteenHoursLater = now + 18 * 3600000;
-
-    return result.filter(
-      (d) => d.timestamp >= sixHoursAgo && d.timestamp <= eighteenHoursLater
-    );
-  } catch (error) {
-    console.error('Failed to fetch energy data:', error);
-    throw new Error('Fehler beim Laden der Energiedaten');
+// Fetch real data from Energy Charts API with caching
+export async function fetchEnergyData() {
+  // Prüfe In-Memory Cache
+  const age = Date.now() - cacheTimestamp;
+  if (cachedData && age < CACHE_DURATION) {
+    console.log('Using cached energy data (age: ' + Math.round(age / 1000 / 60) + ' minutes)');
+    return cachedData;
   }
-}
 
-// Fallback: Generate mock data
-export function generateMockData(): EnergyDataPoint[] {
-  const data: EnergyDataPoint[] = [];
+  // Daten von API abrufen (via CORS-Proxy)
+  console.log('Fetching fresh energy data from API...');
   const now = Date.now();
 
-  for (let i = -6; i <= 18; i++) {
-    const timestamp = now + i * 3600000;
-    data.push({
-      timestamp,
-      marketPrice: 30 + Math.random() * 40 + Math.sin(i / 3) * 15,
-      renewableShare: 40 + Math.random() * 30 + Math.cos(i / 4) * 20,
+  // CORS-Proxy um die API-Blockierung zu umgehen
+  const CORS_PROXY = 'https://corsproxy.io/?';
+
+  try {
+    const [priceRes, renewableRes] = await Promise.all([
+      fetch(`${CORS_PROXY}${encodeURIComponent(`https://api.energy-charts.info/price?country=de&_t=${now}`)}`),
+      fetch(`${CORS_PROXY}${encodeURIComponent(`https://api.energy-charts.info/ren_share_forecast?country=de&_t=${now}`)}`)
+    ]);
+
+    console.log('Price API status:', priceRes.status, priceRes.statusText);
+    console.log('Renewable API status:', renewableRes.status, renewableRes.statusText);
+
+    if (!priceRes.ok || !renewableRes.ok) {
+      throw new Error(`API request failed - Price: ${priceRes.status}, Renewable: ${renewableRes.status}`);
+    }
+
+    const priceData = await priceRes.json();
+    const renewableData = await renewableRes.json();
+
+    console.log('Price data points:', priceData.unix_seconds?.length || 0);
+    console.log('Renewable data points:', renewableData.unix_seconds?.length || 0);
+
+    const dataMap = new Map();
+    priceData.unix_seconds.forEach((ts: number, i: number) => {
+      dataMap.set(ts * 1000, { timestamp: ts * 1000, marketPrice: priceData.price[i], renewableShare: null });
+    });
+    renewableData.unix_seconds.forEach((ts: number, i: number) => {
+      const existing = dataMap.get(ts * 1000);
+      if (existing) existing.renewableShare = renewableData.ren_share[i];
+      else dataMap.set(ts * 1000, { timestamp: ts * 1000, marketPrice: null, renewableShare: renewableData.ren_share[i] });
+    });
+
+    const result = Array.from(dataMap.values()).sort((a, b) => a.timestamp - b.timestamp);
+
+    // Speichere in In-Memory Cache
+    cachedData = result;
+    cacheTimestamp = Date.now();
+    console.log('Cached fresh energy data:', result.length, 'data points');
+
+    return result;
+  } catch (error) {
+    console.error('Detailed fetch error:', error);
+    throw error;
+  }
+}
+
+// Mock-Daten Generator für Fallback
+export function generateMockData() {
+  const mockData = [];
+  const now = Date.now();
+  for (let i = 0; i < 96; i++) {
+    const hour = i / 4;
+    mockData.push({
+      timestamp: now - (96 - i) * 15 * 60 * 1000,
+      marketPrice: 30 + Math.sin(hour / 24 * Math.PI * 2) * 20 + Math.random() * 10,
+      renewableShare: 60 + Math.sin((hour - 6) / 24 * Math.PI * 2) * 30 + Math.random() * 10,
     });
   }
-
-  return data;
+  return mockData;
 }
