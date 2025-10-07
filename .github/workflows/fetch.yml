@@ -1,7 +1,7 @@
 name: Fetch aWATTar market data
 on:
   schedule:
-    - cron: '0 * * * *'   # jede volle Stunde
+    - cron: '0 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -23,19 +23,20 @@ jobs:
       - name: Compare with previous data
         id: compare
         run: |
+          NEW_TS=$(jq '[.data[].start_timestamp] | max' data/marketdata_new.json)
           if [ -f data/marketdata.json ]; then
             OLD_TS=$(jq '[.data[].start_timestamp] | max' data/marketdata.json)
-            NEW_TS=$(jq '[.data[].start_timestamp] | max' data/marketdata_new.json)
-            echo "OLD_TS=$OLD_TS"
-            echo "NEW_TS=$NEW_TS"
-
-            if [ "$NEW_TS" != "null" ] && [ "$OLD_TS" != "$NEW_TS" ]; then
-              echo "new_data=true" >> $GITHUB_OUTPUT
-            else
-              echo "new_data=false" >> $GITHUB_OUTPUT
-            fi
           else
+            OLD_TS=""
+          fi
+
+          echo "OLD_TS=$OLD_TS"
+          echo "NEW_TS=$NEW_TS"
+
+          if [ "$OLD_TS" != "$NEW_TS" ]; then
             echo "new_data=true" >> $GITHUB_OUTPUT
+          else
+            echo "new_data=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Archive and commit if changed
