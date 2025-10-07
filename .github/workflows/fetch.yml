@@ -1,7 +1,7 @@
 name: Fetch aWATTar market data
 on:
   schedule:
-    - cron: '0 * * * *'   # Jede volle Stunde
+    - cron: '0 * * * *'   # Läuft jede volle Stunde
   workflow_dispatch:
 
 permissions:
@@ -15,21 +15,41 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download aWATTar data
+      - name: Download new data
         run: |
           mkdir -p data
-          curl -fSL "https://api.awattar.de/v1/marketdata" -o data/marketdata.json
+          curl -fsSL "https://api.awattar.de/v1/marketdata" -o data/marketdata_new.json
 
-      - name: Commit and push if changed
+      - name: Compare with previous data
+        id: compare
         run: |
+          if [ -f data/marketdata.json ]; then
+            # Extrahiere den letzten Timestamp beider Dateien
+            OLD_TS=$(jq '[.data[].start_timestamp] | max' data/marketdata.json)
+            NEW_TS=$(jq '[.data[].start_timestamp] | max' data/marketdata_new.json)
+            echo "OLD_TS=$OLD_TS"
+            echo "NEW_TS=$NEW_TS"
+
+            if [ "$NEW_TS" != "null" ] && [ "$OLD_TS" != "$NEW_TS" ]; then
+              echo "new_data=true" >> $GITHUB_OUTPUT
+            else
+              echo "new_data=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            # Es gibt noch keine alte Datei → erste Speicherung erzwingen
+            echo "new_data=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Replace and commit if changed
+        if: steps.compare.outputs.new_data == 'true'
+        run: |
+          mv data/marketdata_new.json data/marketdata.json
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
+          git add data/marketdata.json
+          git commit -m "Update marketdata.json (new data from aWATTar)"
+          git push
 
-          git add data/marketdata.json || true
-
-          if ! git diff --quiet --staged; then
-            git commit -m "Update marketdata.json (automated fetch from aWATTar)"
-            git push
-          else
-            echo "No new data to commit"
-          fi
+      - name: Skip commit if no change
+        if: steps.compare.outputs.new_data == 'false'
+        run: echo "No new data available – skipping commit."
