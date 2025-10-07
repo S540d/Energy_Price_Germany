@@ -17,15 +17,15 @@ jobs:
 
       - name: Download new data
         run: |
-          mkdir -p data
-          curl -fsSL "https://api.awattar.de/v1/marketdata" -o data/marketdata_new.json
+          mkdir -p public
+          curl -fsSL "https://api.awattar.de/v1/marketdata" -o public/marketdata_new.json
 
       - name: Compare with previous data
         id: compare
         run: |
-          NEW_TS=$(jq '[.data[].start_timestamp] | max' data/marketdata_new.json)
-          if [ -f data/marketdata.json ]; then
-            OLD_TS=$(jq '[.data[].start_timestamp] | max' data/marketdata.json)
+          NEW_TS=$(jq '[.data[].start_timestamp] | max' public/marketdata_new.json)
+          if [ -f public/marketdata.json ]; then
+            OLD_TS=$(jq '[.data[].start_timestamp] | max' public/marketdata.json)
           else
             OLD_TS=""
           fi
@@ -42,17 +42,17 @@ jobs:
       - name: Archive and commit if changed
         if: steps.compare.outputs.new_data == 'true'
         run: |
-          mkdir -p data/archive
+          mkdir -p public/archive
           ts=$(date -u +"%Y-%m-%dT%H")
-          cp data/marketdata_new.json "data/archive/marketdata_${ts}.json"
-          mv data/marketdata_new.json data/marketdata.json
+          cp public/marketdata_new.json "public/archive/marketdata_${ts}.json"
+          mv public/marketdata_new.json public/marketdata.json
 
-          # Alte Archivdateien löschen (>30 Tage)
-          find data/archive/ -type f -name "marketdata_*.json" -mtime +30 -print -delete
+          # Alte Archive (>30 Tage) löschen
+          find public/archive/ -type f -name "marketdata_*.json" -mtime +30 -print -delete
 
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          git add data/marketdata.json data/archive/
+          git add public/marketdata.json public/archive/
           git commit -m "Update marketdata.json (new data from aWATTar @ ${ts} UTC)"
           git push
 
