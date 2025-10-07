@@ -39,7 +39,7 @@ export default function App() {
 
         // Lade marketdata.json
         try {
-          const marketResponse = await fetch('/data/marketdata.json');
+          const marketResponse = await fetch('/marketdata.json');
           if (marketResponse.ok) {
             const marketJson = await marketResponse.json();
             // Transformiere Datenformat: { start_timestamp, marketprice } -> { timestamp, marketPrice, renewableShare }
@@ -49,9 +49,10 @@ export default function App() {
               renewableShare: null
             }));
             setMarketData(transformedData);
+            console.log('Loaded marketdata.json:', transformedData.length, 'data points');
           }
         } catch (err) {
-          console.log('marketdata.json not available yet');
+          console.log('marketdata.json not available:', err);
         }
       } catch (error) {
         console.error('Failed to load energy data:', error);
