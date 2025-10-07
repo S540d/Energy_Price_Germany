@@ -17,15 +17,15 @@ jobs:
 
       - name: Download new data
         run: |
-          mkdir -p public
-          curl -fsSL "https://api.awattar.de/v1/marketdata" -o public/marketdata_new.json
+          mkdir -p archive
+          curl -fsSL "https://api.awattar.de/v1/marketdata" -o marketdata_new.json
 
       - name: Compare with previous data
         id: compare
         run: |
-          NEW_TS=$(jq '[.data[].start_timestamp] | max' public/marketdata_new.json)
-          if [ -f public/marketdata.json ]; then
-            OLD_TS=$(jq '[.data[].start_timestamp] | max' public/marketdata.json)
+          NEW_TS=$(jq '[.data[].start_timestamp] | max' marketdata_new.json)
+          if [ -f marketdata.json ]; then
+            OLD_TS=$(jq '[.data[].start_timestamp] | max' marketdata.json)
           else
             OLD_TS=""
           fi
@@ -42,10 +42,9 @@ jobs:
       - name: Archive, create quarter-hour data, and commit if changed
         if: steps.compare.outputs.new_data == 'true'
         run: |
-          mkdir -p public/archive
           ts=$(date -u +"%Y-%m-%dT%H")
-          cp public/marketdata_new.json "public/archive/marketdata_${ts}.json"
-          mv public/marketdata_new.json marketdata.json
+          cp marketdata_new.json "archive/marketdata_${ts}.json"
+          mv marketdata_new.json marketdata.json
 
           # Viertelstunden-Daten erzeugen
           jq '{
@@ -56,14 +55,14 @@ jobs:
               {start_timestamp: $h.start_timestamp+1800000, end_timestamp: $h.start_timestamp+2700000, marketprice: $h.marketprice, unit: $h.unit},
               {start_timestamp: $h.start_timestamp+2700000, end_timestamp: $h.end_timestamp, marketprice: $h.marketprice, unit: $h.unit}
             ]
-          }' public/marketdata.json > public/marketdata_quarter.json
+          }' marketdata.json > marketdata_quarter.json
 
           # Alte Archive (>30 Tage) löschen
-          find public/archive/ -type f -name "marketdata_*.json" -mtime +30 -print -delete
+          find archive/ -type f -name "marketdata_*.json" -mtime +30 -print -delete
 
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          git add public/marketdata.json public/marketdata_quarter.json public/archive/
+          git add marketdata.json marketdata_quarter.json archive/
           git commit -m "Update marketdata.json & marketdata_quarter.json (new data from aWATTar @ ${ts} UTC)"
           git push
 
