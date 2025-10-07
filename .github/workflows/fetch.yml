@@ -15,20 +15,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download new data
+      - name: Download new data with debug
         run: |
-          mkdir -p archive
-          curl -fsSL "https://api.awattar.de/v1/marketdata" -o marketdata_new.json
+          set -x
+          curl -sSL "https://api.awattar.de/v1/marketdata" -o marketdata_new.json
+          echo "Downloaded file contents:"
+          cat marketdata_new.json || echo "File is empty or curl failed"
+          ls -l
 
-      - name: Compare with previous data
-        id: compare
+      - name: Check if new data exists
+        id: check_new
         run: |
-          NEW_TS=$(jq '[.data[].start_timestamp] | max' marketdata_new.json)
+          if [ ! -s marketdata_new.json ]; then
+            echo "new_data=false" >> $GITHUB_OUTPUT
+            echo "Downloaded file is empty. Exiting."
+            exit 0
+          fi
+
           if [ -f marketdata.json ]; then
             OLD_TS=$(jq '[.data[].start_timestamp] | max' marketdata.json)
           else
             OLD_TS=""
           fi
+          NEW_TS=$(jq '[.data[].start_timestamp] | max' marketdata_new.json)
 
           echo "OLD_TS=$OLD_TS"
           echo "NEW_TS=$NEW_TS"
@@ -40,32 +49,41 @@ jobs:
           fi
 
       - name: Archive, create quarter-hour data, and commit if changed
-        if: steps.compare.outputs.new_data == 'true'
+        if: steps.check_new.outputs.new_data == 'true'
         run: |
+          set -x
           ts=$(date -u +"%Y-%m-%dT%H")
+          
+          # Archiv
+          mkdir -p archive
           cp marketdata_new.json "archive/marketdata_${ts}.json"
+
+          # Hauptdatei ersetzen
           mv marketdata_new.json marketdata.json
+          cat marketdata.json
 
           # Viertelstunden-Daten erzeugen
           jq '{
             object: .object,
             data: [.data[] | . as $h | 
-              {start_timestamp: $h.start_timestamp, end_timestamp: $h.start_timestamp+900000, marketprice: $h.marketprice, unit: $h.unit},
-              {start_timestamp: $h.start_timestamp+900000, end_timestamp: $h.start_timestamp+1800000, marketprice: $h.marketprice, unit: $h.unit},
-              {start_timestamp: $h.start_timestamp+1800000, end_timestamp: $h.start_timestamp+2700000, marketprice: $h.marketprice, unit: $h.unit},
-              {start_timestamp: $h.start_timestamp+2700000, end_timestamp: $h.end_timestamp, marketprice: $h.marketprice, unit: $h.unit}
+              {start_timestamp: $h.start_timestamp, end_timestamp: ($h.start_timestamp+900000), marketprice: $h.marketprice, unit: $h.unit},
+              {start_timestamp: ($h.start_timestamp+900000), end_timestamp: ($h.start_timestamp+1800000), marketprice: $h.marketprice, unit: $h.unit},
+              {start_timestamp: ($h.start_timestamp+1800000), end_timestamp: ($h.start_timestamp+2700000), marketprice: $h.marketprice, unit: $h.unit},
+              {start_timestamp: ($h.start_timestamp+2700000), end_timestamp: $h.end_timestamp, marketprice: $h.marketprice, unit: $h.unit}
             ]
           }' marketdata.json > marketdata_quarter.json
+          cat marketdata_quarter.json
 
           # Alte Archive (>30 Tage) löschen
           find archive/ -type f -name "marketdata_*.json" -mtime +30 -print -delete
 
+          # Git commit & push
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           git add marketdata.json marketdata_quarter.json archive/
-          git commit -m "Update marketdata.json & marketdata_quarter.json (new data from aWATTar @ ${ts} UTC)"
+          git commit -m "Update marketdata.json & marketdata_quarter.json (new data from aWATTar @ ${ts} UTC)" || echo "Nothing to commit"
           git push
 
       - name: Skip commit if no change
-        if: steps.compare.outputs.new_data == 'false'
+        if: steps.check_new.outputs.new_data == 'false'
         run: echo "No new data available – skipping commit."
