@@ -21,6 +21,7 @@ type View = 'charts' | 'metrics';
 
 export default function App() {
   const [energyData, setEnergyData] = useState([]);
+  const [marketData, setMarketData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<Theme>('system');
   const [menuVisible, setMenuVisible] = useState(false);
@@ -35,6 +36,23 @@ export default function App() {
         setLoading(true);
         const data = await fetchEnergyData();
         setEnergyData(data);
+
+        // Lade marketdata.json
+        try {
+          const marketResponse = await fetch('/data/marketdata.json');
+          if (marketResponse.ok) {
+            const marketJson = await marketResponse.json();
+            // Transformiere Datenformat: { start_timestamp, marketprice } -> { timestamp, marketPrice, renewableShare }
+            const transformedData = marketJson.data.map((item: any) => ({
+              timestamp: item.start_timestamp,
+              marketPrice: item.marketprice, // Bereits in EUR/MWh
+              renewableShare: null
+            }));
+            setMarketData(transformedData);
+          }
+        } catch (err) {
+          console.log('marketdata.json not available yet');
+        }
       } catch (error) {
         console.error('Failed to load energy data:', error);
         console.log('Using mock data as fallback due to CORS');
@@ -305,6 +323,16 @@ export default function App() {
               textColor={colors.text}
               gridColor={colors.gridLine}
             />
+
+            {marketData.length > 0 && (
+              <PriceBarChart
+                title="Börsen- und Endkundenstrompreis (Cent/kWh)"
+                data={marketData}
+                backgroundColor={colors.surface}
+                textColor={colors.text}
+                gridColor={colors.gridLine}
+              />
+            )}
           </>
         ) : null}
 
