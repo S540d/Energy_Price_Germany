@@ -1,0 +1,35 @@
+name: Fetch aWATTar market data
+on:
+  schedule:
+    - cron: '0 * * * *'   # Jede volle Stunde
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download aWATTar data
+        run: |
+          mkdir -p data
+          curl -fSL "https://api.awattar.de/v1/marketdata" -o data/marketdata.json
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "actions@github.com"
+
+          git add data/marketdata.json || true
+
+          if ! git diff --quiet --staged; then
+            git commit -m "Update marketdata.json (automated fetch from aWATTar)"
+            git push
+          else
+            echo "No new data to commit"
+          fi
