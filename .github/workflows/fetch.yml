@@ -1,7 +1,7 @@
 name: Fetch aWATTar market data
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 * * * *'  # jede volle Stunde
   workflow_dispatch:
 
 permissions:
@@ -47,9 +47,12 @@ jobs:
           cp data/marketdata_new.json "data/archive/marketdata_${ts}.json"
           mv data/marketdata_new.json data/marketdata.json
 
+          # Alte Archivdateien löschen (>30 Tage)
+          find data/archive/ -type f -name "marketdata_*.json" -mtime +30 -print -delete
+
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          git add data/marketdata.json data/archive/marketdata_${ts}.json
+          git add data/marketdata.json data/archive/
           git commit -m "Update marketdata.json (new data from aWATTar @ ${ts} UTC)"
           git push
 
