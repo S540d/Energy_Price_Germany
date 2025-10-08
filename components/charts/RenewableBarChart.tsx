@@ -120,7 +120,7 @@ export function RenewableBarChart({
         })}
 
         {/* Bars */}
-        <Svg width={chartWidth} height={chartHeight + bottomPadding}>
+        <Svg width={chartWidth} height={chartHeight + bottomPadding} onPress={handlePress}>
           {data.map((d, index) => {
             const value = d.renewableShare;
             if (value === null) return null;
@@ -222,13 +222,13 @@ export function RenewableBarChart({
               key={`ylabel-${i}`}
               style={{
                 position: 'absolute',
-                left: 8,
+                left: 0,
                 top: y - 8,
                 fontSize: 10,
                 color: textColor,
                 opacity: 0.6,
                 textAlign: 'right',
-                width: 30,
+                width: leftPadding - 5,
               }}
             >
               {value.toFixed(0)}%
