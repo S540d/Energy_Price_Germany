@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Dimensions, Pressable } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 
@@ -18,6 +18,8 @@ export function PriceBarChart({
   textColor,
   gridColor,
 }: PriceBarChartProps) {
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
   const screenWidth = Dimensions.get('window').width;
   const chartHeight = 180;
   const leftPadding = 45;
@@ -42,6 +44,16 @@ export function PriceBarChart({
   const minTime = Math.min(...timestamps);
   const maxTime = Math.max(...timestamps);
   const timeRange = maxTime - minTime;
+
+  const handlePress = (event: any) => {
+    // Get x position relative to the element
+    const locationX = event.nativeEvent.locationX ?? event.nativeEvent.offsetX;
+    const barWidth = (chartWidth - leftPadding) / data.length;
+    const index = Math.floor((locationX - leftPadding) / barWidth);
+    if (index >= 0 && index < data.length) {
+      setSelectedIndex(index === selectedIndex ? null : index);
+    }
+  };
 
   const getColor = (totalPrice: number) => {
     const interpolateColor = (color1: number[], color2: number[], factor: number) => {
@@ -70,6 +82,18 @@ export function PriceBarChart({
 
   return (
     <View style={{ backgroundColor, margin: 12, padding: 12, borderRadius: 12, alignSelf: 'flex-start' }}>
+      {selectedIndex !== null && data[selectedIndex]?.marketPrice !== null && (
+        <View style={{ paddingVertical: 4, paddingHorizontal: 8, backgroundColor: textColor + '20', borderRadius: 4, marginBottom: 4, position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
+          <Text style={{ color: textColor, fontSize: 12 }}>
+            {new Date(data[selectedIndex].timestamp).toLocaleString('de-DE', {
+              day: '2-digit',
+              month: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}: {(data[selectedIndex].marketPrice! * 0.1).toFixed(2)} ¢/kWh
+          </Text>
+        </View>
+      )}
       <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 2, color: textColor }}>{title}</Text>
       {/* Y-Achsen-Label */}
       <Text style={getYAxisLabelStyle(chartHeight, 30, textColor)}>
@@ -96,8 +120,9 @@ export function PriceBarChart({
         })}
 
         {/* Bars */}
-        <Svg width={chartWidth} height={chartHeight + bottomPadding}>
-          {data.map((d, index) => {
+        <Pressable onPress={handlePress}>
+          <Svg width={chartWidth} height={chartHeight + bottomPadding}>
+            {data.map((d, index) => {
             const marketPrice = d.marketPrice !== null ? d.marketPrice * 0.1 : null;
             if (marketPrice === null) return null;
 
@@ -157,7 +182,8 @@ export function PriceBarChart({
               strokeDasharray="5,5"
             />
           )}
-        </Svg>
+          </Svg>
+        </Pressable>
 
         {/* Durchschnittslinie Label */}
         <Text
@@ -183,13 +209,13 @@ export function PriceBarChart({
               key={`ylabel-${i}`}
               style={{
                 position: 'absolute',
-                left: 8,
+                left: 0,
                 top: y - 8,
                 fontSize: 10,
                 color: textColor,
                 opacity: 0.6,
                 textAlign: 'right',
-                width: 30,
+                width: leftPadding - 5,
               }}
             >
               {value.toFixed(1)}
