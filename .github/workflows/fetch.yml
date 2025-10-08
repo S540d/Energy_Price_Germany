@@ -18,7 +18,68 @@ jobs:
       - name: Download new data
         run: |
           mkdir -p public
-          curl -fsSL "https://api.awattar.de/v1/marketdata" -o public/marketdata_new.json
+          curl -fsSL "https://api.awattar.de/v1/marketdata" -o public/marketdata_raw.json
+
+      - name: Interpolate to 15-minute intervals with linear interpolation
+        run: |
+          node -e '
+          const fs = require("fs");
+          const raw = JSON.parse(fs.readFileSync("public/marketdata_raw.json", "utf8"));
+
+          // Sortiere Daten nach Zeitstempel
+          raw.data.sort((a, b) => a.start_timestamp - b.start_timestamp);
+
+          const interpolated = [];
+
+          // Verarbeite Daten in Paaren für lineare Interpolation
+          for (let i = 0; i < raw.data.length; i++) {
+            const current = raw.data[i];
+            const next = raw.data[i + 1];
+
+            const start = current.start_timestamp;
+            const end = current.end_timestamp;
+            const currentPrice = current.marketprice;
+            const duration = end - start;
+
+            // Anzahl 15-Minuten-Intervalle in diesem Zeitraum
+            const intervals = Math.floor(duration / (15 * 60 * 1000));
+
+            if (next) {
+              // Lineare Interpolation zwischen current und next
+              const timeDiff = next.start_timestamp - current.start_timestamp;
+              const priceDiff = next.marketprice - current.marketprice;
+
+              for (let j = 0; j < intervals; j++) {
+                const timeOffset = j * 15 * 60 * 1000;
+                const interpolationFactor = timeOffset / timeDiff;
+                const interpolatedPrice = currentPrice + (priceDiff * interpolationFactor);
+
+                interpolated.push({
+                  start_timestamp: start + timeOffset,
+                  end_timestamp: start + (j + 1) * 15 * 60 * 1000,
+                  marketprice: Math.round(interpolatedPrice * 100) / 100, // Runde auf 2 Dezimalstellen
+                  unit: current.unit
+                });
+              }
+            } else {
+              // Letzter Eintrag - verwende konstanten Preis
+              for (let j = 0; j < intervals; j++) {
+                interpolated.push({
+                  start_timestamp: start + j * 15 * 60 * 1000,
+                  end_timestamp: start + (j + 1) * 15 * 60 * 1000,
+                  marketprice: currentPrice,
+                  unit: current.unit
+                });
+              }
+            }
+          }
+
+          fs.writeFileSync("public/marketdata_new.json", JSON.stringify({
+            object: "list",
+            data: interpolated
+          }, null, 2));
+          '
+          rm public/marketdata_raw.json
 
       - name: Compare with previous data
         id: compare

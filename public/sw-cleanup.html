@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Service Worker Cleanup</title>
+</head>
+<body>
+    <h1>Service Worker Cleanup</h1>
+    <button onclick="unregisterSW()">Unregister Service Worker</button>
+    <div id="status"></div>
+
+    <script>
+        function unregisterSW() {
+            const status = document.getElementById('status');
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    const promises = registrations.map(registration => {
+                        status.innerHTML += `Unregistering: ${registration.scope}<br>`;
+                        return registration.unregister();
+                    });
+
+                    Promise.all(promises).then(() => {
+                        status.innerHTML += '<br><strong>All Service Workers unregistered!</strong><br>';
+                        status.innerHTML += '<a href="http://localhost:8081">Click here to reload the app</a>';
+                    });
+                });
+            } else {
+                status.innerHTML = 'Service Worker not supported';
+            }
+        }
+
+        // Auto-unregister on page load
+        window.addEventListener('load', () => {
+            unregisterSW();
+        });
+    </script>
+</body>
+</html>

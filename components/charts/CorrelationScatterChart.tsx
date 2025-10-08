@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, Dimensions } from 'react-native';
 import Svg, { Circle, Line } from 'react-native-svg';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
@@ -18,19 +18,32 @@ export function CorrelationScatterChart({
   textColor,
   gridColor,
 }: CorrelationScatterChartProps) {
-  const screenWidth = Dimensions.get('window').width;
-  const chartHeight = 180;
-  const leftPadding = 45;
+  const screenWidth = useMemo(() => Dimensions.get('window').width, []);
+  const screenHeight = useMemo(() => Dimensions.get('window').height, []);
+  const isSmallScreen = screenWidth < 768;
+  const isPhone = screenWidth < 480;
+
+  // Responsive Chart-Größen
+  const chartHeight = isPhone ? 140 : isSmallScreen ? 160 : 180;
+  const leftPadding = isPhone ? 35 : 45;
   const padding = 50;
-  const rightPadding = 50;
-  const bottomPadding = 40;
-  const maxChartWidth = Math.min(chartHeight * 3.5, screenWidth - 48);
+  const rightPadding = isPhone ? 40 : 50;
+  const bottomPadding = isPhone ? 35 : 40;
+
+  // Maximale Chart-Breite basierend auf Bildschirmgröße
+  const maxChartWidth = isPhone
+    ? screenWidth - 24  // Fast voller Bildschirm auf Phone
+    : isSmallScreen
+    ? Math.min(chartHeight * 2.5, screenWidth - 24)
+    : Math.min(chartHeight * 3.5, screenWidth - 48);
+
   const chartWidth = maxChartWidth;
 
+  // Only use entries with both marketPrice and renewableShare for rendering points
   const validData = data.filter(d => d.marketPrice !== null && d.renewableShare !== null);
 
-  const priceInCentValues = validData.map(d => (d.marketPrice as number) * 0.1);
-  const renewableValues = validData.map(d => d.renewableShare as number);
+  const priceInCentValues = validData.map(d => d.marketPrice! * 0.1);
+  const renewableValues = validData.map(d => d.renewableShare!);
 
   const minRenewable = 0;
   const maxRenewable = Math.max(100, ...renewableValues);
@@ -65,23 +78,25 @@ export function CorrelationScatterChart({
   };
 
   return (
-    <View style={{ backgroundColor, margin: 12, padding: 12, borderRadius: 12, alignSelf: 'flex-start' }}>
+    <View style={{ backgroundColor, margin: isPhone ? 6 : 12, padding: isPhone ? 8 : 12, borderRadius: 12, alignSelf: 'flex-start', marginRight: isPhone ? 6 : 12 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 0, color: textColor }}>{title}</Text>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2196F3' }} />
-            <Text style={{ fontSize: 9, color: textColor, opacity: 0.7 }}>Nacht</Text>
+        <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: 0, color: textColor }}>{title}</Text>
+        {!isPhone && (
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2196F3' }} />
+              <Text style={{ fontSize: 9, color: textColor, opacity: 0.7 }}>Nacht</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF9800' }} />
+              <Text style={{ fontSize: 9, color: textColor, opacity: 0.7 }}>M/A</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFEB3B' }} />
+              <Text style={{ fontSize: 9, color: textColor, opacity: 0.7 }}>Tag</Text>
+            </View>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF9800' }} />
-            <Text style={{ fontSize: 9, color: textColor, opacity: 0.7 }}>M/A</Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFEB3B' }} />
-            <Text style={{ fontSize: 9, color: textColor, opacity: 0.7 }}>Tag</Text>
-          </View>
-        </View>
+        )}
       </View>
       <View style={{ height: chartHeight, width: chartWidth }}>
         {/* Grid Lines */}
@@ -162,13 +177,13 @@ export function CorrelationScatterChart({
               key={`ylabel-${i}`}
               style={{
                 position: 'absolute',
-                left: 0,
+                left: 8,
                 top: y - 8,
-                fontSize: 10,
+                fontSize: isPhone ? 9 : 10,
                 color: textColor,
                 opacity: 0.6,
                 textAlign: 'right',
-                width: leftPadding - 5,
+                width: isPhone ? 25 : 30,
               }}
             >
               {value.toFixed(0)}
@@ -186,8 +201,8 @@ export function CorrelationScatterChart({
               style={{
                 position: 'absolute',
                 left: x - 15,
-                top: chartHeight - 30,
-                fontSize: 10,
+                top: chartHeight - (isPhone ? 25 : 30),
+                fontSize: isPhone ? 9 : 10,
                 color: textColor,
                 opacity: 0.6,
               }}
@@ -202,8 +217,8 @@ export function CorrelationScatterChart({
           style={{
             position: 'absolute',
             left: chartWidth / 2 - 60,
-            bottom: 5,
-            fontSize: 11,
+            bottom: isPhone ? 2 : 5,
+            fontSize: isPhone ? 10 : 11,
             color: textColor,
             fontWeight: '600',
           }}

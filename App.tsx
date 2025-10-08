@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -11,35 +11,77 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator } from 'react-native';
-import { fetchEnergyData, generateMockData } from './services/energyApi';
+import { fetchEnergyData, generateMockData, getCurrentDataSource } from './services/energyApi';
 import { RenewableBarChart } from './components/charts/RenewableBarChart';
 import { PriceBarChart } from './components/charts/PriceBarChart';
 import { CorrelationScatterChart } from './components/charts/CorrelationScatterChart';
 
+
+type EnergyData = {
+  timestamp: number;
+  marketPrice: number | null;
+  renewableShare: number | null;
+};
+
 type Theme = 'light' | 'dark' | 'system';
-type View = 'charts' | 'metrics';
+type ViewMode = 'charts' | 'metrics';
 
 export default function App() {
-  const [energyData, setEnergyData] = useState([]);
-  const [marketData, setMarketData] = useState([]);
+  const [energyData, setEnergyData] = useState<EnergyData[]>([]);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<Theme>('system');
   const [menuVisible, setMenuVisible] = useState(false);
-  const [currentView, setCurrentView] = useState<View>('charts');
+  const [currentView, setCurrentView] = useState<ViewMode>('charts');
   const systemTheme = useColorScheme();
 
   const isDark = theme === 'dark' || (theme === 'system' && systemTheme === 'dark');
+
+  // Memoized metrics calculations for better performance
+  const metrics = useMemo(() => {
+    if (energyData.length === 0) return null;
+
+    const validRenewableData = energyData.filter(d => d.renewableShare !== null);
+    const validPriceData = energyData.filter(d => d.marketPrice !== null);
+
+    return {
+      timeRange: {
+        start: Math.min(...energyData.map(d => d.timestamp)),
+        end: Math.max(...energyData.map(d => d.timestamp)),
+      },
+      renewable: {
+        avg: validRenewableData.length > 0
+          ? validRenewableData.reduce((sum, d) => sum + d.renewableShare!, 0) / validRenewableData.length
+          : 0,
+        min: validRenewableData.length > 0
+          ? Math.min(...validRenewableData.map(d => d.renewableShare!))
+          : 0,
+        max: validRenewableData.length > 0
+          ? Math.max(...validRenewableData.map(d => d.renewableShare!))
+          : 0,
+      },
+      marketPrice: {
+        avg: validPriceData.length > 0
+          ? validPriceData.reduce((sum, d) => sum + d.marketPrice! * 0.1, 0) / validPriceData.length
+          : 0,
+        min: validPriceData.length > 0
+          ? Math.min(...validPriceData.map(d => d.marketPrice!)) * 0.1
+          : 0,
+        max: validPriceData.length > 0
+          ? Math.max(...validPriceData.map(d => d.marketPrice!)) * 0.1
+          : 0,
+      },
+    };
+  }, [energyData]);
 
   useEffect(() => {
     async function loadData() {
       try {
         setLoading(true);
-        const data = await fetchEnergyData();
-        setEnergyData(data);
+        let data = await fetchEnergyData();
 
-        // Lade marketdata.json
+        // Lade marketdata.json als Fallback
         try {
-          const marketResponse = await fetch('/marketdata.json');
+          const marketResponse = await fetch('/data/marketdata.json');
           if (marketResponse.ok) {
             const marketJson = await marketResponse.json();
             // Transformiere Datenformat: { start_timestamp, marketprice } -> { timestamp, marketPrice, renewableShare }
@@ -48,12 +90,18 @@ export default function App() {
               marketPrice: item.marketprice, // Bereits in EUR/MWh
               renewableShare: null
             }));
-            setMarketData(transformedData);
-            console.log('Loaded marketdata.json:', transformedData.length, 'data points');
+            console.log('Loaded marketdata.json fallback:', transformedData.length, 'data points');
+            // Verwende marketdata als energyData wenn API fehlgeschlagen ist oder nur null Werte hat
+            if (data.length === 0 || (data.length > 0 && data.every((d: EnergyData) => d.marketPrice === null))) {
+              data = transformedData;
+              console.log('Using marketdata.json as primary data source');
+            }
           }
         } catch (err) {
-          console.log('marketdata.json not available:', err);
+          console.log('marketdata.json fallback not available:', err);
         }
+
+        setEnergyData(data);
       } catch (error) {
         console.error('Failed to load energy data:', error);
         console.log('Using mock data as fallback due to CORS');
@@ -92,7 +140,7 @@ export default function App() {
     const csv = [
       'Zeitstempel,Börsenstrompreis (EUR/MWh),Anteil Erneuerbarer (%)',
       ...energyData.map(d =>
-        `${new Date(d.timestamp).toISOString()},${d.marketPrice.toFixed(2)},${d.renewableShare.toFixed(2)}`
+        `${new Date(d.timestamp).toISOString()},${d.marketPrice?.toFixed(2) ?? 'N/A'},${d.renewableShare?.toFixed(2) ?? 'N/A'}`
       ),
     ].join('\n');
 
@@ -104,6 +152,31 @@ export default function App() {
       a.download = 'energy_data.csv';
       a.click();
       URL.revokeObjectURL(url);
+    }
+  };
+
+  const getDataSourceInfo = () => {
+    const source = getCurrentDataSource();
+    switch (source) {
+      case 'energy-charts':
+        return {
+          name: 'Energy Charts (Fraunhofer ISE)',
+          license: 'CC BY 4.0',
+          url: 'api.energy-charts.info'
+        };
+      case 'awattar':
+        return {
+          name: 'Awattar.at',
+          license: 'Proprietary',
+          url: 'awattar.at'
+        };
+      case 'none':
+      default:
+        return {
+          name: 'Mock Data (Demo)',
+          license: 'Generated',
+          url: 'demo'
+        };
     }
   };
 
@@ -264,13 +337,13 @@ export default function App() {
           <View style={styles.menuItem}>
             <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Datenquelle</Text>
             <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-              Energy Charts (Fraunhofer ISE)
+              {getDataSourceInfo().name}
             </Text>
             <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-              Lizenz: CC BY 4.0
+              Lizenz: {getDataSourceInfo().license}
             </Text>
             <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-              api.energy-charts.info
+              {getDataSourceInfo().url}
             </Text>
           </View>
 
@@ -324,16 +397,6 @@ export default function App() {
               textColor={colors.text}
               gridColor={colors.gridLine}
             />
-
-            {marketData.length > 0 && (
-              <PriceBarChart
-                title="Börsen- und Endkundenstrompreis (Cent/kWh)"
-                data={marketData}
-                backgroundColor={colors.surface}
-                textColor={colors.text}
-                gridColor={colors.gridLine}
-              />
-            )}
           </>
         ) : null}
 
@@ -349,13 +412,13 @@ export default function App() {
                 Zeitraum
               </Text>
               <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-                {new Date(Math.min(...energyData.map(d => d.timestamp))).toLocaleString('de-DE', {
+                {metrics ? new Date(metrics.timeRange.start).toLocaleString('de-DE', {
                   day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                })}
+                }) : 'Lädt...'}
                 {' bis '}
-                {new Date(Math.max(...energyData.map(d => d.timestamp))).toLocaleString('de-DE', {
+                {metrics ? new Date(metrics.timeRange.end).toLocaleString('de-DE', {
                   day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                })}
+                }) : 'Lädt...'}
               </Text>
             </View>
 
@@ -368,21 +431,19 @@ export default function App() {
                 <View style={{ alignItems: 'center' }}>
                   <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Durchschnitt</Text>
                   <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                    {(energyData.filter(d => d.renewableShare !== null)
-                      .reduce((sum, d) => sum + d.renewableShare!, 0) /
-                      energyData.filter(d => d.renewableShare !== null).length).toFixed(1)}%
+                    {metrics ? metrics.renewable.avg.toFixed(1) : '0.0'}%
                   </Text>
                 </View>
                 <View style={{ alignItems: 'center' }}>
                   <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Minimum</Text>
                   <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                    {Math.min(...energyData.filter(d => d.renewableShare !== null).map(d => d.renewableShare!)).toFixed(1)}%
+                    {metrics ? metrics.renewable.min.toFixed(1) : '0.0'}%
                   </Text>
                 </View>
                 <View style={{ alignItems: 'center' }}>
                   <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Maximum</Text>
                   <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                    {Math.max(...energyData.filter(d => d.renewableShare !== null).map(d => d.renewableShare!)).toFixed(1)}%
+                    {metrics ? metrics.renewable.max.toFixed(1) : '0.0'}%
                   </Text>
                 </View>
               </View>
@@ -397,21 +458,19 @@ export default function App() {
                 <View style={{ alignItems: 'center' }}>
                   <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Durchschnitt</Text>
                   <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                    {(energyData.filter(d => d.marketPrice !== null)
-                      .reduce((sum, d) => sum + d.marketPrice! * 0.1, 0) /
-                      energyData.filter(d => d.marketPrice !== null).length).toFixed(2)} ¢
+                    {metrics ? metrics.marketPrice.avg.toFixed(2) : '0.00'} ¢
                   </Text>
                 </View>
                 <View style={{ alignItems: 'center' }}>
                   <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Minimum</Text>
                   <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                    {(Math.min(...energyData.filter(d => d.marketPrice !== null).map(d => d.marketPrice!)) * 0.1).toFixed(2)} ¢
+                    {metrics ? metrics.marketPrice.min.toFixed(2) : '0.00'} ¢
                   </Text>
                 </View>
                 <View style={{ alignItems: 'center' }}>
                   <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Maximum</Text>
                   <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                    {(Math.max(...energyData.filter(d => d.marketPrice !== null).map(d => d.marketPrice!)) * 0.1).toFixed(2)} ¢
+                    {metrics ? metrics.marketPrice.max.toFixed(2) : '0.00'} ¢
                   </Text>
                 </View>
               </View>
@@ -426,21 +485,19 @@ export default function App() {
                 <View style={{ alignItems: 'center' }}>
                   <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Durchschnitt</Text>
                   <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                    {(energyData.filter(d => d.marketPrice !== null)
-                      .reduce((sum, d) => sum + d.marketPrice! * 0.1, 0) /
-                      energyData.filter(d => d.marketPrice !== null).length + 20).toFixed(2)} ¢
+                    {metrics ? (metrics.marketPrice.avg + 20).toFixed(2) : '20.00'} ¢
                   </Text>
                 </View>
                 <View style={{ alignItems: 'center' }}>
                   <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Minimum</Text>
                   <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                    {((Math.min(...energyData.filter(d => d.marketPrice !== null).map(d => d.marketPrice!)) * 0.1) + 20).toFixed(2)} ¢
+                    {metrics ? (metrics.marketPrice.min + 20).toFixed(2) : '20.00'} ¢
                   </Text>
                 </View>
                 <View style={{ alignItems: 'center' }}>
                   <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Maximum</Text>
                   <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                    {((Math.max(...energyData.filter(d => d.marketPrice !== null).map(d => d.marketPrice!)) * 0.1) + 20).toFixed(2)} ¢
+                    {metrics ? (metrics.marketPrice.max + 20).toFixed(2) : '20.00'} ¢
                   </Text>
                 </View>
               </View>

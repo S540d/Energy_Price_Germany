@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, Dimensions, Pressable } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, Dimensions, TouchableOpacity } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 
@@ -20,40 +20,43 @@ export function PriceBarChart({
 }: PriceBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  const screenWidth = Dimensions.get('window').width;
-  const chartHeight = 180;
-  const leftPadding = 45;
+  const screenWidth = useMemo(() => Dimensions.get('window').width, []);
+  const screenHeight = useMemo(() => Dimensions.get('window').height, []);
+  const isSmallScreen = screenWidth < 768;
+  const isPhone = screenWidth < 480;
+
+  // Responsive Chart-Größen
+  const chartHeight = isPhone ? 140 : isSmallScreen ? 160 : 180;
+  const leftPadding = isPhone ? 35 : 45;
   const padding = 40;
-  const bottomPadding = 50;
-  const maxChartWidth = Math.min(chartHeight * 3.5, screenWidth - 48);
+  const bottomPadding = isPhone ? 40 : 50;
+
+  // Maximale Chart-Breite basierend auf Bildschirmgröße
+  const maxChartWidth = isPhone
+    ? screenWidth - 24  // Fast voller Bildschirm auf Phone
+    : isSmallScreen
+    ? Math.min(chartHeight * 2.5, screenWidth - 24)
+    : Math.min(chartHeight * 3.5, screenWidth - 48);
+
   const chartWidth = maxChartWidth;
 
-  const pricesInCent = data.map(d => d.marketPrice !== null ? d.marketPrice * 0.1 : null);
+  // Only use entries with valid marketPrice for rendering bars
+  const validData = data.filter(d => d.marketPrice !== null);
+  const pricesInCent = validData.map(d => d.marketPrice! * 0.1);
   const GRID_FEES_AND_TAXES = 20;
 
-  const validPrices = pricesInCent.filter(p => p !== null) as number[];
-  const maxMarketPrice = Math.max(...validPrices);
+  const maxMarketPrice = Math.max(...pricesInCent);
   const maxTotal = maxMarketPrice + GRID_FEES_AND_TAXES;
-  const min = Math.min(...validPrices, 0);
+  const min = Math.min(...pricesInCent, 0);
   const range = maxTotal - min;
 
-  const avgMarketPrice = validPrices.reduce((sum, v) => sum + v, 0) / validPrices.length;
+  const avgMarketPrice = pricesInCent.reduce((sum, v) => sum + v, 0) / pricesInCent.length;
 
   const now = Date.now();
-  const timestamps = data.map(d => d.timestamp);
+  const timestamps = validData.map(d => d.timestamp);
   const minTime = Math.min(...timestamps);
   const maxTime = Math.max(...timestamps);
   const timeRange = maxTime - minTime;
-
-  const handlePress = (event: any) => {
-    // Get x position relative to the element
-    const locationX = event.nativeEvent.locationX ?? event.nativeEvent.offsetX;
-    const barWidth = (chartWidth - leftPadding) / data.length;
-    const index = Math.floor((locationX - leftPadding) / barWidth);
-    if (index >= 0 && index < data.length) {
-      setSelectedIndex(index === selectedIndex ? null : index);
-    }
-  };
 
   const getColor = (totalPrice: number) => {
     const interpolateColor = (color1: number[], color2: number[], factor: number) => {
@@ -81,25 +84,50 @@ export function PriceBarChart({
   };
 
   return (
-    <View style={{ backgroundColor, margin: 12, padding: 12, borderRadius: 12, alignSelf: 'flex-start' }}>
-      {selectedIndex !== null && data[selectedIndex]?.marketPrice !== null && (
-        <View style={{ paddingVertical: 4, paddingHorizontal: 8, backgroundColor: textColor + '20', borderRadius: 4, marginBottom: 4, position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
-          <Text style={{ color: textColor, fontSize: 12 }}>
-            {new Date(data[selectedIndex].timestamp).toLocaleString('de-DE', {
-              day: '2-digit',
-              month: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit'
-            })}: {(data[selectedIndex].marketPrice! * 0.1).toFixed(2)} ¢/kWh
-          </Text>
-        </View>
-      )}
-      <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 2, color: textColor }}>{title}</Text>
+    <View style={{ backgroundColor, margin: isPhone ? 6 : 12, padding: isPhone ? 8 : 12, borderRadius: 12, alignSelf: 'flex-start' }}>
+      {selectedIndex !== null && (() => {
+        const item = data[selectedIndex];
+        if (!item || item.marketPrice === null) return null;
+
+        const marketPriceCent = item.marketPrice * 0.1;
+        const totalPrice = marketPriceCent + GRID_FEES_AND_TAXES;
+
+        return (
+          <View style={{
+            paddingVertical: 4,
+            paddingHorizontal: 8,
+            backgroundColor: textColor + '20',
+            borderRadius: 4,
+            marginBottom: 4,
+            position: 'absolute',
+            top: isPhone ? 8 : 12,
+            right: isPhone ? 8 : 12,
+            zIndex: 10,
+            maxWidth: chartWidth * 0.6
+          }}>
+            <Text style={{ color: textColor, fontSize: isPhone ? 10 : 12 }}>
+              {new Date(item.timestamp).toLocaleString('de-DE', {
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </Text>
+            <Text style={{ color: textColor, fontSize: isPhone ? 10 : 12, fontWeight: 'bold' }}>
+              Börsenpreis: {marketPriceCent.toFixed(2)} ¢/kWh
+            </Text>
+            <Text style={{ color: textColor, fontSize: isPhone ? 10 : 12 }}>
+              Endpreis: {totalPrice.toFixed(2)} ¢/kWh
+            </Text>
+          </View>
+        );
+      })()}
+      <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: 2, color: textColor }}>{title}</Text>
       {/* Y-Achsen-Label */}
       <Text style={getYAxisLabelStyle(chartHeight, 30, textColor)}>
         Börsen- und{'\n'}Endkundenstrompreis (Cent/kWh)
       </Text>
-      <View style={{ height: chartHeight + bottomPadding, width: chartWidth }}>
+      <View style={{ height: chartHeight + bottomPadding, width: chartWidth, position: 'relative' }}>
         {/* Grid Lines */}
         {[0, 1, 2, 3, 4].map(i => {
           const y = padding + (i / 4) * (chartHeight - padding);
@@ -120,9 +148,8 @@ export function PriceBarChart({
         })}
 
         {/* Bars */}
-        <Pressable onPress={handlePress}>
-          <Svg width={chartWidth} height={chartHeight + bottomPadding}>
-            {data.map((d, index) => {
+        <Svg width={chartWidth} height={chartHeight + bottomPadding}>
+          {data.map((d, index) => {
             const marketPrice = d.marketPrice !== null ? d.marketPrice * 0.1 : null;
             if (marketPrice === null) return null;
 
@@ -136,15 +163,34 @@ export function PriceBarChart({
             const gridBarHeight = (GRID_FEES_AND_TAXES / range) * (chartHeight - padding);
             const gridY = marketY - gridBarHeight;
 
+            const isSelected = selectedIndex === index;
+
             return (
               <React.Fragment key={index}>
+                {/* Invisible touchable area for each bar */}
+                <TouchableOpacity
+                  key={`touch-${index}`}
+                  style={{
+                    position: 'absolute',
+                    left: x - barWidth / 2,
+                    top: gridY,
+                    width: barWidth,
+                    height: marketBarHeight + gridBarHeight,
+                  }}
+                  onPress={() => {
+                    setSelectedIndex(index === selectedIndex ? null : index);
+                  }}
+                  activeOpacity={1}
+                />
                 <Rect
                   x={x - barWidth / 2}
                   y={marketY}
                   width={barWidth}
                   height={marketBarHeight}
                   fill={getColor(totalPrice)}
-                  opacity={0.9}
+                  opacity={isSelected ? 1.0 : 0.9}
+                  stroke={isSelected ? textColor : 'none'}
+                  strokeWidth={isSelected ? 2 : 0}
                 />
                 <Rect
                   x={x - barWidth / 2}
@@ -152,7 +198,9 @@ export function PriceBarChart({
                   width={barWidth}
                   height={gridBarHeight}
                   fill="#757575"
-                  opacity={0.6}
+                  opacity={isSelected ? 0.8 : 0.6}
+                  stroke={isSelected ? textColor : 'none'}
+                  strokeWidth={isSelected ? 2 : 0}
                 />
               </React.Fragment>
             );
@@ -182,16 +230,15 @@ export function PriceBarChart({
               strokeDasharray="5,5"
             />
           )}
-          </Svg>
-        </Pressable>
+        </Svg>
 
         {/* Durchschnittslinie Label */}
         <Text
           style={{
             position: 'absolute',
-            left: chartWidth - 60,
+            left: chartWidth - (isPhone ? 50 : 60),
             top: chartHeight - ((avgMarketPrice - min) / range) * (chartHeight - padding) - 12,
-            fontSize: 10,
+            fontSize: isPhone ? 9 : 10,
             color: textColor,
             fontWeight: '600',
             opacity: 0.7,
@@ -209,13 +256,13 @@ export function PriceBarChart({
               key={`ylabel-${i}`}
               style={{
                 position: 'absolute',
-                left: 0,
+                left: 8,
                 top: y - 8,
-                fontSize: 10,
+                fontSize: isPhone ? 9 : 10,
                 color: textColor,
                 opacity: 0.6,
                 textAlign: 'right',
-                width: leftPadding - 5,
+                width: isPhone ? 25 : 30,
               }}
             >
               {value.toFixed(1)}
@@ -245,7 +292,7 @@ export function PriceBarChart({
                   position: 'absolute',
                   left: x - 10,
                   top: chartHeight + 5,
-                  fontSize: 10,
+                  fontSize: isPhone ? 9 : 10,
                   color: textColor,
                   opacity: 0.6,
                 }}
@@ -267,7 +314,7 @@ export function PriceBarChart({
               position: 'absolute',
               left: leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding) - 15,
               top: chartHeight + 20,
-              fontSize: 10,
+              fontSize: isPhone ? 9 : 10,
               color: 'red',
               fontWeight: 'bold',
             }}
