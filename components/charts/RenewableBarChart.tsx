@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Dimensions } from 'react-native';
+import { View, Text, Dimensions, Pressable } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 
@@ -44,7 +44,8 @@ export function RenewableBarChart({
   const timeRange = maxTime - minTime;
 
   const handlePress = (event: any) => {
-    const { locationX } = event.nativeEvent;
+    // Get x position relative to the element
+    const locationX = event.nativeEvent.locationX ?? event.nativeEvent.offsetX;
     const barWidth = (chartWidth - leftPadding) / data.length;
     const index = Math.floor((locationX - leftPadding) / barWidth);
     if (index >= 0 && index < data.length) {
@@ -120,8 +121,9 @@ export function RenewableBarChart({
         })}
 
         {/* Bars */}
-        <Svg width={chartWidth} height={chartHeight + bottomPadding}>
-          {data.map((d, index) => {
+        <Pressable onPress={handlePress}>
+          <Svg width={chartWidth} height={chartHeight + bottomPadding}>
+            {data.map((d, index) => {
             const value = d.renewableShare;
             if (value === null) return null;
 
@@ -196,7 +198,8 @@ export function RenewableBarChart({
               strokeDasharray="5,5"
             />
           )}
-        </Svg>
+          </Svg>
+        </Pressable>
 
         {/* Durchschnittslinie Label */}
         <Text
@@ -222,13 +225,13 @@ export function RenewableBarChart({
               key={`ylabel-${i}`}
               style={{
                 position: 'absolute',
-                left: 8,
+                left: 0,
                 top: y - 8,
                 fontSize: 10,
                 color: textColor,
                 opacity: 0.6,
                 textAlign: 'right',
-                width: 30,
+                width: leftPadding - 5,
               }}
             >
               {value.toFixed(0)}%

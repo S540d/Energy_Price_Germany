@@ -65,7 +65,7 @@ export function CorrelationScatterChart({
   };
 
   return (
-    <View style={{ backgroundColor, margin: 12, padding: 12, borderRadius: 12, alignSelf: 'flex-start', marginRight: 12 }}>
+    <View style={{ backgroundColor, margin: 12, padding: 12, borderRadius: 12, alignSelf: 'flex-start' }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
         <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 0, color: textColor }}>{title}</Text>
         <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -162,13 +162,13 @@ export function CorrelationScatterChart({
               key={`ylabel-${i}`}
               style={{
                 position: 'absolute',
-                left: 8,
+                left: 0,
                 top: y - 8,
                 fontSize: 10,
                 color: textColor,
                 opacity: 0.6,
                 textAlign: 'right',
-                width: 30,
+                width: leftPadding - 5,
               }}
             >
               {value.toFixed(0)}
