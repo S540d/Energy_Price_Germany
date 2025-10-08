@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Dimensions } from 'react-native';
+import { View, Text, Dimensions, Pressable } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 
@@ -46,7 +46,8 @@ export function PriceBarChart({
   const timeRange = maxTime - minTime;
 
   const handlePress = (event: any) => {
-    const { locationX } = event.nativeEvent;
+    // Get x position relative to the element
+    const locationX = event.nativeEvent.locationX ?? event.nativeEvent.offsetX;
     const barWidth = (chartWidth - leftPadding) / data.length;
     const index = Math.floor((locationX - leftPadding) / barWidth);
     if (index >= 0 && index < data.length) {
@@ -119,8 +120,9 @@ export function PriceBarChart({
         })}
 
         {/* Bars */}
-        <Svg width={chartWidth} height={chartHeight + bottomPadding} onPress={handlePress}>
-          {data.map((d, index) => {
+        <Pressable onPress={handlePress}>
+          <Svg width={chartWidth} height={chartHeight + bottomPadding}>
+            {data.map((d, index) => {
             const marketPrice = d.marketPrice !== null ? d.marketPrice * 0.1 : null;
             if (marketPrice === null) return null;
 
@@ -180,7 +182,8 @@ export function PriceBarChart({
               strokeDasharray="5,5"
             />
           )}
-        </Svg>
+          </Svg>
+        </Pressable>
 
         {/* Durchschnittslinie Label */}
         <Text
