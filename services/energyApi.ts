@@ -27,7 +27,7 @@ export async function fetchEnergyData() {
 
     // API-Endpunkte für Energy Charts
     const renewableUrl = `https://api.energy-charts.info/ren_share_forecast?country=de`;
-    const priceUrl = `https://api.energy-charts.info/price_spot_market?country=de&start=${startTime}&end=${endTime}`;
+    const priceUrl = `https://api.energy-charts.info/price?country=de`;
 
     let renewableData = null;
     let priceData = null;
@@ -50,7 +50,7 @@ export async function fetchEnergyData() {
       const priceResponse = await fetch(priceUrl);
       if (priceResponse.ok) {
         priceData = await priceResponse.json();
-        console.log(`Successfully loaded price data: ${priceData?.data?.length || 0} points`);
+        console.log(`Successfully loaded price data: ${priceData?.price?.length || 0} points`);
       } else {
         console.log(`Price API failed with status: ${priceResponse.status}`);
       }
@@ -146,18 +146,19 @@ function combineEnergyDataNew(renewableData: any, priceData: any) {
     });
   }
 
-  // Verarbeite Preisdaten
-  if (priceData && priceData.data && Array.isArray(priceData.data)) {
-    priceData.data.forEach((item: any) => {
-      if (item.timestamp && typeof item.price === 'number') {
-        const existing = combined.get(item.timestamp);
+  // Verarbeite Preisdaten (price)
+  if (priceData && priceData.unix_seconds && priceData.price && Array.isArray(priceData.unix_seconds) && Array.isArray(priceData.price)) {
+    priceData.unix_seconds.forEach((timestamp: number, index: number) => {
+      const price = priceData.price[index];
+      if (typeof price === 'number') {
+        const existing = combined.get(timestamp);
         if (existing) {
-          existing.marketPrice = item.price / 10; // EUR/MWh zu Cent/kWh konvertieren
+          existing.marketPrice = price / 10; // EUR/MWh zu Cent/kWh konvertieren
         } else {
-          combined.set(item.timestamp, {
-            timestamp: item.timestamp * 1000,
+          combined.set(timestamp, {
+            timestamp: timestamp * 1000,
             renewableShare: null,
-            marketPrice: item.price / 10
+            marketPrice: price / 10
           });
         }
       }
