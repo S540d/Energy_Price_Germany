@@ -26,7 +26,7 @@ export async function fetchEnergyData() {
     const startTime = endTime - (48 * 60 * 60); // 48 Stunden zurück
 
     // API-Endpunkte für Energy Charts
-    const renewableUrl = `https://api.energy-charts.info/renewable_power?country=de&start=${startTime}&end=${endTime}`;
+    const renewableUrl = `https://api.energy-charts.info/ren_share_forecast?country=de`;
     const priceUrl = `https://api.energy-charts.info/price_spot_market?country=de&start=${startTime}&end=${endTime}`;
 
     let renewableData = null;
@@ -37,7 +37,7 @@ export async function fetchEnergyData() {
       const renewableResponse = await fetch(renewableUrl);
       if (renewableResponse.ok) {
         renewableData = await renewableResponse.json();
-        console.log(`Successfully loaded renewable data: ${renewableData?.data?.length || 0} points`);
+        console.log(`Successfully loaded renewable data: ${renewableData?.ren_share?.length || 0} points`);
       } else {
         console.log(`Renewable API failed with status: ${renewableResponse.status}`);
       }
@@ -59,7 +59,7 @@ export async function fetchEnergyData() {
     }
 
     // Kombiniere die verfügbaren Daten
-    const combinedData = combineEnergyData(renewableData, priceData);
+    const combinedData = combineEnergyDataNew(renewableData, priceData);
 
     if (combinedData.length > 0) {
       console.log(`Successfully loaded ${combinedData.length} real data points from Energy Charts`);
@@ -128,17 +128,18 @@ export async function fetchEnergyData() {
   }
 }
 
-// Hilfsfunktion zum Kombinieren der API-Daten
-function combineEnergyData(renewableData: any, priceData: any) {
+// Hilfsfunktion zum Kombinieren der neuen API-Daten
+function combineEnergyDataNew(renewableData: any, priceData: any) {
   const combined = new Map<number, { timestamp: number; renewableShare: number | null; marketPrice: number | null }>();
 
-  // Verarbeite Erneuerbare Energien Daten
-  if (renewableData && renewableData.data && Array.isArray(renewableData.data)) {
-    renewableData.data.forEach((item: any) => {
-      if (item.timestamp && typeof item.renewable_share === 'number') {
-        combined.set(item.timestamp, {
-          timestamp: item.timestamp * 1000, // API gibt Sekunden zurück, wir brauchen Millisekunden
-          renewableShare: item.renewable_share,
+  // Verarbeite Erneuerbare Energien Daten (ren_share_forecast)
+  if (renewableData && renewableData.unix_seconds && renewableData.ren_share && Array.isArray(renewableData.unix_seconds) && Array.isArray(renewableData.ren_share)) {
+    renewableData.unix_seconds.forEach((timestamp: number, index: number) => {
+      const share = renewableData.ren_share[index];
+      if (typeof share === 'number') {
+        combined.set(timestamp, {
+          timestamp: timestamp * 1000, // API gibt Sekunden zurück, wir brauchen Millisekunden
+          renewableShare: share,
           marketPrice: null
         });
       }
