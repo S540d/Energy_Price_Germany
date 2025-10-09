@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator } from 'react-native';
-import { fetchEnergyData, generateMockData, getCurrentDataSource } from './services/energyApi';
+import { fetchEnergyData, getCurrentDataSource } from './services/energyApi';
 import { RenewableBarChart } from './components/charts/RenewableBarChart';
 import { PriceBarChart } from './components/charts/PriceBarChart';
 import { CorrelationScatterChart } from './components/charts/CorrelationScatterChart';
@@ -77,36 +77,11 @@ export default function App() {
     async function loadData() {
       try {
         setLoading(true);
-        let data = await fetchEnergyData();
-
-        // Lade marketdata.json als Fallback
-        try {
-          const marketResponse = await fetch('/data/marketdata.json');
-          if (marketResponse.ok) {
-            const marketJson = await marketResponse.json();
-            // Transformiere Datenformat: { start_timestamp, marketprice } -> { timestamp, marketPrice, renewableShare }
-            const transformedData = marketJson.data.map((item: any) => ({
-              timestamp: item.start_timestamp,
-              marketPrice: item.marketprice, // Bereits in EUR/MWh
-              renewableShare: null
-            }));
-            console.log('Loaded marketdata.json fallback:', transformedData.length, 'data points');
-            // Verwende marketdata als energyData wenn API fehlgeschlagen ist oder nur null Werte hat
-            if (data.length === 0 || (data.length > 0 && data.every((d: EnergyData) => d.marketPrice === null))) {
-              data = transformedData;
-              console.log('Using marketdata.json as primary data source');
-            }
-          }
-        } catch (err) {
-          console.log('marketdata.json fallback not available:', err);
-        }
-
+        const data = await fetchEnergyData();
         setEnergyData(data);
       } catch (error) {
         console.error('Failed to load energy data:', error);
-        console.log('Using mock data as fallback due to CORS');
-        const mockData = generateMockData();
-        setEnergyData(mockData);
+        setEnergyData([]);
       } finally {
         setLoading(false);
       }
