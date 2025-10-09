@@ -372,6 +372,26 @@ export default function App() {
               textColor={colors.text}
               gridColor={colors.gridLine}
             />
+
+            {/* Debug-Ausgabe */}
+            <View style={[styles.card, { backgroundColor: colors.surface, marginTop: 12 }]}>
+              <Text style={[styles.cardTitle, { color: colors.text, fontSize: 16 }]}>
+                Debug: API-Daten
+              </Text>
+              <Text style={[styles.infoText, { color: colors.text, fontSize: 12 }]}>
+                Anzahl Datenpunkte: {energyData.length}
+              </Text>
+              {energyData.length > 0 && (
+                <>
+                  <Text style={[styles.infoText, { color: colors.text, fontSize: 12 }]}>
+                    Erster Datenpunkt: {JSON.stringify(energyData[0], null, 2).substring(0, 200)}...
+                  </Text>
+                  <Text style={[styles.infoText, { color: colors.text, fontSize: 12 }]}>
+                    Letzter Datenpunkt: {JSON.stringify(energyData[energyData.length - 1], null, 2).substring(0, 200)}...
+                  </Text>
+                </>
+              )}
+            </View>
           </>
         ) : null}
 
@@ -487,6 +507,13 @@ export default function App() {
             </Text>
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
               Die Energiedaten konnten nicht geladen werden. Bitte versuchen Sie es später erneut.
+            </Text>
+            {/* Debug-Ausgabe */}
+            <Text style={[styles.infoText, { color: colors.text, fontSize: 12, marginTop: 10 }]}>
+              Debug-Info: energyData.length = {energyData.length}
+            </Text>
+            <Text style={[styles.infoText, { color: colors.text, fontSize: 12 }]}>
+              Letzter Ladeversuch: {new Date().toLocaleString('de-DE')}
             </Text>
           </View>
         )}
