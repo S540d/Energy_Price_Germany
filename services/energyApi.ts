@@ -1,8 +1,8 @@
-// Cache für API-Daten (3 Stunden) - in-memory cache
+// Cache für API-Daten (15 Minuten) - in-memory cache
 let cachedData: any = null;
 let cacheTimestamp: number = 0;
 let dataSource: 'energy-charts' | 'awattar' | 'none' = 'none';
-const CACHE_DURATION = 3 * 60 * 60 * 1000; // 3 Stunden in Millisekunden
+const CACHE_DURATION = 15 * 60 * 1000; // 15 Minuten in Millisekunden
 
 // Gibt die aktuelle Datenquelle zurück
 export function getCurrentDataSource(): 'energy-charts' | 'awattar' | 'none' {
@@ -21,9 +21,9 @@ export async function fetchEnergyData() {
   try {
     console.log('Fetching real energy data from Energy Charts API...');
 
-    // Hole aktuelle Zeit und berechne Zeitbereich (letzte 24 Stunden)
+    // Hole aktuelle Zeit und berechne Zeitbereich (letzte 48 Stunden)
     const endTime = Math.floor(Date.now() / 1000);
-    const startTime = endTime - (24 * 60 * 60); // 24 Stunden zurück
+    const startTime = endTime - (48 * 60 * 60); // 48 Stunden zurück
 
     // API-Endpunkte für Energy Charts
     const renewableUrl = `https://api.energy-charts.info/renewable_power?country=de&start=${startTime}&end=${endTime}`;
@@ -61,41 +61,41 @@ export async function fetchEnergyData() {
     // Kombiniere die verfügbaren Daten
     const combinedData = combineEnergyData(renewableData, priceData);
 
-    if (combinedData.length === 0) {
-      console.log('No real data available from APIs, trying marketdata.json fallback...');
-      // Fallback auf marketdata.json für Preise, wenn keine API-Daten verfügbar
-      try {
-        const marketResponse = await fetch('/data/marketdata.json');
-        if (marketResponse.ok) {
-          const marketJson = await marketResponse.json();
-          const fallbackData = marketJson.data.map((item: any) => ({
-            timestamp: item.start_timestamp,
-            marketPrice: item.marketprice, // Bereits in EUR/MWh
-            renewableShare: null
-          }));
-          console.log(`Using marketdata.json fallback: ${fallbackData.length} data points`);
-          cachedData = fallbackData;
-          cacheTimestamp = Date.now();
-          dataSource = 'awattar';
-          return fallbackData;
-        }
-      } catch (fallbackError) {
-        console.log('marketdata.json fallback also failed:', fallbackError);
-      }
-
-      // Wenn gar keine Daten verfügbar sind, leeres Array zurückgeben
-      console.log('No data available from any source');
-      cachedData = [];
+    if (combinedData.length > 0) {
+      console.log(`Successfully loaded ${combinedData.length} real data points from Energy Charts`);
+      cachedData = combinedData;
       cacheTimestamp = Date.now();
-      dataSource = 'none';
-      return [];
+      dataSource = 'energy-charts';
+      return combinedData;
     }
 
-    console.log(`Successfully loaded ${combinedData.length} real data points`);
-    cachedData = combinedData;
+    // Fallback: Versuche marketdata.json zu laden
+    console.log('No data from Energy Charts API, trying marketdata.json fallback...');
+    try {
+      const marketResponse = await fetch('/data/marketdata.json');
+      if (marketResponse.ok) {
+        const marketJson = await marketResponse.json();
+        const fallbackData = marketJson.data.map((item: any) => ({
+          timestamp: item.start_timestamp,
+          marketPrice: item.marketprice, // Bereits in EUR/MWh
+          renewableShare: null
+        }));
+        console.log(`Using marketdata.json fallback: ${fallbackData.length} data points`);
+        cachedData = fallbackData;
+        cacheTimestamp = Date.now();
+        dataSource = 'awattar';
+        return fallbackData;
+      }
+    } catch (fallbackError) {
+      console.log('marketdata.json fallback also failed:', fallbackError);
+    }
+
+    // Wenn gar keine Daten verfügbar sind, leeres Array zurückgeben
+    console.log('No data available from any source');
+    cachedData = [];
     cacheTimestamp = Date.now();
-    dataSource = 'energy-charts';
-    return combinedData;
+    dataSource = 'none';
+    return [];
 
   } catch (error) {
     console.error('Failed to fetch any data:', error);
