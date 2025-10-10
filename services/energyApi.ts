@@ -9,7 +9,7 @@ export function getCurrentDataSource(): 'energy-charts' | 'awattar' | 'none' {
   return dataSource;
 }
 
-// Fetch real data from Energy Charts API with caching
+// Fetch real data from marketdata.json with caching
 export async function fetchEnergyData() {
   // Prüfe In-Memory Cache
   const age = Date.now() - cacheTimestamp;
@@ -19,113 +19,36 @@ export async function fetchEnergyData() {
   }
 
   try {
-    console.log('Fetching real energy data from Energy Charts API...');
-
-    // Hole aktuelle Zeit und berechne Zeitbereich (letzte 48 Stunden)
-    const endTime = Math.floor(Date.now() / 1000);
-    const startTime = endTime - (48 * 60 * 60); // 48 Stunden zurück
-
-    // API-Endpunkte für Energy Charts
-    const renewableUrl = `https://api.energy-charts.info/ren_share_forecast?country=de`;
-    const priceUrl = `https://api.energy-charts.info/price?country=de`;
-
-    let renewableData = null;
-    let priceData = null;
-
-    try {
-      console.log('Fetching renewable data...');
-      const renewableResponse = await fetch(renewableUrl);
-      if (renewableResponse.ok) {
-        renewableData = await renewableResponse.json();
-        console.log(`Successfully loaded renewable data: ${renewableData?.ren_share?.length || 0} points`);
-      } else {
-        console.log(`Renewable API failed with status: ${renewableResponse.status}`);
-      }
-    } catch (error) {
-      console.log('Error fetching renewable data:', error);
-    }
-
-    try {
-      console.log('Fetching price data...');
-      const priceResponse = await fetch(priceUrl);
-      if (priceResponse.ok) {
-        priceData = await priceResponse.json();
-        console.log(`Successfully loaded price data: ${priceData?.price?.length || 0} points`);
-      } else {
-        console.log(`Price API failed with status: ${priceResponse.status}`);
-      }
-    } catch (error) {
-      console.log('Error fetching price data:', error);
-    }
-
-    // Kombiniere die verfügbaren Daten
-    const combinedData = combineEnergyDataNew(renewableData, priceData);
-
-    if (combinedData.length > 0) {
-      console.log(`Successfully loaded ${combinedData.length} real data points from Energy Charts`);
-      cachedData = combinedData;
+    console.log('Loading energy data from marketdata.json...');
+    
+    // Primäre Datenquelle: marketdata.json (wird täglich vom GitHub Actions Workflow aktualisiert)
+    const marketResponse = await fetch('/data/marketdata.json');
+    if (marketResponse.ok) {
+      const marketJson = await marketResponse.json();
+      const marketData = marketJson.data.map((item: any) => ({
+        timestamp: item.start_timestamp,
+        marketPrice: item.marketprice, // Bereits in EUR/MWh
+        renewableShare: null
+      }));
+      console.log(`Successfully loaded ${marketData.length} data points from marketdata.json`);
+      cachedData = marketData;
       cacheTimestamp = Date.now();
-      dataSource = 'energy-charts';
-      return combinedData;
+      dataSource = 'awattar';
+      return marketData;
+    } else {
+      console.log(`Failed to load marketdata.json with status: ${marketResponse.status}`);
     }
-
-    // Fallback: Versuche marketdata.json zu laden
-    console.log('No data from Energy Charts API, trying marketdata.json fallback...');
-    try {
-      const marketResponse = await fetch('/data/marketdata.json');
-      if (marketResponse.ok) {
-        const marketJson = await marketResponse.json();
-        const fallbackData = marketJson.data.map((item: any) => ({
-          timestamp: item.start_timestamp,
-          marketPrice: item.marketprice, // Bereits in EUR/MWh
-          renewableShare: null
-        }));
-        console.log(`Using marketdata.json fallback: ${fallbackData.length} data points`);
-        cachedData = fallbackData;
-        cacheTimestamp = Date.now();
-        dataSource = 'awattar';
-        return fallbackData;
-      }
-    } catch (fallbackError) {
-      console.log('marketdata.json fallback also failed:', fallbackError);
-    }
-
-    // Wenn gar keine Daten verfügbar sind, leeres Array zurückgeben
-    console.log('No data available from any source');
-    cachedData = [];
-    cacheTimestamp = Date.now();
-    dataSource = 'none';
-    return [];
 
   } catch (error) {
-    console.error('Failed to fetch any data:', error);
-
-    // Versuche marketdata.json als letzten Fallback
-    try {
-      const marketResponse = await fetch('/data/marketdata.json');
-      if (marketResponse.ok) {
-        const marketJson = await marketResponse.json();
-        const fallbackData = marketJson.data.map((item: any) => ({
-          timestamp: item.start_timestamp,
-          marketPrice: item.marketprice,
-          renewableShare: null
-        }));
-        console.log(`Using marketdata.json fallback after error: ${fallbackData.length} data points`);
-        cachedData = fallbackData;
-        cacheTimestamp = Date.now();
-        dataSource = 'awattar';
-        return fallbackData;
-      }
-    } catch (fallbackError) {
-      console.log('All data sources failed');
-    }
-
-    // Keine Daten verfügbar
-    cachedData = [];
-    cacheTimestamp = Date.now();
-    dataSource = 'none';
-    return [];
+    console.error('Failed to load marketdata.json:', error);
   }
+
+  // Keine Daten verfügbar
+  console.log('No data available from marketdata.json');
+  cachedData = [];
+  cacheTimestamp = Date.now();
+  dataSource = 'none';
+  return [];
 }
 
 // Hilfsfunktion zum Kombinieren der neuen API-Daten

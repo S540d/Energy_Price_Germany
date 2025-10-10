@@ -141,7 +141,7 @@ export default function App() {
         };
       case 'awattar':
         return {
-          name: 'Awattar.at',
+          name: 'aWATTar (EPEX Spot Market Data)',
           license: 'Proprietary',
           url: 'awattar.at'
         };

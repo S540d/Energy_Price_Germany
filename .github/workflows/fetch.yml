@@ -1,7 +1,7 @@
 name: Fetch aWATTar market data
 on:
   schedule:
-    - cron: '0 * * * *'  # jede volle Stunde
+    - cron: '0 12 * * *'  # Täglich um 12:00 UTC (13:00 MEZ / 14:00 MESZ)
   workflow_dispatch:
 
 permissions:
