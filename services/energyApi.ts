@@ -9,31 +9,37 @@ export function getCurrentDataSource(): 'energy-charts' | 'awattar' | 'none' {
   return dataSource;
 }
 
-// Fetch real data from marketdata.json with caching
+// Fetch real data with caching - priorisiert Energy Charts, Fallback auf aWATTar
 export async function fetchEnergyData() {
   // Prüfe In-Memory Cache
   const age = Date.now() - cacheTimestamp;
   if (cachedData && age < CACHE_DURATION) {
-    console.log('Using cached energy data (age: ' + Math.round(age / 1000 / 60) + ' minutes)');
+    console.log('Using cached energy data (age: ' + Math.round(age / 1000 / 60) + ' minutes, source: ' + dataSource + ')');
     return cachedData;
   }
 
   try {
     console.log('Loading energy data from marketdata.json...');
-    
-    // Primäre Datenquelle: marketdata.json (wird täglich vom GitHub Actions Workflow aktualisiert)
+
+    // Primäre Datenquelle: marketdata.json (wird stündlich vom GitHub Actions Workflow aktualisiert)
+    // Enthält priorisiert Energy Charts Daten, bei Ausfall aWATTar (interpoliert)
     const marketResponse = await fetch('/data/marketdata.json');
     if (marketResponse.ok) {
       const marketJson = await marketResponse.json();
+
+      // Bestimme die Datenquelle aus den Metadaten (falls vorhanden)
+      const source = marketJson.source || 'awattar';
+      dataSource = source === 'energy-charts' ? 'energy-charts' : 'awattar';
+
       const marketData = marketJson.data.map((item: any) => ({
         timestamp: item.start_timestamp,
         marketPrice: item.marketprice, // Bereits in EUR/MWh
-        renewableShare: null
+        renewableShare: item.renewable_share || null
       }));
-      console.log(`Successfully loaded ${marketData.length} data points from marketdata.json`);
+
+      console.log(`Successfully loaded ${marketData.length} data points from marketdata.json (source: ${dataSource})`);
       cachedData = marketData;
       cacheTimestamp = Date.now();
-      dataSource = 'awattar';
       return marketData;
     } else {
       console.log(`Failed to load marketdata.json with status: ${marketResponse.status}`);
