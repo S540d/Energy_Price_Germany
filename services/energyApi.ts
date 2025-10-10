@@ -1,8 +1,8 @@
-// Cache für API-Daten (15 Minuten) - in-memory cache
+// Cache für API-Daten (24 Stunden) - in-memory cache
 let cachedData: any = null;
 let cacheTimestamp: number = 0;
 let dataSource: 'energy-charts' | 'awattar' | 'none' = 'none';
-const CACHE_DURATION = 15 * 60 * 1000; // 15 Minuten in Millisekunden
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 Stunden in Millisekunden
 
 // Gibt die aktuelle Datenquelle zurück
 export function getCurrentDataSource(): 'energy-charts' | 'awattar' | 'none' {
@@ -14,7 +14,10 @@ export async function fetchEnergyData() {
   // Prüfe In-Memory Cache
   const age = Date.now() - cacheTimestamp;
   if (cachedData && age < CACHE_DURATION) {
-    console.log('Using cached energy data (age: ' + Math.round(age / 1000 / 60) + ' minutes)');
+    const ageInMinutes = Math.round(age / 1000 / 60);
+    const ageInHours = Math.round(age / 1000 / 60 / 60 * 10) / 10; // Round to 1 decimal
+    const ageDisplay = ageInMinutes < 60 ? `${ageInMinutes} minutes` : `${ageInHours} hours`;
+    console.log(`Using cached energy data (age: ${ageDisplay})`);
     return cachedData;
   }
 
