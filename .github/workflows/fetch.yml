@@ -45,9 +45,9 @@ jobs:
             const renewableMap = new Map();
 
             // Index renewable data by timestamp
-            if (renewable.unix_seconds && renewable.share) {
+            if (renewable.unix_seconds && renewable.ren_share) {
               renewable.unix_seconds.forEach((ts, i) => {
-                renewableMap.set(ts * 1000, renewable.share[i]); // Convert to ms
+                renewableMap.set(ts * 1000, renewable.ren_share[i]); // Convert to ms
               });
             }
 
