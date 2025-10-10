@@ -1,37 +1,111 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
-    <title>Service Worker Cleanup</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cache Cleanup - Energy Prices Germany</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #d93f0b;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #b33308;
+        }
+        .success {
+            background: #4CAF50;
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            display: none;
+        }
+        .info {
+            background: #2196F3;
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+    </style>
 </head>
 <body>
-    <h1>Service Worker Cleanup</h1>
-    <button onclick="unregisterSW()">Unregister Service Worker</button>
-    <div id="status"></div>
+    <div class="container">
+        <h1>Cache Cleanup</h1>
+
+        <div class="info">
+            <strong>Problem:</strong> Sie sehen alte Daten?<br>
+            <strong>Lösung:</strong> Cache und Service Worker zurücksetzen
+        </div>
+
+        <button onclick="doFullCleanup()">Komplett-Cleanup (empfohlen)</button>
+        <button onclick="goToApp()">Zurück zur App</button>
+
+        <div id="success" class="success"></div>
+    </div>
 
     <script>
-        function unregisterSW() {
-            const status = document.getElementById('status');
+        function showSuccess(message) {
+            const successDiv = document.getElementById('success');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+        }
 
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then(registrations => {
-                    const promises = registrations.map(registration => {
-                        status.innerHTML += `Unregistering: ${registration.scope}<br>`;
-                        return registration.unregister();
-                    });
+        async function doFullCleanup() {
+            try {
+                // Clear all caches
+                const cacheNames = await caches.keys();
+                await Promise.all(
+                    cacheNames.map(cacheName => caches.delete(cacheName))
+                );
 
-                    Promise.all(promises).then(() => {
-                        status.innerHTML += '<br><strong>All Service Workers unregistered!</strong><br>';
-                        status.innerHTML += '<a href="http://localhost:8081">Click here to reload the app</a>';
-                    });
-                });
-            } else {
-                status.innerHTML = 'Service Worker not supported';
+                // Unregister all service workers
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(
+                    registrations.map(registration => registration.unregister())
+                );
+
+                showSuccess(`Cleanup erfolgreich! ${cacheNames.length} Caches und ${registrations.length} Service Worker entfernt. Leite zur App weiter...`);
+
+                // Reload after 2 seconds
+                setTimeout(() => {
+                    window.location.href = './';
+                }, 2000);
+            } catch (error) {
+                alert('Fehler: ' + error.message);
             }
         }
 
-        // Auto-unregister on page load
+        function goToApp() {
+            window.location.href = './';
+        }
+
+        // Auto-cleanup on page load
         window.addEventListener('load', () => {
-            unregisterSW();
+            doFullCleanup();
         });
     </script>
 </body>
