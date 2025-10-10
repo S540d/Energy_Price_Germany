@@ -51,47 +51,6 @@ export async function fetchEnergyData() {
   return [];
 }
 
-// Hilfsfunktion zum Kombinieren der neuen API-Daten
-function combineEnergyDataNew(renewableData: any, priceData: any) {
-  const combined = new Map<number, { timestamp: number; renewableShare: number | null; marketPrice: number | null }>();
-
-  // Verarbeite Erneuerbare Energien Daten (ren_share_forecast)
-  if (renewableData && renewableData.unix_seconds && renewableData.ren_share && Array.isArray(renewableData.unix_seconds) && Array.isArray(renewableData.ren_share)) {
-    renewableData.unix_seconds.forEach((timestamp: number, index: number) => {
-      const share = renewableData.ren_share[index];
-      if (typeof share === 'number') {
-        combined.set(timestamp, {
-          timestamp: timestamp * 1000, // API gibt Sekunden zurück, wir brauchen Millisekunden
-          renewableShare: share,
-          marketPrice: null
-        });
-      }
-    });
-  }
-
-  // Verarbeite Preisdaten (price)
-  if (priceData && priceData.unix_seconds && priceData.price && Array.isArray(priceData.unix_seconds) && Array.isArray(priceData.price)) {
-    priceData.unix_seconds.forEach((timestamp: number, index: number) => {
-      const price = priceData.price[index];
-      if (typeof price === 'number') {
-        const existing = combined.get(timestamp);
-        if (existing) {
-          existing.marketPrice = price / 10; // EUR/MWh zu Cent/kWh konvertieren
-        } else {
-          combined.set(timestamp, {
-            timestamp: timestamp * 1000,
-            renewableShare: null,
-            marketPrice: price / 10
-          });
-        }
-      }
-    });
-  }
-
-  // Konvertiere Map zu Array und sortiere nach Zeitstempel
-  return Array.from(combined.values()).sort((a, b) => a.timestamp - b.timestamp);
-}
-
 // Mock-Daten Generator für Fallback
 export function generateMockData() {
   const mockData = [];
