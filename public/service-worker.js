@@ -1,7 +1,9 @@
 // Service Worker for Energy Price Germany PWA
 // Version: 1.0.0
 
-const CACHE_NAME = 'energy-price-germany-v1';
+const CACHE_VERSION = '1.0.0';
+const BUILD_DATE = '2025-10-11';
+const CACHE_NAME = `energy-price-germany-v${CACHE_VERSION}-${BUILD_DATE}`;
 const urlsToCache = [
   './',
   './index.html',
@@ -26,7 +28,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches and force update
 self.addEventListener('activate', (event) => {
   console.log('Service Worker: Activating...');
   event.waitUntil(
@@ -41,6 +43,7 @@ self.addEventListener('activate', (event) => {
       );
     })
     .then(() => {
+      console.log('Cache cleaned, claiming clients');
       // Take control of all pages immediately
       return self.clients.claim();
     })
@@ -52,7 +55,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Network First for marketdata.json (always fresh data)
-  if (url.pathname.includes('/data/marketdata.json')) {
+  if (url.pathname.includes('/data/marketdata.json?v=1760213964144?v=1760213964144?v=1760213871274?v=1760213871274?v=1760213197584?v=1760213197584?v=1760213193300?v=1760213193300?v=1760212904069?v=1760212904069?v=1760212849750?v=1760212849750')) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
@@ -117,9 +120,40 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Message event - handle skip waiting from client
+// Aggressive update checking and auto-reload notification
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
 });
+
+// Update notification system
+let updatePending = false;
+
+self.addEventListener('updatefound', () => {
+  const newWorker = self.registration.installing;
+
+  newWorker.addEventListener('statechange', () => {
+    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+      // New version available
+      if (!updatePending) {
+        updatePending = true;
+
+        // Notify all clients about the update
+        self.clients.matchAll().then((clients) => {
+          clients.forEach((client) => {
+            client.postMessage({
+              type: 'UPDATE_AVAILABLE',
+              message: 'Eine neue Version ist verfügbar. Seite neu laden?'
+            });
+          });
+        });
+      }
+    }
+  });
+});
+
+// Periodic update checks
+setInterval(() => {
+  self.registration.update();
+}, 10000); // Check every 10 seconds

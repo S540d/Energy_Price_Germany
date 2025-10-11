@@ -11,19 +11,15 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator } from 'react-native';
-import { fetchEnergyData, getCurrentDataSource } from './services/energyApi';
+import { fetchEnergyData, getCurrentDataSource } from './services/energyDataManager';
 import { RenewableBarChart } from './components/charts/RenewableBarChart';
 import { PriceBarChart } from './components/charts/PriceBarChart';
 import { CorrelationScatterChart } from './components/charts/CorrelationScatterChart';
+import { MetricsView } from './components/MetricsView';
+import { calculateMetrics, EnergyData } from './utils/metrics';
+import { exportAsCSV, exportAsJSON } from './services/exportService';
+import { getThemeColors, Theme } from './utils/theme';
 
-
-type EnergyData = {
-  timestamp: number;
-  marketPrice: number | null;
-  renewableShare: number | null;
-};
-
-type Theme = 'light' | 'dark' | 'system';
 type ViewMode = 'charts' | 'metrics';
 
 export default function App() {
@@ -34,44 +30,10 @@ export default function App() {
   const [currentView, setCurrentView] = useState<ViewMode>('charts');
   const systemTheme = useColorScheme();
 
-  const isDark = theme === 'dark' || (theme === 'system' && systemTheme === 'dark');
+  const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
 
   // Memoized metrics calculations for better performance
-  const metrics = useMemo(() => {
-    if (energyData.length === 0) return null;
-
-    const validRenewableData = energyData.filter(d => d.renewableShare !== null);
-    const validPriceData = energyData.filter(d => d.marketPrice !== null);
-
-    return {
-      timeRange: {
-        start: Math.min(...energyData.map(d => d.timestamp)),
-        end: Math.max(...energyData.map(d => d.timestamp)),
-      },
-      renewable: {
-        avg: validRenewableData.length > 0
-          ? validRenewableData.reduce((sum, d) => sum + d.renewableShare!, 0) / validRenewableData.length
-          : 0,
-        min: validRenewableData.length > 0
-          ? Math.min(...validRenewableData.map(d => d.renewableShare!))
-          : 0,
-        max: validRenewableData.length > 0
-          ? Math.max(...validRenewableData.map(d => d.renewableShare!))
-          : 0,
-      },
-      marketPrice: {
-        avg: validPriceData.length > 0
-          ? validPriceData.reduce((sum, d) => sum + d.marketPrice! * 0.1, 0) / validPriceData.length
-          : 0,
-        min: validPriceData.length > 0
-          ? Math.min(...validPriceData.map(d => d.marketPrice!)) * 0.1
-          : 0,
-        max: validPriceData.length > 0
-          ? Math.max(...validPriceData.map(d => d.marketPrice!)) * 0.1
-          : 0,
-      },
-    };
-  }, [energyData]);
+  const metrics = useMemo(() => calculateMetrics(energyData), [energyData]);
 
   useEffect(() => {
     async function loadData() {
@@ -88,47 +50,6 @@ export default function App() {
     }
     loadData();
   }, []);
-
-  const colors = isDark
-    ? {
-        background: '#121212',
-        surface: '#1E1E1E',
-        text: '#E0E0E0',
-        textSecondary: '#A0A0A0',
-        primary: '#90CAF9',
-        chartLine: '#90CAF9',
-        chartLine2: '#CE93D8',
-        gridLine: '#888888',
-      }
-    : {
-        background: '#FFFFFF',
-        surface: '#F5F5F5',
-        text: '#000000',
-        textSecondary: '#666666',
-        primary: '#1976D2',
-        chartLine: '#1976D2',
-        chartLine2: '#9C27B0',
-        gridLine: '#E0E0E0',
-      };
-
-  const exportAsCSV = () => {
-    const csv = [
-      'Zeitstempel,Börsenstrompreis (EUR/MWh),Anteil Erneuerbarer (%)',
-      ...energyData.map(d =>
-        `${new Date(d.timestamp).toISOString()},${d.marketPrice?.toFixed(2) ?? 'N/A'},${d.renewableShare?.toFixed(2) ?? 'N/A'}`
-      ),
-    ].join('\n');
-
-    if (Platform.OS === 'web') {
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'energy_data.csv';
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-  };
 
   const getDataSourceInfo = () => {
     const source = getCurrentDataSource();
@@ -155,24 +76,10 @@ export default function App() {
     }
   };
 
-  const exportAsJSON = () => {
-    const json = JSON.stringify(energyData, null, 2);
-
-    if (Platform.OS === 'web') {
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'energy_data.json';
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-  };
-
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <StatusBar style={colors.background === '#121212' ? 'light' : 'dark'} />
         <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.text }]}>
@@ -185,7 +92,7 @@ export default function App() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <StatusBar style={colors.background === '#121212' ? 'light' : 'dark'} />
 
       {/* Top Bar */}
       <View style={[styles.topBar, { backgroundColor: colors.surface }]}>
@@ -327,7 +234,7 @@ export default function App() {
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => {
-              exportAsCSV();
+              exportAsCSV(energyData);
               setMenuVisible(false);
             }}
           >
@@ -336,7 +243,7 @@ export default function App() {
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => {
-              exportAsJSON();
+              exportAsJSON(energyData);
               setMenuVisible(false);
             }}
           >
@@ -356,6 +263,15 @@ export default function App() {
               textColor={colors.text}
               gridColor={colors.gridLine}
             />
+            <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center', marginTop: 4, marginBottom: 16 }}>
+              Zeitraum: {energyData.length > 0 ? new Date(energyData[0].timestamp).toLocaleString('de-DE', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+              }) : 'Lädt...'}
+              {' bis '}
+              {energyData.length > 0 ? new Date(energyData[energyData.length - 1].timestamp).toLocaleString('de-DE', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+              }) : 'Lädt...'}
+            </Text>
 
             <PriceBarChart
               title="Börsen- und Endkundenstrompreis (Cent/kWh)"
@@ -364,6 +280,15 @@ export default function App() {
               textColor={colors.text}
               gridColor={colors.gridLine}
             />
+            <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center', marginTop: 4, marginBottom: 16 }}>
+              Zeitraum: {energyData.length > 0 ? new Date(energyData[0].timestamp).toLocaleString('de-DE', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+              }) : 'Lädt...'}
+              {' bis '}
+              {energyData.length > 0 ? new Date(energyData[energyData.length - 1].timestamp).toLocaleString('de-DE', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+              }) : 'Lädt...'}
+            </Text>
 
             <CorrelationScatterChart
               title="Korrelation: Preis vs. Erneuerbare"
@@ -372,132 +297,21 @@ export default function App() {
               textColor={colors.text}
               gridColor={colors.gridLine}
             />
+            <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center', marginTop: 4, marginBottom: 16 }}>
+              Zeitraum: {energyData.length > 0 ? new Date(energyData[0].timestamp).toLocaleString('de-DE', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+              }) : 'Lädt...'}
+              {' bis '}
+              {energyData.length > 0 ? new Date(energyData[energyData.length - 1].timestamp).toLocaleString('de-DE', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+              }) : 'Lädt...'}
+            </Text>
 
-            {/* Debug-Ausgabe */}
-            <View style={[styles.card, { backgroundColor: colors.surface, marginTop: 12 }]}>
-              <Text style={[styles.cardTitle, { color: colors.text, fontSize: 16 }]}>
-                Debug: API-Daten
-              </Text>
-              <Text style={[styles.infoText, { color: colors.text, fontSize: 12 }]}>
-                Anzahl Datenpunkte: {energyData.length}
-              </Text>
-              {energyData.length > 0 && (
-                <>
-                  <Text style={[styles.infoText, { color: colors.text, fontSize: 12 }]}>
-                    Erster Datenpunkt: {JSON.stringify(energyData[0], null, 2).substring(0, 200)}...
-                  </Text>
-                  <Text style={[styles.infoText, { color: colors.text, fontSize: 12 }]}>
-                    Letzter Datenpunkt: {JSON.stringify(energyData[energyData.length - 1], null, 2).substring(0, 200)}...
-                  </Text>
-                </>
-              )}
-            </View>
           </>
         ) : null}
 
-        {currentView === 'metrics' && energyData.length > 0 ? (
-          <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.cardTitle, { color: colors.text, marginBottom: 16 }]}>
-              Metriken
-            </Text>
-
-            {/* Zeitraum */}
-            <View style={{ marginBottom: 20 }}>
-              <Text style={{ color: colors.text, fontSize: 14, fontWeight: '600', marginBottom: 8 }}>
-                Zeitraum
-              </Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-                {metrics ? new Date(metrics.timeRange.start).toLocaleString('de-DE', {
-                  day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                }) : 'Lädt...'}
-                {' bis '}
-                {metrics ? new Date(metrics.timeRange.end).toLocaleString('de-DE', {
-                  day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                }) : 'Lädt...'}
-              </Text>
-            </View>
-
-            {/* Erneuerbare Energien */}
-            <View style={{ marginBottom: 20 }}>
-              <Text style={{ color: colors.text, fontSize: 14, fontWeight: '600', marginBottom: 8 }}>
-                Anteil Erneuerbarer Energien (%)
-              </Text>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Durchschnitt</Text>
-                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                    {metrics ? metrics.renewable.avg.toFixed(1) : '0.0'}%
-                  </Text>
-                </View>
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Minimum</Text>
-                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                    {metrics ? metrics.renewable.min.toFixed(1) : '0.0'}%
-                  </Text>
-                </View>
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Maximum</Text>
-                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                    {metrics ? metrics.renewable.max.toFixed(1) : '0.0'}%
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Börsenstrompreis */}
-            <View style={{ marginBottom: 20 }}>
-              <Text style={{ color: colors.text, fontSize: 14, fontWeight: '600', marginBottom: 8 }}>
-                Börsenstrompreis (Cent/kWh)
-              </Text>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Durchschnitt</Text>
-                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                    {metrics ? metrics.marketPrice.avg.toFixed(2) : '0.00'} ¢
-                  </Text>
-                </View>
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Minimum</Text>
-                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                    {metrics ? metrics.marketPrice.min.toFixed(2) : '0.00'} ¢
-                  </Text>
-                </View>
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Maximum</Text>
-                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                    {metrics ? metrics.marketPrice.max.toFixed(2) : '0.00'} ¢
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Endkundenstrompreis (inkl. Netzentgelte) */}
-            <View>
-              <Text style={{ color: colors.text, fontSize: 14, fontWeight: '600', marginBottom: 8 }}>
-                Endkundenstrompreis (Cent/kWh)
-              </Text>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Durchschnitt</Text>
-                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                    {metrics ? (metrics.marketPrice.avg + 20).toFixed(2) : '20.00'} ¢
-                  </Text>
-                </View>
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Minimum</Text>
-                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                    {metrics ? (metrics.marketPrice.min + 20).toFixed(2) : '20.00'} ¢
-                  </Text>
-                </View>
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Maximum</Text>
-                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                    {metrics ? (metrics.marketPrice.max + 20).toFixed(2) : '20.00'} ¢
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </View>
+        {currentView === 'metrics' && energyData.length > 0 && metrics ? (
+          <MetricsView metrics={metrics} colors={colors} />
         ) : null}
 
         {energyData.length === 0 && (
@@ -507,13 +321,6 @@ export default function App() {
             </Text>
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
               Die Energiedaten konnten nicht geladen werden. Bitte versuchen Sie es später erneut.
-            </Text>
-            {/* Debug-Ausgabe */}
-            <Text style={[styles.infoText, { color: colors.text, fontSize: 12, marginTop: 10 }]}>
-              Debug-Info: energyData.length = {energyData.length}
-            </Text>
-            <Text style={[styles.infoText, { color: colors.text, fontSize: 12 }]}>
-              Letzter Ladeversuch: {new Date().toLocaleString('de-DE')}
             </Text>
           </View>
         )}
