@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1.00001, viewport-fit=cover"
+    />
+    <title>Energy Prices Germany</title>
+    <meta name="description" content="Visualisierung von Energiepreisen und erneuerbaren Energien in Deutschland" />
+    <link rel="manifest" href="./manifest.json" />
+    <meta name="theme-color" content="#6200EE" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Energy Prices Germany" />
+    <style>
+      #root,
+      body,
+      html {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+          Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+    </style>
+  <link rel="icon" href="./favicon.ico" /></head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('./service-worker.js?v=1760213197584')
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+
+              // Immediate update check on load
+              registration.update();
+
+              // Check for updates every 10 seconds
+              setInterval(() => {
+                registration.update();
+              }, 10000);
+
+              // Listen for update notifications
+              navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data && event.data.type === 'UPDATE_AVAILABLE') {
+                  showUpdateNotification(event.data.message);
+                }
+              });
+
+              // Handle update found
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                console.log('New service worker installing...');
+
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('New service worker installed, showing update prompt');
+                    showUpdateNotification('Eine neue Version ist verfügbar. Seite neu laden?');
+                  }
+                });
+              });
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+
+      // Function to show update notification
+      function showUpdateNotification(message) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #6200EE;
+          color: white;
+          padding: 16px 20px;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          z-index: 10000;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          max-width: 300px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        `;
+
+        notification.innerHTML = `
+          <div style="font-weight: 500; margin-bottom: 8px;">🔄 Update verfügbar</div>
+          <div style="font-size: 14px; opacity: 0.9; margin-bottom: 12px;">${message}</div>
+          <div style="display: flex; gap: 8px;">
+            <button id="update-yes" style="
+              background: white;
+              color: #6200EE;
+              border: none;
+              padding: 6px 12px;
+              border-radius: 4px;
+              font-weight: 500;
+              cursor: pointer;
+            ">Aktualisieren</button>
+            <button id="update-no" style="
+              background: transparent;
+              color: white;
+              border: 1px solid rgba(255,255,255,0.3);
+              padding: 6px 12px;
+              border-radius: 4px;
+              cursor: pointer;
+            ">Später</button>
+          </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Handle update button
+        document.getElementById('update-yes').addEventListener('click', () => {
+          // Tell service worker to skip waiting and activate new version
+          navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+
+          // Reload the page
+          window.location.reload();
+        });
+
+        // Handle dismiss button
+        document.getElementById('update-no').addEventListener('click', () => {
+          notification.remove();
+        });
+
+        // Auto-hide after 30 seconds
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.remove();
+          }
+        }, 30000);
+      }
+    </script>
+  <script src="./_expo/static/js/web/index-a3bc236998964b86628af098e6002805.js?v=1760213964144" defer></script>
+</body>
+</html>
