@@ -13,10 +13,22 @@ A React Native/Expo app for visualizing energy prices and renewable energy share
 
 ## Data Sources
 
-The app prioritizes data from:
-1. **Energy Charts (Fraunhofer ISE)** - Primary source for renewable energy share
-2. **aWATTar (EPEX Spot Market Data)** - Fallback for market prices
-3. **Mock Data** - Generated data for demonstration when APIs are unavailable
+The app uses a **hybrid data strategy** for maximum forecast coverage:
+
+1. **Energy Charts (Fraunhofer ISE)** - Primary source (15-min resolution, ~24h coverage)
+   - Day-ahead market prices (EUR/MWh)
+   - Renewable energy share forecast (%)
+   
+2. **aWATTar (EPEX Spot Market Data)** - Supplement & Fallback (~48h coverage)
+   - Supplements Energy Charts when coverage gap ≥3h
+   - Interpolated to 15-minute intervals
+   - Used as fallback when Energy Charts unavailable
+
+3. **Mock Data** - Generated demonstration data when both APIs fail
+
+**Result**: Up to 43+ hours of forecast data with high-quality renewable share information for the first 24 hours.
+
+📖 See [DATA-MERGE-STRATEGY.md](DATA-MERGE-STRATEGY.md) for detailed information about the data merging logic.
 
 ## Installation
 
