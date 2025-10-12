@@ -6,6 +6,21 @@
 
 ⚠️ **WICHTIG**: Bei Pfadänderungen **NUR** `config.js` bearbeiten, nicht die einzelnen Dateien!
 
+## 🔄 Automatische Deployment-Pipeline
+
+**Workflow:** Daten-Update → Auto-Build → Auto-Deploy
+
+1. **`.github/workflows/fetch.yml`** (stündlich 08:00-20:00 UTC)
+   - Lädt neue Daten von Energy Charts API
+   - Commitet `public/data/marketdata.json` wenn Daten neu sind
+
+2. **`.github/workflows/deploy-on-data-update.yml`** (bei Daten-Update)
+   - Wird automatisch getriggert wenn `marketdata.json` geändert wird
+   - Baut App neu mit `npm run build:web`
+   - Deployed zu GitHub Pages mit `npm run deploy:gh-pages`
+
+**Resultat:** Neue Daten sind innerhalb von ~5 Minuten live auf der Website! 🚀
+
 ## 📂 Aktueller Pfad-Standard
 
 ```
