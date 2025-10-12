@@ -2,7 +2,7 @@ name: Fetch energy market data
 on:
   schedule:
     # Stündlich zwischen 10:00 und 15:00 UTC (11:00 bis 16:00 MEZ / 12:00 bis 17:00 MESZ)
-    - cron: '0 10-15 * * *'
+    - cron: '0 08-20 * * *'
   workflow_dispatch:
 
 permissions:
@@ -20,13 +20,13 @@ jobs:
         id: energy_charts
         continue-on-error: true
         run: |
-          mkdir -p public
+          mkdir -p public/data
 
           # Energy Charts: Renewable share forecast (15-min resolution)
-          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=de" -o public/renewable_raw.json || exit 1
+          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=de" -o public/data/renewable_raw.json || exit 1
 
           # Energy Charts: Day-ahead prices (15-min resolution)
-          curl -fsSL "https://api.energy-charts.info/price?country=de" -o public/price_raw.json || exit 1
+          curl -fsSL "https://api.energy-charts.info/price?country=de" -o public/data/price_raw.json || exit 1
 
           echo "success=true" >> $GITHUB_OUTPUT
 
@@ -37,8 +37,8 @@ jobs:
           const fs = require("fs");
 
           try {
-            const renewable = JSON.parse(fs.readFileSync("public/renewable_raw.json", "utf8"));
-            const price = JSON.parse(fs.readFileSync("public/price_raw.json", "utf8"));
+            const renewable = JSON.parse(fs.readFileSync("public/data/renewable_raw.json", "utf8"));
+            const price = JSON.parse(fs.readFileSync("public/data/price_raw.json", "utf8"));
 
             // Merge price and renewable data based on unix_seconds timestamp
             const merged = [];
@@ -68,7 +68,7 @@ jobs:
             // Sort by timestamp
             merged.sort((a, b) => a.start_timestamp - b.start_timestamp);
 
-            fs.writeFileSync("public/marketdata_new.json", JSON.stringify({
+            fs.writeFileSync("public/data/marketdata_new.json", JSON.stringify({
               object: "list",
               source: "energy-charts",
               data: merged
@@ -80,20 +80,20 @@ jobs:
             process.exit(1);
           }
           '
-          rm -f public/renewable_raw.json public/price_raw.json
+          rm -f public/data/renewable_raw.json public/data/price_raw.json
 
       - name: Fallback to aWATTar if Energy Charts failed
         if: steps.energy_charts.outputs.success != 'true'
         run: |
           echo "Energy Charts API failed, falling back to aWATTar..."
-          curl -fsSL "https://api.awattar.de/v1/marketdata" -o public/marketdata_raw.json
+          curl -fsSL "https://api.awattar.de/v1/marketdata" -o public/data/marketdata_raw.json
 
       - name: Interpolate aWATTar data to 15-minute intervals
         if: steps.energy_charts.outputs.success != 'true'
         run: |
           node -e '
           const fs = require("fs");
-          const raw = JSON.parse(fs.readFileSync("public/marketdata_raw.json", "utf8"));
+          const raw = JSON.parse(fs.readFileSync("public/data/marketdata_raw.json", "utf8"));
 
           // Sortiere Daten nach Zeitstempel
           raw.data.sort((a, b) => a.start_timestamp - b.start_timestamp);
@@ -145,20 +145,20 @@ jobs:
             }
           }
 
-          fs.writeFileSync("public/marketdata_new.json", JSON.stringify({
+          fs.writeFileSync("public/data/marketdata_new.json", JSON.stringify({
             object: "list",
             source: "awattar",
             data: interpolated
           }, null, 2));
           '
-          rm -f public/marketdata_raw.json
+          rm -f public/data/marketdata_raw.json
 
       - name: Compare with previous data
         id: compare
         run: |
-          NEW_TS=$(jq '[.data[].start_timestamp] | max' public/marketdata_new.json)
-          if [ -f public/marketdata.json ]; then
-            OLD_TS=$(jq '[.data[].start_timestamp] | max' public/marketdata.json)
+          NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/marketdata_new.json)
+          if [ -f public/data/marketdata.json ]; then
+            OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/marketdata.json)
           else
             OLD_TS=""
           fi
@@ -175,18 +175,18 @@ jobs:
       - name: Archive and commit if changed
         if: steps.compare.outputs.new_data == 'true'
         run: |
-          mkdir -p public/archive
+          mkdir -p public/data/archive
           ts=$(date -u +"%Y-%m-%dT%H")
-          SOURCE=$(jq -r '.source // "unknown"' public/marketdata_new.json)
-          cp public/marketdata_new.json "public/archive/marketdata_${ts}.json"
-          mv public/marketdata_new.json public/marketdata.json
+          SOURCE=$(jq -r '.source // "unknown"' public/data/marketdata_new.json)
+          cp public/data/marketdata_new.json "public/data/archive/marketdata_${ts}.json"
+          mv public/data/marketdata_new.json public/data/marketdata.json
 
           # Alte Archive (>30 Tage) löschen
-          find public/archive/ -type f -name "marketdata_*.json" -mtime +30 -print -delete
+          find public/data/archive/ -type f -name "marketdata_*.json" -mtime +30 -print -delete
 
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          git add public/marketdata.json public/archive/
+          git add public/data/marketdata.json public/data/archive/
           git commit -m "Update marketdata.json (source: ${SOURCE} @ ${ts} UTC)"
           git push
 
