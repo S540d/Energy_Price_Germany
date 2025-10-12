@@ -68,7 +68,8 @@ export class EnergyDataManager {
 
       // Cache-busting Parameter hinzufügen
       const cacheBust = Date.now();
-      const response = await fetch(`/data/marketdata.json?v=${cacheBust}`);
+      // Use relative path to work with GitHub Pages baseUrl
+      const response = await fetch(`./data/marketdata.json?v=${cacheBust}`);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
