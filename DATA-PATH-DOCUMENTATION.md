@@ -11,13 +11,15 @@
 **Workflow:** Daten-Update → Auto-Build → Auto-Deploy
 
 1. **`.github/workflows/fetch.yml`** (stündlich 08:00-20:00 UTC)
-   - Lädt neue Daten von Energy Charts API
+   - Lädt Daten von Energy Charts API (primär)
+   - Lädt Daten von aWATTar API (supplement/fallback)
+   - Merged Daten intelligent (siehe DATA-MERGE-STRATEGY.md)
    - Commitet `public/data/marketdata.json` wenn Daten neu sind
 
 2. **`.github/workflows/deploy-on-data-update.yml`** (bei Daten-Update)
    - Wird automatisch getriggert wenn `marketdata.json` geändert wird
    - Baut App neu mit `npm run build:web`
-   - Deployed zu GitHub Pages mit `npm run deploy:gh-pages`
+   - Deployed zu GitHub Pages mit offiziellem `actions/deploy-pages@v4`
 
 **Resultat:** Neue Daten sind innerhalb von ~5 Minuten live auf der Website! 🚀
 
@@ -32,17 +34,20 @@ Frontend:    ./data/marketdata.json (relative)
 
 ## 📋 Dateien die den Pfad verwenden
 
-| Datei | Funktion | Verwendet config.js |
-|-------|----------|-------------------|
-| `config.js` | ✅ **ZENTRALE KONFIGURATION** | - |
-| `update-marketdata.js` | Aktualisiert Daten manuell | ⚠️ TODO |
-| `.github/workflows/fetch.yml` | GitHub Actions Workflow | ⚠️ Nicht möglich* |
-| `scripts/post-build.js` | Kopiert Dateien nach dist/ | ⚠️ TODO |
-| `services/energyDataManager.ts` | Lädt Daten im Frontend | ⚠️ TODO |
-| `public/service-worker.js` | PWA Cache-Strategie | ⚠️ Wird generiert |
-| `update-cache-version.js` | Cache-Busting | ⚠️ TODO |
+| Datei | Funktion | Verwendet config.js | Status |
+|-------|----------|-------------------|--------|
+| `config.js` | ✅ **ZENTRALE KONFIGURATION** | - | ✅ Aktuell |
+| `update-marketdata.js` | Aktualisiert Daten manuell (mit Merge-Logik) | ⚠️ TODO | ✅ 2025-10-12 |
+| `.github/workflows/fetch.yml` | GitHub Actions Workflow (mit Merge-Logik) | ⚠️ Nicht möglich* | ✅ 2025-10-12 |
+| `.github/workflows/deploy-on-data-update.yml` | Auto-Deploy bei Datenänderung | ⚠️ Nicht möglich* | ✅ 2025-10-12 |
+| `scripts/post-build.js` | Kopiert Dateien nach dist/ | ⚠️ TODO | 📋 Offen |
+| `services/energyDataManager.ts` | Lädt Daten im Frontend | ⚠️ TODO | 📋 Offen |
+| `public/service-worker.js` | PWA Cache-Strategie | ⚠️ Wird generiert | 📋 Offen |
+| `update-cache-version.js` | Cache-Busting | ⚠️ TODO | 📋 Offen |
 
-\* GitHub Actions kann keine lokalen config.js importieren, daher dokumentiert
+\* GitHub Actions kann keine lokalen config.js importieren, daher Pfade dokumentiert
+
+📖 **Siehe auch:** `DATA-MERGE-STRATEGY.md` für Details zur Daten-Zusammenführung
 
 ## 🔄 Geschichte der Pfad-Änderungen
 
@@ -50,6 +55,14 @@ Frontend:    ./data/marketdata.json (relative)
 2. **2025-10-08**: `data/marketdata.json`
 3. **2025-10-10**: `public/marketdata.json`
 4. **2025-10-12**: `public/data/marketdata.json` ← **AKTUELL & FINAL**
+
+## 📊 Daten-Strategie Änderungen
+
+- **2025-10-12**: Hybrid Data Strategy implementiert
+  - Energy Charts + aWATTar Merge-Logik
+  - Coverage erweitert von ~24h auf ~43h
+  - Dokumentiert in `DATA-MERGE-STRATEGY.md`
+  - ⚠️ **KEINE Pfadänderung** - nur Daten-Logik
 
 ## ✅ Warum `public/data/` die beste Lösung ist:
 
