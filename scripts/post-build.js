@@ -11,6 +11,12 @@ const filesToCopy = [
   // NOTE: index.html is NOT copied - we use the Expo-generated one with script tags
 ];
 
+// Create .nojekyll file to disable Jekyll processing on GitHub Pages
+// This is necessary because Expo uses _expo/ directory which GitHub Pages ignores by default
+const nojekyllPath = path.join(__dirname, '..', 'dist', '.nojekyll');
+fs.writeFileSync(nojekyllPath, '');
+console.log('✓ Created .nojekyll file for GitHub Pages');
+
 filesToCopy.forEach(({ src, dest }) => {
   const srcPath = path.join(__dirname, '..', src);
   const destPath = path.join(__dirname, '..', dest);
