@@ -213,14 +213,15 @@ function updateDataCacheBusting() {
         let content = fs.readFileSync(filePath, 'utf8');
 
         // Update marketdata.json references with cache busting
+        // First remove any existing ?v= parameters to avoid stacking
         content = content.replace(
-            /\/data\/marketdata\.json/g,
+            /\/data\/marketdata\.json(\?v=[^'")\s]*)?/g,
             `/data/marketdata.json?v=${buildTime}`
         );
 
         // Update any other data file references if they exist
         content = content.replace(
-            /\/data\/([^'"]+\.json)/g,
+            /\/data\/([^'"?]+\.json)(\?v=[^'")\s]*)?/g,
             `/data/$1?v=${buildTime}`
         );
 
