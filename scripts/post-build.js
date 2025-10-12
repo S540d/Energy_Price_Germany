@@ -28,8 +28,10 @@ const indexPath = path.join(__dirname, '..', 'dist', 'index.html');
 if (fs.existsSync(indexPath)) {
   let html = fs.readFileSync(indexPath, 'utf8');
 
-  // DON'T modify paths - Expo already handles baseUrl correctly!
-  // The paths are already correct from Expo with baseUrl setting
+  // Add baseUrl prefix to all absolute paths for GitHub Pages subpath
+  const baseUrl = '/Energy_Price_Germany';
+  html = html.replace(/href="\/(?!\/)/g, `href="${baseUrl}/`);
+  html = html.replace(/src="\/(?!\/)/g, `src="${baseUrl}/`);
 
   // Fix title and meta tags
   html = html.replace(/<title>.*?<\/title>/, '<title>Energy Prices Germany</title>');
