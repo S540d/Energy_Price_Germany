@@ -2,7 +2,7 @@
 // Version: 1.0.0
 
 const CACHE_VERSION = '1.0.0';
-const BUILD_DATE = '2025-10-11';
+const BUILD_DATE = '2025-10-12';
 const CACHE_NAME = `energy-price-germany-v${CACHE_VERSION}-${BUILD_DATE}`;
 const urlsToCache = [
   './',
@@ -55,7 +55,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Network First for marketdata.json (always fresh data)
-  if (url.pathname.includes('/data/marketdata.json?v=1760213964144?v=1760213964144?v=1760213871274?v=1760213871274?v=1760213197584?v=1760213197584?v=1760213193300?v=1760213193300?v=1760212904069?v=1760212904069?v=1760212849750?v=1760212849750')) {
+  if (url.pathname.includes('/data/marketdata.json?v=1760246053763?v=1760246053763?v=1760213964144?v=1760213964144?v=1760213871274?v=1760213871274?v=1760213197584?v=1760213197584?v=1760213193300?v=1760213193300?v=1760212904069?v=1760212904069?v=1760212849750?v=1760212849750')) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
