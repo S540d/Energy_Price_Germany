@@ -2,7 +2,7 @@
 // Version: 1.0.0
 
 const CACHE_VERSION = '1.0.0';
-const BUILD_DATE = '2025-10-12';
+const BUILD_DATE = '2025-10-13';
 const CACHE_NAME = `energy-price-germany-v${CACHE_VERSION}-${BUILD_DATE}`;
 const urlsToCache = [
   './',
@@ -54,8 +54,14 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
+  // BYPASS Service Worker for external APIs (SMARD, etc.)
+  if (url.origin !== self.location.origin) {
+    // Let the browser handle external requests directly
+    return;
+  }
+
   // Network First for marketdata.json (always fresh data)
-  if (url.pathname.includes('/data/marketdata.json?v=1760265190294')) {
+  if (url.pathname.includes('/data/marketdata.json?v=1760337502513')) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
