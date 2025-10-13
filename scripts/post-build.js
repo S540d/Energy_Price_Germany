@@ -57,7 +57,7 @@ if (fs.existsSync(indexPath)) {
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker
-            .register('./service-worker.js?v=${Date.now()}')
+            .register('${baseUrl}/service-worker.js?v=${Date.now()}')
             .then((registration) => {
               console.log('SW registered: ', registration);
               registration.update();
