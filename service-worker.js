@@ -54,14 +54,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // BYPASS Service Worker for external APIs (SMARD, etc.)
-  if (url.origin !== self.location.origin) {
-    // Let the browser handle external requests directly
-    return;
-  }
-
   // Network First for marketdata.json (always fresh data)
-  if (url.pathname.includes('/data/marketdata.json?v=1760351314895')) {
+  if (url.pathname.includes('/data/marketdata.json?v=1760351561655')) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
