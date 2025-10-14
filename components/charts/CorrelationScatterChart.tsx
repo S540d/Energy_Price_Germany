@@ -5,6 +5,7 @@ import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 
 interface CorrelationScatterChartProps {
   title: string;
+  subtitle?: string;
   data: Array<{ timestamp: number; marketPrice: number | null; renewableShare: number | null }>;
   backgroundColor: string;
   textColor: string;
@@ -13,6 +14,7 @@ interface CorrelationScatterChartProps {
 
 export function CorrelationScatterChart({
   title,
+  subtitle,
   data,
   backgroundColor,
   textColor,
@@ -79,8 +81,15 @@ export function CorrelationScatterChart({
 
   return (
     <View style={{ backgroundColor, margin: isPhone ? 6 : 12, padding: isPhone ? 8 : 12, borderRadius: 12, alignSelf: 'flex-start', marginRight: isPhone ? 6 : 12 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-        <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: 0, color: textColor }}>{title}</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: subtitle ? 0 : 2 }}>
+        <View>
+          <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: subtitle ? 0 : 0, color: textColor }}>{title}</Text>
+          {subtitle && (
+            <Text style={{ fontSize: isPhone ? 10 : 12, color: textColor, opacity: 0.7 }}>
+              {subtitle}
+            </Text>
+          )}
+        </View>
         {!isPhone && (
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>

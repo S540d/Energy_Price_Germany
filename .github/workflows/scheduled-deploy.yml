@@ -1,11 +1,10 @@
-name: Deploy on Data Update
+name: Scheduled Deployment
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'public/data/marketdata.json'
+  schedule:
+    # Deployment 3x täglich: 06:00, 14:00, 22:00 UTC
+    # (07:00, 15:00, 23:00 MEZ / 08:00, 16:00, 00:00 MESZ)
+    - cron: '0 6,14,22 * * *'
   workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
@@ -61,8 +60,8 @@ jobs:
 
       - name: Summary
         run: |
-          echo "✅ Data-triggered deployment successful!" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Scheduled deployment successful!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "🔗 **Live URL:** https://s540d.github.io/Energy_Price_Germany/" >> $GITHUB_STEP_SUMMARY
           echo "📅 **Deployed at:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
-          echo "📊 **Trigger:** Market data update" >> $GITHUB_STEP_SUMMARY
+          echo "⏰ **Trigger:** Scheduled deployment (3x daily)" >> $GITHUB_STEP_SUMMARY

@@ -258,54 +258,42 @@ export default function App() {
           <>
             <RenewableBarChart
               title="Anteil Erneuerbarer Energien an der Last (%)"
+              subtitle={`Zeitraum: ${energyData.length > 0 ? new Date(energyData[0].timestamp).toLocaleString('de-DE', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+              }) : 'Lädt...'} bis ${energyData.length > 0 ? new Date(energyData[energyData.length - 1].timestamp).toLocaleString('de-DE', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+              }) : 'Lädt...'}`}
               data={energyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
               gridColor={colors.gridLine}
             />
-            <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center', marginTop: 4, marginBottom: 16 }}>
-              Zeitraum: {energyData.length > 0 ? new Date(energyData[0].timestamp).toLocaleString('de-DE', {
-                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-              }) : 'Lädt...'}
-              {' bis '}
-              {energyData.length > 0 ? new Date(energyData[energyData.length - 1].timestamp).toLocaleString('de-DE', {
-                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-              }) : 'Lädt...'}
-            </Text>
 
             <PriceBarChart
               title="Börsen- und Endkundenstrompreis (Cent/kWh)"
+              subtitle={`Zeitraum: ${energyData.length > 0 ? new Date(energyData[0].timestamp).toLocaleString('de-DE', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+              }) : 'Lädt...'} bis ${energyData.length > 0 ? new Date(energyData[energyData.length - 1].timestamp).toLocaleString('de-DE', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+              }) : 'Lädt...'}`}
               data={energyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
               gridColor={colors.gridLine}
             />
-            <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center', marginTop: 4, marginBottom: 16 }}>
-              Zeitraum: {energyData.length > 0 ? new Date(energyData[0].timestamp).toLocaleString('de-DE', {
-                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-              }) : 'Lädt...'}
-              {' bis '}
-              {energyData.length > 0 ? new Date(energyData[energyData.length - 1].timestamp).toLocaleString('de-DE', {
-                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-              }) : 'Lädt...'}
-            </Text>
 
             <CorrelationScatterChart
               title="Korrelation: Preis vs. Erneuerbare"
+              subtitle={`Zeitraum: ${energyData.length > 0 ? new Date(energyData[0].timestamp).toLocaleString('de-DE', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+              }) : 'Lädt...'} bis ${energyData.length > 0 ? new Date(energyData[energyData.length - 1].timestamp).toLocaleString('de-DE', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+              }) : 'Lädt...'}`}
               data={energyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
               gridColor={colors.gridLine}
             />
-            <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center', marginTop: 4, marginBottom: 16 }}>
-              Zeitraum: {energyData.length > 0 ? new Date(energyData[0].timestamp).toLocaleString('de-DE', {
-                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-              }) : 'Lädt...'}
-              {' bis '}
-              {energyData.length > 0 ? new Date(energyData[energyData.length - 1].timestamp).toLocaleString('de-DE', {
-                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-              }) : 'Lädt...'}
-            </Text>
 
           </>
         ) : null}
