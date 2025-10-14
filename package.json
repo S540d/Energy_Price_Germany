@@ -19,6 +19,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "build:web": "expo export --platform web && node scripts/post-build.js && node update-cache-version.js",
+    "build:local": "expo export --platform web && node scripts/post-build-local.js && node update-cache-version.js",
+    "serve:local": "npm run build:local && npx serve dist -p 8080",
     "cache:update": "node update-cache-version.js",
     "data:update": "node update-marketdata.js",
     "version:update": "npm version patch --no-git-tag-version && node update-cache-version.js",
