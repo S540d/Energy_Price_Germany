@@ -24,18 +24,13 @@ filesToCopy.forEach(({ src, dest }) => {
   }
 });
 
-// Modify the Expo-generated index.html for GitHub Pages and PWA
+// Modify the Expo-generated index.html for LOCAL testing (NO baseUrl prefix)
 const indexPath = path.join(__dirname, '..', 'dist', 'index.html');
 if (fs.existsSync(indexPath)) {
   let html = fs.readFileSync(indexPath, 'utf8');
 
-  // Add baseUrl prefix to all absolute paths for GitHub Pages subpath
-  const baseUrl = '/Energy_Price_Germany';
-  html = html.replace(/href="\/(?!\/)/g, `href="${baseUrl}/`);
-  html = html.replace(/src="\/(?!\/)/g, `src="${baseUrl}/`);
-
   // Fix title and meta tags
-  html = html.replace(/<title>.*?<\/title>/, '<title>Energy Prices Germany</title>');
+  html = html.replace(/<title>.*?<\/title>/, '<title>Energy Prices Germany (LOCAL)</title>');
   
   // Add PWA meta tags if not present
   if (!html.includes('apple-mobile-web-app-title')) {
@@ -52,7 +47,7 @@ if (fs.existsSync(indexPath)) {
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker
-            .register('${baseUrl}/service-worker.js?v=${Date.now()}')
+            .register('./service-worker.js?v=${Date.now()}')
             .then((registration) => {
               console.log('SW registered: ', registration);
               registration.update();
@@ -106,17 +101,17 @@ if (fs.existsSync(indexPath)) {
   }
 
   fs.writeFileSync(indexPath, html);
-  console.log('✓ Modified Expo-generated index.html for PWA and subpath deployment');
+  console.log('✓ Modified Expo-generated index.html for LOCAL testing (no baseUrl prefix)');
 }
 
 // Update cache version in service worker with timestamp
 const swPath = path.join(__dirname, '..', 'dist', 'service-worker.js');
 if (fs.existsSync(swPath)) {
   let swContent = fs.readFileSync(swPath, 'utf8');
-  const cacheVersion = `energy-price-germany-v${Date.now()}`;
+  const cacheVersion = `energy-price-germany-local-v${Date.now()}`;
   swContent = swContent.replace(/const CACHE_NAME = '[^']+';/, `const CACHE_NAME = '${cacheVersion}';`);
   fs.writeFileSync(swPath, swContent);
   console.log(`✓ Updated service worker cache version to: ${cacheVersion}`);
 }
 
-console.log('✓ PWA files copied successfully!');
+console.log('✓ Local build completed successfully!');
