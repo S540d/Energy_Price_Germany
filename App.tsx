@@ -20,11 +20,16 @@ import { calculateMetrics, EnergyData } from './utils/metrics';
 import { exportAsCSV, exportAsJSON } from './services/exportService';
 import { getThemeColors, Theme } from './utils/theme';
 
+const APP_VERSION = '1.0.1';
+
+type ViewMode = 'charts' | 'metrics';
+
 export default function App() {
   const [energyData, setEnergyData] = useState<EnergyData[]>([]);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<Theme>('system');
   const [menuVisible, setMenuVisible] = useState(false);
+  const [currentView, setCurrentView] = useState<ViewMode>('charts');
   const systemTheme = useColorScheme();
 
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
@@ -203,6 +208,18 @@ export default function App() {
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
+                setCurrentView('metrics');
+                setMenuVisible(false);
+              }}
+            >
+              <Text style={{ color: colors.text }}>📈 Metriken anzeigen</Text>
+            </TouchableOpacity>
+
+            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
                 exportAsCSV(energyData);
                 setMenuVisible(false);
               }}
@@ -218,13 +235,31 @@ export default function App() {
             >
               <Text style={{ color: colors.text }}>📄 Export als JSON</Text>
             </TouchableOpacity>
+
+            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+            <View style={styles.menuItem}>
+              <Text style={[styles.legendText, { color: colors.textSecondary, textAlign: 'center' }]}>
+                Version {APP_VERSION}
+              </Text>
+            </View>
           </View>
         </>
       )}
 
       {/* Main Content */}
       <ScrollView style={styles.scrollView}>
-        {energyData.length > 0 ? (
+        {currentView === 'metrics' && energyData.length > 0 && metrics ? (
+          <View style={styles.metricsContainer}>
+            <TouchableOpacity 
+              style={[styles.backButton, { backgroundColor: colors.surface }]}
+              onPress={() => setCurrentView('charts')}
+            >
+              <Text style={[styles.backButtonText, { color: colors.primary }]}>← Zurück zu Diagrammen</Text>
+            </TouchableOpacity>
+            <MetricsView metrics={metrics} colors={colors} />
+          </View>
+        ) : energyData.length > 0 ? (
           <>
             <RenewableBarChart
               title="Anteil Erneuerbarer Energien an der Last (%)"
@@ -264,13 +299,9 @@ export default function App() {
               textColor={colors.text}
               gridColor={colors.gridLine}
             />
-
-            {/* Metrics Section */}
-            {metrics && (
-              <MetricsView metrics={metrics} colors={colors} />
-            )}
           </>
-        ) : (
+        ) : null}
+        {energyData.length === 0 && (
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>
               Keine Daten verfügbar
@@ -283,26 +314,28 @@ export default function App() {
       </ScrollView>
 
       {/* Footer with Settings and Support */}
-      <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.gridLine }]}>
-        <TouchableOpacity 
-          onPress={() => setMenuVisible(true)}
+      <View style={[styles.footerContainer, { backgroundColor: colors.background }]}>
+        <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.gridLine }]}>
+          <TouchableOpacity 
+            onPress={() => setMenuVisible(true)}
+            style={styles.footerButton}
+          >
+            <Text style={[styles.footerButtonText, { color: colors.primary }]}>
+              ⋮
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => {
+            if (Platform.OS === 'web') {
+              window.open('https://buymeacoffee.com/sven4321', '_blank');
+            }
+          }}
           style={styles.footerButton}
-        >
-          <Text style={[styles.footerButtonText, { color: colors.primary }]}>
-            ⚙️ Einstellungen
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => {
-          if (Platform.OS === 'web') {
-            window.open('https://buymeacoffee.com/sven4321', '_blank');
-          }
-        }}
-        style={styles.footerButton}
-        >
-          <Text style={[styles.footerButtonText, { color: colors.primary }]}>
-            ☕ Support me
-          </Text>
-        </TouchableOpacity>
+          >
+            <Text style={[styles.footerButtonText, { color: colors.primary }]}>
+              ☕ Support me
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -421,6 +454,29 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 16,
   },
+  metricsContainer: {
+    padding: 12,
+  },
+  backButton: {
+    padding: 12,
+    marginHorizontal: 12,
+    marginTop: 12,
+    marginBottom: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  backButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  footerContainer: {
+    alignItems: 'center',
+  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -432,12 +488,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    width: '100%',
+    maxWidth: 800,
   },
   footerButton: {
     padding: 8,
   },
   footerButtonText: {
-    fontSize: 14,
+    fontSize: 24,
     fontWeight: '600',
   },
 });
