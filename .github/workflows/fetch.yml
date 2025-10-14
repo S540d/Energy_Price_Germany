@@ -250,6 +250,20 @@ jobs:
             echo "new_data=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Update marketdata.json and create archive
+        if: steps.compare.outputs.new_data == 'true'
+        run: |
+          # Create archive with timestamp
+          ARCHIVE_NAME="marketdata_$(date -u +"%Y-%m-%dT%H").json"
+          mkdir -p public/data/archive
+          cp public/data/marketdata_new.json "public/data/archive/$ARCHIVE_NAME"
+          
+          # Replace main file
+          mv public/data/marketdata_new.json public/data/marketdata.json
+          
+          echo "✓ Updated marketdata.json"
+          echo "✓ Created archive: $ARCHIVE_NAME"
+
       - name: Commit changes and trigger deployment
         if: steps.compare.outputs.new_data == 'true'
         run: |
@@ -274,6 +288,13 @@ jobs:
           gh workflow run deploy.yml
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cleanup if no new data
+        if: steps.compare.outputs.new_data == 'false'
+        run: |
+          # Remove temporary file if no update needed
+          rm -f public/data/marketdata_new.json
+          echo "ℹ️ No new data available - keeping existing marketdata.json" >> $GITHUB_STEP_SUMMARY
 
       - name: Summary
         if: steps.compare.outputs.new_data == 'true'
