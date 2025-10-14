@@ -331,7 +331,7 @@ export default function App() {
         style={styles.footerButton}
         >
           <Text style={[styles.footerButtonText, { color: colors.primary }]}>
-            ☕ Support me
+            Support me
           </Text>
         </TouchableOpacity>
       </View>
@@ -479,8 +479,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    margin: 12,
+    alignSelf: 'stretch',  // Changed from flex-start to stretch to match card width
+    marginHorizontal: 12,
+    marginVertical: 8,
     padding: 16,
     borderRadius: 12,
     elevation: 4,
@@ -488,13 +489,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    minWidth: 300,
   },
   footerButton: {
     padding: 8,
   },
   footerButtonText: {
-    fontSize: 16,
+    fontSize: 14,  // Reduced from 16 to 14
     fontWeight: '600',
   },
 });
