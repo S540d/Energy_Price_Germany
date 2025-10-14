@@ -2,48 +2,35 @@
 
 ## 📊 Overview
 
-Since **October 14, 2025**, the application uses a **triple-redundant deployment strategy** to ensure reliable and timely updates to GitHub Pages.
+Since **October 14, 2025**, the application uses a **simplified dual deployment strategy** to ensure reliable and timely updates to GitHub Pages.
 
 ## 🎯 Problem & Solution
 
 ### Problem
+- Too many overlapping workflows caused confusion
 - Automatic deployment after data updates was unreliable
-- GitHub Actions don't automatically trigger other actions from bot commits (security feature)
-- Users saw outdated data on the live site even when fresh data was available
+- Scheduled deployments ran regardless of actual data changes
 
 ### Solution
-Triple deployment strategy combining multiple triggers:
-1. **Scheduled Deployment**: Guaranteed 3x daily builds
-2. **Direct Trigger**: Immediate deployment after data updates
-3. **Manual Deployment**: On-demand via workflow_dispatch
+Simplified dual deployment strategy:
+1. **Automatic Deployment on Data Update**: Immediate deployment triggered after each data fetch
+2. **Manual Deployment**: On-demand via workflow_dispatch or push to main
 
 ## 🔄 Deployment Workflows
 
-### 1. Scheduled Deployment (`scheduled-deploy.yml`)
+### 1. Automatic Data-Triggered Deployment (`fetch.yml` → `deploy.yml`)
 ```yaml
-Schedule: 06:00, 14:00, 22:00 UTC
-Trigger:  Cron schedule + manual dispatch
-Purpose:  Guaranteed backup deployment
-```
-
-**Benefits:**
-- ✅ Completely independent and reliable
-- ✅ Runs regardless of data update success
-- ✅ Ensures maximum 8-hour staleness
-
-### 2. Data-Triggered Deployment (`fetch.yml`)
-```yaml
-Trigger:  After successful data commit
-Method:   gh workflow run deploy.yml
-Purpose:  Fast deployment after fresh data
+Trigger:  Hourly data fetch (08:00-20:00 UTC) + manual dispatch
+Flow:     Fetch data → Commit if changed → Trigger deploy.yml
+Purpose:  Immediate deployment after fresh data
 ```
 
 **Benefits:**
 - ✅ Immediate updates when new data arrives
-- ✅ Reduces latency between data fetch and live update
-- ✅ Only runs when there's actually new data
+- ✅ No unnecessary deployments when data hasn't changed
+- ✅ Reduces complexity - single clear trigger path
 
-### 3. Manual Deployment (`deploy.yml`)
+### 2. Manual Deployment (`deploy.yml`)
 ```yaml
 Trigger:  Push to main + workflow_dispatch
 Purpose:  Code changes and manual intervention
@@ -51,8 +38,8 @@ Purpose:  Code changes and manual intervention
 
 **Benefits:**
 - ✅ Standard deployment for code changes
-- ✅ Manual override capability
-- ✅ Can be triggered by other workflows
+- ✅ Manual override capability when needed
+- ✅ Can be triggered by fetch.yml workflow
 
 ## 📋 Deployment Decision Tree
 
@@ -61,21 +48,19 @@ Purpose:  Code changes and manual intervention
 │              When Does Deployment Happen?                │
 └─────────────────────────────────────────────────────────┘
 
-Every Day:
-├─ 06:00 UTC → Scheduled Deployment ✓
-├─ 14:00 UTC → Scheduled Deployment ✓
-└─ 22:00 UTC → Scheduled Deployment ✓
-
-When Data Updates (08:00-20:00 UTC hourly):
+Hourly Data Fetch (08:00-20:00 UTC):
+├─ Fetch data from APIs
 ├─ New data found? 
 │  ├─ YES → Commit + Trigger deploy.yml ✓
-│  └─ NO  → Skip (no deployment needed)
+│  │        └─ Website updated within ~2 minutes
+│  └─ NO  → Skip (no deployment, saves resources)
 
 When Code Changes:
 └─ Push to main → deploy.yml runs ✓
+                  └─ Website updated within ~2 minutes
 
 Manual:
-└─ workflow_dispatch → Any workflow on demand ✓
+└─ workflow_dispatch → Run any workflow on demand ✓
 ```
 
 ## ⏰ Typical Daily Schedule
