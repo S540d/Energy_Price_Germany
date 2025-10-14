@@ -5,6 +5,7 @@ import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 
 interface RenewableBarChartProps {
   title: string;
+  subtitle?: string;
   data: Array<{ timestamp: number; marketPrice: number | null; renewableShare: number | null }>;
   backgroundColor: string;
   textColor: string;
@@ -13,6 +14,7 @@ interface RenewableBarChartProps {
 
 export function RenewableBarChart({
   title,
+  subtitle,
   data,
   backgroundColor,
   textColor,
@@ -120,7 +122,12 @@ export function RenewableBarChart({
           </Text>
         </View>
       )}
-      <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: 2, color: textColor }}>{title}</Text>
+      <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: subtitle ? 0 : 2, color: textColor }}>{title}</Text>
+      {subtitle && (
+        <Text style={{ fontSize: isPhone ? 10 : 12, color: textColor, opacity: 0.7, marginBottom: 2 }}>
+          {subtitle}
+        </Text>
+      )}
       {/* Y-Achsen-Label */}
       <Text style={getYAxisLabelStyle(chartHeight, 30, textColor)}>
         Anteil Erneuerbarer{'\n'}Energien an der Last (%)
