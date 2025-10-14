@@ -20,7 +20,7 @@ import { calculateMetrics, EnergyData } from './utils/metrics';
 import { exportAsCSV, exportAsJSON } from './services/exportService';
 import { getThemeColors, Theme } from './utils/theme';
 
-const APP_VERSION = '1.0.1';
+const APP_VERSION = '1.0.2';
 
 type ViewMode = 'charts' | 'metrics';
 
