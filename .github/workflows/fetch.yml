@@ -271,3 +271,11 @@ jobs:
       - name: Skip commit if no change
         if: steps.compare.outputs.new_data == 'false'
         run: echo "No new data available – skipping commit."
+
+      - name: Trigger deployment if data changed
+        if: steps.compare.outputs.new_data == 'true'
+        run: |
+          echo "New data detected - triggering deployment workflow"
+          gh workflow run deploy.yml
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
