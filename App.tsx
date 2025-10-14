@@ -314,28 +314,26 @@ export default function App() {
       </ScrollView>
 
       {/* Footer with Settings and Support */}
-      <View style={[styles.footerContainer, { backgroundColor: colors.background }]}>
-        <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.gridLine }]}>
-          <TouchableOpacity 
-            onPress={() => setMenuVisible(true)}
-            style={styles.footerButton}
-          >
-            <Text style={[styles.footerButtonText, { color: colors.primary }]}>
-              ⋮
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => {
-            if (Platform.OS === 'web') {
-              window.open('https://buymeacoffee.com/sven4321', '_blank');
-            }
-          }}
+      <View style={[styles.footer, { backgroundColor: colors.surface, borderColor: colors.gridLine }]}>
+        <TouchableOpacity 
+          onPress={() => setMenuVisible(true)}
           style={styles.footerButton}
-          >
-            <Text style={[styles.footerButtonText, { color: colors.primary }]}>
-              ☕ Support me
-            </Text>
-          </TouchableOpacity>
-        </View>
+        >
+          <Text style={[styles.footerButtonText, { color: colors.primary }]}>
+            ⋮
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => {
+          if (Platform.OS === 'web') {
+            window.open('https://buymeacoffee.com/sven4321', '_blank');
+          }
+        }}
+        style={styles.footerButton}
+        >
+          <Text style={[styles.footerButtonText, { color: colors.primary }]}>
+            ☕ Support me
+          </Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -475,21 +473,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   footerContainer: {
-    alignItems: 'center',
+    // Container is not needed anymore, footer aligns with charts
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    margin: 12,
     padding: 16,
-    borderTopWidth: 1,
+    borderRadius: 12,
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    width: '100%',
-    maxWidth: 800,
   },
   footerButton: {
     padding: 8,
