@@ -479,6 +479,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     margin: 12,
     padding: 16,
     borderRadius: 12,
@@ -487,12 +488,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    minWidth: 300,
   },
   footerButton: {
     padding: 8,
   },
   footerButtonText: {
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: '600',
   },
 });
