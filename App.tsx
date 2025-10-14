@@ -20,14 +20,11 @@ import { calculateMetrics, EnergyData } from './utils/metrics';
 import { exportAsCSV, exportAsJSON } from './services/exportService';
 import { getThemeColors, Theme } from './utils/theme';
 
-type ViewMode = 'charts' | 'metrics';
-
 export default function App() {
   const [energyData, setEnergyData] = useState<EnergyData[]>([]);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<Theme>('system');
   const [menuVisible, setMenuVisible] = useState(false);
-  const [currentView, setCurrentView] = useState<ViewMode>('charts');
   const systemTheme = useColorScheme();
 
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
@@ -94,167 +91,140 @@ export default function App() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={colors.background === '#121212' ? 'light' : 'dark'} />
 
-      {/* Top Bar */}
-      <View style={[styles.topBar, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.title, { color: colors.text }]}>Energy Prices Germany</Text>
-        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-          <TouchableOpacity
-            onPress={() => setCurrentView('charts')}
-            style={[
-              styles.tabButton,
-              currentView === 'charts' && { backgroundColor: colors.primary }
-            ]}
-          >
-            <Text style={[
-              styles.tabButtonText,
-              { color: currentView === 'charts' ? '#fff' : colors.text }
-            ]}>
-              📊 Diagramme
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setCurrentView('metrics')}
-            style={[
-              styles.tabButton,
-              currentView === 'metrics' && { backgroundColor: colors.primary }
-            ]}
-          >
-            <Text style={[
-              styles.tabButtonText,
-              { color: currentView === 'metrics' ? '#fff' : colors.text }
-            ]}>
-              📈 Metrik
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setMenuVisible(!menuVisible)}
-            style={styles.menuButton}
-          >
-            <Text style={[styles.menuIcon, { color: colors.text }]}>⋮</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Dropdown Menu */}
+      {/* Settings Modal */}
       {menuVisible && (
-        <View style={[styles.menu, { backgroundColor: colors.surface }]}>
-          {/* Theme Slider */}
-          <View style={styles.menuItem}>
-            <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Theme</Text>
-            <View style={styles.themeToggle}>
-              <TouchableOpacity
-                style={[
-                  styles.themeButton,
-                  theme === 'dark' && styles.themeButtonActive,
-                  { backgroundColor: theme === 'dark' ? colors.primary : colors.gridLine }
-                ]}
-                onPress={() => setTheme('dark')}
-              >
-                <Text style={{ color: theme === 'dark' ? '#fff' : colors.text, fontSize: 12 }}>🌙 Dunkel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.themeButton,
-                  theme === 'system' && styles.themeButtonActive,
-                  { backgroundColor: theme === 'system' ? colors.primary : colors.gridLine }
-                ]}
-                onPress={() => setTheme('system')}
-              >
-                <Text style={{ color: theme === 'system' ? '#fff' : colors.text, fontSize: 12 }}>📱 System</Text>
+        <>
+          <TouchableOpacity 
+            style={styles.settingsOverlay}
+            activeOpacity={1} 
+            onPress={() => setMenuVisible(false)}
+          />
+          <View style={[styles.menu, { backgroundColor: colors.surface }]}>
+            <View style={[styles.menuHeader, { borderBottomColor: colors.gridLine }]}>
+              <Text style={[styles.menuTitle, { color: colors.text }]}>⚙️ Einstellungen</Text>
+              <TouchableOpacity onPress={() => setMenuVisible(false)}>
+                <Text style={[styles.closeButton, { color: colors.text }]}>✕</Text>
               </TouchableOpacity>
             </View>
-          </View>
 
-          <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-          {/* Legenden */}
-          <View style={styles.menuItem}>
-            <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Erneuerbare Energien</Text>
-            <View style={{ gap: 5 }}>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendBox, { backgroundColor: '#90A4AE' }]} />
-                <Text style={[styles.legendText, { color: colors.textSecondary }]}>Überschuss (nur &gt;100%, Rest grün)</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendBox, { backgroundColor: '#4CAF50' }]} />
-                <Text style={[styles.legendText, { color: colors.textSecondary }]}>Hoch (80-100%)</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendBox, { backgroundColor: '#FFC107' }]} />
-                <Text style={[styles.legendText, { color: colors.textSecondary }]}>Mittel (50-80%)</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendBox, { backgroundColor: '#F44336' }]} />
-                <Text style={[styles.legendText, { color: colors.textSecondary }]}>Niedrig (&lt;50%)</Text>
-              </View>
-            </View>
-          </View>
-
-          <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-          <View style={styles.menuItem}>
-            <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Börsenstrompreis</Text>
-            <View style={{ gap: 5 }}>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendBox, { backgroundColor: '#4CAF50' }]} />
-                <Text style={[styles.legendText, { color: colors.textSecondary }]}>Niedrig (&lt;25 ¢/kWh)</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendBox, { backgroundColor: '#FFC107' }]} />
-                <Text style={[styles.legendText, { color: colors.textSecondary }]}>Mittel (25-35 ¢/kWh)</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendBox, { backgroundColor: '#F44336' }]} />
-                <Text style={[styles.legendText, { color: colors.textSecondary }]}>Hoch (&gt;35 ¢/kWh)</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendBox, { backgroundColor: '#757575', opacity: 0.6 }]} />
-                <Text style={[styles.legendText, { color: colors.textSecondary }]}>Netzentgelte (~20 ¢/kWh)</Text>
+            {/* Theme Slider */}
+            <View style={styles.menuItem}>
+              <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Theme</Text>
+              <View style={styles.themeToggle}>
+                <TouchableOpacity
+                  style={[
+                    styles.themeButton,
+                    theme === 'dark' && styles.themeButtonActive,
+                    { backgroundColor: theme === 'dark' ? colors.primary : colors.gridLine }
+                  ]}
+                  onPress={() => setTheme('dark')}
+                >
+                  <Text style={{ color: theme === 'dark' ? '#fff' : colors.text, fontSize: 12 }}>🌙 Dunkel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.themeButton,
+                    theme === 'system' && styles.themeButtonActive,
+                    { backgroundColor: theme === 'system' ? colors.primary : colors.gridLine }
+                  ]}
+                  onPress={() => setTheme('system')}
+                >
+                  <Text style={{ color: theme === 'system' ? '#fff' : colors.text, fontSize: 12 }}>📱 System</Text>
+                </TouchableOpacity>
               </View>
             </View>
+
+            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+            {/* Legenden */}
+            <View style={styles.menuItem}>
+              <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Erneuerbare Energien</Text>
+              <View style={{ gap: 5 }}>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendBox, { backgroundColor: '#90A4AE' }]} />
+                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Überschuss (nur &gt;100%, Rest grün)</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendBox, { backgroundColor: '#4CAF50' }]} />
+                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Hoch (80-100%)</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendBox, { backgroundColor: '#FFC107' }]} />
+                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Mittel (50-80%)</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendBox, { backgroundColor: '#F44336' }]} />
+                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Niedrig (&lt;50%)</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+            <View style={styles.menuItem}>
+              <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Börsenstrompreis</Text>
+              <View style={{ gap: 5 }}>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendBox, { backgroundColor: '#4CAF50' }]} />
+                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Niedrig (&lt;25 ¢/kWh)</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendBox, { backgroundColor: '#FFC107' }]} />
+                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Mittel (25-35 ¢/kWh)</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendBox, { backgroundColor: '#F44336' }]} />
+                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Hoch (&gt;35 ¢/kWh)</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendBox, { backgroundColor: '#757575', opacity: 0.6 }]} />
+                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Netzentgelte (~20 ¢/kWh)</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+            <View style={styles.menuItem}>
+              <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Datenquelle</Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>
+                {getDataSourceInfo().name}
+              </Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>
+                Lizenz: {getDataSourceInfo().license}
+              </Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>
+                {getDataSourceInfo().url}
+              </Text>
+            </View>
+
+            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                exportAsCSV(energyData);
+                setMenuVisible(false);
+              }}
+            >
+              <Text style={{ color: colors.text }}>💾 Export als CSV</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                exportAsJSON(energyData);
+                setMenuVisible(false);
+              }}
+            >
+              <Text style={{ color: colors.text }}>📄 Export als JSON</Text>
+            </TouchableOpacity>
           </View>
-
-          <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-          <View style={styles.menuItem}>
-            <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Datenquelle</Text>
-            <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-              {getDataSourceInfo().name}
-            </Text>
-            <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-              Lizenz: {getDataSourceInfo().license}
-            </Text>
-            <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-              {getDataSourceInfo().url}
-            </Text>
-          </View>
-
-          <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => {
-              exportAsCSV(energyData);
-              setMenuVisible(false);
-            }}
-          >
-            <Text style={{ color: colors.text }}>💾 Export als CSV</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => {
-              exportAsJSON(energyData);
-              setMenuVisible(false);
-            }}
-          >
-            <Text style={{ color: colors.text }}>📄 Export als JSON</Text>
-          </TouchableOpacity>
-        </View>
+        </>
       )}
 
       {/* Main Content */}
       <ScrollView style={styles.scrollView}>
-        {currentView === 'charts' && energyData.length > 0 ? (
+        {energyData.length > 0 ? (
           <>
             <RenewableBarChart
               title="Anteil Erneuerbarer Energien an der Last (%)"
@@ -295,14 +265,12 @@ export default function App() {
               gridColor={colors.gridLine}
             />
 
+            {/* Metrics Section */}
+            {metrics && (
+              <MetricsView metrics={metrics} colors={colors} />
+            )}
           </>
-        ) : null}
-
-        {currentView === 'metrics' && energyData.length > 0 && metrics ? (
-          <MetricsView metrics={metrics} colors={colors} />
-        ) : null}
-
-        {energyData.length === 0 && (
+        ) : (
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>
               Keine Daten verfügbar
@@ -314,14 +282,24 @@ export default function App() {
         )}
       </ScrollView>
 
-      {/* Footer */}
-      <View style={[styles.footer, { backgroundColor: colors.surface }]}>
+      {/* Footer with Settings and Support */}
+      <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.gridLine }]}>
+        <TouchableOpacity 
+          onPress={() => setMenuVisible(true)}
+          style={styles.footerButton}
+        >
+          <Text style={[styles.footerButtonText, { color: colors.primary }]}>
+            ⚙️ Einstellungen
+          </Text>
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => {
           if (Platform.OS === 'web') {
             window.open('https://buymeacoffee.com/sven4321', '_blank');
           }
-        }}>
-          <Text style={[styles.footerLink, { color: colors.primary }]}>
+        }}
+        style={styles.footerButton}
+        >
+          <Text style={[styles.footerButtonText, { color: colors.primary }]}>
             ☕ Support me
           </Text>
         </TouchableOpacity>
@@ -343,50 +321,44 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
   },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  menuButton: {
-    padding: 8,
-  },
-  menuIcon: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  tabButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: 'transparent',
-  },
-  tabButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
+  settingsOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 999,
   },
   menu: {
     position: 'absolute',
-    top: 60,
-    right: 16,
-    width: 220,
-    borderRadius: 8,
-    elevation: 8,
+    top: '10%',
+    left: '10%',
+    right: '10%',
+    maxHeight: '80%',
+    borderRadius: 12,
+    elevation: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     zIndex: 1000,
+  },
+  menuHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+  },
+  menuTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    padding: 4,
   },
   menuItem: {
     padding: 16,
@@ -450,13 +422,22 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   footer: {
-    padding: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    padding: 16,
+    borderTopWidth: 1,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  footerLink: {
-    fontSize: 12,
-    marginTop: 8,
+  footerButton: {
+    padding: 8,
+  },
+  footerButtonText: {
+    fontSize: 14,
     fontWeight: '600',
-    textDecorationLine: 'underline',
   },
 });
