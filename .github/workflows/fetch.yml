@@ -250,23 +250,40 @@ jobs:
             echo "new_data=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Archive and commit if changed
+      - name: Commit changes and trigger deployment
         if: steps.compare.outputs.new_data == 'true'
         run: |
-          mkdir -p public/data/archive
-          ts=$(date -u +"%Y-%m-%dT%H")
-          SOURCE=$(jq -r '.source // "unknown"' public/data/marketdata_new.json)
-          cp public/data/marketdata_new.json "public/data/archive/marketdata_${ts}.json"
-          mv public/data/marketdata_new.json public/data/marketdata.json
-
-          # Alte Archive (>30 Tage) löschen
-          find public/data/archive/ -type f -name "marketdata_*.json" -mtime +30 -print -delete
-
-          git config user.name "github-actions[bot]"
-          git config user.email "actions@github.com"
-          git add public/data/marketdata.json public/data/archive/
-          git commit -m "Update marketdata.json (source: ${SOURCE} @ ${ts} UTC)"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add public/data/marketdata.json
+          git add public/data/archive/*.json
+          
+          # Get current date/time for commit message
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H UTC")
+          
+          # Get source from marketdata.json
+          SOURCE=$(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).source)')
+          
+          git commit -m "Update marketdata.json (source: $SOURCE @ $TIMESTAMP)"
           git push
+
+      - name: Trigger deployment workflow
+        if: steps.compare.outputs.new_data == 'true'
+        run: |
+          echo "🚀 Triggering deployment after data update..."
+          gh workflow run deploy.yml
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        if: steps.compare.outputs.new_data == 'true'
+        run: |
+          echo "✅ Market data updated successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📊 **Source:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).source)')" >> $GITHUB_STEP_SUMMARY
+          echo "📈 **Data points:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).data.length)')" >> $GITHUB_STEP_SUMMARY
+          echo "⏰ **Updated at:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+          echo "🚀 **Deployment:** Triggered automatically" >> $GITHUB_STEP_SUMMARY
 
       - name: Skip commit if no change
         if: steps.compare.outputs.new_data == 'false'
