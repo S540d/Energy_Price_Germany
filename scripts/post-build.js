@@ -3,6 +3,7 @@ const path = require('path');
 
 // Copy PWA files to dist folder (but NOT index.html - Expo generates that)
 const filesToCopy = [
+  { src: 'public/.nojekyll', dest: 'dist/.nojekyll' },
   { src: 'public/manifest.json', dest: 'dist/manifest.json' },
   { src: 'public/service-worker.js', dest: 'dist/service-worker.js' },
   { src: 'public/icon-192.png', dest: 'dist/icon-192.png' },
@@ -10,12 +11,6 @@ const filesToCopy = [
   { src: 'public/data/marketdata.json', dest: 'dist/data/marketdata.json' }
   // NOTE: index.html is NOT copied - we use the Expo-generated one with script tags
 ];
-
-// Create .nojekyll file to disable Jekyll processing on GitHub Pages
-// This is necessary because Expo uses _expo/ directory which GitHub Pages ignores by default
-const nojekyllPath = path.join(__dirname, '..', 'dist', '.nojekyll');
-fs.writeFileSync(nojekyllPath, '');
-console.log('✓ Created .nojekyll file for GitHub Pages');
 
 filesToCopy.forEach(({ src, dest }) => {
   const srcPath = path.join(__dirname, '..', src);
