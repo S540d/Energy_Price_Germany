@@ -20,7 +20,7 @@ import { calculateMetrics, EnergyData } from './utils/metrics';
 import { exportAsCSV, exportAsJSON } from './services/exportService';
 import { getThemeColors, Theme } from './utils/theme';
 
-const APP_VERSION = '1.0.3';
+const APP_VERSION = '1.0.1';
 
 type ViewMode = 'charts' | 'metrics';
 
@@ -208,18 +208,6 @@ export default function App() {
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
-                setCurrentView('metrics');
-                setMenuVisible(false);
-              }}
-            >
-              <Text style={{ color: colors.text }}>📈 Metriken anzeigen</Text>
-            </TouchableOpacity>
-
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
                 exportAsCSV(energyData);
                 setMenuVisible(false);
               }}
@@ -235,31 +223,13 @@ export default function App() {
             >
               <Text style={{ color: colors.text }}>📄 Export als JSON</Text>
             </TouchableOpacity>
-
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-            <View style={styles.menuItem}>
-              <Text style={[styles.legendText, { color: colors.textSecondary, textAlign: 'center' }]}>
-                Version {APP_VERSION}
-              </Text>
-            </View>
           </View>
         </>
       )}
 
       {/* Main Content */}
       <ScrollView style={styles.scrollView}>
-        {currentView === 'metrics' && energyData.length > 0 && metrics ? (
-          <View style={styles.metricsContainer}>
-            <TouchableOpacity 
-              style={[styles.backButton, { backgroundColor: colors.surface }]}
-              onPress={() => setCurrentView('charts')}
-            >
-              <Text style={[styles.backButtonText, { color: colors.primary }]}>← Zurück zu Diagrammen</Text>
-            </TouchableOpacity>
-            <MetricsView metrics={metrics} colors={colors} />
-          </View>
-        ) : energyData.length > 0 ? (
+        {energyData.length > 0 ? (
           <>
             <RenewableBarChart
               title="Anteil Erneuerbarer Energien an der Last (%)"
@@ -299,9 +269,13 @@ export default function App() {
               textColor={colors.text}
               gridColor={colors.gridLine}
             />
+
+            {/* Metrics Section */}
+            {metrics && (
+              <MetricsView metrics={metrics} colors={colors} />
+            )}
           </>
-        ) : null}
-        {energyData.length === 0 && (
+        ) : (
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>
               Keine Daten verfügbar
@@ -314,13 +288,13 @@ export default function App() {
       </ScrollView>
 
       {/* Footer with Settings and Support */}
-      <View style={[styles.footer, { backgroundColor: colors.surface, borderColor: colors.gridLine }]}>
+      <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.gridLine }]}>
         <TouchableOpacity 
           onPress={() => setMenuVisible(true)}
           style={styles.footerButton}
         >
           <Text style={[styles.footerButtonText, { color: colors.primary }]}>
-            ⋮
+            ⚙️ Einstellungen
           </Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => {
@@ -331,7 +305,7 @@ export default function App() {
         style={styles.footerButton}
         >
           <Text style={[styles.footerButtonText, { color: colors.primary }]}>
-            Support me
+            ☕ Support me
           </Text>
         </TouchableOpacity>
       </View>
@@ -452,38 +426,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 16,
   },
-  metricsContainer: {
-    padding: 12,
-  },
-  backButton: {
-    padding: 12,
-    marginHorizontal: 12,
-    marginTop: 12,
-    marginBottom: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  backButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  footerContainer: {
-    // Container is not needed anymore, footer aligns with charts
-  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    alignSelf: 'stretch',  // Changed from flex-start to stretch to match card width
-    marginHorizontal: 12,
-    marginVertical: 8,
     padding: 16,
-    borderRadius: 12,
+    borderTopWidth: 1,
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
@@ -494,7 +442,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   footerButtonText: {
-    fontSize: 14,  // Reduced from 16 to 14
+    fontSize: 14,
     fontWeight: '600',
   },
 });

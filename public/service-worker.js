@@ -1,7 +1,7 @@
 // Service Worker for Energy Price Germany PWA
-// Version: 1.0.0
+// Version: 1.0.3 - Fixed: index.html now uses Network First strategy
 
-const CACHE_VERSION = '1.0.0';
+const CACHE_VERSION = '1.0.3';
 const BUILD_DATE = '2025-10-14';
 const CACHE_NAME = `energy-price-germany-v${CACHE_VERSION}-${BUILD_DATE}`;
 const urlsToCache = [
@@ -55,7 +55,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Network First for marketdata.json (always fresh data)
-  if (url.pathname.includes('/data/marketdata.json?v=1760459382785')) {
+  if (url.pathname.includes('/data/marketdata.json?v=1760467146399')) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
@@ -71,6 +71,24 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() => {
           // If network fails, try cache
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // Network First for index.html (CRITICAL: always get latest HTML with correct JS hash)
+  if (url.pathname.includes('index.html') || url.pathname.endsWith('/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+          return response;
+        })
+        .catch(() => {
           return caches.match(event.request);
         })
     );
