@@ -132,7 +132,7 @@ jobs:
             echo "🧹 Cleaned up temporary file (no new data)"
           fi
 
-      - name: Commit changes and trigger deployment
+      - name: Commit changes
         if: steps.compare.outputs.new_data == 'true'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
@@ -148,14 +148,9 @@ jobs:
           
           git commit -m "Update marketdata.json (source: $SOURCE @ $TIMESTAMP)"
           git push
-
-      - name: Trigger deployment workflow
-        if: steps.compare.outputs.new_data == 'true'
-        run: |
-          echo "🚀 Triggering deployment after data update..."
-          gh workflow run deploy.yml
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+          echo "✅ Changes committed and pushed"
+          echo "🚀 Deployment workflow will be triggered automatically by push to main"
 
       - name: Summary (new data)
         if: steps.compare.outputs.new_data == 'true'
@@ -165,7 +160,7 @@ jobs:
           echo "📊 **Source:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).source)')" >> $GITHUB_STEP_SUMMARY
           echo "📈 **Data points:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).data.length)')" >> $GITHUB_STEP_SUMMARY
           echo "⏰ **Updated at:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
-          echo "🚀 **Deployment:** Triggered automatically" >> $GITHUB_STEP_SUMMARY
+          echo "🚀 **Deployment:** Will be triggered by push to main" >> $GITHUB_STEP_SUMMARY
 
       - name: Summary (no new data)
         if: steps.compare.outputs.new_data == 'false'
@@ -174,11 +169,3 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "📊 **Current source:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).source)')" >> $GITHUB_STEP_SUMMARY
           echo "⏰ **Checked at:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
-
-      - name: Trigger deployment if data changed
-        if: steps.compare.outputs.new_data == 'true'
-        run: |
-          echo "New data detected - triggering deployment workflow"
-          gh workflow run deploy.yml
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
