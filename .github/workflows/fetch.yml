@@ -264,6 +264,15 @@ jobs:
           echo "✓ Updated marketdata.json"
           echo "✓ Created archive: $ARCHIVE_NAME"
 
+      - name: Cleanup temporary file
+        if: steps.compare.outputs.new_data == 'false'
+        run: |
+          # Remove temporary file if no update needed
+          if [ -f public/data/marketdata_new.json ]; then
+            rm -f public/data/marketdata_new.json
+            echo "🧹 Cleaned up temporary file (no new data)"
+          fi
+
       - name: Commit changes and trigger deployment
         if: steps.compare.outputs.new_data == 'true'
         run: |
@@ -289,14 +298,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Cleanup if no new data
-        if: steps.compare.outputs.new_data == 'false'
-        run: |
-          # Remove temporary file if no update needed
-          rm -f public/data/marketdata_new.json
-          echo "ℹ️ No new data available - keeping existing marketdata.json" >> $GITHUB_STEP_SUMMARY
-
-      - name: Summary
+      - name: Summary (new data)
         if: steps.compare.outputs.new_data == 'true'
         run: |
           echo "✅ Market data updated successfully!" >> $GITHUB_STEP_SUMMARY
@@ -306,9 +308,13 @@ jobs:
           echo "⏰ **Updated at:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
           echo "🚀 **Deployment:** Triggered automatically" >> $GITHUB_STEP_SUMMARY
 
-      - name: Skip commit if no change
+      - name: Summary (no new data)
         if: steps.compare.outputs.new_data == 'false'
-        run: echo "No new data available – skipping commit."
+        run: |
+          echo "ℹ️ No new data available – keeping existing marketdata.json" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📊 **Current source:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).source)')" >> $GITHUB_STEP_SUMMARY
+          echo "⏰ **Checked at:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
 
       - name: Trigger deployment if data changed
         if: steps.compare.outputs.new_data == 'true'
