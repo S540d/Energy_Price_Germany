@@ -3,23 +3,35 @@ import { View, Text, Dimensions, TouchableOpacity } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 
-interface PriceBarChartProps {
+interface SmardPriceData {
+  date_generated: string;
+  market_data: {
+    today: {
+      date: string;
+      price_eur_mwh: Array<{ start_timestamp: number; marketprice: number }>;
+    };
+    tomorrow: {
+      date: string;
+      price_eur_mwh: Array<{ start_timestamp: number; marketprice: number }>;
+    };
+  };
+}
+
+interface SmardChartProps {
   title: string;
-  subtitle?: string;
-  data: Array<{ timestamp: number; marketPrice: number | null; renewableShare: number | null }>;
+  data: SmardPriceData;
   backgroundColor: string;
   textColor: string;
   gridColor: string;
 }
 
-export function PriceBarChart({
+export function SmardChart({
   title,
-  subtitle,
   data,
   backgroundColor,
   textColor,
   gridColor,
-}: PriceBarChartProps) {
+}: SmardChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const screenWidth = useMemo(() => Dimensions.get('window').width, []);
@@ -42,9 +54,11 @@ export function PriceBarChart({
 
   const chartWidth = maxChartWidth;
 
-  // Only use entries with valid marketPrice for rendering bars
-  const validData = data.filter(d => d.marketPrice !== null);
-  const pricesInCent = validData.map(d => d.marketPrice! * 0.1);
+  // Kombiniere today und tomorrow Daten
+  const allPriceData = [...data.market_data.today.price_eur_mwh, ...data.market_data.tomorrow.price_eur_mwh];
+
+  // Konvertiere Preise von EUR/MWh zu Cent/kWh
+  const pricesInCent = allPriceData.map(d => d.marketprice * 0.1);
   const GRID_FEES_AND_TAXES = 20;
 
   const maxMarketPrice = Math.max(...pricesInCent);
@@ -55,7 +69,7 @@ export function PriceBarChart({
   const avgMarketPrice = pricesInCent.reduce((sum, v) => sum + v, 0) / pricesInCent.length;
 
   const now = Date.now();
-  const timestamps = validData.map(d => d.timestamp);
+  const timestamps = allPriceData.map(d => d.start_timestamp);
   const minTime = Math.min(...timestamps);
   const maxTime = Math.max(...timestamps);
   const timeRange = maxTime - minTime;
@@ -88,10 +102,10 @@ export function PriceBarChart({
   return (
     <View style={{ backgroundColor, margin: isPhone ? 6 : 12, padding: isPhone ? 8 : 12, borderRadius: 12, alignSelf: 'flex-start' }}>
       {selectedIndex !== null && (() => {
-        const item = data[selectedIndex];
-        if (!item || item.marketPrice === null) return null;
+        const item = allPriceData[selectedIndex];
+        if (!item) return null;
 
-        const marketPriceCent = item.marketPrice * 0.1;
+        const marketPriceCent = item.marketprice * 0.1;
         const totalPrice = marketPriceCent + GRID_FEES_AND_TAXES;
 
         return (
@@ -108,7 +122,7 @@ export function PriceBarChart({
             maxWidth: chartWidth * 0.6
           }}>
             <Text style={{ color: textColor, fontSize: isPhone ? 10 : 12 }}>
-              {new Date(item.timestamp).toLocaleString('de-DE', {
+              {new Date(item.start_timestamp).toLocaleString('de-DE', {
                 day: '2-digit',
                 month: '2-digit',
                 hour: '2-digit',
@@ -124,12 +138,10 @@ export function PriceBarChart({
           </View>
         );
       })()}
-      <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: subtitle ? 0 : 2, color: textColor }}>{title}</Text>
-      {subtitle && (
-        <Text style={{ fontSize: isPhone ? 10 : 12, color: textColor, opacity: 0.7, marginBottom: 2 }}>
-          {subtitle}
-        </Text>
-      )}
+      <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: 2, color: textColor }}>{title}</Text>
+      <Text style={{ fontSize: isPhone ? 12 : 14, color: textColor, opacity: 0.7, marginBottom: 8 }}>
+        SMARD Daten • Generiert: {new Date(data.date_generated).toLocaleString('de-DE')}
+      </Text>
       {/* Y-Achsen-Label */}
       <Text style={getYAxisLabelStyle(chartHeight, 30, textColor)}>
         Börsen- und{'\n'}Endkundenstrompreis (Cent/kWh)
@@ -156,13 +168,11 @@ export function PriceBarChart({
 
         {/* Bars */}
         <Svg width={chartWidth} height={chartHeight + bottomPadding}>
-          {data.map((d, index) => {
-            const marketPrice = d.marketPrice !== null ? d.marketPrice * 0.1 : null;
-            if (marketPrice === null) return null;
-
+          {allPriceData.map((d, index) => {
+            const marketPrice = d.marketprice * 0.1;
             const totalPrice = marketPrice + GRID_FEES_AND_TAXES;
-            const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
-            const barWidth = ((chartWidth - leftPadding) / data.length) * 0.8;
+            const x = leftPadding + ((d.start_timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
+            const barWidth = ((chartWidth - leftPadding) / allPriceData.length) * 0.8;
 
             const marketBarHeight = ((marketPrice - min) / range) * (chartHeight - padding);
             const marketY = chartHeight - marketBarHeight;
@@ -283,13 +293,14 @@ export function PriceBarChart({
           const startDate = new Date(minTime);
           const endDate = new Date(maxTime);
 
-          const startHour = Math.ceil(startDate.getHours() / 3) * 3;
+          const startHour = Math.ceil(startDate.getHours() / 6) * 6;
           const current = new Date(startDate);
           current.setHours(startHour, 0, 0, 0);
 
           while (current <= endDate) {
             const timestamp = current.getTime();
             const x = leftPadding + ((timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
+            const day = current.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
             const hour = current.getHours();
 
             labels.push(
@@ -297,18 +308,33 @@ export function PriceBarChart({
                 key={`xlabel-${timestamp}`}
                 style={{
                   position: 'absolute',
-                  left: x - 10,
+                  left: x - 20,
                   top: chartHeight + 5,
                   fontSize: isPhone ? 9 : 10,
                   color: textColor,
                   opacity: 0.6,
                 }}
               >
+                {day}
+              </Text>
+            );
+            labels.push(
+              <Text
+                key={`xlabel-hour-${timestamp}`}
+                style={{
+                  position: 'absolute',
+                  left: x - 10,
+                  top: chartHeight + 18,
+                  fontSize: isPhone ? 8 : 9,
+                  color: textColor,
+                  opacity: 0.5,
+                }}
+              >
                 {hour}h
               </Text>
             );
 
-            current.setHours(current.getHours() + 3);
+            current.setHours(current.getHours() + 12);
           }
 
           return labels;
@@ -329,6 +355,18 @@ export function PriceBarChart({
             Jetzt
           </Text>
         )}
+      </View>
+
+      {/* Legende */}
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50', marginRight: 4, borderRadius: 2 }} />
+          <Text style={{ fontSize: isPhone ? 10 : 12, color: textColor, opacity: 0.7 }}>Börsenpreis</Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ width: 12, height: 12, backgroundColor: '#757575', marginRight: 4, borderRadius: 2, opacity: 0.6 }} />
+          <Text style={{ fontSize: isPhone ? 10 : 12, color: textColor, opacity: 0.7 }}>Netzentgelte</Text>
+        </View>
       </View>
     </View>
   );
