@@ -2,44 +2,47 @@
 
 ## 📊 Overview
 
-Since **October 14, 2025**, the application uses a **simplified dual deployment strategy** to ensure reliable and timely updates to GitHub Pages.
+Since **October 15, 2025**, the application uses a **modular workflow_call deployment strategy** to ensure reliable and timely updates to GitHub Pages.
 
 ## 🎯 Problem & Solution
 
 ### Problem
-- Too many overlapping workflows caused confusion
-- Automatic deployment after data updates was unreliable
-- Scheduled deployments ran regardless of actual data changes
+- Data updates via `fetch.yml` didn't trigger deployments (GitHub Actions security feature)
+- Website showed outdated data without `renewable_share` values
+- Manual deployment was required after each data update
 
 ### Solution
-Simplified dual deployment strategy:
-1. **Automatic Deployment on Data Update**: Immediate deployment triggered after each data fetch
-2. **Manual Deployment**: On-demand via workflow_dispatch or push to main
+Modular workflow_call strategy:
+1. **deploy.yml** as reusable workflow (supports `workflow_call` trigger)
+2. **fetch.yml** automatically calls `deploy.yml` when new data arrives
+3. **Manual Deployment**: Still available via workflow_dispatch or push to main
 
 ## 🔄 Deployment Workflows
 
-### 1. Automatic Data-Triggered Deployment (`fetch.yml` → `deploy.yml`)
+### 1. Reusable Deployment Workflow (`deploy.yml`)
 ```yaml
-Trigger:  Hourly data fetch (08:00-20:00 UTC) + manual dispatch
-Flow:     Fetch data → Commit if changed → Trigger deploy.yml
-Purpose:  Immediate deployment after fresh data
+Triggers: - workflow_call (from other workflows)
+          - push to main (code changes)
+          - workflow_dispatch (manual)
+Purpose:  Single source of truth for deployment logic
+```
+
+**Benefits:**
+- ✅ Can be called by other workflows (modular)
+- ✅ No duplication of deployment logic
+- ✅ Standard deployment for all triggers
+
+### 2. Data Fetch with Auto-Deploy (`fetch.yml`)
+```yaml
+Trigger:  Hourly (08:00-20:00 UTC) + manual dispatch
+Flow:     Fetch data → Commit if changed → Call deploy.yml
+Purpose:  Automatic deployment when new data arrives
 ```
 
 **Benefits:**
 - ✅ Immediate updates when new data arrives
-- ✅ No unnecessary deployments when data hasn't changed
-- ✅ Reduces complexity - single clear trigger path
-
-### 2. Manual Deployment (`deploy.yml`)
-```yaml
-Trigger:  Push to main + workflow_dispatch
-Purpose:  Code changes and manual intervention
-```
-
-**Benefits:**
-- ✅ Standard deployment for code changes
-- ✅ Manual override capability when needed
-- ✅ Can be triggered by fetch.yml workflow
+- ✅ No deployment if data hasn't changed (saves resources)
+- ✅ Clean separation of concerns (fetch vs. deploy)
 
 ## 📋 Deployment Decision Tree
 
@@ -51,90 +54,102 @@ Purpose:  Code changes and manual intervention
 Hourly Data Fetch (08:00-20:00 UTC):
 ├─ Fetch data from APIs
 ├─ New data found? 
-│  ├─ YES → Commit + Trigger deploy.yml ✓
-│  │        └─ Website updated within ~2 minutes
+│  ├─ YES → Commit + workflow_call(deploy.yml) ✓
+│  │        └─ Website updated within ~3-5 minutes
 │  └─ NO  → Skip (no deployment, saves resources)
 
 When Code Changes:
-└─ Push to main → deploy.yml runs ✓
-                  └─ Website updated within ~2 minutes
+└─ Push to main → deploy.yml triggered directly ✓
+                  └─ Website updated within ~3-5 minutes
 
 Manual:
-└─ workflow_dispatch → Run any workflow on demand ✓
+└─ workflow_dispatch → deploy.yml or fetch.yml on demand ✓
 ```
 
 ## ⏰ Typical Daily Schedule
 
-### Morning (CET/CEST)
-- **07:00/08:00**: Scheduled deployment
-- **09:00-12:00**: Data fetches every hour → deployments if new data
+### Active Hours (08:00-20:00 UTC / 09:00-21:00 CET)
+- **Every hour**: Data fetch runs
+- **If new data**: Automatic deployment triggered
+- **Result**: Website updates within 5 minutes of new data
 
-### Afternoon
-- **15:00/16:00**: Scheduled deployment  
-- **13:00-21:00**: Data fetches every hour → deployments if new data
-
-### Night
-- **23:00/00:00**: Scheduled deployment
-- **Night**: No data fetches (energy market closed)
+### Night (20:00-08:00 UTC)
+- **No automatic fetches**: Energy market data not yet available
+- **Manual trigger**: Still available via workflow_dispatch if needed
 
 ## 🔧 Technical Implementation
 
 ### Modified Files
 
-#### 1. `.github/workflows/fetch.yml`
+#### 1. `.github/workflows/deploy.yml`
 **Added:**
 ```yaml
-- name: Trigger deployment if data changed
-  if: steps.compare.outputs.new_data == 'true'
-  run: |
-    echo "New data detected - triggering deployment workflow"
-    gh workflow run deploy.yml
-  env:
-    GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+  workflow_call:  # NEW: Allow other workflows to call this
 ```
 
-#### 2. `.github/workflows/scheduled-deploy.yml` (NEW)
-**Created:** Complete new workflow for scheduled deployments
-- Runs 3x daily
-- Independent of data updates
-- Same build process as regular deployment
+#### 2. `.github/workflows/fetch.yml`
+**Added job:**
+```yaml
+jobs:
+  update:
+    outputs:
+      new_data: ${{ steps.compare.outputs.new_data }}
+    # ... fetch and commit steps ...
+  
+  deploy:
+    needs: update
+    if: needs.update.outputs.new_data == 'true'
+    uses: ./.github/workflows/deploy.yml  # Calls deploy.yml
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+```
 
 ### Unchanged Files
-- `.github/workflows/deploy.yml` - Can now be triggered by other workflows
-- `.github/workflows/deploy-on-data-update.yml` - Can be deprecated/removed
 - All data processing logic - Completely unchanged
+- Build process - Identical to before
 
 ## 📊 Deployment Reliability
 
-### Before (Old Strategy)
+### Before (Broken)
 ```
-Data Update → Commit → ❌ No deployment (unreliable)
-Result: Manual intervention often needed
-```
-
-### After (New Strategy)
-```
-Data Update → Commit → ✅ Triggered deployment
-PLUS: ✅ Scheduled deployment (backup)
-Result: Always up-to-date within 8 hours maximum
+Data Update → Commit → ❌ No deployment
+Reason: GitHub Actions doesn't trigger workflows on commits made by workflows
+Result: Manual intervention required after every data update
 ```
 
-## 🎯 Redundancy Levels
+### After (workflow_call Strategy)
+```
+Data Update → Commit → workflow_call(deploy.yml) → ✅ Deployment
+Result: Automatic deployment within 5 minutes
+```
 
-### Level 1: Fast Path (Minutes)
-- Data fetch finds new data
-- Triggers immediate deployment
-- Live in ~5-10 minutes
+## 🎯 Advantages of workflow_call
 
-### Level 2: Scheduled (Hours)
-- Even if trigger fails
-- Scheduled deployment runs
-- Live within 8 hours max
+### Why workflow_call instead of gh workflow run?
 
-### Level 3: Manual (On-Demand)
-- Emergency override available
-- workflow_dispatch capability
-- Immediate deployment when needed
+#### workflow_call (CHOSEN)
+- ✅ Direct job dependency (cleaner workflow visualization)
+- ✅ Runs in same workflow run (better logs)
+- ✅ Native GitHub Actions feature
+- ✅ Proper error propagation
+- ✅ No additional permissions needed
+
+#### gh workflow run (ALTERNATIVE)
+- ❌ Indirect trigger (separate workflow run)
+- ❌ Harder to track in UI
+- ❌ Potential timing issues
+- ❌ Requires GH_TOKEN or PAT
+
+### Manual Override
+- workflow_dispatch available on both workflows
+- Can trigger deployment independently if needed
+- Can re-run failed deployments
 
 ## 🔍 Monitoring & Verification
 
@@ -153,36 +168,33 @@ curl https://s540d.github.io/Energy_Price_Germany/
 ls -la .github/workflows/
 
 # Expected workflows:
-# - deploy.yml (main deployment)
-# - fetch.yml (data fetch + trigger)
-# - scheduled-deploy.yml (scheduled backup)
-# - deploy-on-data-update.yml (deprecated, can be removed)
+# - deploy.yml (reusable deployment workflow)
+# - fetch.yml (data fetch + auto-deploy)
 ```
 
 ## 📝 Maintenance Notes
 
-### Cleanup Recommendation
-The old `deploy-on-data-update.yml` can be **safely removed** as it's now redundant:
-- Scheduled deployment provides the reliability
-- Direct triggering provides the speed
-- Path-based trigger was unreliable anyway
+### Workflow Structure
+- **deploy.yml**: Single source of truth for deployment
+- **fetch.yml**: Data fetching with conditional deployment call
+- No redundant or deprecated workflows
 
 ### Cost Considerations
-- GitHub Actions minutes: ~3-4 builds/day
+- GitHub Actions minutes: ~13 builds/day (1 per hour during active hours)
 - Each build: ~3-5 minutes
-- Total: ~12-20 minutes/day (well within free tier)
+- Total: ~40-65 minutes/day (well within free tier for public repos)
 
 ## 🚀 Future Improvements
 
 ### Potential Enhancements
-1. **Smart Scheduling**: Only deploy if data changed since last deployment
-2. **Conditional Scheduled**: Skip scheduled if recent data-triggered deployment
-3. **Deployment Notifications**: Slack/Discord notifications on successful deployment
+1. **Deployment Notifications**: Slack/Discord notifications on deployment
+2. **Deployment Analytics**: Track deployment frequency and success rate
+3. **Conditional Builds**: Skip build if only data changed (faster deployments)
 
 ### Not Recommended
-- ❌ More frequent scheduled deployments (unnecessary resource usage)
-- ❌ Deployment on every push (too aggressive)
-- ❌ Removing scheduled backup (reduces reliability)
+- ❌ Using `gh workflow run` instead of `workflow_call` (less reliable)
+- ❌ Using PAT for push triggers (security risk)
+- ❌ Separate scheduled deployment (unnecessary with current strategy)
 
 ## 📅 Integration with Data Strategy
 
@@ -212,7 +224,10 @@ Deployment is considered successful when:
 
 ---
 
-**Implementation Date**: October 14, 2025  
-**Strategy Version**: 1.0  
+**Implementation Date**: October 15, 2025  
+**Strategy Version**: 2.0 (workflow_call)  
 **Status**: ✅ Active in production  
 **Compatibility**: Fully compatible with DATA-MERGE-STRATEGY.md v1.0
+
+**Previous Versions:**
+- v1.0 (Oct 14, 2025): Documented but never implemented `gh workflow run` approach
