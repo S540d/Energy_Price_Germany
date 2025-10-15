@@ -2,7 +2,7 @@
 // Version: 1.0.3 - Fixed: index.html now uses Network First strategy
 
 const CACHE_VERSION = '1.0.3';
-const BUILD_DATE = '2025-10-14';
+const BUILD_DATE = '2025-10-15';
 const CACHE_NAME = `energy-price-germany-v${CACHE_VERSION}-${BUILD_DATE}`;
 const urlsToCache = [
   './',
@@ -55,7 +55,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Network First for marketdata.json (always fresh data)
-  if (url.pathname.includes('/data/marketdata.json?v=1760467146399')) {
+  if (url.pathname.includes('/data/marketdata.json?v=1760541345683')) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
