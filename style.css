@@ -1,0 +1,67 @@
+
+/* ============================================ */
+/* Sync Status Indicator (Phase 4: Offline-Support) */
+/* ============================================ */
+
+.offline-indicator-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.offline-dot,
+.pending-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.offline-dot {
+    background-color: #f56565; /* red */
+    animation: pulse-red 2s ease-in-out infinite;
+}
+
+.pending-dot {
+    background-color: #ecc94b; /* yellow */
+    animation: pulse-yellow 2s ease-in-out infinite;
+}
+
+.syncing-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    flex-shrink: 0;
+}
+
+.pending-count {
+    opacity: 0.8;
+    font-size: 0.9em;
+}
+
+@keyframes pulse-red {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@keyframes pulse-yellow {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
