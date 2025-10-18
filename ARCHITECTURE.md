@@ -1,0 +1,426 @@
+# Architecture - Energy Price Germany
+
+## Project Overview
+
+Energy Price Germany is a cross-platform React Native/Expo application for visualizing energy market prices and renewable energy share in Germany. It combines multiple data sources to provide comprehensive forecasts and supports offline-first functionality.
+
+---
+
+## System Architecture
+
+### 1. Data Pipeline
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     DATA SOURCES                             │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  Energy Charts API (Primary)          aWATTar API (Backup)  │
+│  • 15-min resolution                  • 48h+ coverage       │
+│  • ~24h forecast                      • Day-ahead prices    │
+│  • Renewable share data               • Interpolated data   │
+│                                                              │
+└──────────────────┬──────────────────┬──────────────────────┘
+                   │                  │
+                   └──────┬───────────┘
+                          │
+                   ┌──────▼────────┐
+                   │ Merge Strategy│
+                   │ (if gap ≥ 3h) │
+                   └──────┬────────┘
+                          │
+                   ┌──────▼──────────┐
+                   │ Merged Dataset  │
+                   │ (43+ hours)     │
+                   └──────┬──────────┘
+                          │
+            ┌─────────────┴────────────────┐
+            │                              │
+    ┌───────▼────────┐          ┌─────────▼────────┐
+    │ GitHub Pages   │          │ Local Storage    │
+    │ (Deployment)   │          │ (Offline Cache)  │
+    └────────────────┘          └──────────────────┘
+```
+
+**Merge Algorithm:**
+1. Fetch Energy Charts data (preferred source)
+2. Fetch aWATTar data (supplement/fallback)
+3. If Energy Charts available:
+   - Compare timestamps
+   - If gap ≥ 3 hours: merge aWATTar continuation
+   - Otherwise: use Energy Charts only
+4. If Energy Charts unavailable: use aWATTar as fallback
+5. Store merged dataset with source attribution
+
+See [DATA-MERGE-STRATEGY.md](DATA-MERGE-STRATEGY.md) for detailed algorithm.
+
+---
+
+### 2. GitHub Actions Workflows
+
+#### Fetch Workflow (`.github/workflows/fetch.yml`)
+**Trigger:** Scheduled (hourly 3-22 UTC) + Manual dispatch
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ UPDATE JOB                                               │
+├─────────────────────────────────────────────────────────┤
+│ 1. Fetch from Energy Charts API                         │
+│ 2. Fetch from aWATTar API                              │
+│ 3. Merge data (hybrid strategy)                         │
+│ 4. Compare with previous data                          │
+│ 5. Output: new_data=true/false                         │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ├─────────────────────────────────┐
+                     │ new_data = true                 │
+                     │                                 │
+        ┌────────────▼────────────┐                   │
+        │ COMMIT JOB              │       new_data = false
+        ├────────────┬────────────┤       │
+        │ Git commit │ Git push   │       │
+        └────────────┬────────────┘       │
+                     │                    │
+        ┌────────────▼────────────┐      │
+        │ BUILD JOB               │      │
+        ├────────────┬────────────┤      │
+        │ npm ci     │ npm build  │      │
+        └────────────┬────────────┘      │
+                     │                    │
+        ┌────────────▼────────────┐      │
+        │ DEPLOY JOB              │      │
+        ├────────────┬────────────┤      │
+        │ Build artifact upload   │      │
+        │ Deploy to GitHub Pages  │      │
+        └────────────┬────────────┘      │
+                     │                    │
+                     └────┬───────────────┘
+                          │
+                    ✅ END: GitHub Pages Updated
+```
+
+#### Deploy Workflow (`.github/workflows/deploy.yml`)
+**Trigger:** Push to main + Manual dispatch
+
+- Standalone workflow for on-demand deployments
+- Can be called from other workflows
+- Performs: Build → Upload → Deploy to GitHub Pages
+
+---
+
+### 3. Application Architecture
+
+#### Frontend Structure
+```
+dist/
+├── index.html              (Entry point)
+├── service-worker.js       (Offline support)
+├── manifest.json           (PWA manifest)
+├── data/
+│   ├── marketdata.json     (Current forecast data)
+│   └── archive/            (Historical data snapshots)
+└── _expo/
+    └── static/js/web/      (Built React components)
+```
+
+#### Module Structure
+```
+js/modules/
+├── storage.js              (Data persistence & offline queue)
+├── ui.js                   (UI components & rendering)
+├── offline-queue.js        (Offline operation queue)
+├── drag-manager.js         (Touch/drag interaction)
+└── notifications.js        (Toast notifications)
+```
+
+---
+
+### 4. Data Model
+
+#### Market Data Structure
+```javascript
+{
+  "object": "list",
+  "source": "energy-charts" | "awattar" | "mock",
+  "data": [
+    {
+      "start_timestamp": 1698067800000,      // Unix ms
+      "end_timestamp": 1698068700000,        // 15-min interval
+      "marketprice": 89.5,                   // EUR/MWh
+      "renewable_share": 42.3,               // % (null if from aWATTar)
+      "unit": "Eur/MWh"
+    },
+    // ... more data points
+  ]
+}
+```
+
+#### Storage Model (IndexedDB)
+```
+Database: "energydb"
+│
+├── ObjectStore: "tasks" (if app extends to task management)
+│   └── keyPath: "id"
+│
+└── ObjectStore: "offlineQueue" (Offline operation queue)
+    ├── operation: "saveTask" | "updateTask" | "deleteTask"
+    ├── functionBody: serialized async function
+    ├── context: operation parameters
+    └── maxRetries: number
+```
+
+---
+
+### 5. Offline-First Architecture
+
+#### Network State Detection
+```javascript
+// Browser API
+window.navigator.onLine
+window.addEventListener('online', callback)
+window.addEventListener('offline', callback)
+```
+
+#### Sync Queue Pattern
+```
+User Action → Offline? → Queue Storage → Retry Loop
+              ├─ Yes ──→ IndexedDB    → Exponential Backoff
+              │         (persistent)    (1s, 2s, 4s)
+              └─ No  ──→ Direct API Call
+                        ↓
+                    Success? ✅ / ❌
+                        ├─ Yes → Remove from queue
+                        └─ No  → Retry with backoff
+```
+
+#### UI Indicators
+- **Offline Dot** (Red pulse): No network connection
+- **Pending Dot** (Yellow pulse): Items waiting to sync
+- **Syncing Spinner** (Rotating): Active synchronization
+- **Pending Count**: Number of pending operations
+
+---
+
+### 6. Development Workflow
+
+#### Local Development
+```bash
+# Start dev server with hot reload
+npm start
+
+# Web-specific dev server
+npm run web
+
+# Build for local testing
+npm run build:local
+npm run serve:local
+# Open http://localhost:8080
+```
+
+#### Build Process
+```
+Source Code (TypeScript/JSX)
+    ↓
+Expo Export (--platform web)
+    ↓
+post-build.js Script
+├─ Copy public/data → dist/data
+├─ Copy service-worker.js
+├─ Add .nojekyll for GitHub Pages
+└─ Configure base href for subdirectory
+    ↓
+update-cache-version.js
+├─ Generate cache buster token
+└─ Update index.html version
+    ↓
+Distributable (dist/)
+```
+
+#### Deployment
+```
+Local Build → npm run deploy
+    ↓
+gh-pages Deploy
+    ↓
+GitHub Pages (gh-pages branch)
+    ↓
+Live: https://s540d.github.io/Energy_Price_Germany/
+```
+
+---
+
+### 7. Data Sources Integration
+
+#### Energy Charts API
+- **Endpoint**: https://api.energy-charts.info/
+- **Data Points**:
+  - `/price?country=de` - Market prices
+  - `/ren_share_forecast?country=de` - Renewable forecasts
+- **Resolution**: 15 minutes
+- **Coverage**: ~24 hours ahead
+- **Format**: Unix timestamps (seconds) + arrays
+
+#### aWATTar API
+- **Endpoint**: https://api.awattar.de/v1/marketdata
+- **Data Points**: Day-ahead and future prices
+- **Resolution**: Hourly (interpolated to 15-min)
+- **Coverage**: 48+ hours
+- **Format**: Unix timestamps (milliseconds) + array of objects
+
+#### Data Merge Strategy
+See [DATA-MERGE-STRATEGY.md](DATA-MERGE-STRATEGY.md) for:
+- Detailed merge algorithm
+- Decision tree and scenarios
+- Example data transformations
+- Test cases
+
+---
+
+### 8. Cache & Version Management
+
+#### Cache Busting Strategy
+```javascript
+// Version token updated on each build
+const CACHE_VERSION = 1760823900018;  // Unix timestamp
+
+// Applied to:
+// - index.html <script> tags
+// - Service worker cache names
+// - Asset URLs when needed
+```
+
+#### Cache Layers
+1. **HTTP Cache** - Browser standard HTTP caching
+2. **Service Worker Cache** - Application shell caching
+3. **Firestore Offline Persistence** - Local database cache
+4. **IndexedDB** - Sync queue persistence
+
+---
+
+### 9. Error Handling
+
+#### API Failure Scenarios
+```
+Primary API Fails
+    ↓
+Try Backup API
+    ↓
+Backup Success? ──Yes──→ Use with source attribution
+    ↓ No
+Use Mock Data
+    ↓
+Log Error & Notify User
+```
+
+#### Retry Strategy
+```
+Failed Operation
+    ↓
+Exponential Backoff: 1s → 2s → 4s
+    ↓
+Max Retries: 3
+    ↓
+Success? ──Yes──→ ✅ Complete
+    ↓ No
+❌ Store Error & Notify User
+```
+
+---
+
+### 10. Dependencies
+
+#### Production
+- `react` / `react-native` - Core framework
+- `expo` - Universal React applications
+- `victory-native` - Charting library
+- `react-native-svg` - SVG support
+- `@react-native-async-storage/async-storage` - Local storage
+
+#### Development
+- `typescript` - Type safety
+- `gh-pages` - GitHub Pages deployment
+- Node.js scripts for build automation
+
+---
+
+## Security Considerations
+
+### Data Sources
+- ✅ All APIs use HTTPS
+- ✅ Public data only (no authentication required)
+- ✅ No sensitive user data stored
+- ✅ Service Worker uses secure context
+
+### Storage
+- ✅ IndexedDB: Client-side only, no server transmission
+- ✅ LocalStorage: XSS protection via Content Security Policy
+- ✅ No credentials or API keys in frontend
+
+### Deployment
+- ✅ GitHub Pages: Static hosting, no server vulnerabilities
+- ✅ Automated workflows: Protected by GitHub branch rules
+- ✅ HTTPS enforcement: GitHub Pages default
+
+---
+
+## Performance Optimization
+
+### Data Management
+- **Incremental Updates**: Only new data points processed
+- **Archive Snapshots**: Historical data snapshots for analysis
+- **Compression**: JSON minification in production
+
+### Rendering
+- **Victory Native**: Optimized charting library
+- **React Reconciliation**: Efficient DOM updates
+- **Lazy Loading**: Components load on demand
+
+### Network
+- **Service Worker**: Offline-first, minimal network requests
+- **Cache Strategy**: Network-first with fallback
+- **Data Compression**: Gzipped responses
+
+---
+
+## Monitoring & Debugging
+
+### Build Artifacts
+- `dist/` - Distributable (1.5MB typical)
+- `package-lock.json` - Dependency lock file
+- `version.json` - Current app version info
+
+### Workflow Logs
+- GitHub Actions UI: View detailed workflow execution
+- Step summaries: Deploy status, data update statistics
+- Error logs: Automatic capture and reporting
+
+---
+
+## Future Roadmap
+
+### Phase 5: Testing & Polish
+- [ ] Unit tests for data merging logic
+- [ ] E2E tests for complete workflows
+- [ ] Performance profiling and optimization
+- [ ] UI/UX refinements
+
+### Phase 6: Feature Enhancements
+- [ ] User preferences/settings UI
+- [ ] Data export improvements
+- [ ] Additional data sources
+- [ ] Real-time notifications
+
+---
+
+## References
+
+- [DATA-MERGE-STRATEGY.md](DATA-MERGE-STRATEGY.md) - Detailed merge algorithm
+- [REFACTORING-STATUS.md](REFACTORING-STATUS.md) - Development phases
+- [README.md](README.md) - Project overview
+- [GitHub Repository](https://github.com/S540d/Energy_Price_Germany)
+
+---
+
+**Last Updated**: 2025-10-18
+**Current Version**: 1.0.3
+**Maintainer**: S540d
