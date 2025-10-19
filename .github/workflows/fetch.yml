@@ -11,14 +11,10 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 jobs:
   update:
     runs-on: ubuntu-latest
-    outputs:
-      new_data: ${{ steps.compare.outputs.new_data }}
 
     steps:
       - name: Checkout repository
@@ -159,9 +155,9 @@ jobs:
           
           git commit -m "Update marketdata.json (source: $SOURCE @ $TIMESTAMP)"
           git push
-          
+
           echo "✅ Changes committed and pushed"
-          echo "🚀 Deployment will be triggered by workflow call"
+          echo "🚀 Deployment will be triggered by push to main"
 
       - name: Summary (new data)
         if: steps.compare.outputs.new_data == 'true'
@@ -171,7 +167,7 @@ jobs:
           echo "📊 **Source:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).source)')" >> $GITHUB_STEP_SUMMARY
           echo "📈 **Data points:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).data.length)')" >> $GITHUB_STEP_SUMMARY
           echo "⏰ **Updated at:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
-          echo "🚀 **Deployment:** Automatically triggered via workflow_call" >> $GITHUB_STEP_SUMMARY
+          echo "🚀 **Deployment:** Automatically triggered by push to main" >> $GITHUB_STEP_SUMMARY
 
       - name: Summary (no new data)
         if: steps.compare.outputs.new_data == 'false'
@@ -181,8 +177,3 @@ jobs:
           echo "📊 **Current source:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).source)')" >> $GITHUB_STEP_SUMMARY
           echo "⏰ **Checked at:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
 
-  # Deploy job - automatically triggered when new data is available
-  deploy:
-    needs: update
-    if: needs.update.outputs.new_data == 'true'
-    uses: ./.github/workflows/deploy.yml
