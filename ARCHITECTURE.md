@@ -63,41 +63,65 @@ See [DATA-MERGE-STRATEGY.md](DATA-MERGE-STRATEGY.md) for detailed algorithm.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ UPDATE JOB                                               │
+│ UPDATE JOB (fetch.yml)                                  │
 ├─────────────────────────────────────────────────────────┤
 │ 1. Fetch from Energy Charts API                         │
 │ 2. Fetch from aWATTar API                              │
 │ 3. Merge data (hybrid strategy)                         │
 │ 4. Compare with previous data                          │
-│ 5. Output: new_data=true/false                         │
+│ 5. Git commit & push (if new data)                     │
 └────────────────────┬────────────────────────────────────┘
                      │
                      ├─────────────────────────────────┐
                      │ new_data = true                 │
                      │                                 │
         ┌────────────▼────────────┐                   │
-        │ COMMIT JOB              │       new_data = false
-        ├────────────┬────────────┤       │
-        │ Git commit │ Git push   │       │
+        │ Git Push to main        │       new_data = false
+        │ (marketdata.json)       │       │ (no changes)
         └────────────┬────────────┘       │
                      │                    │
-        ┌────────────▼────────────┐      │
-        │ BUILD JOB               │      │
-        ├────────────┬────────────┤      │
-        │ npm ci     │ npm build  │      │
-        └────────────┬────────────┘      │
-                     │                    │
-        ┌────────────▼────────────┐      │
-        │ DEPLOY JOB              │      │
-        ├────────────┬────────────┤      │
-        │ Build artifact upload   │      │
-        │ Deploy to GitHub Pages  │      │
-        └────────────┬────────────┘      │
-                     │                    │
-                     └────┬───────────────┘
+                     └────────┬───────────┘
+                              │
+                    ┌─────────▼──────────────────┐
+                    │ Push event triggers        │
+                    │ deploy.yml automatically   │
+                    └─────────┬──────────────────┘
+                              │
+        ┌─────────────────────┴──────────────────┐
+        │                                        │
+┌───────▼────────┐                    ┌─────────▼────────┐
+│ BUILD JOB       │                    │ BUILD JOB        │
+│ (deploy.yml)    │                    │ (deploy.yml)     │
+├────────┬────────┤                    ├────────┬─────────┤
+│ npm ci  │ npm   │                    │ npm ci │ npm     │
+│         │ build │                    │        │ build   │
+└────────┬────────┘                    └────────┬─────────┘
+         │                                      │
+┌────────▼───────────────┐            ┌────────▼──────────┐
+│ DEPLOY JOB            │            │ DEPLOY JOB        │
+│ (deploy.yml)          │            │ (deploy.yml)      │
+├────────┬──────────────┤            ├────────┬──────────┤
+│ Upload │ Deploy to GH │            │ Upload │ Deploy   │
+│ artifact│ Pages       │            │ artifact│ to GH    │
+└────────┬──────────────┘            │ Pages   │         │
+         │                           └────────┬──────────┘
+         │                                    │
+         └────────────────┬───────────────────┘
                           │
-                    ✅ END: GitHub Pages Updated
+                    ✅ GitHub Pages Updated
 ```
+
+**Architecture Flow:**
+1. **fetch.yml (data update)** → Fetches APIs, merges, commits to main
+2. **GitHub detects push** → Automatically triggers deploy.yml
+3. **deploy.yml (deployment)** → Builds and deploys to GitHub Pages
+
+**Advantages:**
+- ✅ Clean separation of concerns
+- ✅ No race conditions from parallel jobs
+- ✅ Standard GitHub workflow pattern
+- ✅ Single source of truth for deployment logic (deploy.yml)
+- ✅ Automatic retry handling by GitHub
 
 #### Deploy Workflow (`.github/workflows/deploy.yml`)
 **Trigger:** Push to main + Manual dispatch
