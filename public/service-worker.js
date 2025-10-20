@@ -5,11 +5,11 @@ const CACHE_VERSION = '1.0.3';
 const BUILD_DATE = '2025-10-15';
 const CACHE_NAME = `energy-price-germany-v${CACHE_VERSION}-${BUILD_DATE}`;
 const urlsToCache = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
+  '/Energy_Price_Germany/',
+  '/Energy_Price_Germany/index.html',
+  '/Energy_Price_Germany/manifest.json',
+  '/Energy_Price_Germany/icon-192.png',
+  '/Energy_Price_Germany/icon-512.png',
 ];
 
 // Install event - cache essential files
