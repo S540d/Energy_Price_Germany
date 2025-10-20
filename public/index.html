@@ -9,7 +9,7 @@
     />
     <title>Energy Prices Germany</title>
     <meta name="description" content="Visualisierung von Energiepreisen und erneuerbaren Energien in Deutschland" />
-    <link rel="manifest" href="/manifest.json" />
+    <link rel="manifest" href="/Energy_Price_Germany/manifest.json" />
     <meta name="theme-color" content="#6200EE" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -38,7 +38,7 @@
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker
-            .register('./service-worker.js?v=1760213197584')
+            .register('/Energy_Price_Germany/service-worker.js', { scope: '/Energy_Price_Germany/' })
             .then((registration) => {
               console.log('SW registered: ', registration);
 
