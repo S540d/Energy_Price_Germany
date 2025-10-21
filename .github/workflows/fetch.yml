@@ -167,7 +167,7 @@ jobs:
           echo "📊 **Source:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).source)')" >> $GITHUB_STEP_SUMMARY
           echo "📈 **Data points:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).data.length)')" >> $GITHUB_STEP_SUMMARY
           echo "⏰ **Updated at:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
-          echo "🚀 **Deployment:** Automatically triggered by push to main" >> $GITHUB_STEP_SUMMARY
+          echo "🚀 **Deployment:** Triggered by push to main (Fallback: scheduled at 4:00, 10:00, 16:00, 22:00 UTC)" >> $GITHUB_STEP_SUMMARY
 
       - name: Summary (no new data)
         if: steps.compare.outputs.new_data == 'false'
