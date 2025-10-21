@@ -1,8 +1,12 @@
 name: Deploy to GitHub Pages
 
 on:
+  # Automatic trigger on push to main
   push:
     branches: [ main ]
+  # Fallback: Scheduled deployment every 6 hours (4:00, 10:00, 16:00, 22:00 UTC)
+  schedule:
+    - cron: '0 4,10,16,22 * * *'
   workflow_dispatch:
   workflow_call:  # Allow other workflows to call this workflow
 
