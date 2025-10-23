@@ -80,12 +80,12 @@ export function CorrelationScatterChart({
   };
 
   return (
-    <View style={{ backgroundColor, margin: isPhone ? 6 : 12, padding: isPhone ? 8 : 12, borderRadius: 12, alignSelf: 'flex-start', marginRight: isPhone ? 6 : 12 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: subtitle ? 0 : 2 }}>
+    <View style={{ backgroundColor, margin: isPhone ? 6 : 12, padding: isPhone ? 8 : 12, borderRadius: 12, alignSelf: 'stretch' }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0 }}>
         <View>
-          <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: subtitle ? 0 : 0, color: textColor }}>{title}</Text>
+          <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: 0, color: textColor }}>{title}</Text>
           {subtitle && (
-            <Text style={{ fontSize: isPhone ? 10 : 12, color: textColor, opacity: 0.7 }}>
+            <Text style={{ fontSize: 11, color: textColor, opacity: 0.7 }}>
               {subtitle}
             </Text>
           )}
@@ -94,15 +94,15 @@ export function CorrelationScatterChart({
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2196F3' }} />
-              <Text style={{ fontSize: 9, color: textColor, opacity: 0.7 }}>Nacht</Text>
+              <Text style={{ fontSize: 11, color: textColor, opacity: 0.7 }}>Nacht</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF9800' }} />
-              <Text style={{ fontSize: 9, color: textColor, opacity: 0.7 }}>M/A</Text>
+              <Text style={{ fontSize: 11, color: textColor, opacity: 0.7 }}>M/A</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFEB3B' }} />
-              <Text style={{ fontSize: 9, color: textColor, opacity: 0.7 }}>Tag</Text>
+              <Text style={{ fontSize: 11, color: textColor, opacity: 0.7 }}>Tag</Text>
             </View>
           </View>
         )}
@@ -188,7 +188,7 @@ export function CorrelationScatterChart({
                 position: 'absolute',
                 left: 8,
                 top: y - 8,
-                fontSize: isPhone ? 9 : 10,
+                fontSize: 11,
                 color: textColor,
                 opacity: 0.6,
                 textAlign: 'right',
@@ -211,7 +211,7 @@ export function CorrelationScatterChart({
                 position: 'absolute',
                 left: x - 15,
                 top: chartHeight - (isPhone ? 25 : 30),
-                fontSize: isPhone ? 9 : 10,
+                fontSize: 11,
                 color: textColor,
                 opacity: 0.6,
               }}
@@ -227,7 +227,7 @@ export function CorrelationScatterChart({
             position: 'absolute',
             left: chartWidth / 2 - 60,
             bottom: isPhone ? 2 : 5,
-            fontSize: isPhone ? 10 : 11,
+            fontSize: 11,
             color: textColor,
             fontWeight: '600',
           }}
