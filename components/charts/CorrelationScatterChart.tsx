@@ -177,7 +177,7 @@ export function CorrelationScatterChart({
           })}
         </Svg>
 
-        {/* Y-axis labels (Preis) */}
+        {/* Y-axis labels (Preis (Cent/kWh)) */}
         {[0, 1, 2, 3, 4].map(i => {
           const value = maxPrice - (i / 4) * priceRange;
           const y = padding + (i / 4) * (chartHeight - padding - bottomPadding);
