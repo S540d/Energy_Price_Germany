@@ -19,7 +19,7 @@ import { MetricsView } from './components/MetricsView';
 import { calculateMetrics, EnergyData } from './utils/metrics';
 import { getThemeColors, Theme } from './utils/theme';
 
-const APP_VERSION = '1.0.3';
+const APP_VERSION = '1.0.5';
 
 type ViewMode = 'charts' | 'metrics';
 
@@ -175,7 +175,7 @@ export default function App() {
                 </View>
                 <View style={[styles.legendItem, { width: '48%' }]}>
                   <View style={[styles.legendBox, { backgroundColor: '#757575', opacity: 0.6 }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary, flex: 1 }]}>Netzentgelte (~20 ¢)</Text>
+                  <Text style={[styles.legendText, { color: colors.textSecondary, flex: 1 }]}>Netzentgelte (~18 ¢)</Text>
                 </View>
               </View>
             </View>
