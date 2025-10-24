@@ -262,7 +262,7 @@ export default function App() {
         ) : energyData.length > 0 ? (
           <>
             <RenewableBarChart
-              title="Anteil Erneuerbarer Energien an der Last (%)"
+              title="Anteil Erneuerbarer Energien an der Last"
               subtitle={`Zeitraum: ${energyData.length > 0 ? new Date(energyData[0].timestamp).toLocaleString('de-DE', {
                 day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
               }) : 'Lädt...'} bis ${energyData.length > 0 ? new Date(energyData[energyData.length - 1].timestamp).toLocaleString('de-DE', {
@@ -275,7 +275,7 @@ export default function App() {
             />
 
             <PriceBarChart
-              title="Börsen- und Endkundenstrompreis (Cent/kWh)"
+              title="Börsen- und Endkundenstrompreis"
               subtitle={`Zeitraum: ${energyData.length > 0 ? new Date(energyData[0].timestamp).toLocaleString('de-DE', {
                 day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
               }) : 'Lädt...'} bis ${energyData.length > 0 ? new Date(energyData[energyData.length - 1].timestamp).toLocaleString('de-DE', {

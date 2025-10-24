@@ -33,12 +33,12 @@ export function PriceBarChart({
   const padding = 40;
   const bottomPadding = isPhone ? 40 : 50;
 
-  // Maximale Chart-Breite basierend auf Bildschirmgröße
+  // Maximale Chart-Breite basierend auf Bildschirmgröße (5% breiter)
   const maxChartWidth = isPhone
     ? screenWidth - 24  // Fast voller Bildschirm auf Phone
     : isSmallScreen
-    ? Math.min(chartHeight * 2.5, screenWidth - 24)
-    : Math.min(chartHeight * 3.5, screenWidth - 48);
+    ? Math.min(chartHeight * 2.5 * 1.05, screenWidth - 24)
+    : Math.min(chartHeight * 3.5 * 1.05, screenWidth - 48);
 
   const chartWidth = maxChartWidth;
 
@@ -108,7 +108,7 @@ export function PriceBarChart({
             zIndex: 10,
             maxWidth: chartWidth * 0.6
           }}>
-            <Text style={{ color: textColor, fontSize: 11 }}>
+            <Text style={{ color: textColor, fontSize: 12 }}>
               {new Date(item.timestamp).toLocaleString('de-DE', {
                 day: '2-digit',
                 month: '2-digit',
@@ -116,10 +116,10 @@ export function PriceBarChart({
                 minute: '2-digit'
               })}
             </Text>
-            <Text style={{ color: textColor, fontSize: 11, fontWeight: 'bold' }}>
+            <Text style={{ color: textColor, fontSize: 12, fontWeight: 'bold' }}>
               Börsenpreis: {marketPriceCent.toFixed(2)} ¢/kWh
             </Text>
-            <Text style={{ color: textColor, fontSize: 11 }}>
+            <Text style={{ color: textColor, fontSize: 12 }}>
               Endpreis: {totalPrice.toFixed(2)} ¢/kWh
             </Text>
           </View>
@@ -127,13 +127,13 @@ export function PriceBarChart({
       })()}
       <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: 0, color: textColor }}>{title}</Text>
       {subtitle && (
-        <Text style={{ fontSize: 11, color: textColor, opacity: 0.7, marginBottom: 0 }}>
+        <Text style={{ fontSize: 12, color: textColor, opacity: 0.7, marginBottom: 0 }}>
           {subtitle}
         </Text>
       )}
       {/* Y-Achsen-Label */}
       <Text style={getYAxisLabelStyle(chartHeight, 30, textColor)}>
-        Preis
+        Preis{'\n'}(¢/kWh)
       </Text>
       <View style={{ height: chartHeight + bottomPadding, width: chartWidth, position: 'relative' }}>
         {/* Grid Lines */}
@@ -246,7 +246,7 @@ export function PriceBarChart({
             position: 'absolute',
             left: chartWidth - (isPhone ? 50 : 60),
             top: chartHeight - ((avgMarketPrice - min) / range) * (chartHeight - padding) - 12,
-            fontSize: 11,
+            fontSize: 12,
             color: textColor,
             fontWeight: '600',
             opacity: 0.7,
@@ -266,7 +266,7 @@ export function PriceBarChart({
                 position: 'absolute',
                 left: 8,
                 top: y - 8,
-                fontSize: 11,
+                fontSize: 12,
                 color: textColor,
                 opacity: 0.6,
                 textAlign: 'right',
@@ -300,7 +300,7 @@ export function PriceBarChart({
                   position: 'absolute',
                   left: x - 10,
                   top: chartHeight + 5,
-                  fontSize: 11,
+                  fontSize: 12,
                   color: textColor,
                   opacity: 0.6,
                 }}
@@ -322,7 +322,7 @@ export function PriceBarChart({
               position: 'absolute',
               left: leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding) - 15,
               top: chartHeight + 20,
-              fontSize: 11,
+              fontSize: 12,
               color: 'red',
               fontWeight: 'bold',
             }}
