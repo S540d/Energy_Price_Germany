@@ -17,7 +17,6 @@ import { PriceBarChart } from './components/charts/PriceBarChart';
 import { CorrelationScatterChart } from './components/charts/CorrelationScatterChart';
 import { MetricsView } from './components/MetricsView';
 import { calculateMetrics, EnergyData } from './utils/metrics';
-import { exportAsCSV, exportAsJSON } from './services/exportService';
 import { getThemeColors, Theme } from './utils/theme';
 
 const APP_VERSION = '1.0.3';
@@ -105,16 +104,8 @@ export default function App() {
             onPress={() => setMenuVisible(false)}
           />
           <View style={[styles.menu, { backgroundColor: colors.surface }]}>
+            {/* Header with Theme Toggle */}
             <View style={[styles.menuHeader, { borderBottomColor: colors.gridLine }]}>
-              <Text style={[styles.menuTitle, { color: colors.text }]}>⚙️ Einstellungen</Text>
-              <TouchableOpacity onPress={() => setMenuVisible(false)}>
-                <Text style={[styles.closeButton, { color: colors.text }]}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Theme Slider */}
-            <View style={styles.menuItem}>
-              <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Theme</Text>
               <View style={styles.themeToggle}>
                 <TouchableOpacity
                   style={[
@@ -137,29 +128,30 @@ export default function App() {
                   <Text style={{ color: theme === 'system' ? '#fff' : colors.text, fontSize: 12 }}>📱 System</Text>
                 </TouchableOpacity>
               </View>
+              <TouchableOpacity onPress={() => setMenuVisible(false)}>
+                <Text style={[styles.closeButton, { color: colors.text }]}>✕</Text>
+              </TouchableOpacity>
             </View>
-
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
             {/* Legenden */}
             <View style={styles.menuItem}>
               <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Erneuerbare Energien</Text>
-              <View style={{ gap: 5 }}>
-                <View style={styles.legendItem}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
+                <View style={[styles.legendItem, { width: '48%' }]}>
                   <View style={[styles.legendBox, { backgroundColor: '#90A4AE' }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Überschuss (nur &gt;100%, Rest grün)</Text>
+                  <Text style={[styles.legendText, { color: colors.textSecondary, flex: 1 }]}>Überschuss (&gt;100%)</Text>
                 </View>
-                <View style={styles.legendItem}>
+                <View style={[styles.legendItem, { width: '48%' }]}>
                   <View style={[styles.legendBox, { backgroundColor: '#4CAF50' }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Hoch (80-100%)</Text>
+                  <Text style={[styles.legendText, { color: colors.textSecondary, flex: 1 }]}>Hoch (80-100%)</Text>
                 </View>
-                <View style={styles.legendItem}>
+                <View style={[styles.legendItem, { width: '48%' }]}>
                   <View style={[styles.legendBox, { backgroundColor: '#FFC107' }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Mittel (50-80%)</Text>
+                  <Text style={[styles.legendText, { color: colors.textSecondary, flex: 1 }]}>Mittel (50-80%)</Text>
                 </View>
-                <View style={styles.legendItem}>
+                <View style={[styles.legendItem, { width: '48%' }]}>
                   <View style={[styles.legendBox, { backgroundColor: '#F44336' }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Niedrig (&lt;50%)</Text>
+                  <Text style={[styles.legendText, { color: colors.textSecondary, flex: 1 }]}>Niedrig (&lt;50%)</Text>
                 </View>
               </View>
             </View>
@@ -168,22 +160,22 @@ export default function App() {
 
             <View style={styles.menuItem}>
               <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Börsenstrompreis</Text>
-              <View style={{ gap: 5 }}>
-                <View style={styles.legendItem}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
+                <View style={[styles.legendItem, { width: '48%' }]}>
                   <View style={[styles.legendBox, { backgroundColor: '#4CAF50' }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Niedrig (&lt;25 ¢/kWh)</Text>
+                  <Text style={[styles.legendText, { color: colors.textSecondary, flex: 1 }]}>Niedrig (&lt;25 ¢)</Text>
                 </View>
-                <View style={styles.legendItem}>
+                <View style={[styles.legendItem, { width: '48%' }]}>
                   <View style={[styles.legendBox, { backgroundColor: '#FFC107' }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Mittel (25-35 ¢/kWh)</Text>
+                  <Text style={[styles.legendText, { color: colors.textSecondary, flex: 1 }]}>Mittel (25-35 ¢)</Text>
                 </View>
-                <View style={styles.legendItem}>
+                <View style={[styles.legendItem, { width: '48%' }]}>
                   <View style={[styles.legendBox, { backgroundColor: '#F44336' }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Hoch (&gt;35 ¢/kWh)</Text>
+                  <Text style={[styles.legendText, { color: colors.textSecondary, flex: 1 }]}>Hoch (&gt;35 ¢)</Text>
                 </View>
-                <View style={styles.legendItem}>
+                <View style={[styles.legendItem, { width: '48%' }]}>
                   <View style={[styles.legendBox, { backgroundColor: '#757575', opacity: 0.6 }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Netzentgelte (~20 ¢/kWh)</Text>
+                  <Text style={[styles.legendText, { color: colors.textSecondary, flex: 1 }]}>Netzentgelte (~20 ¢)</Text>
                 </View>
               </View>
             </View>
@@ -217,27 +209,6 @@ export default function App() {
 
             <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                exportAsCSV(energyData);
-                setMenuVisible(false);
-              }}
-            >
-              <Text style={{ color: colors.text }}>💾 Export als CSV</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                exportAsJSON(energyData);
-                setMenuVisible(false);
-              }}
-            >
-              <Text style={{ color: colors.text }}>📄 Export als JSON</Text>
-            </TouchableOpacity>
-
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
             <View style={styles.menuItem}>
               <Text style={[styles.legendText, { color: colors.textSecondary, textAlign: 'center' }]}>
                 Version {APP_VERSION}
@@ -262,7 +233,7 @@ export default function App() {
         ) : energyData.length > 0 ? (
           <>
             <RenewableBarChart
-              title="Anteil Erneuerbarer Energien an der Last (%)"
+              title="Anteil Erneuerbarer Energien an der Last"
               subtitle={`Zeitraum: ${energyData.length > 0 ? new Date(energyData[0].timestamp).toLocaleString('de-DE', {
                 day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
               }) : 'Lädt...'} bis ${energyData.length > 0 ? new Date(energyData[energyData.length - 1].timestamp).toLocaleString('de-DE', {
@@ -275,7 +246,7 @@ export default function App() {
             />
 
             <PriceBarChart
-              title="Börsen- und Endkundenstrompreis (Cent/kWh)"
+              title="Börsen- und Endkundenstrompreis"
               subtitle={`Zeitraum: ${energyData.length > 0 ? new Date(energyData[0].timestamp).toLocaleString('de-DE', {
                 day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
               }) : 'Lädt...'} bis ${energyData.length > 0 ? new Date(energyData[energyData.length - 1].timestamp).toLocaleString('de-DE', {
