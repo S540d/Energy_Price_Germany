@@ -85,7 +85,7 @@ export function CorrelationScatterChart({
         <View>
           <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: 0, color: textColor }}>{title}</Text>
           {subtitle && (
-            <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>
+            <Text style={{ fontSize: 12, color: textColor, opacity: 0.7, marginBottom: 2 }}>
               {subtitle}
             </Text>
           )}
@@ -235,7 +235,7 @@ export function CorrelationScatterChart({
           Erneuerbare (%)
         </Text>
         <Text style={getYAxisLabelStyle(chartHeight, 0, textColor)}>
-          Preis{'\n'}(¢/kWh)
+          Preis (¢/kWh)
         </Text>
       </View>
     </View>
