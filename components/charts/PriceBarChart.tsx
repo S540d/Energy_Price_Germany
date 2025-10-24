@@ -52,7 +52,7 @@ export function PriceBarChart({
   // Only use entries with valid marketPrice for rendering bars and calculations
   const validData = data.filter(d => d.marketPrice !== null);
   const pricesInCent = validData.map(d => d.marketPrice! * 0.1);
-  const GRID_FEES_AND_TAXES = 20;
+  const GRID_FEES_AND_TAXES = 18;
 
   const maxMarketPrice = Math.max(...pricesInCent);
   const maxTotal = maxMarketPrice + GRID_FEES_AND_TAXES;
@@ -127,13 +127,13 @@ export function PriceBarChart({
       })()}
       <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: 0, color: textColor }}>{title}</Text>
       {subtitle && (
-        <Text style={{ fontSize: 12, color: textColor, opacity: 0.7, marginBottom: 0 }}>
+        <Text style={{ fontSize: 12, color: textColor, opacity: 0.7, marginBottom: 2 }}>
           {subtitle}
         </Text>
       )}
       {/* Y-Achsen-Label */}
       <Text style={getYAxisLabelStyle(chartHeight, 30, textColor)}>
-        Preis{'\n'}(¢/kWh)
+        Preis (¢/kWh)
       </Text>
       <View style={{ height: chartHeight + bottomPadding, width: chartWidth, position: 'relative' }}>
         {/* Grid Lines */}
