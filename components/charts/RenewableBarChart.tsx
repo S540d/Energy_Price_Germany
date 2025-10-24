@@ -33,16 +33,23 @@ export function RenewableBarChart({
   const padding = 40;
   const bottomPadding = isPhone ? 40 : 50;
 
-  // Maximale Chart-Breite basierend auf Bildschirmgröße
+  // Maximale Chart-Breite basierend auf Bildschirmgröße (5% breiter)
   const maxChartWidth = isPhone
     ? screenWidth - 24  // Fast voller Bildschirm auf Phone
     : isSmallScreen
-    ? Math.min(chartHeight * 2.5, screenWidth - 24)
-    : Math.min(chartHeight * 3.5, screenWidth - 48);
+    ? Math.min(chartHeight * 2.5 * 1.05, screenWidth - 24)
+    : Math.min(chartHeight * 3.5 * 1.05, screenWidth - 48);
 
   const chartWidth = maxChartWidth;
 
-  // Only use entries with valid renewableShare for rendering bars
+  // Use ALL data timestamps for consistent X-axis range across all charts
+  const now = Date.now();
+  const timestamps = data.map(d => d.timestamp);
+  const minTime = Math.min(...timestamps);
+  const maxTime = Math.max(...timestamps);
+  const timeRange = maxTime - minTime;
+
+  // Only use entries with valid renewableShare for rendering bars and calculations
   const validData = data.filter(d => d.renewableShare !== null);
   const values = validData.map(d => d.renewableShare!);
   const dataMax = Math.max(...values);
@@ -53,12 +60,6 @@ export function RenewableBarChart({
 
   // Durchschnittswert berechnen
   const avgValue = values.reduce((sum, v) => sum + v, 0) / values.length;
-
-  const now = Date.now();
-  const timestamps = validData.map(d => d.timestamp);
-  const minTime = Math.min(...timestamps);
-  const maxTime = Math.max(...timestamps);
-  const timeRange = maxTime - minTime;
 
   const handlePress = (event: any) => {
     const { locationX } = event.nativeEvent;
@@ -98,7 +99,7 @@ export function RenewableBarChart({
   };
 
   return (
-    <View style={{ backgroundColor, margin: isPhone ? 6 : 12, padding: isPhone ? 8 : 12, borderRadius: 12, alignSelf: 'flex-start' }}>
+    <View style={{ backgroundColor, margin: isPhone ? 6 : 12, padding: isPhone ? 8 : 12, borderRadius: 12, alignSelf: 'stretch' }}>
       {selectedIndex !== null && data[selectedIndex]?.renewableShare !== null && (
         <View style={{
           paddingVertical: 4,
@@ -112,7 +113,7 @@ export function RenewableBarChart({
           zIndex: 10,
           maxWidth: chartWidth * 0.6
         }}>
-          <Text style={{ color: textColor, fontSize: isPhone ? 10 : 12 }}>
+          <Text style={{ color: textColor, fontSize: 12 }}>
             {new Date(data[selectedIndex].timestamp).toLocaleString('de-DE', {
               day: '2-digit',
               month: '2-digit',
@@ -122,15 +123,15 @@ export function RenewableBarChart({
           </Text>
         </View>
       )}
-      <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: subtitle ? 0 : 2, color: textColor }}>{title}</Text>
+      <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: 0, color: textColor }}>{title}</Text>
       {subtitle && (
-        <Text style={{ fontSize: isPhone ? 10 : 12, color: textColor, opacity: 0.7, marginBottom: 2 }}>
+        <Text style={{ fontSize: 12, color: textColor, opacity: 0.7, marginBottom: 2 }}>
           {subtitle}
         </Text>
       )}
       {/* Y-Achsen-Label */}
       <Text style={getYAxisLabelStyle(chartHeight, 30, textColor)}>
-        Anteil Erneuerbarer{'\n'}Energien an der Last (%)
+        Erneuerbare (%)
       </Text>
       <View style={{ height: chartHeight + bottomPadding, width: chartWidth }}>
         {/* Grid Lines */}
@@ -237,7 +238,7 @@ export function RenewableBarChart({
             position: 'absolute',
             left: chartWidth - (isPhone ? 42 : 48),
             top: chartHeight - ((avgValue - min) / range) * (chartHeight - padding) - 12,
-            fontSize: isPhone ? 9 : 10,
+            fontSize: 12,
             color: textColor,
             fontWeight: '600',
             opacity: 0.7,
@@ -257,7 +258,7 @@ export function RenewableBarChart({
                 position: 'absolute',
                 left: 8,
                 top: y - 8,
-                fontSize: isPhone ? 9 : 10,
+                fontSize: 12,
                 color: textColor,
                 opacity: 0.6,
                 textAlign: 'right',
@@ -291,7 +292,7 @@ export function RenewableBarChart({
                   position: 'absolute',
                   left: x - 10,
                   top: chartHeight + 5,
-                  fontSize: isPhone ? 9 : 10,
+                  fontSize: 12,
                   color: textColor,
                   opacity: 0.6,
                 }}
@@ -313,7 +314,7 @@ export function RenewableBarChart({
               position: 'absolute',
               left: leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding) - 15,
               top: chartHeight + 20,
-              fontSize: isPhone ? 9 : 10,
+              fontSize: 12,
               color: 'red',
               fontWeight: 'bold',
             }}
