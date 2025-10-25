@@ -273,7 +273,7 @@ export function PriceBarChart({
                 width: isPhone ? 25 : 30,
               }}
             >
-              {value.toFixed(1)}
+              {value.toFixed(0)}
             </Text>
           );
         })}
