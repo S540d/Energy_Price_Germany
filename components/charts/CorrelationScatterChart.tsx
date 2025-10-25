@@ -21,29 +21,25 @@ export function CorrelationScatterChart({
   gridColor,
 }: CorrelationScatterChartProps) {
   const screenWidth = useMemo(() => Dimensions.get('window').width, []);
-  const screenHeight = useMemo(() => Dimensions.get('window').height, []);
   const isSmallScreen = screenWidth < 768;
   const isPhone = screenWidth < 480;
 
-  // Responsive Chart-Größen - dynamisch basierend auf Bildschirmhöhe
-  // Verfügbare Höhe: Gesamthöhe minus geschätzter Footer/Header (ca. 200px)
-  const availableHeight = screenHeight - 200;
-  const dynamicHeight = Math.floor(availableHeight / 3); // 3 Charts
-  const minHeight = isPhone ? 140 : 160; // Minimum für Lesbarkeit
-  const chartHeight = Math.max(minHeight, dynamicHeight);
+  // Responsive Chart-Größen - Breite optimal nutzen, Höhe im Verhältnis zur Breite
   const leftPadding = isPhone ? 35 : 45;
   const padding = 50;
   const rightPadding = isPhone ? 40 : 50;
   const bottomPadding = isPhone ? 35 : 40;
 
-  // Maximale Chart-Breite basierend auf Bildschirmgröße (5% breiter)
-  const maxChartWidth = isPhone
+  // Breite: Nutze verfügbare Bildschirmbreite optimal
+  const chartWidth = isPhone
     ? screenWidth - 24  // Fast voller Bildschirm auf Phone
     : isSmallScreen
-    ? Math.min(chartHeight * 2.5 * 1.05, screenWidth - 24)
-    : Math.min(chartHeight * 3.5 * 1.05, screenWidth - 48);
+    ? screenWidth - 24  // Fast voller Bildschirm auf Tablet
+    : screenWidth - 48; // Mit etwas Margin auf Desktop
 
-  const chartWidth = maxChartWidth;
+  // Höhe: Basierend auf Breite mit optimalem Aspekt-Verhältnis (2.5:1)
+  // Scrolling ist okay - Hauptsache die Charts sind gut lesbar
+  const chartHeight = Math.round(chartWidth / 2.5);
 
   // Only use entries with both marketPrice and renewableShare for rendering points
   const validData = data.filter(d => d.marketPrice !== null && d.renewableShare !== null);
