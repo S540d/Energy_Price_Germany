@@ -68,6 +68,37 @@ export function CorrelationScatterChart({
   const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
   const intercept = (sumY - slope * sumX) / n;
 
+  // Calculate trend line points that stay within chart bounds
+  let trendStartX = minRenewable;
+  let trendStartY = intercept + slope * minRenewable;
+  let trendEndX = maxRenewable;
+  let trendEndY = intercept + slope * maxRenewable;
+
+  // Clip to minPrice boundary
+  if (trendStartY < minPrice) {
+    trendStartY = minPrice;
+    trendStartX = (minPrice - intercept) / slope;
+  }
+  if (trendEndY < minPrice) {
+    trendEndY = minPrice;
+    trendEndX = (minPrice - intercept) / slope;
+  }
+
+  // Clip to maxPrice boundary
+  if (trendStartY > maxPrice) {
+    trendStartY = maxPrice;
+    trendStartX = (maxPrice - intercept) / slope;
+  }
+  if (trendEndY > maxPrice) {
+    trendEndY = maxPrice;
+    trendEndX = (maxPrice - intercept) / slope;
+  }
+
+  // Ensure trendStartX <= trendEndX
+  if (trendStartX > trendEndX) {
+    [trendStartX, trendStartY, trendEndX, trendEndY] = [trendEndX, trendEndY, trendStartX, trendStartY];
+  }
+
   const getTimeColor = (timestamp: number) => {
     const hour = new Date(timestamp).getHours();
     if (hour >= 22 || hour < 6) {
@@ -149,10 +180,10 @@ export function CorrelationScatterChart({
         <Svg width={chartWidth} height={chartHeight}>
           {/* Trendlinie */}
           <Line
-            x1={leftPadding}
-            y1={Math.max(padding, Math.min(chartHeight - bottomPadding, chartHeight - bottomPadding - ((intercept + slope * minRenewable - minPrice) / priceRange) * (chartHeight - padding - bottomPadding)))}
-            x2={chartWidth - rightPadding}
-            y2={Math.max(padding, Math.min(chartHeight - bottomPadding, chartHeight - bottomPadding - ((intercept + slope * maxRenewable - minPrice) / priceRange) * (chartHeight - padding - bottomPadding)))}
+            x1={leftPadding + ((trendStartX - minRenewable) / renewableRange) * (chartWidth - leftPadding - rightPadding)}
+            y1={chartHeight - bottomPadding - ((trendStartY - minPrice) / priceRange) * (chartHeight - padding - bottomPadding)}
+            x2={leftPadding + ((trendEndX - minRenewable) / renewableRange) * (chartWidth - leftPadding - rightPadding)}
+            y2={chartHeight - bottomPadding - ((trendEndY - minPrice) / priceRange) * (chartHeight - padding - bottomPadding)}
             stroke={textColor}
             strokeWidth="2"
             strokeDasharray="8,4"
