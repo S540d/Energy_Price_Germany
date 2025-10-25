@@ -265,7 +265,7 @@ export function RenewableBarChart({
                 width: isPhone ? 25 : 30,
               }}
             >
-              {value.toFixed(0)}%
+              {value.toFixed(0)}
             </Text>
           );
         })}
