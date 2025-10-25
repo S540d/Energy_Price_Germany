@@ -150,9 +150,9 @@ export function CorrelationScatterChart({
           {/* Trendlinie */}
           <Line
             x1={leftPadding}
-            y1={chartHeight - bottomPadding - ((intercept + slope * minRenewable - minPrice) / priceRange) * (chartHeight - padding - bottomPadding)}
+            y1={Math.max(padding, Math.min(chartHeight - bottomPadding, chartHeight - bottomPadding - ((intercept + slope * minRenewable - minPrice) / priceRange) * (chartHeight - padding - bottomPadding)))}
             x2={chartWidth - rightPadding}
-            y2={chartHeight - bottomPadding - ((intercept + slope * maxRenewable - minPrice) / priceRange) * (chartHeight - padding - bottomPadding)}
+            y2={Math.max(padding, Math.min(chartHeight - bottomPadding, chartHeight - bottomPadding - ((intercept + slope * maxRenewable - minPrice) / priceRange) * (chartHeight - padding - bottomPadding)))}
             stroke={textColor}
             strokeWidth="2"
             strokeDasharray="8,4"
