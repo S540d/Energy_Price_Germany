@@ -27,8 +27,12 @@ export function RenewableBarChart({
   const isSmallScreen = screenWidth < 768;
   const isPhone = screenWidth < 480;
 
-  // Responsive Chart-Größen
-  const chartHeight = isPhone ? 140 : isSmallScreen ? 160 : 180;
+  // Responsive Chart-Größen - dynamisch basierend auf Bildschirmhöhe
+  // Verfügbare Höhe: Gesamthöhe minus geschätzter Footer/Header (ca. 200px)
+  const availableHeight = screenHeight - 200;
+  const dynamicHeight = Math.floor(availableHeight / 3); // 3 Charts
+  const minHeight = isPhone ? 140 : 160; // Minimum für Lesbarkeit
+  const chartHeight = Math.max(minHeight, dynamicHeight);
   const leftPadding = isPhone ? 35 : 45;
   const padding = 40;
   const bottomPadding = isPhone ? 40 : 50;
@@ -256,7 +260,7 @@ export function RenewableBarChart({
               key={`ylabel-${i}`}
               style={{
                 position: 'absolute',
-                left: 8,
+                left: 10,
                 top: y - 8,
                 fontSize: 12,
                 color: textColor,
