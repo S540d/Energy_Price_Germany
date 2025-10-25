@@ -286,14 +286,6 @@ export default function App() {
 
       {/* Footer with Settings and Support */}
       <View style={[styles.footer, { backgroundColor: colors.surface, borderColor: colors.gridLine }]}>
-        <TouchableOpacity 
-          onPress={() => setMenuVisible(true)}
-          style={styles.footerButton}
-        >
-          <Text style={[styles.footerButtonText, { color: colors.primary }]}>
-            ⋮
-          </Text>
-        </TouchableOpacity>
         <TouchableOpacity onPress={() => {
           if (Platform.OS === 'web') {
             window.open('https://buymeacoffee.com/sven4321', '_blank');
@@ -303,6 +295,14 @@ export default function App() {
         >
           <Text style={[styles.footerButtonText, { color: colors.primary }]}>
             Support me
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setMenuVisible(true)}
+          style={styles.footerButton}
+        >
+          <Text style={[styles.footerButtonText, { color: colors.text, fontSize: 20, fontWeight: 'bold' }]}>
+            ⋮
           </Text>
         </TouchableOpacity>
       </View>
