@@ -23,24 +23,24 @@ export function PriceBarChart({
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const screenWidth = useMemo(() => Dimensions.get('window').width, []);
-  const screenHeight = useMemo(() => Dimensions.get('window').height, []);
   const isSmallScreen = screenWidth < 768;
   const isPhone = screenWidth < 480;
 
-  // Responsive Chart-Größen
-  const chartHeight = isPhone ? 140 : isSmallScreen ? 160 : 180;
+  // Responsive Chart-Größen - Breite optimal nutzen, Höhe im Verhältnis zur Breite
   const leftPadding = isPhone ? 35 : 45;
   const padding = 40;
   const bottomPadding = isPhone ? 40 : 50;
 
-  // Maximale Chart-Breite basierend auf Bildschirmgröße (5% breiter)
-  const maxChartWidth = isPhone
+  // Breite: Nutze verfügbare Bildschirmbreite optimal
+  const chartWidth = isPhone
     ? screenWidth - 24  // Fast voller Bildschirm auf Phone
     : isSmallScreen
-    ? Math.min(chartHeight * 2.5 * 1.05, screenWidth - 24)
-    : Math.min(chartHeight * 3.5 * 1.05, screenWidth - 48);
+    ? screenWidth - 24  // Fast voller Bildschirm auf Tablet
+    : screenWidth - 48; // Mit etwas Margin auf Desktop
 
-  const chartWidth = maxChartWidth;
+  // Höhe: Basierend auf Breite mit optimalem Aspekt-Verhältnis (2.5:1)
+  // Scrolling ist okay - Hauptsache die Charts sind gut lesbar
+  const chartHeight = Math.round(chartWidth / 2.5);
 
   // Use ALL data timestamps for consistent X-axis range across all charts
   const now = Date.now();
@@ -264,7 +264,7 @@ export function PriceBarChart({
               key={`ylabel-${i}`}
               style={{
                 position: 'absolute',
-                left: 8,
+                left: 10,
                 top: y - 8,
                 fontSize: 12,
                 color: textColor,
