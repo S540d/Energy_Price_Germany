@@ -117,9 +117,28 @@ export default function App() {
             onPress={() => setMenuVisible(false)}
           />
           <View style={[styles.menu, { backgroundColor: colors.surface }]}>
-            {/* Header with Theme Toggle */}
+            {/* Header with Close Button */}
             <View style={[styles.menuHeader, { borderBottomColor: colors.gridLine }]}>
+              <Text style={[styles.menuTitle, { color: colors.text }]}>Settings</Text>
+              <TouchableOpacity onPress={() => setMenuVisible(false)}>
+                <Text style={[styles.closeButton, { color: colors.text }]}>×</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Appearance Settings */}
+            <View style={styles.menuSection}>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>APPEARANCE</Text>
               <View style={styles.themeToggle}>
+                <TouchableOpacity
+                  style={[
+                    styles.themeButton,
+                    theme === 'light' && styles.themeButtonActive,
+                    { backgroundColor: theme === 'light' ? colors.primary : colors.gridLine }
+                  ]}
+                  onPress={() => setTheme('light')}
+                >
+                  <Text style={{ color: theme === 'light' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>Light</Text>
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={[
                     styles.themeButton,
@@ -128,7 +147,7 @@ export default function App() {
                   ]}
                   onPress={() => setTheme('dark')}
                 >
-                  <Text style={{ color: theme === 'dark' ? '#fff' : colors.text, fontSize: 12 }}>🌙 Dunkel</Text>
+                  <Text style={{ color: theme === 'dark' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>Dark</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[
@@ -138,93 +157,43 @@ export default function App() {
                   ]}
                   onPress={() => setTheme('system')}
                 >
-                  <Text style={{ color: theme === 'system' ? '#fff' : colors.text, fontSize: 12 }}>📱 System</Text>
+                  <Text style={{ color: theme === 'system' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>System</Text>
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={() => setMenuVisible(false)}>
-                <Text style={[styles.closeButton, { color: colors.text }]}>✕</Text>
+            </View>
+
+            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+            {/* Feedback */}
+            <View style={styles.menuSection}>
+              <TouchableOpacity
+                onPress={() => {
+                  Linking.openURL('mailto:feedback@example.com');
+                }}
+                style={styles.menuItem}
+              >
+                <Text style={[styles.legendText, { color: colors.primary }]}>Send Feedback</Text>
               </TouchableOpacity>
             </View>
 
-            {/* Legenden */}
-            <View style={styles.menuItem}>
-              <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Erneuerbare Energien</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
-                <View style={[styles.legendItem, { width: '48%' }]}>
-                  <View style={[styles.legendBox, { backgroundColor: '#90A4AE' }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary, flex: 1 }]}>Überschuss (&gt;100%)</Text>
-                </View>
-                <View style={[styles.legendItem, { width: '48%' }]}>
-                  <View style={[styles.legendBox, { backgroundColor: '#4CAF50' }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary, flex: 1 }]}>Hoch (80-100%)</Text>
-                </View>
-                <View style={[styles.legendItem, { width: '48%' }]}>
-                  <View style={[styles.legendBox, { backgroundColor: '#FFC107' }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary, flex: 1 }]}>Mittel (50-80%)</Text>
-                </View>
-                <View style={[styles.legendItem, { width: '48%' }]}>
-                  <View style={[styles.legendBox, { backgroundColor: '#F44336' }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary, flex: 1 }]}>Niedrig (&lt;50%)</Text>
-                </View>
-              </View>
-            </View>
-
             <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
-            <View style={styles.menuItem}>
-              <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Börsenstrompreis</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
-                <View style={[styles.legendItem, { width: '48%' }]}>
-                  <View style={[styles.legendBox, { backgroundColor: '#4CAF50' }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary, flex: 1 }]}>Niedrig (&lt;25 ¢)</Text>
-                </View>
-                <View style={[styles.legendItem, { width: '48%' }]}>
-                  <View style={[styles.legendBox, { backgroundColor: '#FFC107' }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary, flex: 1 }]}>Mittel (25-35 ¢)</Text>
-                </View>
-                <View style={[styles.legendItem, { width: '48%' }]}>
-                  <View style={[styles.legendBox, { backgroundColor: '#F44336' }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary, flex: 1 }]}>Hoch (&gt;35 ¢)</Text>
-                </View>
-                <View style={[styles.legendItem, { width: '48%' }]}>
-                  <View style={[styles.legendBox, { backgroundColor: '#757575', opacity: 0.6 }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary, flex: 1 }]}>Netzentgelte (~18 ¢)</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-            <View style={styles.menuItem}>
-              <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Datenquelle</Text>
-              <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-                {getDataSourceInfo().name}
+            {/* About */}
+            <View style={styles.menuSection}>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>ABOUT</Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>Version {APP_VERSION}</Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary, marginTop: 8 }]}>
+                Data: {getDataSourceInfo().name}
               </Text>
               <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-                Lizenz: {getDataSourceInfo().license}
-              </Text>
-              <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-                {getDataSourceInfo().url}
+                License: {getDataSourceInfo().license}
               </Text>
             </View>
-
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                setCurrentView('metrics');
-                setMenuVisible(false);
-              }}
-            >
-              <Text style={{ color: colors.text }}>📈 Metriken anzeigen</Text>
-            </TouchableOpacity>
 
             <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
             {/* Support Section */}
-            <View style={styles.menuItem}>
-              <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Support</Text>
+            <View style={styles.menuSection}>
               <TouchableOpacity
                 onPress={() => {
                   if (Platform.OS === 'web') {
@@ -233,34 +202,10 @@ export default function App() {
                     Linking.openURL('https://buymeacoffee.com/sven4321');
                   }
                 }}
-                style={{ paddingVertical: 8 }}
+                style={styles.menuItem}
               >
-                <Text style={[styles.legendText, { color: colors.primary }]}>
-                  Buy Me a Coffee
-                </Text>
+                <Text style={[styles.legendText, { color: colors.primary }]}>Buy Me a Coffee</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  if (Platform.OS === 'web') {
-                    window.open('https://github.com/S540d/Energy_Price_Germany', '_blank');
-                  } else {
-                    Linking.openURL('https://github.com/S540d/Energy_Price_Germany');
-                  }
-                }}
-                style={{ paddingVertical: 8 }}
-              >
-                <Text style={[styles.legendText, { color: colors.primary }]}>
-                  🔗 GitHub Repository
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-            <View style={styles.menuItem}>
-              <Text style={[styles.legendText, { color: colors.textSecondary, textAlign: 'center' }]}>
-                Version {APP_VERSION}
-              </Text>
             </View>
           </View>
         </>
@@ -527,5 +472,16 @@ const styles = StyleSheet.create({
   settingsHeaderButtonText: {
     fontSize: 24,
     fontWeight: '500',
+  },
+  menuSection: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });
