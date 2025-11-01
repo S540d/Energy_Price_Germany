@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   useColorScheme,
   Platform,
+  Linking,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator } from 'react-native';
@@ -209,6 +210,41 @@ export default function App() {
 
             <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
+            {/* Support Section */}
+            <View style={styles.menuItem}>
+              <Text style={[styles.menuSectionTitle, { color: colors.text }]}>Support</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  if (Platform.OS === 'web') {
+                    window.open('https://buymeacoffee.com/sven4321', '_blank');
+                  } else {
+                    Linking.openURL('https://buymeacoffee.com/sven4321');
+                  }
+                }}
+                style={{ paddingVertical: 8 }}
+              >
+                <Text style={[styles.legendText, { color: colors.primary }]}>
+                  💝 Support the Project
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  if (Platform.OS === 'web') {
+                    window.open('https://github.com/S540d/Energy_Price_Germany', '_blank');
+                  } else {
+                    Linking.openURL('https://github.com/S540d/Energy_Price_Germany');
+                  }
+                }}
+                style={{ paddingVertical: 8 }}
+              >
+                <Text style={[styles.legendText, { color: colors.primary }]}>
+                  🔗 GitHub Repository
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
             <View style={styles.menuItem}>
               <Text style={[styles.legendText, { color: colors.textSecondary, textAlign: 'center' }]}>
                 Version {APP_VERSION}
@@ -284,25 +320,14 @@ export default function App() {
         )}
       </ScrollView>
 
-      {/* Footer with Settings and Support */}
+      {/* Footer with Settings */}
       <View style={[styles.footer, { backgroundColor: colors.surface, borderColor: colors.gridLine }]}>
-        <TouchableOpacity onPress={() => {
-          if (Platform.OS === 'web') {
-            window.open('https://buymeacoffee.com/sven4321', '_blank');
-          }
-        }}
-        style={styles.footerButton}
-        >
-          <Text style={[styles.footerButtonText, { color: colors.primary }]}>
-            Support me
-          </Text>
-        </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setMenuVisible(true)}
           style={styles.footerButton}
         >
           <Text style={[styles.footerButtonText, { color: colors.text, fontSize: 20, fontWeight: 'bold' }]}>
-            ⋮
+            ⚙️
           </Text>
         </TouchableOpacity>
       </View>
@@ -448,7 +473,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'stretch',  // Changed from flex-start to stretch to match card width
     marginHorizontal: 12,
