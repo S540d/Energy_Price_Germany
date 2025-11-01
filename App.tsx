@@ -282,9 +282,10 @@ export default function App() {
         <TouchableOpacity
           onPress={() => setMenuVisible(true)}
           style={styles.footerButton}
+          aria-label="Settings"
         >
-          <Text style={[styles.footerButtonText, { color: colors.text, fontSize: 20, fontWeight: 'bold' }]}>
-            ⚙️
+          <Text style={[styles.footerButtonText, { color: colors.primary, fontSize: 20, fontWeight: 'bold' }]}>
+            ⋮
           </Text>
         </TouchableOpacity>
       </View>
