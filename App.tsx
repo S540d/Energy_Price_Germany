@@ -23,14 +23,50 @@ import { getThemeColors, Theme } from './utils/theme';
 const APP_VERSION = '1.0.5';
 
 type ViewMode = 'charts' | 'metrics';
+type Language = 'en' | 'de';
+
+const translations = {
+  en: {
+    settings: 'Settings',
+    appearance: 'APPEARANCE',
+    dark: 'Dark',
+    system: 'System',
+    language: 'LANGUAGE',
+    english: 'English',
+    german: 'German',
+    feedback: 'Send Feedback',
+    support: 'Buy Me a Coffee',
+    about: 'ABOUT',
+    version: 'Version',
+    dataSource: 'Data Source',
+    license: 'License',
+  },
+  de: {
+    settings: 'Einstellungen',
+    appearance: 'ERSCHEINUNGSBILD',
+    dark: 'Dunkel',
+    system: 'System',
+    language: 'SPRACHE',
+    english: 'English',
+    german: 'Deutsch',
+    feedback: 'Feedback senden',
+    support: 'Buy Me a Coffee',
+    about: 'ÜBER',
+    version: 'Version',
+    dataSource: 'Datenquelle',
+    license: 'Lizenz',
+  },
+};
 
 export default function App() {
   const [energyData, setEnergyData] = useState<EnergyData[]>([]);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<Theme>('system');
+  const [language, setLanguage] = useState<Language>('en');
   const [menuVisible, setMenuVisible] = useState(false);
   const [currentView, setCurrentView] = useState<ViewMode>('charts');
   const systemTheme = useColorScheme();
+  const t = translations[language];
 
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
 
@@ -119,26 +155,16 @@ export default function App() {
           <View style={[styles.menu, { backgroundColor: colors.surface }]}>
             {/* Header with Close Button */}
             <View style={[styles.menuHeader, { borderBottomColor: colors.gridLine }]}>
-              <Text style={[styles.menuTitle, { color: colors.text }]}>Settings</Text>
+              <Text style={[styles.menuTitle, { color: colors.text }]}>{t.settings}</Text>
               <TouchableOpacity onPress={() => setMenuVisible(false)}>
                 <Text style={[styles.closeButton, { color: colors.text }]}>×</Text>
               </TouchableOpacity>
             </View>
 
-            {/* Appearance Settings */}
+            {/* Appearance Settings - Dark/System Only */}
             <View style={styles.menuSection}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>APPEARANCE</Text>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.appearance}</Text>
               <View style={styles.themeToggle}>
-                <TouchableOpacity
-                  style={[
-                    styles.themeButton,
-                    theme === 'light' && styles.themeButtonActive,
-                    { backgroundColor: theme === 'light' ? colors.primary : colors.gridLine }
-                  ]}
-                  onPress={() => setTheme('light')}
-                >
-                  <Text style={{ color: theme === 'light' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>Light</Text>
-                </TouchableOpacity>
                 <TouchableOpacity
                   style={[
                     styles.themeButton,
@@ -147,7 +173,7 @@ export default function App() {
                   ]}
                   onPress={() => setTheme('dark')}
                 >
-                  <Text style={{ color: theme === 'dark' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>Dark</Text>
+                  <Text style={{ color: theme === 'dark' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.dark}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[
@@ -157,43 +183,52 @@ export default function App() {
                   ]}
                   onPress={() => setTheme('system')}
                 >
-                  <Text style={{ color: theme === 'system' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>System</Text>
+                  <Text style={{ color: theme === 'system' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.system}</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
-            {/* Feedback */}
+            {/* Language Settings */}
             <View style={styles.menuSection}>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.language}</Text>
+              <View style={styles.themeToggle}>
+                <TouchableOpacity
+                  style={[
+                    styles.themeButton,
+                    language === 'en' && styles.themeButtonActive,
+                    { backgroundColor: language === 'en' ? colors.primary : colors.gridLine }
+                  ]}
+                  onPress={() => setLanguage('en')}
+                >
+                  <Text style={{ color: language === 'en' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.english}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.themeButton,
+                    language === 'de' && styles.themeButtonActive,
+                    { backgroundColor: language === 'de' ? colors.primary : colors.gridLine }
+                  ]}
+                  onPress={() => setLanguage('de')}
+                >
+                  <Text style={{ color: language === 'de' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.german}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+            {/* Feedback and Support in One Row */}
+            <View style={[styles.menuSection, styles.menuSectionRow]}>
               <TouchableOpacity
                 onPress={() => {
                   Linking.openURL('mailto:feedback@example.com');
                 }}
-                style={styles.menuItem}
+                style={styles.menuItemFlex}
               >
-                <Text style={[styles.legendText, { color: colors.primary }]}>Send Feedback</Text>
+                <Text style={[styles.legendText, { color: colors.primary }]}>{t.feedback}</Text>
               </TouchableOpacity>
-            </View>
-
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-            {/* About */}
-            <View style={styles.menuSection}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>ABOUT</Text>
-              <Text style={[styles.legendText, { color: colors.textSecondary }]}>Version {APP_VERSION}</Text>
-              <Text style={[styles.legendText, { color: colors.textSecondary, marginTop: 8 }]}>
-                Data: {getDataSourceInfo().name}
-              </Text>
-              <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-                License: {getDataSourceInfo().license}
-              </Text>
-            </View>
-
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-            {/* Support Section */}
-            <View style={styles.menuSection}>
               <TouchableOpacity
                 onPress={() => {
                   if (Platform.OS === 'web') {
@@ -202,10 +237,24 @@ export default function App() {
                     Linking.openURL('https://buymeacoffee.com/sven4321');
                   }
                 }}
-                style={styles.menuItem}
+                style={styles.menuItemFlex}
               >
-                <Text style={[styles.legendText, { color: colors.primary }]}>Buy Me a Coffee</Text>
+                <Text style={[styles.legendText, { color: colors.primary }]}>{t.support}</Text>
               </TouchableOpacity>
+            </View>
+
+            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+            {/* About */}
+            <View style={styles.menuSection}>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.about}</Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>{t.version} {APP_VERSION}</Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary, marginTop: 8 }]}>
+                {t.dataSource}: {getDataSourceInfo().name}
+              </Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>
+                {t.license}: {getDataSourceInfo().license}
+              </Text>
             </View>
           </View>
         </>
@@ -335,6 +384,17 @@ const styles = StyleSheet.create({
   },
   menuItem: {
     padding: 16,
+  },
+  menuItemFlex: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  menuSectionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 0,
   },
   menuSectionTitle: {
     fontSize: 14,
