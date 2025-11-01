@@ -96,12 +96,24 @@ export default function App() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={colors.background === '#121212' ? 'light' : 'dark'} />
 
+      {/* Header with Settings Button */}
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.gridLine }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Energy Price Germany</Text>
+        <TouchableOpacity
+          onPress={() => setMenuVisible(true)}
+          style={styles.settingsHeaderButton}
+          aria-label="Settings"
+        >
+          <Text style={[styles.settingsHeaderButtonText, { color: colors.primary }]}>⋮</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Settings Modal */}
       {menuVisible && (
         <>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.settingsOverlay}
-            activeOpacity={1} 
+            activeOpacity={1}
             onPress={() => setMenuVisible(false)}
           />
           <View style={[styles.menu, { backgroundColor: colors.surface }]}>
@@ -224,7 +236,7 @@ export default function App() {
                 style={{ paddingVertical: 8 }}
               >
                 <Text style={[styles.legendText, { color: colors.primary }]}>
-                  💝 Support the Project
+                  Buy Me a Coffee
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -492,5 +504,28 @@ const styles = StyleSheet.create({
   footerButtonText: {
     fontSize: 14,  // Reduced from 16 to 14
     fontWeight: '600',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  settingsHeaderButton: {
+    padding: 8,
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  settingsHeaderButtonText: {
+    fontSize: 24,
+    fontWeight: '500',
   },
 });
