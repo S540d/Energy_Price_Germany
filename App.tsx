@@ -277,18 +277,6 @@ export default function App() {
         )}
       </ScrollView>
 
-      {/* Footer with Settings */}
-      <View style={[styles.footer, { backgroundColor: colors.surface, borderColor: colors.gridLine }]}>
-        <TouchableOpacity
-          onPress={() => setMenuVisible(true)}
-          style={styles.footerButton}
-          aria-label="Settings"
-        >
-          <Text style={[styles.footerButtonText, { color: colors.primary, fontSize: 20, fontWeight: 'bold' }]}>
-            ⋮
-          </Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }
@@ -424,31 +412,6 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 14,
-    fontWeight: '600',
-  },
-  footerContainer: {
-    // Container is not needed anymore, footer aligns with charts
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'stretch',  // Changed from flex-start to stretch to match card width
-    marginHorizontal: 12,
-    marginVertical: 8,
-    padding: 16,
-    borderRadius: 12,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  footerButton: {
-    padding: 8,
-  },
-  footerButtonText: {
-    fontSize: 14,  // Reduced from 16 to 14
     fontWeight: '600',
   },
   header: {
