@@ -108,29 +108,43 @@ export function RenewableBarChart({
 
   return (
     <View style={{ backgroundColor, margin, padding: cardPadding, borderRadius: 12, alignSelf: 'stretch' }}>
-      {selectedIndex !== null && data[selectedIndex]?.renewableShare !== null && (
-        <View style={{
-          paddingVertical: 4,
-          paddingHorizontal: 8,
-          backgroundColor: textColor + '20',
-          borderRadius: 4,
-          marginBottom: 4,
-          position: 'absolute',
-          top: cardPadding,
-          right: cardPadding,
-          zIndex: 10,
-          maxWidth: chartWidth * 0.6
-        }}>
-          <Text style={{ color: textColor, fontSize: isPhone ? 12 : 13 }}>
-            {new Date(data[selectedIndex].timestamp).toLocaleString('de-DE', {
-              day: '2-digit',
-              month: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit'
-            })}: {data[selectedIndex].renewableShare!.toFixed(1)}%
-          </Text>
-        </View>
-      )}
+      {selectedIndex !== null && data[selectedIndex]?.renewableShare !== null && (() => {
+        const item = data[selectedIndex];
+        const renewablePercent = item.renewableShare!;
+
+        // Berechne Position des Tooltips über dem Balken
+        const x = leftPadding + ((item.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
+        const tooltipWidth = 80; // Geschätzte Breite
+        let tooltipLeft = x - tooltipWidth / 2;
+
+        // Rand-Check: Tooltip darf nicht über den Rand hinaus
+        if (tooltipLeft < 0) tooltipLeft = 8;
+        if (tooltipLeft + tooltipWidth > chartWidth) tooltipLeft = chartWidth - tooltipWidth - 8;
+
+        return (
+          <View style={{
+            paddingVertical: 6,
+            paddingHorizontal: 12,
+            backgroundColor: backgroundColor,
+            borderWidth: 1,
+            borderColor: textColor,
+            borderRadius: 6,
+            position: 'absolute',
+            top: cardPadding + 30,
+            left: tooltipLeft,
+            zIndex: 10,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
+          }}>
+            <Text style={{ color: textColor, fontSize: 14, fontWeight: 'bold' }}>
+              {renewablePercent.toFixed(1)}%
+            </Text>
+          </View>
+        );
+      })()}
       <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: 0, color: textColor }}>{title}</Text>
       {subtitle && (
         <Text style={{ fontSize: 12, color: textColor, opacity: 0.7, marginBottom: 2 }}>

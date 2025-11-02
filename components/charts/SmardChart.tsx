@@ -113,35 +113,40 @@ export function SmardChart({
         const item = allPriceData[selectedIndex];
         if (!item) return null;
 
-        const marketPriceCent = item.marketprice * 0.1;
-        const totalPrice = marketPriceCent + GRID_FEES_AND_TAXES;
+        // Berechne Position des Tooltips über dem Balken
+        const x = leftPadding + ((item.start_timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
+        const tooltipWidth = 110; // Geschätzte Breite
+        let tooltipLeft = x - tooltipWidth / 2;
+
+        // Rand-Check: Tooltip darf nicht über den Rand hinaus
+        if (tooltipLeft < 0) tooltipLeft = 8;
+        if (tooltipLeft + tooltipWidth > chartWidth) tooltipLeft = chartWidth - tooltipWidth - 8;
 
         return (
           <View style={{
-            paddingVertical: 4,
-            paddingHorizontal: 8,
-            backgroundColor: textColor + '20',
-            borderRadius: 4,
-            marginBottom: 4,
+            paddingVertical: 6,
+            paddingHorizontal: 12,
+            backgroundColor: backgroundColor,
+            borderWidth: 1,
+            borderColor: textColor,
+            borderRadius: 6,
             position: 'absolute',
-            top: cardPadding,
-            right: cardPadding,
+            top: cardPadding + 30,
+            left: tooltipLeft,
             zIndex: 10,
-            maxWidth: chartWidth * 0.6
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
           }}>
-            <Text style={{ color: textColor, fontSize: isPhone ? 12 : 13 }}>
+            <Text style={{ color: textColor, fontSize: 14, fontWeight: 'bold' }}>
               {new Date(item.start_timestamp).toLocaleString('de-DE', {
                 day: '2-digit',
                 month: '2-digit',
                 hour: '2-digit',
                 minute: '2-digit'
               })}
-            </Text>
-            <Text style={{ color: textColor, fontSize: isPhone ? 12 : 13, fontWeight: 'bold' }}>
-              Börsenpreis: {marketPriceCent.toFixed(2)} ¢/kWh
-            </Text>
-            <Text style={{ color: textColor, fontSize: isPhone ? 12 : 13 }}>
-              Endpreis: {totalPrice.toFixed(2)} ¢/kWh
             </Text>
           </View>
         );
