@@ -39,20 +39,26 @@ export function SmardChart({
   const isSmallScreen = screenWidth < 768;
   const isPhone = screenWidth < 480;
 
-  // Responsive Chart-Größen
-  const chartHeight = isPhone ? 140 : isSmallScreen ? 160 : 180;
+  // Responsive Chart-Größen - Viewport-bewusst für optimale Darstellung
   const leftPadding = isPhone ? 35 : 45;
   const padding = 40;
   const bottomPadding = isPhone ? 40 : 50;
 
-  // Maximale Chart-Breite basierend auf Bildschirmgröße
-  const maxChartWidth = isPhone
-    ? screenWidth - 24  // Fast voller Bildschirm auf Phone
-    : isSmallScreen
-    ? Math.min(chartHeight * 2.5, screenWidth - 24)
-    : Math.min(chartHeight * 3.5, screenWidth - 48);
+  // Margins (8px Grid)
+  const margin = isPhone ? 8 : 16;
+  const cardPadding = isPhone ? 12 : 16;
 
-  const chartWidth = maxChartWidth;
+  // Breite: Nutze verfügbare Bildschirmbreite optimal (minus Margins)
+  const chartWidth = screenWidth - (margin * 2);
+
+  // Höhe: Viewport-bewusst, sodass alle 3 Charts gut sichtbar sind
+  const baseAspectRatio = 2.5;
+  const availableHeight = screenHeight - 200; // Header + Overhead
+  const maxChartHeight = availableHeight / 3.3; // 3 Charts + Gaps
+  const chartHeight = Math.round(Math.min(
+    chartWidth / baseAspectRatio,
+    maxChartHeight
+  ));
 
   // Kombiniere today und tomorrow Daten
   const allPriceData = [...data.market_data.today.price_eur_mwh, ...data.market_data.tomorrow.price_eur_mwh];
@@ -100,7 +106,7 @@ export function SmardChart({
   };
 
   return (
-    <View style={{ backgroundColor, margin: isPhone ? 6 : 12, padding: isPhone ? 8 : 12, borderRadius: 12, alignSelf: 'flex-start' }}>
+    <View style={{ backgroundColor, margin, padding: cardPadding, borderRadius: 12, alignSelf: 'stretch' }}>
       {selectedIndex !== null && (() => {
         const item = allPriceData[selectedIndex];
         if (!item) return null;
@@ -116,12 +122,12 @@ export function SmardChart({
             borderRadius: 4,
             marginBottom: 4,
             position: 'absolute',
-            top: isPhone ? 8 : 12,
-            right: isPhone ? 8 : 12,
+            top: cardPadding,
+            right: cardPadding,
             zIndex: 10,
             maxWidth: chartWidth * 0.6
           }}>
-            <Text style={{ color: textColor, fontSize: isPhone ? 10 : 12 }}>
+            <Text style={{ color: textColor, fontSize: isPhone ? 12 : 13 }}>
               {new Date(item.start_timestamp).toLocaleString('de-DE', {
                 day: '2-digit',
                 month: '2-digit',
@@ -129,10 +135,10 @@ export function SmardChart({
                 minute: '2-digit'
               })}
             </Text>
-            <Text style={{ color: textColor, fontSize: isPhone ? 10 : 12, fontWeight: 'bold' }}>
+            <Text style={{ color: textColor, fontSize: isPhone ? 12 : 13, fontWeight: 'bold' }}>
               Börsenpreis: {marketPriceCent.toFixed(2)} ¢/kWh
             </Text>
-            <Text style={{ color: textColor, fontSize: isPhone ? 10 : 12 }}>
+            <Text style={{ color: textColor, fontSize: isPhone ? 12 : 13 }}>
               Endpreis: {totalPrice.toFixed(2)} ¢/kWh
             </Text>
           </View>
@@ -255,7 +261,7 @@ export function SmardChart({
             position: 'absolute',
             left: chartWidth - (isPhone ? 50 : 60),
             top: chartHeight - ((avgMarketPrice - min) / range) * (chartHeight - padding) - 12,
-            fontSize: isPhone ? 9 : 10,
+            fontSize: 12,
             color: textColor,
             fontWeight: '600',
             opacity: 0.7,
@@ -273,16 +279,16 @@ export function SmardChart({
               key={`ylabel-${i}`}
               style={{
                 position: 'absolute',
-                left: 8,
+                left: 10,
                 top: y - 8,
-                fontSize: isPhone ? 9 : 10,
+                fontSize: 12,
                 color: textColor,
                 opacity: 0.6,
                 textAlign: 'right',
                 width: isPhone ? 25 : 30,
               }}
             >
-              {value.toFixed(1)}
+              {value.toFixed(0)}
             </Text>
           );
         })}
@@ -310,7 +316,7 @@ export function SmardChart({
                   position: 'absolute',
                   left: x - 20,
                   top: chartHeight + 5,
-                  fontSize: isPhone ? 9 : 10,
+                  fontSize: 12,
                   color: textColor,
                   opacity: 0.6,
                 }}
@@ -325,7 +331,7 @@ export function SmardChart({
                   position: 'absolute',
                   left: x - 10,
                   top: chartHeight + 18,
-                  fontSize: isPhone ? 8 : 9,
+                  fontSize: 12,
                   color: textColor,
                   opacity: 0.5,
                 }}
@@ -347,7 +353,7 @@ export function SmardChart({
               position: 'absolute',
               left: leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding) - 15,
               top: chartHeight + 20,
-              fontSize: isPhone ? 9 : 10,
+              fontSize: 12,
               color: 'red',
               fontWeight: 'bold',
             }}
@@ -361,11 +367,11 @@ export function SmardChart({
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 8 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50', marginRight: 4, borderRadius: 2 }} />
-          <Text style={{ fontSize: isPhone ? 10 : 12, color: textColor, opacity: 0.7 }}>Börsenpreis</Text>
+          <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>Börsenpreis</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <View style={{ width: 12, height: 12, backgroundColor: '#757575', marginRight: 4, borderRadius: 2, opacity: 0.6 }} />
-          <Text style={{ fontSize: isPhone ? 10 : 12, color: textColor, opacity: 0.7 }}>Netzentgelte</Text>
+          <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>Netzentgelte</Text>
         </View>
       </View>
     </View>
