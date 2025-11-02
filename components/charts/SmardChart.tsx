@@ -55,9 +55,11 @@ export function SmardChart({
   const baseAspectRatio = 2.5;
   const availableHeight = screenHeight - 200; // Header + Overhead
   const maxChartHeight = availableHeight / 3.3; // 3 Charts + Gaps
+  const absoluteMaxHeight = isPhone ? 200 : isSmallScreen ? 280 : 320; // Absolute Obergrenze
   const chartHeight = Math.round(Math.min(
     chartWidth / baseAspectRatio,
-    maxChartHeight
+    maxChartHeight,
+    absoluteMaxHeight
   ));
 
   // Kombiniere today und tomorrow Daten
