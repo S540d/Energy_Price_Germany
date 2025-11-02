@@ -29,7 +29,7 @@ export function getYAxisLabelStyle(
     position: 'absolute' as const,
     left: -90,  // Fester vertikaler Abstand vom oberen Rand
     top: getYAxisLabelCenterPosition(chartHeight, horizontalOffset),
-    fontSize: 11,
+    fontSize: 12,
     color: textColor,
     fontWeight: '600' as const,
     transform: [{ rotate: '-90deg' }],
