@@ -197,7 +197,7 @@ export function PriceBarChart({
                   height={marketBarHeight}
                   fill={getColor(totalPrice)}
                   opacity={isSelected ? 1.0 : 0.9}
-                  stroke={isSelected ? textColor : 'none'}
+                  stroke={isSelected ? '#999999' : 'none'}
                   strokeWidth={isSelected ? 2 : 0}
                 />
                 <Rect
@@ -207,7 +207,7 @@ export function PriceBarChart({
                   height={gridBarHeight}
                   fill="#757575"
                   opacity={isSelected ? 0.8 : 0.6}
-                  stroke={isSelected ? textColor : 'none'}
+                  stroke={isSelected ? '#999999' : 'none'}
                   strokeWidth={isSelected ? 2 : 0}
                 />
               </React.Fragment>

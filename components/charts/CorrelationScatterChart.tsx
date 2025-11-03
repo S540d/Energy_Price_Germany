@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { View, Text, Dimensions } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, Dimensions, Platform } from 'react-native';
 import Svg, { Circle, Line } from 'react-native-svg';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 
@@ -20,6 +20,8 @@ export function CorrelationScatterChart({
   textColor,
   gridColor,
 }: CorrelationScatterChartProps) {
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
   const screenWidth = useMemo(() => Dimensions.get('window').width, []);
   const screenHeight = useMemo(() => Dimensions.get('window').height, []);
   const isSmallScreen = screenWidth < 768;
@@ -120,6 +122,49 @@ export function CorrelationScatterChart({
 
   return (
     <View style={{ backgroundColor, margin, padding: cardPadding, borderRadius: 12, alignSelf: 'stretch' }}>
+      {selectedIndex !== null && validData[selectedIndex] && (() => {
+        const item = validData[selectedIndex];
+        const priceInCent = item.marketPrice! * 0.1;
+        const renewablePercent = item.renewableShare!;
+
+        // Berechne Position im Chart
+        const x = leftPadding + ((renewablePercent - minRenewable) / renewableRange) * (chartWidth - leftPadding - rightPadding);
+        const tooltipWidth = 120;
+        let tooltipLeft = x - tooltipWidth / 2;
+
+        // Rand-Check
+        if (tooltipLeft < 0) tooltipLeft = 8;
+        if (tooltipLeft + tooltipWidth > chartWidth) tooltipLeft = chartWidth - tooltipWidth - 8;
+
+        return (
+          <View style={{
+            paddingVertical: 6,
+            paddingHorizontal: 12,
+            backgroundColor: backgroundColor,
+            borderWidth: 1,
+            borderColor: textColor,
+            borderRadius: 6,
+            position: 'absolute',
+            top: cardPadding + 30,
+            left: tooltipLeft,
+            zIndex: 10,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
+          }}>
+            <Text style={{ color: textColor, fontSize: 14, fontWeight: 'bold' }}>
+              {new Date(item.timestamp).toLocaleString('de-DE', {
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </Text>
+          </View>
+        );
+      })()}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0 }}>
         <View>
           <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: 0, color: textColor }}>{title}</Text>
@@ -202,19 +247,51 @@ export function CorrelationScatterChart({
             const priceInCent = (d.marketPrice! * 0.1);
             const x = leftPadding + ((d.renewableShare! - minRenewable) / renewableRange) * (chartWidth - leftPadding - rightPadding);
             const y = chartHeight - bottomPadding - ((priceInCent - minPrice) / priceRange) * (chartHeight - padding - bottomPadding);
+            const isSelected = selectedIndex === index;
 
             return (
               <Circle
                 key={index}
                 cx={x}
                 cy={y}
-                r={4}
+                r={isSelected ? 6 : 4}
                 fill={getTimeColor(d.timestamp)}
-                opacity={0.7}
+                opacity={isSelected ? 1.0 : 0.7}
+                stroke={isSelected ? '#999999' : 'none'}
+                strokeWidth={isSelected ? 2 : 0}
               />
             );
           })}
         </Svg>
+
+        {/* Invisible touch/hover areas for points - rendered AFTER SVG */}
+        {validData.map((d, index) => {
+          const priceInCent = (d.marketPrice! * 0.1);
+          const x = leftPadding + ((d.renewableShare! - minRenewable) / renewableRange) * (chartWidth - leftPadding - rightPadding);
+          const y = chartHeight - bottomPadding - ((priceInCent - minPrice) / priceRange) * (chartHeight - padding - bottomPadding);
+          const touchSize = 24; // Größerer Touch-Bereich für bessere UX
+
+          return (
+            <View
+              key={`touch-${index}`}
+              style={{
+                position: 'absolute',
+                left: x - touchSize / 2,
+                top: y - touchSize / 2,
+                width: touchSize,
+                height: touchSize,
+                zIndex: 10,
+                cursor: Platform.OS === 'web' ? 'pointer' : undefined,
+              }}
+              onStartShouldSetResponder={() => true}
+              onResponderGrant={() => setSelectedIndex(index === selectedIndex ? null : index)}
+              {...(Platform.OS === 'web' && {
+                onMouseEnter: () => setSelectedIndex(index),
+                onMouseLeave: () => setSelectedIndex(null),
+              })}
+            />
+          );
+        })}
 
         {/* Y-axis labels (Preis) */}
         {[0, 1, 2, 3, 4].map(i => {
