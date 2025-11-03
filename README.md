@@ -5,10 +5,12 @@ A React Native/Expo app for visualizing energy prices and renewable energy share
 ## Features
 
 - **Real-time Data**: Fetches current energy market data from reliable sources
-- **Interactive Charts**: Visualize price trends and renewable energy share over time
+- **Interactive Charts**: Visualize price trends and renewable energy share over time with hover/touch interactions
 - **Correlation Analysis**: See the relationship between energy prices and renewable energy availability
-- **Responsive Design**: Works on web, iOS, and Android
+- **Bilingual Support**: Full German/English localization with automatic language detection
+- **Responsive Design**: Works on web, iOS, and Android with optimized layouts
 - **Dark/Light Theme**: Automatic system theme detection with manual override
+- **Progressive Web App (PWA)**: Install on mobile devices, works offline
 - **Data Export**: Export data as CSV or JSON for further analysis
 
 ## Data Sources
