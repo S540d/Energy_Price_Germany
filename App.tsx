@@ -82,12 +82,16 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>('system');
   const [language, setLanguage] = useState<Language>(() => {
     // Load saved language preference or detect browser language
-    if (Platform.OS === 'web') {
-      const saved = localStorage.getItem('language') as Language | null;
-      if (saved) return saved;
-      // Auto-detect browser language
-      const browserLang = navigator.language.toLowerCase();
-      return browserLang.startsWith('de') ? 'de' : 'en';
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      try {
+        const saved = window.localStorage?.getItem('language') as Language | null;
+        if (saved) return saved;
+        // Auto-detect browser language
+        const browserLang = window.navigator?.language?.toLowerCase() || 'en';
+        return browserLang.startsWith('de') ? 'de' : 'en';
+      } catch (e) {
+        return 'en';
+      }
     }
     return 'en';
   });
@@ -115,8 +119,12 @@ export default function App() {
 
   // Save language preference when it changes
   useEffect(() => {
-    if (Platform.OS === 'web') {
-      localStorage.setItem('language', language);
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      try {
+        window.localStorage?.setItem('language', language);
+      } catch (e) {
+        console.error('Failed to save language preference:', e);
+      }
     }
   }, [language]);
 

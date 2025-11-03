@@ -170,7 +170,7 @@ export function PriceBarChart({
           );
         })}
 
-        {/* Bars */}
+        {/* Bars (SVG) */}
         <Svg width={chartWidth} height={chartHeight + bottomPadding}>
           {data.map((d, index) => {
             const marketPrice = d.marketPrice !== null ? d.marketPrice * 0.1 : null;
@@ -190,24 +190,6 @@ export function PriceBarChart({
 
             return (
               <React.Fragment key={index}>
-                {/* Invisible touchable/hoverable area for each bar */}
-                <View
-                  key={`touch-${index}`}
-                  style={{
-                    position: 'absolute',
-                    left: x - barWidth / 2,
-                    top: gridY,
-                    width: barWidth,
-                    height: marketBarHeight + gridBarHeight,
-                    cursor: Platform.OS === 'web' ? 'pointer' : undefined,
-                  }}
-                  onStartShouldSetResponder={() => true}
-                  onResponderGrant={() => handleBarInteraction(index)}
-                  {...(Platform.OS === 'web' && {
-                    onMouseEnter: () => setSelectedIndex(index),
-                    onMouseLeave: () => setSelectedIndex(null),
-                  })}
-                />
                 <Rect
                   x={x - barWidth / 2}
                   y={marketY}
@@ -257,6 +239,43 @@ export function PriceBarChart({
             />
           )}
         </Svg>
+
+        {/* Invisible touch/hover areas for bars - rendered AFTER SVG to receive events */}
+        {data.map((d, index) => {
+          const marketPrice = d.marketPrice !== null ? d.marketPrice * 0.1 : null;
+          if (marketPrice === null) return null;
+
+          const totalPrice = marketPrice + GRID_FEES_AND_TAXES;
+          const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
+          const barWidth = ((chartWidth - leftPadding) / data.length) * 0.8;
+
+          const marketBarHeight = ((marketPrice - min) / range) * (chartHeight - padding);
+          const marketY = chartHeight - marketBarHeight;
+
+          const gridBarHeight = (GRID_FEES_AND_TAXES / range) * (chartHeight - padding);
+          const gridY = marketY - gridBarHeight;
+
+          return (
+            <View
+              key={`touch-${index}`}
+              style={{
+                position: 'absolute',
+                left: x - barWidth / 2,
+                top: gridY,
+                width: barWidth,
+                height: marketBarHeight + gridBarHeight,
+                zIndex: 10,
+                cursor: Platform.OS === 'web' ? 'pointer' : undefined,
+              }}
+              onStartShouldSetResponder={() => true}
+              onResponderGrant={() => handleBarInteraction(index)}
+              {...(Platform.OS === 'web' && {
+                onMouseEnter: () => setSelectedIndex(index),
+                onMouseLeave: () => setSelectedIndex(null),
+              })}
+            />
+          );
+        })}
 
         {/* Durchschnittslinie Label */}
         <Text

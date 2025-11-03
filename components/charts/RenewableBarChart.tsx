@@ -170,38 +170,7 @@ export function RenewableBarChart({
           );
         })}
 
-        {/* Invisible touch/hover areas for bars */}
-        {data.map((d, index) => {
-          const value = d.renewableShare;
-          if (value === null) return null;
-
-          const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
-          const barWidth = ((chartWidth - leftPadding) / data.length) * 0.8;
-          const barHeight = ((value - min) / range) * (chartHeight - padding);
-          const y = chartHeight - barHeight;
-
-          return (
-            <View
-              key={`touch-${index}`}
-              style={{
-                position: 'absolute',
-                left: x - barWidth / 2,
-                top: y,
-                width: barWidth,
-                height: barHeight,
-                cursor: Platform.OS === 'web' ? 'pointer' : undefined,
-              }}
-              onStartShouldSetResponder={() => true}
-              onResponderGrant={() => handleBarInteraction(index)}
-              {...(Platform.OS === 'web' && {
-                onMouseEnter: () => setSelectedIndex(index),
-                onMouseLeave: () => setSelectedIndex(null),
-              })}
-            />
-          );
-        })}
-
-        {/* Bars */}
+        {/* Bars (SVG) */}
         <Svg width={chartWidth} height={chartHeight + bottomPadding}>
           {data.map((d, index) => {
             const value = d.renewableShare;
@@ -286,6 +255,38 @@ export function RenewableBarChart({
             />
           )}
         </Svg>
+
+        {/* Invisible touch/hover areas for bars - rendered AFTER SVG to receive events */}
+        {data.map((d, index) => {
+          const value = d.renewableShare;
+          if (value === null) return null;
+
+          const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
+          const barWidth = ((chartWidth - leftPadding) / data.length) * 0.8;
+          const barHeight = ((value - min) / range) * (chartHeight - padding);
+          const y = chartHeight - barHeight;
+
+          return (
+            <View
+              key={`touch-${index}`}
+              style={{
+                position: 'absolute',
+                left: x - barWidth / 2,
+                top: y,
+                width: barWidth,
+                height: barHeight,
+                zIndex: 10,
+                cursor: Platform.OS === 'web' ? 'pointer' : undefined,
+              }}
+              onStartShouldSetResponder={() => true}
+              onResponderGrant={() => handleBarInteraction(index)}
+              {...(Platform.OS === 'web' && {
+                onMouseEnter: () => setSelectedIndex(index),
+                onMouseLeave: () => setSelectedIndex(null),
+              })}
+            />
+          );
+        })}
 
         {/* Durchschnittslinie Label */}
         <Text
