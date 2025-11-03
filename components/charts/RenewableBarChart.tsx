@@ -198,7 +198,7 @@ export function RenewableBarChart({
                     height={baseHeight}
                     fill={getColor(100)}
                     opacity={isSelected ? 1.0 : 0.9}
-                    stroke={isSelected ? textColor : 'none'}
+                    stroke={isSelected ? '#999999' : 'none'}
                     strokeWidth={isSelected ? 2 : 0}
                   />
                   <Rect
@@ -208,7 +208,7 @@ export function RenewableBarChart({
                     height={overHeight}
                     fill="#90A4AE"
                     opacity={isSelected ? 1.0 : 0.9}
-                    stroke={isSelected ? textColor : 'none'}
+                    stroke={isSelected ? '#999999' : 'none'}
                     strokeWidth={isSelected ? 2 : 0}
                   />
                 </React.Fragment>
@@ -224,7 +224,7 @@ export function RenewableBarChart({
                 height={barHeight}
                 fill={getColor(value)}
                 opacity={isSelected ? 1.0 : 0.9}
-                stroke={isSelected ? textColor : 'none'}
+                stroke={isSelected ? '#999999' : 'none'}
                 strokeWidth={isSelected ? 2 : 0}
               />
             );
