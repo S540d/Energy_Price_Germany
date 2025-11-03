@@ -11,7 +11,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Unit tests for core data merging logic
   - E2E tests for workflows
   - Performance optimization
-  - UI/UX refinements
+
+---
+
+## [1.1.0] - 2025-11-03
+
+### Added
+- **Complete Bilingual Support** - German/English localization throughout the app
+  - Automatic browser language detection
+  - Manual language toggle in settings
+  - All UI elements, chart labels, and tooltips translated
+  - Persistent language preference in localStorage
+  - Date/time formatting adapts to selected language
+
+- **Interactive Chart Enhancements**
+  - Hover tooltips on all three charts (desktop/web)
+  - Touch tooltips for mobile devices
+  - Date/time display on correlation scatter chart
+  - Value display on bar charts
+  - 24px touch areas for better mobile UX
+  - Smooth hover transitions with visual feedback
+
+### Changed
+- **Improved Chart Consistency**
+  - Unified Y-axis label positioning across all charts
+  - Consistent padding values (40px) for uniform spacing
+  - Gray highlights (#999999) for more subtle selection feedback
+  - Optimized chart rendering for better performance
+
+### Fixed
+- localStorage access issues causing 404 errors on page reload
+- Hover functionality now works consistently across all charts
+- Y-axis label spacing now uniform across all three charts
+- SSR-safe browser API access with proper error handling
+
+### Technical
+- Enhanced chart components with localization props
+- Improved event handling with z-index layering
+- Platform-specific touch/hover handlers for cross-platform support
+- Centralized translation management in App.tsx
 
 ---
 
@@ -166,7 +204,7 @@ This project follows Semantic Versioning (MAJOR.MINOR.PATCH):
 - MINOR: New features, backward compatible
 - PATCH: Bug fixes and improvements
 
-Current version: **1.0.3**
+Current version: **1.1.0**
 
 ---
 

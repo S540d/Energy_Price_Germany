@@ -20,7 +20,7 @@ import { MetricsView } from './components/MetricsView';
 import { calculateMetrics, EnergyData } from './utils/metrics';
 import { getThemeColors, Theme } from './utils/theme';
 
-const APP_VERSION = '1.0.5';
+const APP_VERSION = '1.1.0';
 
 type ViewMode = 'charts' | 'metrics';
 type Language = 'en' | 'de';
