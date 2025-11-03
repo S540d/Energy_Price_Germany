@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Fixed
+- **Chart Layout Consistency** - Unified chart structure and positioning across all components
+  - Y-axis labels now positioned consistently at 40% from top (horizontalOffset: -15)
+  - Fixed right-side overflow in narrow browser windows (all X-calculations now use rightPadding)
+  - Unified container heights across all three charts (removed inconsistent bottomPadding additions)
+  - All chart elements (bars, touch areas, lines, labels) now respect rightPadding boundaries
+  - Consistent layout structure: Y-labels inside chart container (not outside)
+
 ### Planned
 - Phase 5: Testing & Polish
   - Unit tests for core data merging logic
