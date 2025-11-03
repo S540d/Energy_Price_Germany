@@ -1,8 +1,9 @@
 # Android App Store Vorbereitung - Checkliste
 
-**Stand:** 2025-11-01
+**Stand:** 2025-01-03
 **Projekt:** Energy Prices Germany
 **Package:** com.sven4321.energypricegermany
+**Version:** 1.1.0 (versionCode: 4)
 
 ## Status-Übersicht
 
@@ -23,7 +24,7 @@
 - [ ] 12. Build testen auf verschiedenen Android-Geräten/Emulatoren
 
 ### 📤 Veröffentlichung
-- [ ] 13. Google Play Console Account einrichten
+- [x] 13. Google Play Console Account einrichten
 - [ ] 14. App in Google Play Console hochladen und Store Listing vervollständigen
 
 ---
@@ -53,24 +54,31 @@
 ### 2. App-Versionierung
 **Dateien:** `app.json`, `package.json`
 **Aktueller Stand:**
-- app.json: 1.0.0
-- package.json: 1.0.3
+- app.json: 1.1.0
+- package.json: 1.1.0
+- versionCode: 4
 
-**Ziel:** Synchronisieren auf gemeinsame Version
+**Status:** ✅ Versionen sind synchronisiert
 
 ### 3. Android-Konfiguration in app.json
 **Erforderliche Felder:**
-- `versionCode`: Integer, muss bei jedem Update erhöht werden
-- `permissions`: Liste der benötigten Berechtigungen
+- `versionCode`: 4 (wird bei jedem Update erhöht)
+- `permissions`: INTERNET, ACCESS_NETWORK_STATE ✅
+- `package`: com.sven4321.energypricegermany ✅
 - Optional: `intentFilters`, `googleServicesFile`, etc.
 
+**Status:** ✅ Konfiguration vollständig
+
 ### 4. App-Icons
+**Status:** ✅ Alle Icons erstellt
+
 **Vorhandene Assets:**
-- `assets/icon.png`
-- `assets/adaptive-icon.png`
+- `assets/icon.png` (App-Icon)
+- `assets/adaptive-icon.png` (Android Adaptive Icon)
+- `play-store-assets/icon-512x512.png` ✅ (512x512px für Play Store)
 
 **Erforderlich für Play Store:**
-- 512x512px High-res icon (PNG, 32-bit mit Alpha)
+- ✅ 512x512px High-res icon (PNG, 32-bit mit Alpha)
 
 ### 5. Feature Graphic
 **Spezifikationen:**
@@ -100,17 +108,24 @@
 - Features: Echtzeit-Daten, Charts, Korrelationsanalyse, Datenexport
 
 ### 8. Datenschutzrichtlinie
-**Erforderlich:** URL zu einer Datenschutzrichtlinie
-**Optionen:**
-- Eigene Website
-- GitHub Pages
-- Spezialisierte Dienste für Privacy Policies
+**Status:** ✅ Vollständig und deployed
 
-**Zu dokumentieren:**
-- Welche Daten werden gesammelt? (vermutlich keine)
-- Wie werden Daten verwendet?
-- Werden Daten geteilt?
-- AsyncStorage Nutzung dokumentieren
+**URL für Play Store:**
+```
+https://s540d.github.io/Energy_Price_Germany/PRIVACY_POLICY.html
+```
+
+**Lokale Dateien:**
+- `PRIVACY_POLICY.md` (Markdown)
+- `public/PRIVACY_POLICY.html` (Web-Version, deployed)
+
+**Inhalt:**
+- ✅ Zweisprachig (Deutsch/English)
+- ✅ Keine Erhebung personenbezogener Daten
+- ✅ Lokale Datenspeicherung dokumentiert (AsyncStorage)
+- ✅ API-Datenquellen dokumentiert (Energy Charts, aWATTar)
+- ✅ Berechtigungen erklärt (INTERNET, ACCESS_NETWORK_STATE)
+- ✅ Kein Tracking, keine Werbung, keine Analytics
 
 ### 9. Berechtigungen (Permissions)
 **Zu prüfen:**
@@ -177,35 +192,48 @@ eas build:download
 
 ## Notizen
 
-### Erledigte Arbeiten (2025-11-01)
+### Aktueller Stand (2025-01-03)
+
+**App-Version:**
+- Version: 1.1.0
+- versionCode: 4
+- Package: com.sven4321.energypricegermany
 
 **Konfigurationsdateien:**
 - ✅ `eas.json` erstellt mit Development, Preview und Production Profilen
 - ✅ `app.json` aktualisiert:
-  - Version auf 1.0.3 synchronisiert
-  - versionCode: 3 gesetzt
-  - Android Permissions hinzugefügt (INTERNET, ACCESS_NETWORK_STATE)
-  - Privacy-Setting auf "public" gesetzt
-  - Primary Color definiert (#4CAF50)
+  - Version: 1.1.0 (synchronisiert mit package.json)
+  - versionCode: 4
+  - Android Permissions: INTERNET, ACCESS_NETWORK_STATE
+  - Privacy-Setting: "public"
+  - Primary Color: #4CAF50
 
 **Dokumentation erstellt:**
 - ✅ `PRIVACY_POLICY.md` - Vollständige Datenschutzerklärung (DE/EN)
-- ✅ `PRIVACY_POLICY.html` - Webversion für GitHub Pages
+- ✅ `PRIVACY_POLICY.html` - Webversion für GitHub Pages (deployed)
+- ✅ `public/PRIVACY_POLICY.html` - Im public/ Ordner für Web-Deployment
 - ✅ `PERMISSIONS.md` - Detaillierte Berechtigungsdokumentation
 - ✅ `play-store-assets/README.md` - Anforderungen für grafische Assets
 - ✅ `play-store-assets/store-listing.md` - Komplette Store-Texte (DE/EN)
-- ✅ `play-store-assets/CATEGORY_AND_RATING.md` - Kategorisierung & Content Rating
+- ✅ `CATEGORY_AND_RATING.md` - Kategorisierung & Content Rating
 
-**Datenschutzrichtlinie URL:**
-Nach Web-Deployment verfügbar unter:
-`https://s540d.github.io/Energy_Price_Germany/PRIVACY_POLICY.html`
+**Grafische Assets:**
+- ✅ App-Icons erstellt (512x512, verschiedene Densities)
+- ✅ Feature Graphic vorhanden
+- ✅ Screenshots erstellt
+
+**Datenschutzrichtlinie URL (deployed):**
+```
+https://s540d.github.io/Energy_Price_Germany/PRIVACY_POLICY.html
+```
 
 **Nächste Schritte:**
-1. Grafische Assets erstellen (Icon 512x512, Feature Graphic, Screenshots)
-2. PRIVACY_POLICY.html deployen (mit `npm run deploy`)
-3. EAS Build erstellen
-4. Build testen
-5. Google Play Console Setup
+1. ~~Grafische Assets erstellen~~ ✅ Erledigt
+2. ~~PRIVACY_POLICY.html deployen~~ ✅ Erledigt (2025-01-03)
+3. EAS Build erstellen (Android AAB)
+4. Build testen auf Geräten/Emulatoren
+5. Google Play Console Upload
+6. Store Listing vervollständigen
 
 **Hinweise:**
 - Store Listing Texte sind fertig (DE/EN)
@@ -213,3 +241,4 @@ Nach Web-Deployment verfügbar unter:
 - Kategorie: "Tools" (Alternative: Business/Finance)
 - Keine In-App-Käufe, keine Werbung
 - Open Source (MIT License)
+- Datenschutz: Keine personenbezogenen Daten
