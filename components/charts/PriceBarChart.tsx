@@ -10,6 +10,11 @@ interface PriceBarChartProps {
   backgroundColor: string;
   textColor: string;
   gridColor: string;
+  labels: {
+    yAxis: string;
+    now: string;
+    average: string;
+  };
 }
 
 export function PriceBarChart({
@@ -19,6 +24,7 @@ export function PriceBarChart({
   backgroundColor,
   textColor,
   gridColor,
+  labels,
 }: PriceBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -148,7 +154,7 @@ export function PriceBarChart({
       )}
       {/* Y-Achsen-Label */}
       <Text style={getYAxisLabelStyle(chartHeight, 30, textColor)}>
-        Preis (¢/kWh)
+        {labels.yAxis}
       </Text>
       <View style={{ height: chartHeight + bottomPadding, width: chartWidth, position: 'relative' }}>
         {/* Grid Lines */}
@@ -289,7 +295,7 @@ export function PriceBarChart({
             opacity: 0.7,
           }}
         >
-          Ø {avgMarketPrice.toFixed(2)} ¢
+          {labels.average} {avgMarketPrice.toFixed(2)} ¢
         </Text>
 
         {/* Y-axis labels */}
@@ -364,7 +370,7 @@ export function PriceBarChart({
               fontWeight: 'bold',
             }}
           >
-            Jetzt
+            {labels.now}
           </Text>
         )}
       </View>

@@ -49,6 +49,14 @@ const translations = {
     timeRange: 'Time Range',
     noData: 'No data available',
     noDataMessage: 'The energy data could not be loaded. Please try again later.',
+    // Chart labels
+    renewablePercent: 'Renewables (%)',
+    pricePerKwh: 'Price (¢/kWh)',
+    now: 'Now',
+    average: 'Avg',
+    night: 'Night',
+    morningEvening: 'M/E',
+    day: 'Day',
   },
   de: {
     settings: 'Einstellungen',
@@ -73,6 +81,14 @@ const translations = {
     timeRange: 'Zeitraum',
     noData: 'Keine Daten verfügbar',
     noDataMessage: 'Die Energiedaten konnten nicht geladen werden. Bitte versuchen Sie es später erneut.',
+    // Chart labels
+    renewablePercent: 'Erneuerbare (%)',
+    pricePerKwh: 'Preis (¢/kWh)',
+    now: 'Jetzt',
+    average: 'Ø',
+    night: 'Nacht',
+    morningEvening: 'M/A',
+    day: 'Tag',
   },
 };
 
@@ -342,6 +358,11 @@ export default function App() {
               backgroundColor={colors.surface}
               textColor={colors.text}
               gridColor={colors.gridLine}
+              labels={{
+                yAxis: t.renewablePercent,
+                now: t.now,
+                average: t.average,
+              }}
             />
 
             <PriceBarChart
@@ -351,6 +372,11 @@ export default function App() {
               backgroundColor={colors.surface}
               textColor={colors.text}
               gridColor={colors.gridLine}
+              labels={{
+                yAxis: t.pricePerKwh,
+                now: t.now,
+                average: t.average,
+              }}
             />
 
             <CorrelationScatterChart
@@ -360,6 +386,13 @@ export default function App() {
               backgroundColor={colors.surface}
               textColor={colors.text}
               gridColor={colors.gridLine}
+              labels={{
+                yAxisPrice: t.pricePerKwh,
+                xAxisRenewables: t.renewablePercent,
+                night: t.night,
+                morningEvening: t.morningEvening,
+                day: t.day,
+              }}
             />
           </>
         ) : null}

@@ -10,6 +10,11 @@ interface RenewableBarChartProps {
   backgroundColor: string;
   textColor: string;
   gridColor: string;
+  labels: {
+    yAxis: string;
+    now: string;
+    average: string;
+  };
 }
 
 export function RenewableBarChart({
@@ -19,6 +24,7 @@ export function RenewableBarChart({
   backgroundColor,
   textColor,
   gridColor,
+  labels,
 }: RenewableBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -148,7 +154,7 @@ export function RenewableBarChart({
       )}
       {/* Y-Achsen-Label */}
       <Text style={getYAxisLabelStyle(chartHeight, 30, textColor)}>
-        Erneuerbare (%)
+        {labels.yAxis}
       </Text>
       <View style={{ height: chartHeight + bottomPadding, width: chartWidth, position: 'relative' }}>
         {/* Grid Lines */}
@@ -300,7 +306,7 @@ export function RenewableBarChart({
             opacity: 0.7,
           }}
         >
-          Ø {avgValue.toFixed(1)}%
+          {labels.average} {avgValue.toFixed(1)}%
         </Text>
 
         {/* Y-axis labels */}
@@ -375,7 +381,7 @@ export function RenewableBarChart({
               fontWeight: 'bold',
             }}
           >
-            Jetzt
+            {labels.now}
           </Text>
         )}
       </View>
