@@ -39,7 +39,16 @@ const translations = {
     about: 'ABOUT',
     version: 'Version',
     dataSource: 'Data Source',
-    license: 'License',
+    dataLicense: 'Data License',
+    appLicense: 'App License',
+    loadingData: 'Loading energy data...',
+    backToCharts: '← Back to Charts',
+    renewableTitle: 'Share of Renewable Energy in Load',
+    priceTitle: 'Market and End Customer Electricity Price',
+    correlationTitle: 'Correlation: Price vs. Renewables',
+    timeRange: 'Time Range',
+    noData: 'No data available',
+    noDataMessage: 'The energy data could not be loaded. Please try again later.',
   },
   de: {
     settings: 'Einstellungen',
@@ -54,7 +63,16 @@ const translations = {
     about: 'ÜBER',
     version: 'Version',
     dataSource: 'Datenquelle',
-    license: 'Lizenz',
+    dataLicense: 'Daten-Lizenz',
+    appLicense: 'App-Lizenz',
+    loadingData: 'Lade Energiedaten...',
+    backToCharts: '← Zurück zu Diagrammen',
+    renewableTitle: 'Anteil Erneuerbarer Energien an der Last',
+    priceTitle: 'Börsen- und Endkundenstrompreis',
+    correlationTitle: 'Korrelation: Preis vs. Erneuerbare',
+    timeRange: 'Zeitraum',
+    noData: 'Keine Daten verfügbar',
+    noDataMessage: 'Die Energiedaten konnten nicht geladen werden. Bitte versuchen Sie es später erneut.',
   },
 };
 
@@ -62,7 +80,17 @@ export default function App() {
   const [energyData, setEnergyData] = useState<EnergyData[]>([]);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<Theme>('system');
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguage] = useState<Language>(() => {
+    // Load saved language preference or detect browser language
+    if (Platform.OS === 'web') {
+      const saved = localStorage.getItem('language') as Language | null;
+      if (saved) return saved;
+      // Auto-detect browser language
+      const browserLang = navigator.language.toLowerCase();
+      return browserLang.startsWith('de') ? 'de' : 'en';
+    }
+    return 'en';
+  });
   const [menuVisible, setMenuVisible] = useState(false);
   const [currentView, setCurrentView] = useState<ViewMode>('charts');
   const systemTheme = useColorScheme();
@@ -72,6 +100,25 @@ export default function App() {
 
   // Memoized metrics calculations for better performance
   const metrics = useMemo(() => calculateMetrics(energyData), [energyData]);
+
+  // Helper function to format date according to selected language
+  const formatDate = (timestamp: number) => {
+    const locale = language === 'de' ? 'de-DE' : 'en-US';
+    return new Date(timestamp).toLocaleString(locale, {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Save language preference when it changes
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      localStorage.setItem('language', language);
+    }
+  }, [language]);
 
   useEffect(() => {
     async function loadData() {
@@ -121,7 +168,7 @@ export default function App() {
         <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.text }]}>
-            Lade Energiedaten...
+            {t.loadingData}
           </Text>
         </View>
       </SafeAreaView>
@@ -253,7 +300,13 @@ export default function App() {
                 {t.dataSource}: {getDataSourceInfo().name}
               </Text>
               <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-                {t.license}: {getDataSourceInfo().license}
+                {t.dataLicense}: {getDataSourceInfo().license}
+              </Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary, marginTop: 8 }]}>
+                {t.appLicense}: Open Source • MIT
+              </Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary, fontSize: 11 }]}>
+                {language === 'de' ? 'Keine kommerzielle Nutzung ohne Genehmigung' : 'No commercial use without permission'}
               </Text>
             </View>
           </View>
@@ -264,23 +317,19 @@ export default function App() {
       <ScrollView style={styles.scrollView}>
         {currentView === 'metrics' && energyData.length > 0 && metrics ? (
           <View style={styles.metricsContainer}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.backButton, { backgroundColor: colors.surface }]}
               onPress={() => setCurrentView('charts')}
             >
-              <Text style={[styles.backButtonText, { color: colors.primary }]}>← Zurück zu Diagrammen</Text>
+              <Text style={[styles.backButtonText, { color: colors.primary }]}>  {t.backToCharts}</Text>
             </TouchableOpacity>
             <MetricsView metrics={metrics} colors={colors} />
           </View>
         ) : energyData.length > 0 ? (
           <>
             <RenewableBarChart
-              title="Anteil Erneuerbarer Energien an der Last"
-              subtitle={`Zeitraum: ${energyData.length > 0 ? new Date(energyData[0].timestamp).toLocaleString('de-DE', {
-                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-              }) : 'Lädt...'} bis ${energyData.length > 0 ? new Date(energyData[energyData.length - 1].timestamp).toLocaleString('de-DE', {
-                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-              }) : 'Lädt...'}`}
+              title={t.renewableTitle}
+              subtitle={`${t.timeRange}: ${energyData.length > 0 ? formatDate(energyData[0].timestamp) : t.loadingData} - ${energyData.length > 0 ? formatDate(energyData[energyData.length - 1].timestamp) : t.loadingData}`}
               data={energyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
@@ -288,12 +337,8 @@ export default function App() {
             />
 
             <PriceBarChart
-              title="Börsen- und Endkundenstrompreis"
-              subtitle={`Zeitraum: ${energyData.length > 0 ? new Date(energyData[0].timestamp).toLocaleString('de-DE', {
-                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-              }) : 'Lädt...'} bis ${energyData.length > 0 ? new Date(energyData[energyData.length - 1].timestamp).toLocaleString('de-DE', {
-                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-              }) : 'Lädt...'}`}
+              title={t.priceTitle}
+              subtitle={`${t.timeRange}: ${energyData.length > 0 ? formatDate(energyData[0].timestamp) : t.loadingData} - ${energyData.length > 0 ? formatDate(energyData[energyData.length - 1].timestamp) : t.loadingData}`}
               data={energyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
@@ -301,12 +346,8 @@ export default function App() {
             />
 
             <CorrelationScatterChart
-              title="Korrelation: Preis vs. Erneuerbare"
-              subtitle={`Zeitraum: ${energyData.length > 0 ? new Date(energyData[0].timestamp).toLocaleString('de-DE', {
-                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-              }) : 'Lädt...'} bis ${energyData.length > 0 ? new Date(energyData[energyData.length - 1].timestamp).toLocaleString('de-DE', {
-                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-              }) : 'Lädt...'}`}
+              title={t.correlationTitle}
+              subtitle={`${t.timeRange}: ${energyData.length > 0 ? formatDate(energyData[0].timestamp) : t.loadingData} - ${energyData.length > 0 ? formatDate(energyData[energyData.length - 1].timestamp) : t.loadingData}`}
               data={energyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
@@ -317,10 +358,10 @@ export default function App() {
         {energyData.length === 0 && (
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>
-              Keine Daten verfügbar
+              {t.noData}
             </Text>
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-              Die Energiedaten konnten nicht geladen werden. Bitte versuchen Sie es später erneut.
+              {t.noDataMessage}
             </Text>
           </View>
         )}
