@@ -180,8 +180,8 @@ export function PriceBarChart({
             if (marketPrice === null) return null;
 
             const totalPrice = marketPrice + GRID_FEES_AND_TAXES;
-            const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
-            const barWidth = ((chartWidth - leftPadding) / data.length) * 0.8;
+            const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
+            const barWidth = ((chartWidth - leftPadding - rightPadding) / data.length) * 0.8;
 
             const marketBarHeight = ((marketPrice - min) / range) * (chartHeight - padding - bottomPadding);
             const marketY = chartHeight - bottomPadding - marketBarHeight;
@@ -232,9 +232,9 @@ export function PriceBarChart({
           {/* "Jetzt" Markierung */}
           {now >= minTime && now <= maxTime && (
             <Line
-              x1={leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding)}
+              x1={leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding)}
               y1={padding}
-              x2={leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding)}
+              x2={leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding)}
               y2={chartHeight - bottomPadding}
               stroke="red"
               strokeWidth="2"
@@ -249,8 +249,8 @@ export function PriceBarChart({
           if (marketPrice === null) return null;
 
           const totalPrice = marketPrice + GRID_FEES_AND_TAXES;
-          const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
-          const barWidth = ((chartWidth - leftPadding) / data.length) * 0.8;
+          const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
+          const barWidth = ((chartWidth - leftPadding - rightPadding) / data.length) * 0.8;
 
           const marketBarHeight = ((marketPrice - min) / range) * (chartHeight - padding - bottomPadding);
           const marketY = chartHeight - bottomPadding - marketBarHeight;
@@ -330,7 +330,7 @@ export function PriceBarChart({
 
           while (current <= endDate) {
             const timestamp = current.getTime();
-            const x = leftPadding + ((timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
+            const x = leftPadding + ((timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
             const hour = current.getHours();
 
             labels.push(
@@ -360,7 +360,7 @@ export function PriceBarChart({
           <Text
             style={{
               position: 'absolute',
-              left: leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding) - 15,
+              left: leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding) - 15,
               top: chartHeight - bottomPadding + 20,
               fontSize: 12,
               color: 'red',
@@ -372,7 +372,7 @@ export function PriceBarChart({
         )}
 
         {/* Y-Achsen-Label */}
-        <Text style={getYAxisLabelStyle(chartHeight, 30, textColor)}>
+        <Text style={getYAxisLabelStyle(chartHeight, -60, textColor)}>
           {labels.yAxis}
         </Text>
       </View>
