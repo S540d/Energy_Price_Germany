@@ -358,7 +358,7 @@ export function CorrelationScatterChart({
         >
           {labels.xAxisRenewables}
         </Text>
-        <Text style={getYAxisLabelStyle(chartHeight, -60, textColor)}>
+        <Text style={getYAxisLabelStyle(chartHeight, -15, textColor)}>
           {labels.yAxisPrice}
         </Text>
       </View>
