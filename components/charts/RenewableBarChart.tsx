@@ -179,8 +179,8 @@ export function RenewableBarChart({
             const value = d.renewableShare;
             if (value === null) return null;
 
-            const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
-            const barWidth = ((chartWidth - leftPadding) / data.length) * 0.8;
+            const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
+            const barWidth = ((chartWidth - leftPadding - rightPadding) / data.length) * 0.8;
             const barHeight = ((value - min) / range) * (chartHeight - padding - bottomPadding);
             const y = chartHeight - bottomPadding - barHeight;
             const isSelected = selectedIndex === index;
@@ -248,9 +248,9 @@ export function RenewableBarChart({
           {/* "Jetzt" Markierung */}
           {now >= minTime && now <= maxTime && (
             <Line
-              x1={leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding)}
+              x1={leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding)}
               y1={padding}
-              x2={leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding)}
+              x2={leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding)}
               y2={chartHeight - bottomPadding}
               stroke="red"
               strokeWidth="2"
@@ -264,8 +264,8 @@ export function RenewableBarChart({
           const value = d.renewableShare;
           if (value === null) return null;
 
-          const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
-          const barWidth = ((chartWidth - leftPadding) / data.length) * 0.8;
+          const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
+          const barWidth = ((chartWidth - leftPadding - rightPadding) / data.length) * 0.8;
           const barHeight = ((value - min) / range) * (chartHeight - padding - bottomPadding);
           const y = chartHeight - bottomPadding - barHeight;
 
@@ -341,7 +341,7 @@ export function RenewableBarChart({
 
           while (current <= endDate) {
             const timestamp = current.getTime();
-            const x = leftPadding + ((timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
+            const x = leftPadding + ((timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
             const hour = current.getHours();
 
             labels.push(
@@ -371,7 +371,7 @@ export function RenewableBarChart({
           <Text
             style={{
               position: 'absolute',
-              left: leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding) - 15,
+              left: leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding) - 15,
               top: chartHeight - bottomPadding + 20,
               fontSize: 12,
               color: 'red',
@@ -383,7 +383,7 @@ export function RenewableBarChart({
         )}
 
         {/* Y-Achsen-Label */}
-        <Text style={getYAxisLabelStyle(chartHeight, 30, textColor)}>
+        <Text style={getYAxisLabelStyle(chartHeight, -60, textColor)}>
           {labels.yAxis}
         </Text>
       </View>
