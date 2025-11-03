@@ -21,25 +21,33 @@ export function CorrelationScatterChart({
   gridColor,
 }: CorrelationScatterChartProps) {
   const screenWidth = useMemo(() => Dimensions.get('window').width, []);
+  const screenHeight = useMemo(() => Dimensions.get('window').height, []);
   const isSmallScreen = screenWidth < 768;
   const isPhone = screenWidth < 480;
 
-  // Responsive Chart-Größen - Breite optimal nutzen, Höhe im Verhältnis zur Breite
+  // Responsive Chart-Größen - Viewport-bewusst für optimale Darstellung
   const leftPadding = isPhone ? 35 : 45;
   const padding = 50;
   const rightPadding = isPhone ? 40 : 50;
   const bottomPadding = isPhone ? 35 : 40;
 
-  // Breite: Nutze verfügbare Bildschirmbreite optimal
-  const chartWidth = isPhone
-    ? screenWidth - 24  // Fast voller Bildschirm auf Phone
-    : isSmallScreen
-    ? screenWidth - 24  // Fast voller Bildschirm auf Tablet
-    : screenWidth - 48; // Mit etwas Margin auf Desktop
+  // Margins (8px Grid)
+  const margin = isPhone ? 8 : 16;
+  const cardPadding = isPhone ? 12 : 16;
 
-  // Höhe: Basierend auf Breite mit optimalem Aspekt-Verhältnis (2.5:1)
-  // Scrolling ist okay - Hauptsache die Charts sind gut lesbar
-  const chartHeight = Math.round(chartWidth / 2.5);
+  // Breite: Nutze verfügbare Bildschirmbreite optimal (minus Margins)
+  const chartWidth = screenWidth - (margin * 2);
+
+  // Höhe: Viewport-bewusst, sodass alle 3 Charts gut sichtbar sind
+  const baseAspectRatio = 2.5;
+  const availableHeight = screenHeight - 200; // Header + Overhead
+  const maxChartHeight = availableHeight / 3.3; // 3 Charts + Gaps
+  const absoluteMaxHeight = isPhone ? 200 : isSmallScreen ? 280 : 320; // Absolute Obergrenze
+  const chartHeight = Math.round(Math.min(
+    chartWidth / baseAspectRatio,
+    maxChartHeight,
+    absoluteMaxHeight
+  ));
 
   // Only use entries with both marketPrice and renewableShare for rendering points
   const validData = data.filter(d => d.marketPrice !== null && d.renewableShare !== null);
@@ -111,7 +119,7 @@ export function CorrelationScatterChart({
   };
 
   return (
-    <View style={{ backgroundColor, margin: isPhone ? 6 : 12, padding: isPhone ? 8 : 12, borderRadius: 12, alignSelf: 'stretch' }}>
+    <View style={{ backgroundColor, margin, padding: cardPadding, borderRadius: 12, alignSelf: 'stretch' }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0 }}>
         <View>
           <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: 0, color: textColor }}>{title}</Text>

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, Dimensions } from 'react-native';
+import { View, Text, Dimensions, Platform } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 
@@ -69,13 +69,8 @@ export function RenewableBarChart({
   // Durchschnittswert berechnen
   const avgValue = values.reduce((sum, v) => sum + v, 0) / values.length;
 
-  const handlePress = (event: any) => {
-    const { locationX } = event.nativeEvent;
-    const barWidth = (chartWidth - leftPadding) / data.length;
-    const index = Math.floor((locationX - leftPadding) / barWidth);
-    if (index >= 0 && index < data.length) {
-      setSelectedIndex(index === selectedIndex ? null : index);
-    }
+  const handleBarInteraction = (index: number) => {
+    setSelectedIndex(index === selectedIndex ? null : index);
   };
 
   // Farbcodierung mit fließenden Übergängen
@@ -155,7 +150,7 @@ export function RenewableBarChart({
       <Text style={getYAxisLabelStyle(chartHeight, 30, textColor)}>
         Erneuerbare (%)
       </Text>
-      <View style={{ height: chartHeight + bottomPadding, width: chartWidth }}>
+      <View style={{ height: chartHeight + bottomPadding, width: chartWidth, position: 'relative' }}>
         {/* Grid Lines */}
         {[0, 1, 2, 3, 4].map(i => {
           const y = padding + (i / 4) * (chartHeight - padding);
@@ -175,6 +170,37 @@ export function RenewableBarChart({
           );
         })}
 
+        {/* Invisible touch/hover areas for bars */}
+        {data.map((d, index) => {
+          const value = d.renewableShare;
+          if (value === null) return null;
+
+          const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
+          const barWidth = ((chartWidth - leftPadding) / data.length) * 0.8;
+          const barHeight = ((value - min) / range) * (chartHeight - padding);
+          const y = chartHeight - barHeight;
+
+          return (
+            <View
+              key={`touch-${index}`}
+              style={{
+                position: 'absolute',
+                left: x - barWidth / 2,
+                top: y,
+                width: barWidth,
+                height: barHeight,
+                cursor: Platform.OS === 'web' ? 'pointer' : undefined,
+              }}
+              onStartShouldSetResponder={() => true}
+              onResponderGrant={() => handleBarInteraction(index)}
+              {...(Platform.OS === 'web' && {
+                onMouseEnter: () => setSelectedIndex(index),
+                onMouseLeave: () => setSelectedIndex(null),
+              })}
+            />
+          );
+        })}
+
         {/* Bars */}
         <Svg width={chartWidth} height={chartHeight + bottomPadding}>
           {data.map((d, index) => {
@@ -185,6 +211,7 @@ export function RenewableBarChart({
             const barWidth = ((chartWidth - leftPadding) / data.length) * 0.8;
             const barHeight = ((value - min) / range) * (chartHeight - padding);
             const y = chartHeight - barHeight;
+            const isSelected = selectedIndex === index;
 
             // Wenn Wert über 100%, Balken zweiteilen
             if (value > 100) {
@@ -201,7 +228,9 @@ export function RenewableBarChart({
                     width={barWidth}
                     height={baseHeight}
                     fill={getColor(100)}
-                    opacity={0.9}
+                    opacity={isSelected ? 1.0 : 0.9}
+                    stroke={isSelected ? textColor : 'none'}
+                    strokeWidth={isSelected ? 2 : 0}
                   />
                   <Rect
                     x={x - barWidth / 2}
@@ -209,7 +238,9 @@ export function RenewableBarChart({
                     width={barWidth}
                     height={overHeight}
                     fill="#90A4AE"
-                    opacity={0.9}
+                    opacity={isSelected ? 1.0 : 0.9}
+                    stroke={isSelected ? textColor : 'none'}
+                    strokeWidth={isSelected ? 2 : 0}
                   />
                 </React.Fragment>
               );
@@ -223,7 +254,9 @@ export function RenewableBarChart({
                 width={barWidth}
                 height={barHeight}
                 fill={getColor(value)}
-                opacity={0.9}
+                opacity={isSelected ? 1.0 : 0.9}
+                stroke={isSelected ? textColor : 'none'}
+                strokeWidth={isSelected ? 2 : 0}
               />
             );
           })}

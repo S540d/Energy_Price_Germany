@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, Dimensions, TouchableOpacity } from 'react-native';
+import { View, Text, Dimensions, TouchableOpacity, Platform } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 
@@ -21,6 +21,10 @@ export function PriceBarChart({
   gridColor,
 }: PriceBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
+  const handleBarInteraction = (index: number) => {
+    setSelectedIndex(index === selectedIndex ? null : index);
+  };
 
   const screenWidth = useMemo(() => Dimensions.get('window').width, []);
   const screenHeight = useMemo(() => Dimensions.get('window').height, []);
@@ -186,8 +190,8 @@ export function PriceBarChart({
 
             return (
               <React.Fragment key={index}>
-                {/* Invisible touchable area for each bar */}
-                <TouchableOpacity
+                {/* Invisible touchable/hoverable area for each bar */}
+                <View
                   key={`touch-${index}`}
                   style={{
                     position: 'absolute',
@@ -195,11 +199,14 @@ export function PriceBarChart({
                     top: gridY,
                     width: barWidth,
                     height: marketBarHeight + gridBarHeight,
+                    cursor: Platform.OS === 'web' ? 'pointer' : undefined,
                   }}
-                  onPress={() => {
-                    setSelectedIndex(index === selectedIndex ? null : index);
-                  }}
-                  activeOpacity={1}
+                  onStartShouldSetResponder={() => true}
+                  onResponderGrant={() => handleBarInteraction(index)}
+                  {...(Platform.OS === 'web' && {
+                    onMouseEnter: () => setSelectedIndex(index),
+                    onMouseLeave: () => setSelectedIndex(null),
+                  })}
                 />
                 <Rect
                   x={x - barWidth / 2}
