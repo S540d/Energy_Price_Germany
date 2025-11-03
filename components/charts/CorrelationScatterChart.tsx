@@ -10,6 +10,13 @@ interface CorrelationScatterChartProps {
   backgroundColor: string;
   textColor: string;
   gridColor: string;
+  labels: {
+    yAxisPrice: string;
+    xAxisRenewables: string;
+    night: string;
+    morningEvening: string;
+    day: string;
+  };
 }
 
 export function CorrelationScatterChart({
@@ -19,6 +26,7 @@ export function CorrelationScatterChart({
   backgroundColor,
   textColor,
   gridColor,
+  labels,
 }: CorrelationScatterChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -178,15 +186,15 @@ export function CorrelationScatterChart({
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2196F3' }} />
-              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>Nacht</Text>
+              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.night}</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF9800' }} />
-              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>M/A</Text>
+              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.morningEvening}</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFEB3B' }} />
-              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>Tag</Text>
+              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.day}</Text>
             </View>
           </View>
         )}
@@ -348,10 +356,10 @@ export function CorrelationScatterChart({
             fontWeight: '600',
           }}
         >
-          Erneuerbare (%)
+          {labels.xAxisRenewables}
         </Text>
-        <Text style={getYAxisLabelStyle(chartHeight, 0, textColor)}>
-          Preis (¢/kWh)
+        <Text style={getYAxisLabelStyle(chartHeight, 30, textColor)}>
+          {labels.yAxisPrice}
         </Text>
       </View>
     </View>
