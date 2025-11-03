@@ -1,6 +1,6 @@
 # Android App Store Vorbereitung - Checkliste
 
-**Stand:** 2025-01-03
+**Stand:** 2025-11-03
 **Projekt:** Energy Prices Germany
 **Package:** com.sven4321.energypricegermany
 **Version:** 1.1.0 (versionCode: 4)
@@ -192,7 +192,7 @@ eas build:download
 
 ## Notizen
 
-### Aktueller Stand (2025-01-03)
+### Aktueller Stand (2025-11-03)
 
 **App-Version:**
 - Version: 1.1.0
@@ -229,7 +229,7 @@ https://s540d.github.io/Energy_Price_Germany/PRIVACY_POLICY.html
 
 **Nächste Schritte:**
 1. ~~Grafische Assets erstellen~~ ✅ Erledigt
-2. ~~PRIVACY_POLICY.html deployen~~ ✅ Erledigt (2025-01-03)
+2. ~~PRIVACY_POLICY.html deployen~~ ✅ Erledigt (2025-11-03)
 3. EAS Build erstellen (Android AAB)
 4. Build testen auf Geräten/Emulatoren
 5. Google Play Console Upload
