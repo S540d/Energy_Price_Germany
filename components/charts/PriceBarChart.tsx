@@ -372,7 +372,7 @@ export function PriceBarChart({
         )}
 
         {/* Y-Achsen-Label */}
-        <Text style={getYAxisLabelStyle(chartHeight, -60, textColor)}>
+        <Text style={getYAxisLabelStyle(chartHeight, -15, textColor)}>
           {labels.yAxis}
         </Text>
       </View>
