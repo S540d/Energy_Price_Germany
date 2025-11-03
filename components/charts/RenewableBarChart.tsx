@@ -36,7 +36,8 @@ export function RenewableBarChart({
   // Responsive Chart-Größen - Viewport-bewusst für optimale Darstellung
   const leftPadding = isPhone ? 35 : 45;
   const padding = 40;
-  const bottomPadding = isPhone ? 40 : 50;
+  const rightPadding = isPhone ? 40 : 50;
+  const bottomPadding = isPhone ? 35 : 40;
 
   // Margins (8px Grid)
   const margin = isPhone ? 8 : 16;
@@ -152,14 +153,10 @@ export function RenewableBarChart({
           {subtitle}
         </Text>
       )}
-      {/* Y-Achsen-Label */}
-      <Text style={getYAxisLabelStyle(chartHeight, 30, textColor)}>
-        {labels.yAxis}
-      </Text>
-      <View style={{ height: chartHeight + bottomPadding, width: chartWidth, position: 'relative' }}>
+      <View style={{ height: chartHeight, width: chartWidth, position: 'relative' }}>
         {/* Grid Lines */}
         {[0, 1, 2, 3, 4].map(i => {
-          const y = padding + (i / 4) * (chartHeight - padding);
+          const y = padding + (i / 4) * (chartHeight - padding - bottomPadding);
           return (
             <View
               key={`grid-${i}`}
@@ -167,7 +164,7 @@ export function RenewableBarChart({
                 position: 'absolute',
                 left: leftPadding,
                 top: y,
-                width: chartWidth - leftPadding,
+                width: chartWidth - leftPadding - rightPadding,
                 height: 1,
                 backgroundColor: gridColor,
                 opacity: 0.3,
@@ -177,22 +174,22 @@ export function RenewableBarChart({
         })}
 
         {/* Bars (SVG) */}
-        <Svg width={chartWidth} height={chartHeight + bottomPadding}>
+        <Svg width={chartWidth} height={chartHeight}>
           {data.map((d, index) => {
             const value = d.renewableShare;
             if (value === null) return null;
 
             const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
             const barWidth = ((chartWidth - leftPadding) / data.length) * 0.8;
-            const barHeight = ((value - min) / range) * (chartHeight - padding);
-            const y = chartHeight - barHeight;
+            const barHeight = ((value - min) / range) * (chartHeight - padding - bottomPadding);
+            const y = chartHeight - bottomPadding - barHeight;
             const isSelected = selectedIndex === index;
 
             // Wenn Wert über 100%, Balken zweiteilen
             if (value > 100) {
-              const baseHeight = ((100 - min) / range) * (chartHeight - padding);
-              const overHeight = ((value - 100) / range) * (chartHeight - padding);
-              const baseY = chartHeight - baseHeight;
+              const baseHeight = ((100 - min) / range) * (chartHeight - padding - bottomPadding);
+              const overHeight = ((value - 100) / range) * (chartHeight - padding - bottomPadding);
+              const baseY = chartHeight - bottomPadding - baseHeight;
               const overY = baseY - overHeight;
 
               return (
@@ -239,9 +236,9 @@ export function RenewableBarChart({
           {/* Durchschnittslinie */}
           <Line
             x1={leftPadding}
-            y1={chartHeight - ((avgValue - min) / range) * (chartHeight - padding)}
-            x2={chartWidth}
-            y2={chartHeight - ((avgValue - min) / range) * (chartHeight - padding)}
+            y1={chartHeight - bottomPadding - ((avgValue - min) / range) * (chartHeight - padding - bottomPadding)}
+            x2={chartWidth - rightPadding}
+            y2={chartHeight - bottomPadding - ((avgValue - min) / range) * (chartHeight - padding - bottomPadding)}
             stroke={textColor}
             strokeWidth="2"
             strokeDasharray="8,4"
@@ -254,7 +251,7 @@ export function RenewableBarChart({
               x1={leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding)}
               y1={padding}
               x2={leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding)}
-              y2={chartHeight}
+              y2={chartHeight - bottomPadding}
               stroke="red"
               strokeWidth="2"
               strokeDasharray="5,5"
@@ -269,8 +266,8 @@ export function RenewableBarChart({
 
           const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
           const barWidth = ((chartWidth - leftPadding) / data.length) * 0.8;
-          const barHeight = ((value - min) / range) * (chartHeight - padding);
-          const y = chartHeight - barHeight;
+          const barHeight = ((value - min) / range) * (chartHeight - padding - bottomPadding);
+          const y = chartHeight - bottomPadding - barHeight;
 
           return (
             <View
@@ -299,7 +296,7 @@ export function RenewableBarChart({
           style={{
             position: 'absolute',
             left: chartWidth - (isPhone ? 42 : 48),
-            top: chartHeight - ((avgValue - min) / range) * (chartHeight - padding) - 12,
+            top: chartHeight - bottomPadding - ((avgValue - min) / range) * (chartHeight - padding - bottomPadding) - 12,
             fontSize: 12,
             color: textColor,
             fontWeight: '600',
@@ -312,7 +309,7 @@ export function RenewableBarChart({
         {/* Y-axis labels */}
         {[0, 1, 2, 3, 4].map(i => {
           const value = max - (i / 4) * range;
-          const y = padding + (i / 4) * (chartHeight - padding);
+          const y = padding + (i / 4) * (chartHeight - padding - bottomPadding);
           return (
             <Text
               key={`ylabel-${i}`}
@@ -353,7 +350,7 @@ export function RenewableBarChart({
                 style={{
                   position: 'absolute',
                   left: x - 10,
-                  top: chartHeight + 5,
+                  top: chartHeight - bottomPadding + 5,
                   fontSize: 12,
                   color: textColor,
                   opacity: 0.6,
@@ -375,7 +372,7 @@ export function RenewableBarChart({
             style={{
               position: 'absolute',
               left: leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding) - 15,
-              top: chartHeight + 20,
+              top: chartHeight - bottomPadding + 20,
               fontSize: 12,
               color: 'red',
               fontWeight: 'bold',
@@ -384,6 +381,11 @@ export function RenewableBarChart({
             {labels.now}
           </Text>
         )}
+
+        {/* Y-Achsen-Label */}
+        <Text style={getYAxisLabelStyle(chartHeight, 30, textColor)}>
+          {labels.yAxis}
+        </Text>
       </View>
     </View>
   );
