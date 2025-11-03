@@ -37,7 +37,7 @@ export function CorrelationScatterChart({
 
   // Responsive Chart-Größen - Viewport-bewusst für optimale Darstellung
   const leftPadding = isPhone ? 35 : 45;
-  const padding = 50;
+  const padding = 40;
   const rightPadding = isPhone ? 40 : 50;
   const bottomPadding = isPhone ? 35 : 40;
 
