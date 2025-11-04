@@ -188,7 +188,7 @@ export default function App() {
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <StatusBar style={colors.background === '#121212' ? 'light' : 'dark'} />
+        <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
         <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.text }]}>
@@ -201,7 +201,7 @@ export default function App() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar style={colors.background === '#121212' ? 'light' : 'dark'} />
+      <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
 
       {/* Header with Settings Button */}
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.gridLine }]}>
@@ -338,7 +338,10 @@ export default function App() {
       )}
 
       {/* Main Content */}
-      <ScrollView style={styles.scrollView}>
+      <ScrollView
+        style={[styles.scrollView, { backgroundColor: colors.background }]}
+        contentContainerStyle={{ backgroundColor: colors.background }}
+      >
         {currentView === 'metrics' && energyData.length > 0 && metrics ? (
           <View style={styles.metricsContainer}>
             <TouchableOpacity
