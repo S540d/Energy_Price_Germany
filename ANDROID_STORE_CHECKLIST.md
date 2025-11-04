@@ -19,8 +19,8 @@
 - [x] 9. Berechtigungen (Permissions) dokumentieren und minimieren ✅
 - [x] 10. App-Kategorie und Content Rating definieren ✅
 
-### 🧪 Testing (später)
-- [ ] 11. Production Build mit EAS erstellen (AAB Format)
+### 🧪 Testing
+- [x] 11. Production Build mit EAS erstellen (AAB Format) ✅
 - [ ] 12. Build testen auf verschiedenen Android-Geräten/Emulatoren
 
 ### 📤 Veröffentlichung
@@ -329,10 +329,20 @@ https://s540d.github.io/Energy_Price_Germany/PRIVACY_POLICY.html
 **Nächste Schritte:**
 1. ~~Grafische Assets erstellen~~ ✅ Erledigt
 2. ~~PRIVACY_POLICY.html deployen~~ ✅ Erledigt (2025-11-03)
-3. EAS Build erstellen (Android AAB)
+3. ~~EAS Build erstellen (Android AAB)~~ ✅ Erledigt (2025-11-04)
 4. Build testen auf Geräten/Emulatoren
-5. Google Play Console Upload
-6. Store Listing vervollständigen
+5. Google Play Console Upload (in Review)
+6. Store Listing vervollständigen (in Review)
+
+**Build-Informationen (EAS Build):**
+- ✅ Build-ID: 3e0a7596-316c-43e0-898c-2340ec220a47
+- ✅ Datum: 2025-11-04 22:24:22 UTC
+- ✅ Status: SUCCESS (10 Minuten 5 Sekunden)
+- ✅ AAB-Datei: play-store-assets/energy-price-germany-v1.1.0-production.aab
+- ✅ Größe: 83 MB
+- ✅ Keystore: Automatisch von EAS verwaltet
+- ✅ Package: com.sven4321.energypricegermany
+- ✅ **Bereit für Play Store Upload!**
 
 **Hinweise:**
 - Store Listing Texte sind fertig (DE/EN)
@@ -341,3 +351,4 @@ https://s540d.github.io/Energy_Price_Germany/PRIVACY_POLICY.html
 - Keine In-App-Käufe, keine Werbung
 - Open Source (MIT License)
 - Datenschutz: Keine personenbezogenen Daten
+- **Wichtig:** Keystore-Backup erstellen (siehe KEYSTORE_BACKUP_GUIDE.md)!
