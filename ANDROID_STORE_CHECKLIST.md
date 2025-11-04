@@ -96,16 +96,115 @@
 - Verschiedene Bildschirmgrößen: Phone, 7-inch Tablet, 10-inch Tablet
 
 ### 7. Store Listing Texte
+
 **Kurzbeschreibung (max. 80 Zeichen):**
-[Noch zu erstellen]
+```
+Strompreise & Ökostrom-Anteil in Deutschland - Live-Daten & Charts
+```
+*(65 Zeichen)*
 
-**Langbeschreibung (max. 4000 Zeichen):**
-[Noch zu erstellen - sollte Features, Datenquellen, Vorteile beschreiben]
+**Vollständige Beschreibung (max. 4000 Zeichen):**
+```
+📊 Energy Price Germany - Ihre App für aktuelle Strompreise und Energiewende-Daten
 
-**Basis-Informationen:**
-- App visualisiert Energiepreise in Deutschland
-- Datenquellen: Energy Charts (Fraunhofer ISE), aWATTar
-- Features: Echtzeit-Daten, Charts, Korrelationsanalyse, Datenexport
+Behalten Sie die Entwicklung der Strompreise und des Ökostrom-Anteils in Deutschland im Blick! Diese App visualisiert Echtzeitdaten vom Energiemarkt und zeigt Ihnen, wann Strom besonders günstig ist und wie hoch der Anteil erneuerbarer Energien im Netz ist.
+
+🌟 HAUPTFUNKTIONEN
+
+✅ Live-Strompreise
+• Day-Ahead-Marktpreise in EUR/MWh
+• Prognosen für bis zu 43+ Stunden
+• 15-Minuten-Auflösung für präzise Daten
+
+✅ Ökostrom-Anteil
+• Aktuelle und prognostizierte Werte
+• Prozentuale Darstellung erneuerbarer Energien
+• Sehen Sie die Energiewende in Echtzeit
+
+✅ Interaktive Charts
+• Preisverlauf über Zeit visualisiert
+• Touch-Interaktionen für Details
+• Korrelationsanalyse zwischen Preis und Ökostrom-Anteil
+
+✅ Daten-Export
+• CSV-Export für Excel/Numbers
+• JSON-Export für eigene Analysen
+• Teilen Sie Daten mit anderen Apps
+
+✅ Benutzerfreundlich
+• Zweisprachig: Deutsch & English
+• Dark/Light Mode (automatisch oder manuell)
+• Responsive Design für alle Bildschirmgrößen
+• Progressive Web App (PWA) - funktioniert auch offline
+
+📡 DATENQUELLEN
+
+Die App nutzt eine intelligente Hybrid-Strategie für maximale Prognose-Abdeckung:
+
+1. Energy Charts (Fraunhofer ISE) - Primärquelle
+   • Day-Ahead-Marktpreise
+   • Ökostrom-Anteil-Prognosen (~24h)
+   • 15-Minuten-Auflösung
+
+2. aWATTar (EPEX Spot Market Data) - Ergänzung
+   • Erweiterte Preisdaten (~48h)
+   • Automatische Lückenfüllung
+   • Fallback bei API-Ausfällen
+
+🔒 DATENSCHUTZ & SICHERHEIT
+
+• Keine Erhebung personenbezogener Daten
+• Keine Werbung, kein Tracking
+• Alle Einstellungen werden nur lokal gespeichert
+• Open Source (MIT License)
+• Vollständige Datenschutzerklärung verfügbar
+
+💡 PERFEKT FÜR
+
+• Stromkunden, die günstige Ladezeiten finden möchten (E-Auto, Wärmepumpe)
+• Energiewende-Interessierte, die den Ökostrom-Anteil verfolgen
+• Haushalte mit intelligentem Energiemanagement
+• Alle, die Transparenz über Strompreise wünschen
+
+🎯 WARUM DIESE APP?
+
+• Kostenlos & werbefrei
+• Zuverlässige Daten von offiziellen Quellen
+• Regelmäßige Updates
+• Einfache Bedienung
+• Funktioniert auch offline (PWA)
+
+📈 ENERGIEKOSTEN OPTIMIEREN
+
+Nutzen Sie die Preisinformationen, um energieintensive Geräte zu günstigen Zeiten zu betreiben:
+• E-Auto-Laden in der Nacht
+• Waschmaschine/Trockner zu günstigen Zeiten
+• Wärmepumpe intelligent steuern
+• Batteriespeicher optimal nutzen
+
+🌍 ENERGIEWENDE VERSTEHEN
+
+Sehen Sie in Echtzeit, wie viel erneuerbare Energie (Wind, Solar, Wasser, Biomasse) ins deutsche Stromnetz eingespeist wird und wie sich das auf die Preise auswirkt.
+
+📞 SUPPORT & FEEDBACK
+
+Haben Sie Fragen oder Verbesserungsvorschläge? Kontaktieren Sie uns über:
+• GitHub: https://github.com/S540d/Energy_Price_Germany
+• Support: devsven@posteo.de
+
+⭐ BEWERTEN SIE UNS
+
+Wenn Ihnen die App gefällt, freuen wir uns über eine positive Bewertung im Play Store!
+
+---
+
+Hinweis: Die angezeigten Preise sind Day-Ahead-Marktpreise und können von Ihren tatsächlichen Endverbraucherpreisen abweichen, da diese weitere Komponenten (Netzentgelte, Steuern, Umlagen) enthalten.
+```
+*(~2850 Zeichen - unter dem 4000-Limit)*
+
+**Alternative Kurzbeschreibungen:**
+- "Energiepreise Deutschland: Live-Daten & Prognosen mit Charts" (60 Zeichen)
+- "Strompreise & erneuerbare Energie in Deutschland - Live-Charts" (63 Zeichen)
 
 ### 8. Datenschutzrichtlinie
 **Status:** ✅ Vollständig und deployed
