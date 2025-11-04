@@ -19,7 +19,7 @@ export function getThemeColors(theme: Theme, systemTheme: 'light' | 'dark'): The
 
   return isDark
     ? {
-        background: '#121212',
+        background: '#000000',
         surface: '#1E1E1E',
         text: '#E0E0E0',
         textSecondary: '#A0A0A0',
