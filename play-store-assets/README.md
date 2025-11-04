@@ -2,15 +2,41 @@
 
 Dieser Ordner enthält alle grafischen Assets, die für die Veröffentlichung im Google Play Store benötigt werden.
 
-## ✅ Bereits vorhanden (aus /assets)
+## 🚀 Schnellstart
 
-Die folgenden Icons sind bereits in `/assets` vorhanden und können verwendet werden:
+```bash
+# Im Terminal:
+cd play-store-assets/
+
+# Interaktives Menü starten:
+./create-assets.sh
+
+# Oder direkt:
+./create-assets.sh feature      # Feature Graphic erstellen
+./create-assets.sh screenshots  # Screenshots erstellen
+./create-assets.sh status       # Status überprüfen
+```
+
+## ✅ Bereits vorhanden
+
+### App-Icon
+- ✅ `icon-512x512.png` - App-Icon für Play Store (512x512px, 266 KB)
+
+### Vorlagen & Tools
+- ✅ `feature-graphic.html` - Interaktive HTML-Vorlage für Feature Graphic
+- ✅ `create-assets.sh` - Automatisierungs-Script
+- ✅ `SCREENSHOT_GUIDE.md` - Detaillierte Anleitung für Screenshots
+- ✅ `store-listing.md` - Store-Texte (DE/EN)
+- ✅ `CATEGORY_AND_RATING.md` - Kategorisierung & Content Rating
+
+## 📋 Noch zu erstellen
+
+### Icons aus /assets (bereits vorhanden, für App)
+Die folgenden Icons sind bereits in `/assets` vorhanden:
 - `icon.png` - App-Icon
 - `adaptive-icon.png` - Android Adaptive Icon
 - `favicon.png` - Web-Favicon
 - `splash-icon.png` - Splash Screen
-
-## 📋 Noch zu erstellen für Play Store
 
 ### 1. App-Icon (High-Resolution)
 **Dateiname:** `icon-512.png`
@@ -154,6 +180,79 @@ adb pull /sdcard/screenshot.png ./play-store-assets/
 
 ---
 
+## 🎬 Workflow
+
+### 1. Feature Graphic erstellen
+
+```bash
+# Script verwenden:
+./create-assets.sh feature
+
+# Oder manuell:
+open feature-graphic.html
+# Dann: DevTools → Rechtsklick auf SVG → Screenshot des Knotens
+# Speichern als: feature-graphic.png
+```
+
+### 2. Screenshots erstellen
+
+```bash
+# Script verwenden:
+./create-assets.sh screenshots
+
+# Oder manuell:
+# 1. Öffne: https://s540d.github.io/Energy_Price_Germany/
+# 2. DevTools (F12) → Device Toolbar (Cmd+Shift+M)
+# 3. Gerät wählen: iPhone 12 Pro oder Pixel 5
+# 4. Cmd+Shift+P → "Capture full size screenshot"
+# 5. Wiederhole für verschiedene Ansichten
+
+# Siehe SCREENSHOT_GUIDE.md für Details!
+```
+
+### 3. Status überprüfen
+
+```bash
+./create-assets.sh status
+```
+
+### 4. Dateien benennen
+
+Screenshots sollten benannt werden:
+```
+screenshot-phone-01-main-chart.png
+screenshot-phone-02-renewable-share.png
+screenshot-phone-03-dark-mode.png
+screenshot-phone-04-full-view.png
+```
+
+---
+
+## 📦 Upload-Checklist
+
+Vor dem Upload in Google Play Console:
+
+- [x] App-Icon 512x512px ✅
+- [ ] Feature Graphic 1024x500px erstellt
+- [ ] Mind. 2 Screenshots erstellt (empfohlen: 4-8)
+- [ ] Alle Dateien unter 8MB
+- [ ] Screenshots zeigen echte Daten (nicht "Loading...")
+- [ ] Dateinamen aussagekräftig
+- [ ] Store-Texte vorbereitet (siehe store-listing.md)
+
+---
+
 ## 📝 Notizen
 
-[Platz für projektspezifische Notizen]
+**Stand:** 2025-11-04
+
+**Fertig:**
+- ✅ App-Icon (icon-512x512.png)
+- ✅ Alle Tools und Vorlagen erstellt
+- ✅ Automatisierungs-Script verfügbar
+
+**TODO:**
+- Feature Graphic als PNG speichern (HTML-Vorlage ist fertig!)
+- Screenshots von der Web-App erstellen
+
+**Hinweis:** Die HTML-Vorlage `feature-graphic.html` ist komplett fertig und kann direkt verwendet werden. Einfach im Browser öffnen und als PNG speichern!

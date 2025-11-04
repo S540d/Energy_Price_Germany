@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Price Germany - Feature Graphic</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .instructions {
+            max-width: 1024px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+        }
+        #feature-graphic {
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="instructions">
+            <h3>📸 Feature Graphic für Google Play Store</h3>
+            <p><strong>Anleitung zum Speichern:</strong></p>
+            <ol>
+                <li>Öffne die Browser-Entwicklertools (F12 oder Rechtsklick → "Untersuchen")</li>
+                <li>Klicke mit Rechtsklick auf das SVG-Element unten</li>
+                <li>Wähle "Screenshot des Knotens aufnehmen" (Chrome/Edge)</li>
+                <li>Oder: Verwende ein Screenshot-Tool, um genau den SVG-Bereich zu erfassen (1024x500px)</li>
+                <li>Speichere als <code>feature-graphic.png</code> im Ordner <code>play-store-assets/</code></li>
+            </ol>
+            <p><strong>Alternative:</strong> Öffne <a href="https://www.photopea.com" target="_blank">Photopea.com</a>, erstelle ein neues Projekt (1024x500px) und füge das SVG ein.</p>
+        </div>
+
+        <svg id="feature-graphic" width="1024" height="500" viewBox="0 0 1024 500" xmlns="http://www.w3.org/2000/svg">
+            <!-- Background Gradient -->
+            <defs>
+                <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#1565C0;stop-opacity:1" />
+                    <stop offset="50%" style="stop-color:#2196F3;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#4CAF50;stop-opacity:1" />
+                </linearGradient>
+
+                <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:0.8" />
+                    <stop offset="100%" style="stop-color:#4CAF50;stop-opacity:0.2" />
+                </linearGradient>
+
+                <!-- Glow effect -->
+                <filter id="glow">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>
+
+            <!-- Background -->
+            <rect width="1024" height="500" fill="url(#bgGradient)"/>
+
+            <!-- Decorative circles -->
+            <circle cx="100" cy="100" r="80" fill="#ffffff" opacity="0.05"/>
+            <circle cx="924" cy="400" r="120" fill="#ffffff" opacity="0.05"/>
+            <circle cx="850" cy="80" r="60" fill="#ffffff" opacity="0.08"/>
+
+            <!-- Chart visualization (left side) -->
+            <g transform="translate(60, 150)">
+                <!-- Chart bars -->
+                <rect x="0" y="140" width="15" height="80" fill="#81C784" opacity="0.9"/>
+                <rect x="20" y="100" width="15" height="120" fill="#66BB6A" opacity="0.9"/>
+                <rect x="40" y="80" width="15" height="140" fill="#4CAF50" opacity="0.9"/>
+                <rect x="60" y="60" width="15" height="160" fill="#43A047" opacity="0.9"/>
+                <rect x="80" y="90" width="15" height="130" fill="#66BB6A" opacity="0.9"/>
+                <rect x="100" y="110" width="15" height="110" fill="#81C784" opacity="0.9"/>
+                <rect x="120" y="130" width="15" height="90" fill="#A5D6A7" opacity="0.9"/>
+
+                <!-- Line chart overlay -->
+                <polyline points="7,180 27,140 47,120 67,100 87,130 107,150 127,170"
+                          stroke="#FFF" stroke-width="3" fill="none" opacity="0.6" filter="url(#glow)"/>
+                <polyline points="7,180 27,140 47,120 67,100 87,130 107,150 127,170"
+                          stroke="#FFEB3B" stroke-width="2" fill="none" opacity="0.9"/>
+            </g>
+
+            <!-- Energy/Lightning icon -->
+            <g transform="translate(200, 180)">
+                <path d="M 30 0 L 15 35 L 25 35 L 20 60 L 45 25 L 35 25 Z"
+                      fill="#FFEB3B" stroke="#FFF" stroke-width="2" opacity="0.9" filter="url(#glow)"/>
+            </g>
+
+            <!-- App Title -->
+            <text x="512" y="180" font-family="Arial, sans-serif" font-size="72" font-weight="bold"
+                  fill="#FFFFFF" text-anchor="middle" filter="url(#glow)">
+                Energy Price
+            </text>
+            <text x="512" y="240" font-family="Arial, sans-serif" font-size="72" font-weight="bold"
+                  fill="#FFFFFF" text-anchor="middle" filter="url(#glow)">
+                Germany
+            </text>
+
+            <!-- Subtitle -->
+            <text x="512" y="290" font-family="Arial, sans-serif" font-size="28"
+                  fill="#FFFFFF" text-anchor="middle" opacity="0.95">
+                Strompreise &amp; Ökostrom-Anteil • Live-Daten
+            </text>
+
+            <!-- Feature badges -->
+            <g transform="translate(320, 340)">
+                <!-- Badge 1 -->
+                <rect x="0" y="0" width="140" height="45" rx="22.5" fill="#FFFFFF" opacity="0.25"/>
+                <text x="70" y="30" font-family="Arial, sans-serif" font-size="18" font-weight="600"
+                      fill="#FFFFFF" text-anchor="middle">📊 Live-Daten</text>
+            </g>
+
+            <g transform="translate(480, 340)">
+                <!-- Badge 2 -->
+                <rect x="0" y="0" width="140" height="45" rx="22.5" fill="#FFFFFF" opacity="0.25"/>
+                <text x="70" y="30" font-family="Arial, sans-serif" font-size="18" font-weight="600"
+                      fill="#FFFFFF" text-anchor="middle">🌱 Ökostrom</text>
+            </g>
+
+            <g transform="translate(640, 340)">
+                <!-- Badge 3 -->
+                <rect x="0" y="0" width="140" height="45" rx="22.5" fill="#FFFFFF" opacity="0.25"/>
+                <text x="70" y="30" font-family="Arial, sans-serif" font-size="18" font-weight="600"
+                      fill="#FFFFFF" text-anchor="middle">📈 Prognosen</text>
+            </g>
+
+            <!-- Germany outline (simplified) - right side -->
+            <g transform="translate(820, 200)" opacity="0.15">
+                <path d="M 40 0 L 60 10 L 80 5 L 100 20 L 110 40 L 115 70 L 110 100 L 100 130 L 80 150 L 60 155 L 40 150 L 20 140 L 10 120 L 5 100 L 0 70 L 5 40 L 15 20 L 30 5 Z"
+                      fill="#FFFFFF" stroke="#FFFFFF" stroke-width="2"/>
+            </g>
+
+            <!-- Decorative lines -->
+            <line x1="80" y1="450" x2="250" y2="450" stroke="#FFFFFF" stroke-width="2" opacity="0.3"/>
+            <line x1="774" y1="450" x2="944" y2="450" stroke="#FFFFFF" stroke-width="2" opacity="0.3"/>
+        </svg>
+    </div>
+
+    <script>
+        // Optional: Auto-download function
+        function downloadFeatureGraphic() {
+            const svg = document.getElementById('feature-graphic');
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 500;
+            const ctx = canvas.getContext('2d');
+
+            const data = new XMLSerializer().serializeToString(svg);
+            const img = new Image();
+            const blob = new Blob([data], {type: 'image/svg+xml'});
+            const url = URL.createObjectURL(blob);
+
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0);
+                canvas.toBlob(function(blob) {
+                    const link = document.createElement('a');
+                    link.download = 'feature-graphic.png';
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                }, 'image/png');
+            };
+            img.src = url;
+        }
+
+        console.log('Feature Graphic bereit! Klicke mit Rechtsklick auf das SVG und wähle "Screenshot des Knotens aufnehmen"');
+        console.log('Oder rufe downloadFeatureGraphic() in der Konsole auf (experimentell)');
+    </script>
+</body>
+</html>

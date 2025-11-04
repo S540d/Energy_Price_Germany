@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Screenshot Helper - Energy Price Germany</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f0f0f0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .controls {
+            max-width: 1200px;
+            margin: 0 auto 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .controls h1 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 24px;
+        }
+
+        .device-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .device-btn {
+            padding: 10px 20px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .device-btn:hover {
+            border-color: #4CAF50;
+            background: #f0f9f0;
+        }
+
+        .device-btn.active {
+            border-color: #4CAF50;
+            background: #4CAF50;
+            color: white;
+        }
+
+        .instructions {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #ffc107;
+            margin-bottom: 15px;
+        }
+
+        .instructions h3 {
+            margin-bottom: 8px;
+            color: #856404;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            color: #856404;
+        }
+
+        .instructions li {
+            margin-bottom: 5px;
+        }
+
+        .instructions code {
+            background: rgba(0,0,0,0.1);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        .device-frame-container {
+            display: flex;
+            justify-content: center;
+            margin: 0 auto;
+            perspective: 1000px;
+        }
+
+        .device-frame {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .device-info {
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        iframe {
+            border: none;
+            display: block;
+            background: white;
+        }
+
+        .screenshot-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 15px 30px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+            transition: all 0.2s;
+        }
+
+        .screenshot-btn:hover {
+            background: #43A047;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+        }
+
+        .screenshot-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Device-specific styles */
+        .device-frame.iphone-12-pro {
+            width: 390px;
+            height: 844px;
+            border-radius: 40px;
+            padding: 12px;
+        }
+
+        .device-frame.pixel-5 {
+            width: 393px;
+            height: 851px;
+            border-radius: 30px;
+            padding: 10px;
+        }
+
+        .device-frame.samsung-galaxy-s21 {
+            width: 360px;
+            height: 800px;
+            border-radius: 35px;
+            padding: 10px;
+        }
+
+        .device-frame.tablet-ipad {
+            width: 768px;
+            height: 1024px;
+            border-radius: 20px;
+            padding: 15px;
+        }
+
+        .tip {
+            background: #e3f2fd;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 4px solid #2196F3;
+            margin-top: 15px;
+        }
+
+        .tip strong {
+            color: #1565C0;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <h1>📱 Screenshot Helper für Play Store</h1>
+
+        <div class="instructions">
+            <h3>📸 So erstellst du perfekte Screenshots:</h3>
+            <ol>
+                <li>Wähle ein Gerät unten aus (empfohlen: iPhone 12 Pro)</li>
+                <li>Warte, bis die App vollständig geladen ist</li>
+                <li><strong>Wichtig:</strong> Öffne Browser DevTools mit <code>F12</code></li>
+                <li>Rechtsklick auf den Device Frame unten</li>
+                <li>Wähle: <code>"Element untersuchen"</code></li>
+                <li>Im Elements-Tab: Finde das <code>&lt;div class="device-frame ...&gt;</code> Element</li>
+                <li>Rechtsklick auf das Element → <code>"Screenshot des Knotens aufnehmen"</code></li>
+                <li>Speichere als PNG im play-store-assets/ Ordner</li>
+            </ol>
+        </div>
+
+        <div class="tip">
+            <strong>💡 Tipp:</strong> Für verschiedene Ansichten (Dark Mode, verschiedene Daten) kannst du direkt in der App unten navigieren und dann neue Screenshots machen!
+        </div>
+
+        <h3 style="margin: 20px 0 10px 0;">Gerät wählen:</h3>
+        <div class="device-selector">
+            <button class="device-btn active" data-device="iphone-12-pro" data-width="390" data-height="844">
+                📱 iPhone 12 Pro (390×844)
+            </button>
+            <button class="device-btn" data-device="pixel-5" data-width="393" data-height="851">
+                📱 Pixel 5 (393×851)
+            </button>
+            <button class="device-btn" data-device="samsung-galaxy-s21" data-width="360" data-height="800">
+                📱 Galaxy S21 (360×800)
+            </button>
+            <button class="device-btn" data-device="tablet-ipad" data-width="768" data-height="1024">
+                📱 iPad (768×1024)
+            </button>
+        </div>
+    </div>
+
+    <div class="device-frame-container">
+        <div id="device-frame" class="device-frame iphone-12-pro">
+            <iframe
+                id="app-iframe"
+                src="https://s540d.github.io/Energy_Price_Germany/"
+                width="366"
+                height="820"
+                scrolling="auto"
+                loading="lazy"
+            ></iframe>
+        </div>
+    </div>
+
+    <div class="device-info">
+        <p id="device-info">iPhone 12 Pro - 390×844px</p>
+        <p style="margin-top: 5px; font-size: 12px; color: #999;">
+            Die App wird von der deployed Version geladen
+        </p>
+    </div>
+
+    <script>
+        const deviceButtons = document.querySelectorAll('.device-btn');
+        const deviceFrame = document.getElementById('device-frame');
+        const iframe = document.getElementById('app-iframe');
+        const deviceInfo = document.getElementById('device-info');
+
+        const devices = {
+            'iphone-12-pro': {
+                width: 390,
+                height: 844,
+                iframeWidth: 366,
+                iframeHeight: 820,
+                name: 'iPhone 12 Pro',
+                padding: 12
+            },
+            'pixel-5': {
+                width: 393,
+                height: 851,
+                iframeWidth: 373,
+                iframeHeight: 831,
+                name: 'Google Pixel 5',
+                padding: 10
+            },
+            'samsung-galaxy-s21': {
+                width: 360,
+                height: 800,
+                iframeWidth: 340,
+                iframeHeight: 780,
+                name: 'Samsung Galaxy S21',
+                padding: 10
+            },
+            'tablet-ipad': {
+                width: 768,
+                height: 1024,
+                iframeWidth: 738,
+                iframeHeight: 994,
+                name: 'iPad',
+                padding: 15
+            }
+        };
+
+        deviceButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons
+                deviceButtons.forEach(btn => btn.classList.remove('active'));
+
+                // Add active class to clicked button
+                button.classList.add('active');
+
+                // Get device info
+                const deviceType = button.getAttribute('data-device');
+                const device = devices[deviceType];
+
+                // Update device frame
+                deviceFrame.className = `device-frame ${deviceType}`;
+
+                // Update iframe size
+                iframe.width = device.iframeWidth;
+                iframe.height = device.iframeHeight;
+
+                // Update info text
+                deviceInfo.textContent = `${device.name} - ${device.width}×${device.height}px`;
+
+                console.log(`Switched to ${device.name}`);
+            });
+        });
+
+        // Log helpful info
+        console.log('%c📱 Screenshot Helper geladen!', 'font-size: 16px; font-weight: bold; color: #4CAF50;');
+        console.log('%cSo erstellst du Screenshots:', 'font-weight: bold;');
+        console.log('1. Wähle ein Gerät oben');
+        console.log('2. Rechtsklick auf Device Frame unten');
+        console.log('3. "Element untersuchen"');
+        console.log('4. Im Elements-Tab: Rechtsklick auf <div class="device-frame"> Element');
+        console.log('5. "Screenshot des Knotens aufnehmen"');
+        console.log('');
+        console.log('%cDie App wird automatisch von der deployed Version geladen.', 'color: #2196F3;');
+    </script>
+</body>
+</html>
