@@ -36,6 +36,12 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
       "baseUrl": "/Energy_Price_Germany"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "db5fda3f-4953-4286-8682-b0a4b31573f2"
+      }
+    },
+    "owner": "devsven"
   }
 }
