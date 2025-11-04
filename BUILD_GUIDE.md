@@ -123,9 +123,14 @@ npx eas build:download --platform android --profile production
 
 # Spezifischen Build herunterladen
 npx eas build:download --id <build-id>
+
+# Beispiel (aktueller Build):
+npx eas build:download --id 3e0a7596-316c-43e0-898c-2340ec220a47
 ```
 
 Die AAB-Datei wird in den Downloads-Ordner gespeichert.
+
+**Hinweis:** AAB/APK-Dateien werden nicht in git committed (zu groß, 83MB). Sie können jederzeit von EAS heruntergeladen werden.
 
 ---
 
@@ -281,12 +286,29 @@ Bei Problemen:
 
 ---
 
-**Letzter Build:** -
-**Nächster Build:** Warten auf Fertigstellung...
-**Build-ID:** Siehe Terminal-Output
+## 📦 Letzter erfolgreicher Build
+
+**Build-ID:** 3e0a7596-316c-43e0-898c-2340ec220a47
+**Datum:** 2025-11-04 22:24:22 UTC
+**Status:** ✅ SUCCESS
+**Version:** 1.1.0 (versionCode: 4)
+**Dauer:** 10 Minuten 5 Sekunden
+**Größe:** 83 MB
+**Datei:** energy-price-germany-v1.1.0-production.aab
+**Speicherort:** play-store-assets/
+
+**Build-Details:**
+- Platform: Android
+- Profile: production
+- Build-Type: app-bundle (AAB)
+- Keystore: Automatisch von EAS verwaltet (erstes Keystore für Projekt)
+- Package: com.sven4321.energypricegermany
+
+**Status:** ✅ Bereit für Play Store Upload!
 
 ---
 
 *Erstellt: 2025-11-04*
 *Projekt: Energy Price Germany*
 *Owner: devsven*
+*Letzter Build: 2025-11-04*
