@@ -17,10 +17,12 @@ expo-env.d.ts
 *.p12
 *.key
 *.mobileprovision
+credentials.json
 
 # Build outputs (can be downloaded from EAS)
 *.aab
 *.apk
+builds/
 
 # Metro
 .metro-health-check*
