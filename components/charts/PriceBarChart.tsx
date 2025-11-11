@@ -164,7 +164,7 @@ export function PriceBarChart({
           )}
         </View>
         {!isPhone && (
-          <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={{ flexDirection: 'row', gap: 8, paddingRight: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
               <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50' }} />
               <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.marketPrice}</Text>
