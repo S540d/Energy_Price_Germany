@@ -14,6 +14,8 @@ interface PriceBarChartProps {
     yAxis: string;
     now: string;
     average: string;
+    missingDataPoints?: string;
+    dataPointsNotAvailable?: string;
   };
 }
 
@@ -177,7 +179,27 @@ export function PriceBarChart({
         <Svg width={chartWidth} height={chartHeight}>
           {data.map((d, index) => {
             const marketPrice = d.marketPrice !== null ? d.marketPrice * 0.1 : null;
-            if (marketPrice === null) return null;
+
+            // Render dashed placeholder for missing data
+            if (marketPrice === null) {
+              const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
+              const barWidth = ((chartWidth - leftPadding - rightPadding) / data.length) * 0.8;
+
+              return (
+                <Rect
+                  key={index}
+                  x={x - barWidth / 2}
+                  y={padding}
+                  width={barWidth}
+                  height={chartHeight - padding - bottomPadding}
+                  fill="none"
+                  stroke={gridColor}
+                  strokeWidth="1"
+                  strokeDasharray="4,4"
+                  opacity={0.3}
+                />
+              );
+            }
 
             const totalPrice = marketPrice + GRID_FEES_AND_TAXES;
             const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
@@ -376,6 +398,25 @@ export function PriceBarChart({
           {labels.yAxis}
         </Text>
       </View>
+
+      {/* Missing data info badge */}
+      {(() => {
+        const missingCount = data.filter(d => d.marketPrice === null).length;
+        if (missingCount > 0 && labels.missingDataPoints && labels.dataPointsNotAvailable) {
+          return (
+            <Text style={{
+              fontSize: 11,
+              color: textColor,
+              opacity: 0.6,
+              marginTop: 8,
+              textAlign: 'center'
+            }}>
+              ⚠️ {missingCount} {labels.missingDataPoints} {data.length} {labels.dataPointsNotAvailable}
+            </Text>
+          );
+        }
+        return null;
+      })()}
     </View>
   );
 }
