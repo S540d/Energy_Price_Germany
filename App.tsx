@@ -67,6 +67,8 @@ const translations = {
     night: 'Night',
     morningEvening: 'M/E',
     day: 'Day',
+    marketPrice: 'Market Price',
+    gridFeesAndTaxes: 'Grid Fees & Taxes',
   },
   de: {
     settings: 'Einstellungen',
@@ -108,6 +110,8 @@ const translations = {
     night: 'Nacht',
     morningEvening: 'M/A',
     day: 'Tag',
+    marketPrice: 'Börsenstrompreis',
+    gridFeesAndTaxes: 'Netzentgelte & Steuern',
   },
 };
 
@@ -444,6 +448,8 @@ function AppContent() {
                 yAxis: t.pricePerKwh,
                 now: t.now,
                 average: t.average,
+                marketPrice: t.marketPrice,
+                gridFeesAndTaxes: t.gridFeesAndTaxes,
               }}
             />
 

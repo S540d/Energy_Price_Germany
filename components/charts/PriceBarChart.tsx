@@ -19,6 +19,8 @@ interface PriceBarChartProps {
     yAxis: string;
     now: string;
     average: string;
+    marketPrice: string;
+    gridFeesAndTaxes: string;
   };
 }
 
@@ -152,12 +154,28 @@ export function PriceBarChart({
           </View>
         );
       })()}
-      <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: 0, color: textColor }}>{title}</Text>
-      {subtitle && (
-        <Text style={{ fontSize: 12, color: textColor, opacity: 0.7, marginBottom: 2 }}>
-          {subtitle}
-        </Text>
-      )}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0 }}>
+        <View>
+          <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: 0, color: textColor }}>{title}</Text>
+          {subtitle && (
+            <Text style={{ fontSize: 12, color: textColor, opacity: 0.7, marginBottom: 2 }}>
+              {subtitle}
+            </Text>
+          )}
+        </View>
+        {!isPhone && (
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+              <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50' }} />
+              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.marketPrice}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+              <View style={{ width: 12, height: 12, backgroundColor: '#757575' }} />
+              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.gridFeesAndTaxes}</Text>
+            </View>
+          </View>
+        )}
+      </View>
       <View style={{ height: chartHeight, width: chartWidth, position: 'relative' }}>
         {/* Grid Lines */}
         {[0, 1, 2, 3, 4].map(i => {
