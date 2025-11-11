@@ -188,9 +188,14 @@ export function RenewableBarChart({
               const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
               const barWidth = ((chartWidth - leftPadding - rightPadding) / data.length) * 0.8;
 
-              // Calculate fade-out height: show bar up to average + 20%
-              const fadeMaxValue = avgValue * 1.2;
-              const clampedFadeMax = Math.min(fadeMaxValue, max);
+              // Seeded random for consistent but varied heights
+              const seed = d.timestamp % 1000;
+              const random = Math.sin(seed) * 10000;
+              const randomFactor = (random - Math.floor(random)) * 0.4 + 0.8; // Range: 0.8 to 1.2
+
+              // Calculate fade-out height: fluctuate around average (±20%)
+              const fadeMaxValue = avgValue * randomFactor;
+              const clampedFadeMax = Math.min(Math.max(fadeMaxValue, min), max);
               const fadeHeight = ((clampedFadeMax - min) / range) * (chartHeight - padding - bottomPadding);
               const fadeY = chartHeight - bottomPadding - fadeHeight;
 
