@@ -207,8 +207,8 @@ export function RenewableBarChart({
                 <React.Fragment key={index}>
                   {Array.from({ length: segments }).map((_, segIndex) => {
                     const segY = fadeY + (segIndex * segmentHeight);
-                    // Opacity decreases as we go up (from 0.2 at bottom to 0.05 at top)
-                    const opacity = 0.2 * (1 - (segIndex / segments));
+                    // Opacity increases as we go down (from 0.0 at top to 0.25 at bottom)
+                    const opacity = 0.25 * (segIndex / (segments - 1));
 
                     return (
                       <Rect

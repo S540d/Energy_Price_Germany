@@ -479,9 +479,11 @@ const styles = StyleSheet.create({
   menu: {
     position: 'absolute',
     top: '10%',
-    left: '10%',
-    right: '10%',
+    left: '50%',
     maxHeight: '80%',
+    width: '80%',
+    maxWidth: 400,
+    transform: [{ translateX: '-50%' }],
     borderRadius: 12,
     elevation: 10,
     shadowColor: '#000',
