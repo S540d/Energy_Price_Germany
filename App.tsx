@@ -4,12 +4,12 @@ import {
   Text,
   View,
   ScrollView,
-  SafeAreaView,
   TouchableOpacity,
   useColorScheme,
   Platform,
   Linking,
 } from 'react-native';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator } from 'react-native';
 import { fetchEnergyData, getCurrentDataSource } from './services/energyDataManager';
@@ -20,7 +20,7 @@ import { MetricsView } from './components/MetricsView';
 import { calculateMetrics, EnergyData } from './utils/metrics';
 import { getThemeColors, Theme } from './utils/theme';
 
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.0';
 
 type ViewMode = 'charts' | 'metrics';
 type Language = 'en' | 'de';
@@ -28,19 +28,27 @@ type Language = 'en' | 'de';
 const translations = {
   en: {
     settings: 'Settings',
+    // App Settings Section
+    appSettings: 'APP SETTINGS',
     appearance: 'APPEARANCE',
     dark: 'Dark',
     system: 'System',
     language: 'LANGUAGE',
     english: 'English',
     german: 'German',
-    feedback: 'Send Feedback',
-    support: 'Buy Me a Coffee',
+    // About Section
     about: 'ABOUT',
     version: 'Version',
     dataSource: 'Data Source',
     dataLicense: 'Data License',
     appLicense: 'App License',
+    repository: 'GitHub Repository',
+    // Support Section
+    supportSection: 'SUPPORT',
+    supportProject: 'Support the Project',
+    rateApp: 'Rate on Play Store',
+    reportBug: 'Report a Bug',
+    // Other
     loadingData: 'Loading energy data...',
     backToCharts: '← Back to Charts',
     renewableTitle: 'Share of Renewable Energy in Load',
@@ -49,6 +57,7 @@ const translations = {
     timeRange: 'Time Range',
     noData: 'No data available',
     noDataMessage: 'The energy data could not be loaded. Please try again later.',
+    noCommercialUse: 'No commercial use without permission',
     // Chart labels
     renewablePercent: 'Renewables (%)',
     pricePerKwh: 'Price (¢/kWh)',
@@ -57,22 +66,33 @@ const translations = {
     night: 'Night',
     morningEvening: 'M/E',
     day: 'Day',
+    // Missing data
+    missingDataPoints: 'of',
+    dataPointsNotAvailable: 'data points not available',
   },
   de: {
     settings: 'Einstellungen',
+    // App Settings Section
+    appSettings: 'APP-EINSTELLUNGEN',
     appearance: 'ERSCHEINUNGSBILD',
     dark: 'Dunkel',
     system: 'System',
     language: 'SPRACHE',
     english: 'English',
     german: 'Deutsch',
-    feedback: 'Feedback senden',
-    support: 'Buy Me a Coffee',
+    // About Section
     about: 'ÜBER',
     version: 'Version',
     dataSource: 'Datenquelle',
     dataLicense: 'Daten-Lizenz',
     appLicense: 'App-Lizenz',
+    repository: 'GitHub Repository',
+    // Support Section
+    supportSection: 'UNTERSTÜTZUNG',
+    supportProject: 'Projekt unterstützen',
+    rateApp: 'Im Play Store bewerten',
+    reportBug: 'Fehler melden',
+    // Other
     loadingData: 'Lade Energiedaten...',
     backToCharts: '← Zurück zu Diagrammen',
     renewableTitle: 'Anteil Erneuerbarer Energien an der Last',
@@ -81,6 +101,7 @@ const translations = {
     timeRange: 'Zeitraum',
     noData: 'Keine Daten verfügbar',
     noDataMessage: 'Die Energiedaten konnten nicht geladen werden. Bitte versuchen Sie es später erneut.',
+    noCommercialUse: 'Keine kommerzielle Nutzung ohne Genehmigung',
     // Chart labels
     renewablePercent: 'Erneuerbare (%)',
     pricePerKwh: 'Preis (¢/kWh)',
@@ -89,10 +110,13 @@ const translations = {
     night: 'Nacht',
     morningEvening: 'M/A',
     day: 'Tag',
+    // Missing data
+    missingDataPoints: 'von',
+    dataPointsNotAvailable: 'Datenpunkten nicht verfügbar',
   },
 };
 
-export default function App() {
+function AppContent() {
   const [energyData, setEnergyData] = useState<EnergyData[]>([]);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<Theme>('system');
@@ -232,9 +256,12 @@ export default function App() {
               </TouchableOpacity>
             </View>
 
-            {/* Appearance Settings - Dark/System Only */}
+            {/* 📊 APP SETTINGS */}
             <View style={styles.menuSection}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.appearance}</Text>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.appSettings}</Text>
+
+              {/* Appearance */}
+              <Text style={[styles.settingLabel, { color: colors.text }]}>{t.appearance}</Text>
               <View style={styles.themeToggle}>
                 <TouchableOpacity
                   style={[
@@ -257,13 +284,9 @@ export default function App() {
                   <Text style={{ color: theme === 'system' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.system}</Text>
                 </TouchableOpacity>
               </View>
-            </View>
 
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-            {/* Language Settings */}
-            <View style={styles.menuSection}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.language}</Text>
+              {/* Language */}
+              <Text style={[styles.settingLabel, { color: colors.text, marginTop: 12 }]}>{t.language}</Text>
               <View style={styles.themeToggle}>
                 <TouchableOpacity
                   style={[
@@ -290,16 +313,46 @@ export default function App() {
 
             <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
-            {/* Feedback and Support in One Row */}
-            <View style={[styles.menuSection, styles.menuSectionRow]}>
+            {/* ℹ️ ABOUT */}
+            <View style={styles.menuSection}>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.about}</Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>
+                📱 {t.version} {APP_VERSION}
+              </Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary, marginTop: 8 }]}>
+                📊 {t.dataSource}: {getDataSourceInfo().name}
+              </Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>
+                📜 {t.dataLicense}: {getDataSourceInfo().license}
+              </Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary, marginTop: 8 }]}>
+                📄 {t.appLicense}: Open Source • MIT
+              </Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary, fontSize: 11 }]}>
+                {t.noCommercialUse}
+              </Text>
               <TouchableOpacity
                 onPress={() => {
-                  Linking.openURL('mailto:feedback@example.com');
+                  if (Platform.OS === 'web') {
+                    window.open('https://github.com/S540d/EnergyPriceGermany', '_blank');
+                  } else {
+                    Linking.openURL('https://github.com/S540d/EnergyPriceGermany');
+                  }
                 }}
-                style={styles.menuItemFlex}
+                style={styles.menuLink}
               >
-                <Text style={[styles.legendText, { color: colors.primary }]}>{t.feedback}</Text>
+                <Text style={[styles.legendText, { color: colors.primary, marginTop: 8 }]}>
+                  🔗 {t.repository}
+                </Text>
               </TouchableOpacity>
+            </View>
+
+            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+            {/* 💝 SUPPORT */}
+            <View style={styles.menuSection}>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.supportSection}</Text>
+
               <TouchableOpacity
                 onPress={() => {
                   if (Platform.OS === 'web') {
@@ -308,30 +361,45 @@ export default function App() {
                     Linking.openURL('https://buymeacoffee.com/sven4321');
                   }
                 }}
-                style={styles.menuItemFlex}
+                style={styles.menuLink}
               >
-                <Text style={[styles.legendText, { color: colors.primary }]}>{t.support}</Text>
+                <Text style={[styles.legendText, { color: colors.primary }]}>
+                  💝 {t.supportProject}
+                </Text>
               </TouchableOpacity>
-            </View>
 
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+              <TouchableOpacity
+                onPress={() => {
+                  const storeUrl = Platform.OS === 'ios'
+                    ? 'https://apps.apple.com/app/id[YOUR_APP_ID]'
+                    : 'https://play.google.com/store/apps/details?id=com.energypricegermany';
+                  if (Platform.OS === 'web') {
+                    window.open(storeUrl, '_blank');
+                  } else {
+                    Linking.openURL(storeUrl);
+                  }
+                }}
+                style={styles.menuLink}
+              >
+                <Text style={[styles.legendText, { color: colors.primary }]}>
+                  ⭐ {t.rateApp}
+                </Text>
+              </TouchableOpacity>
 
-            {/* About */}
-            <View style={styles.menuSection}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.about}</Text>
-              <Text style={[styles.legendText, { color: colors.textSecondary }]}>{t.version} {APP_VERSION}</Text>
-              <Text style={[styles.legendText, { color: colors.textSecondary, marginTop: 8 }]}>
-                {t.dataSource}: {getDataSourceInfo().name}
-              </Text>
-              <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-                {t.dataLicense}: {getDataSourceInfo().license}
-              </Text>
-              <Text style={[styles.legendText, { color: colors.textSecondary, marginTop: 8 }]}>
-                {t.appLicense}: Open Source • MIT
-              </Text>
-              <Text style={[styles.legendText, { color: colors.textSecondary, fontSize: 11 }]}>
-                {language === 'de' ? 'Keine kommerzielle Nutzung ohne Genehmigung' : 'No commercial use without permission'}
-              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  if (Platform.OS === 'web') {
+                    window.open('https://github.com/S540d/EnergyPriceGermany/issues', '_blank');
+                  } else {
+                    Linking.openURL('https://github.com/S540d/EnergyPriceGermany/issues');
+                  }
+                }}
+                style={styles.menuLink}
+              >
+                <Text style={[styles.legendText, { color: colors.primary }]}>
+                  🐛 {t.reportBug}
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         </>
@@ -365,6 +433,8 @@ export default function App() {
                 yAxis: t.renewablePercent,
                 now: t.now,
                 average: t.average,
+                missingDataPoints: t.missingDataPoints,
+                dataPointsNotAvailable: t.dataPointsNotAvailable,
               }}
             />
 
@@ -379,6 +449,8 @@ export default function App() {
                 yAxis: t.pricePerKwh,
                 now: t.now,
                 average: t.average,
+                missingDataPoints: t.missingDataPoints,
+                dataPointsNotAvailable: t.dataPointsNotAvailable,
               }}
             />
 
@@ -593,4 +665,21 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+  settingLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  menuLink: {
+    paddingVertical: 8,
+  },
 });
+
+// Wrap the app with SafeAreaProvider for proper edge-to-edge support on Android 15+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <AppContent />
+    </SafeAreaProvider>
+  );
+}
