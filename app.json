@@ -46,6 +46,11 @@
         "projectId": "db5fda3f-4953-4286-8682-b0a4b31573f2"
       }
     },
-    "owner": "devsven"
+    "owner": "devsven",
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    }
   }
 }

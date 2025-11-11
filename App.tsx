@@ -12,6 +12,7 @@ import {
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator } from 'react-native';
+import * as Updates from 'expo-updates';
 import { fetchEnergyData, getCurrentDataSource } from './services/energyDataManager';
 import { RenewableBarChart } from './components/charts/RenewableBarChart';
 import { PriceBarChart } from './components/charts/PriceBarChart';
@@ -166,6 +167,24 @@ function AppContent() {
       }
     }
   }, [language]);
+
+  useEffect(() => {
+    async function checkAndApplyUpdates() {
+      if (!__DEV__) {
+        try {
+          const update = await Updates.checkForUpdateAsync();
+          if (update.isAvailable) {
+            await Updates.fetchUpdateAsync();
+            await Updates.reloadAsync();
+          }
+        } catch (error) {
+          console.error('Error checking for updates:', error);
+        }
+      }
+    }
+
+    checkAndApplyUpdates();
+  }, []);
 
   useEffect(() => {
     async function loadData() {
