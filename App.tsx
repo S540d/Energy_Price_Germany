@@ -19,6 +19,7 @@ import { CorrelationScatterChart } from './components/charts/CorrelationScatterC
 import { MetricsView } from './components/MetricsView';
 import { calculateMetrics, EnergyData } from './utils/metrics';
 import { getThemeColors, Theme } from './utils/theme';
+import { interpolateMarketPrices, InterpolatedDataPoint } from './utils/dataInterpolation';
 
 const APP_VERSION = '1.2.0';
 
@@ -66,9 +67,6 @@ const translations = {
     night: 'Night',
     morningEvening: 'M/E',
     day: 'Day',
-    // Missing data
-    missingDataPoints: 'of',
-    dataPointsNotAvailable: 'data points not available',
   },
   de: {
     settings: 'Einstellungen',
@@ -110,14 +108,11 @@ const translations = {
     night: 'Nacht',
     morningEvening: 'M/A',
     day: 'Tag',
-    // Missing data
-    missingDataPoints: 'von',
-    dataPointsNotAvailable: 'Datenpunkten nicht verfügbar',
   },
 };
 
 function AppContent() {
-  const [energyData, setEnergyData] = useState<EnergyData[]>([]);
+  const [energyData, setEnergyData] = useState<InterpolatedDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<Theme>('system');
   const [language, setLanguage] = useState<Language>(() => {
@@ -173,7 +168,9 @@ function AppContent() {
       try {
         setLoading(true);
         const data = await fetchEnergyData();
-        setEnergyData(data);
+        // Interpolate missing market prices
+        const interpolatedData = interpolateMarketPrices(data);
+        setEnergyData(interpolatedData);
       } catch (error) {
         console.error('Failed to load energy data:', error);
         setEnergyData([]);
@@ -433,8 +430,6 @@ function AppContent() {
                 yAxis: t.renewablePercent,
                 now: t.now,
                 average: t.average,
-                missingDataPoints: t.missingDataPoints,
-                dataPointsNotAvailable: t.dataPointsNotAvailable,
               }}
             />
 
@@ -449,8 +444,6 @@ function AppContent() {
                 yAxis: t.pricePerKwh,
                 now: t.now,
                 average: t.average,
-                missingDataPoints: t.missingDataPoints,
-                dataPointsNotAvailable: t.dataPointsNotAvailable,
               }}
             />
 

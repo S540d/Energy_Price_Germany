@@ -6,7 +6,12 @@ import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 interface PriceBarChartProps {
   title: string;
   subtitle?: string;
-  data: Array<{ timestamp: number; marketPrice: number | null; renewableShare: number | null }>;
+  data: Array<{
+    timestamp: number;
+    marketPrice: number | null;
+    renewableShare: number | null;
+    isMarketPriceInterpolated?: boolean;
+  }>;
   backgroundColor: string;
   textColor: string;
   gridColor: string;
@@ -14,8 +19,6 @@ interface PriceBarChartProps {
     yAxis: string;
     now: string;
     average: string;
-    missingDataPoints?: string;
-    dataPointsNotAvailable?: string;
   };
 }
 
@@ -212,6 +215,11 @@ export function PriceBarChart({
             const gridY = marketY - gridBarHeight;
 
             const isSelected = selectedIndex === index;
+            const isInterpolated = d.isMarketPriceInterpolated || false;
+
+            // Dimmed opacity for interpolated values
+            const baseOpacity = isInterpolated ? 0.4 : 0.9;
+            const selectedOpacity = isInterpolated ? 0.6 : 1.0;
 
             return (
               <React.Fragment key={index}>
@@ -221,7 +229,7 @@ export function PriceBarChart({
                   width={barWidth}
                   height={marketBarHeight}
                   fill={getColor(totalPrice)}
-                  opacity={isSelected ? 1.0 : 0.9}
+                  opacity={isSelected ? selectedOpacity : baseOpacity}
                   stroke={isSelected ? '#999999' : 'none'}
                   strokeWidth={isSelected ? 2 : 0}
                 />
@@ -231,7 +239,7 @@ export function PriceBarChart({
                   width={barWidth}
                   height={gridBarHeight}
                   fill="#757575"
-                  opacity={isSelected ? 0.8 : 0.6}
+                  opacity={isSelected ? (isInterpolated ? 0.5 : 0.8) : (isInterpolated ? 0.3 : 0.6)}
                   stroke={isSelected ? '#999999' : 'none'}
                   strokeWidth={isSelected ? 2 : 0}
                 />
@@ -398,25 +406,6 @@ export function PriceBarChart({
           {labels.yAxis}
         </Text>
       </View>
-
-      {/* Missing data info badge */}
-      {(() => {
-        const missingCount = data.filter(d => d.marketPrice === null).length;
-        if (missingCount > 0 && labels.missingDataPoints && labels.dataPointsNotAvailable) {
-          return (
-            <Text style={{
-              fontSize: 11,
-              color: textColor,
-              opacity: 0.6,
-              marginTop: 8,
-              textAlign: 'center'
-            }}>
-              ⚠️ {missingCount} {labels.missingDataPoints} {data.length} {labels.dataPointsNotAvailable}
-            </Text>
-          );
-        }
-        return null;
-      })()}
     </View>
   );
 }

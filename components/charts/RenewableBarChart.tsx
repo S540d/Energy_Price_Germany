@@ -6,7 +6,12 @@ import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 interface RenewableBarChartProps {
   title: string;
   subtitle?: string;
-  data: Array<{ timestamp: number; marketPrice: number | null; renewableShare: number | null }>;
+  data: Array<{
+    timestamp: number;
+    marketPrice: number | null;
+    renewableShare: number | null;
+    isRenewableShareInterpolated?: boolean;
+  }>;
   backgroundColor: string;
   textColor: string;
   gridColor: string;
@@ -14,8 +19,6 @@ interface RenewableBarChartProps {
     yAxis: string;
     now: string;
     average: string;
-    missingDataPoints?: string;
-    dataPointsNotAvailable?: string;
   };
 }
 
@@ -409,25 +412,6 @@ export function RenewableBarChart({
           {labels.yAxis}
         </Text>
       </View>
-
-      {/* Missing data info badge */}
-      {(() => {
-        const missingCount = data.filter(d => d.renewableShare === null).length;
-        if (missingCount > 0 && labels.missingDataPoints && labels.dataPointsNotAvailable) {
-          return (
-            <Text style={{
-              fontSize: 11,
-              color: textColor,
-              opacity: 0.6,
-              marginTop: 8,
-              textAlign: 'center'
-            }}>
-              ⚠️ {missingCount} {labels.missingDataPoints} {data.length} {labels.dataPointsNotAvailable}
-            </Text>
-          );
-        }
-        return null;
-      })()}
     </View>
   );
 }
