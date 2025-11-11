@@ -183,24 +183,41 @@ export function RenewableBarChart({
           {data.map((d, index) => {
             const value = d.renewableShare;
 
-            // Render dashed placeholder for missing data
+            // Render gray fading bar for missing data
             if (value === null) {
               const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
               const barWidth = ((chartWidth - leftPadding - rightPadding) / data.length) * 0.8;
 
+              // Calculate fade-out height: show bar up to average + 20%
+              const fadeMaxValue = avgValue * 1.2;
+              const clampedFadeMax = Math.min(fadeMaxValue, max);
+              const fadeHeight = ((clampedFadeMax - min) / range) * (chartHeight - padding - bottomPadding);
+              const fadeY = chartHeight - bottomPadding - fadeHeight;
+
+              // Create fading effect with multiple segments
+              const segments = 5;
+              const segmentHeight = fadeHeight / segments;
+
               return (
-                <Rect
-                  key={index}
-                  x={x - barWidth / 2}
-                  y={padding}
-                  width={barWidth}
-                  height={chartHeight - padding - bottomPadding}
-                  fill="none"
-                  stroke={gridColor}
-                  strokeWidth="1"
-                  strokeDasharray="4,4"
-                  opacity={0.3}
-                />
+                <React.Fragment key={index}>
+                  {Array.from({ length: segments }).map((_, segIndex) => {
+                    const segY = fadeY + (segIndex * segmentHeight);
+                    // Opacity decreases as we go up (from 0.2 at bottom to 0.05 at top)
+                    const opacity = 0.2 * (1 - (segIndex / segments));
+
+                    return (
+                      <Rect
+                        key={`${index}-seg-${segIndex}`}
+                        x={x - barWidth / 2}
+                        y={segY}
+                        width={barWidth}
+                        height={segmentHeight}
+                        fill={gridColor}
+                        opacity={opacity}
+                      />
+                    );
+                  })}
+                </React.Fragment>
               );
             }
 
