@@ -257,7 +257,7 @@ function AppContent() {
               </TouchableOpacity>
             </View>
 
-            {/* 📊 APP SETTINGS */}
+            {/* APP SETTINGS */}
             <View style={styles.menuSection}>
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.appSettings}</Text>
 
@@ -314,43 +314,29 @@ function AppContent() {
 
             <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
-            {/* ℹ️ ABOUT */}
+            {/* ABOUT */}
             <View style={styles.menuSection}>
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.about}</Text>
               <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-                📱 {t.version} {APP_VERSION}
+                {t.version} {APP_VERSION}
               </Text>
               <Text style={[styles.legendText, { color: colors.textSecondary, marginTop: 8 }]}>
-                📊 {t.dataSource}: {getDataSourceInfo().name}
+                {t.dataSource}: {getDataSourceInfo().name}
               </Text>
               <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-                📜 {t.dataLicense}: {getDataSourceInfo().license}
+                {t.dataLicense}: {getDataSourceInfo().license}
               </Text>
               <Text style={[styles.legendText, { color: colors.textSecondary, marginTop: 8 }]}>
-                📄 {t.appLicense}: Open Source • MIT
+                {t.appLicense}: Open Source • MIT
               </Text>
               <Text style={[styles.legendText, { color: colors.textSecondary, fontSize: 11 }]}>
                 {t.noCommercialUse}
               </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  if (Platform.OS === 'web') {
-                    window.open('https://github.com/S540d/EnergyPriceGermany', '_blank');
-                  } else {
-                    Linking.openURL('https://github.com/S540d/EnergyPriceGermany');
-                  }
-                }}
-                style={styles.menuLink}
-              >
-                <Text style={[styles.legendText, { color: colors.primary, marginTop: 8 }]}>
-                  🔗 {t.repository}
-                </Text>
-              </TouchableOpacity>
             </View>
 
             <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
-            {/* 💝 SUPPORT */}
+            {/* SUPPORT */}
             <View style={styles.menuSection}>
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.supportSection}</Text>
 
@@ -365,25 +351,7 @@ function AppContent() {
                 style={styles.menuLink}
               >
                 <Text style={[styles.legendText, { color: colors.primary }]}>
-                  💝 {t.supportProject}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => {
-                  const storeUrl = Platform.OS === 'ios'
-                    ? 'https://apps.apple.com/app/id[YOUR_APP_ID]'
-                    : 'https://play.google.com/store/apps/details?id=com.energypricegermany';
-                  if (Platform.OS === 'web') {
-                    window.open(storeUrl, '_blank');
-                  } else {
-                    Linking.openURL(storeUrl);
-                  }
-                }}
-                style={styles.menuLink}
-              >
-                <Text style={[styles.legendText, { color: colors.primary }]}>
-                  ⭐ {t.rateApp}
+                  {t.supportProject}
                 </Text>
               </TouchableOpacity>
 
@@ -398,7 +366,7 @@ function AppContent() {
                 style={styles.menuLink}
               >
                 <Text style={[styles.legendText, { color: colors.primary }]}>
-                  🐛 {t.reportBug}
+                  {t.reportBug}
                 </Text>
               </TouchableOpacity>
             </View>
