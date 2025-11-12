@@ -94,7 +94,8 @@ async function updateMarketData() {
           end_timestamp: timestamp_ms + 15 * 60 * 1000,
           marketprice: price.price[i],
           renewable_share: renewableMap.get(timestamp_ms) || null,
-          unit: "Eur/MWh"
+          unit: "Eur/MWh",
+          interpolated: false
         });
       });
     }
