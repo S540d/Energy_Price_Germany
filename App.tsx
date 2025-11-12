@@ -70,6 +70,7 @@ const translations = {
     day: 'Day',
     marketPrice: 'Market Price',
     gridFeesAndTaxes: 'Grid Fees & Taxes',
+    interpolated: 'Interpolated',
   },
   de: {
     settings: 'Einstellungen',
@@ -113,6 +114,7 @@ const translations = {
     day: 'Tag',
     marketPrice: 'Börsenstrompreis',
     gridFeesAndTaxes: 'Netzentgelte & Steuern',
+    interpolated: 'Interpoliert',
   },
 };
 
@@ -437,6 +439,7 @@ function AppContent() {
                 average: t.average,
                 marketPrice: t.marketPrice,
                 gridFeesAndTaxes: t.gridFeesAndTaxes,
+                interpolated: t.interpolated,
               }}
             />
 

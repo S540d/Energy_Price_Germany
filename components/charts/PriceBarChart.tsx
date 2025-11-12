@@ -21,6 +21,7 @@ interface PriceBarChartProps {
     average: string;
     marketPrice: string;
     gridFeesAndTaxes: string;
+    interpolated: string;
   };
 }
 
@@ -172,6 +173,10 @@ export function PriceBarChart({
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
               <View style={{ width: 12, height: 12, backgroundColor: '#757575' }} />
               <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.gridFeesAndTaxes}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+              <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50', opacity: 0.4 }} />
+              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.interpolated}</Text>
             </View>
           </View>
         )}
