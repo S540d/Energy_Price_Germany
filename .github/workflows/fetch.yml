@@ -1,12 +1,12 @@
 name: Fetch energy market data
 on:
   schedule:
-    # Stündlich zwischen 5:00 und 23:00 UTC (entspricht 6:00-00:00 MEZ bzw. 7:00-01:00 MESZ)
-    # Da wir 5:00-23:00 lokale Zeit wollen und Deutschland UTC+1 (MEZ) bzw. UTC+2 (MESZ) ist:
-    # MEZ (Winter): 5:00-23:00 MEZ = 4:00-22:00 UTC
-    # MESZ (Sommer): 5:00-23:00 MESZ = 3:00-21:00 UTC
-    # Wir nehmen 3:00-22:00 UTC, um beide Zeitzonen abzudecken (4:00-23:00 MEZ / 5:00-00:00 MESZ)
-    - cron: '0 3-22 * * *'
+    # Stündlich zwischen 13:00 und 21:00 deutscher Zeit
+    # Da Deutschland UTC+1 (MEZ) bzw. UTC+2 (MESZ) ist:
+    # MEZ (Winter): 13:00-21:00 MEZ = 12:00-20:00 UTC
+    # MESZ (Sommer): 13:00-21:00 MESZ = 11:00-19:00 UTC
+    # Wir nehmen 11:00-20:00 UTC, um beide Zeitzonen abzudecken
+    - cron: '0 11-20 * * *'
   workflow_dispatch:
 
 permissions:
