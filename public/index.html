@@ -55,22 +55,22 @@
                 registration.update();
               }, 10000);
 
-              // Listen for update notifications
+              // Listen for update notifications and auto-apply
               navigator.serviceWorker.addEventListener('message', (event) => {
                 if (event.data && event.data.type === 'UPDATE_AVAILABLE') {
-                  showUpdateNotification(event.data.message);
+                  applyUpdate();
                 }
               });
 
-              // Handle update found
+              // Handle update found and auto-apply
               registration.addEventListener('updatefound', () => {
                 const newWorker = registration.installing;
                 console.log('New service worker installing...');
 
                 newWorker.addEventListener('statechange', () => {
                   if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    console.log('New service worker installed, showing update prompt');
-                    showUpdateNotification('Eine neue Version ist verfügbar. Seite neu laden?');
+                    console.log('New service worker installed, applying update automatically');
+                    applyUpdate();
                   }
                 });
               });
@@ -81,72 +81,19 @@
         });
       }
 
-      // Function to show update notification
-      function showUpdateNotification(message) {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: #6200EE;
-          color: white;
-          padding: 16px 20px;
-          border-radius: 8px;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-          z-index: 10000;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          max-width: 300px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        `;
+      // Function to automatically apply updates
+      function applyUpdate() {
+        console.log('Applying update automatically...');
 
-        notification.innerHTML = `
-          <div style="font-weight: 500; margin-bottom: 8px;">🔄 Update verfügbar</div>
-          <div style="font-size: 14px; opacity: 0.9; margin-bottom: 12px;">${message}</div>
-          <div style="display: flex; gap: 8px;">
-            <button id="update-yes" style="
-              background: white;
-              color: #6200EE;
-              border: none;
-              padding: 6px 12px;
-              border-radius: 4px;
-              font-weight: 500;
-              cursor: pointer;
-            ">Aktualisieren</button>
-            <button id="update-no" style="
-              background: transparent;
-              color: white;
-              border: 1px solid rgba(255,255,255,0.3);
-              padding: 6px 12px;
-              border-radius: 4px;
-              cursor: pointer;
-            ">Später</button>
-          </div>
-        `;
-
-        document.body.appendChild(notification);
-
-        // Handle update button
-        document.getElementById('update-yes').addEventListener('click', () => {
-          // Tell service worker to skip waiting and activate new version
+        // Tell service worker to skip waiting and activate new version
+        if (navigator.serviceWorker.controller) {
           navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+        }
 
-          // Reload the page
-          window.location.reload();
-        });
-
-        // Handle dismiss button
-        document.getElementById('update-no').addEventListener('click', () => {
-          notification.remove();
-        });
-
-        // Auto-hide after 30 seconds
+        // Wait a moment for the service worker to activate, then reload
         setTimeout(() => {
-          if (notification.parentNode) {
-            notification.remove();
-          }
-        }, 30000);
+          window.location.reload();
+        }, 100);
       }
     </script>
   </body>

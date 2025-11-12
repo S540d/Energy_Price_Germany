@@ -1,8 +1,8 @@
 // Service Worker for Energy Price Germany PWA
-// Version: 1.0.3 - Fixed: index.html now uses Network First strategy
+// Version: 1.1.0 - Auto-update: Removed manual update notifications, updates apply automatically
 
 const CACHE_VERSION = '1.1.0';
-const BUILD_DATE = '2025-11-05';
+const BUILD_DATE = '2025-11-12';
 const CACHE_NAME = `energy-price-germany-v${CACHE_VERSION}-${BUILD_DATE}`;
 const urlsToCache = [
   '/Energy_Price_Germany/',
@@ -138,40 +138,9 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Aggressive update checking and auto-reload notification
+// Handle messages from clients
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
 });
-
-// Update notification system
-let updatePending = false;
-
-self.addEventListener('updatefound', () => {
-  const newWorker = self.registration.installing;
-
-  newWorker.addEventListener('statechange', () => {
-    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-      // New version available
-      if (!updatePending) {
-        updatePending = true;
-
-        // Notify all clients about the update
-        self.clients.matchAll().then((clients) => {
-          clients.forEach((client) => {
-            client.postMessage({
-              type: 'UPDATE_AVAILABLE',
-              message: 'Eine neue Version ist verfügbar. Seite neu laden?'
-            });
-          });
-        });
-      }
-    }
-  });
-});
-
-// Periodic update checks
-setInterval(() => {
-  self.registration.update();
-}, 10000); // Check every 10 seconds
