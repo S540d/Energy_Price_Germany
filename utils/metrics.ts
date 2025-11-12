@@ -2,6 +2,7 @@ export type EnergyData = {
   timestamp: number;
   marketPrice: number | null;
   renewableShare: number | null;
+  isMarketPriceInterpolated?: boolean;
 };
 
 export interface Metrics {

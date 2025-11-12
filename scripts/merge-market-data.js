@@ -30,7 +30,8 @@ function interpolateAwattarData(raw) {
           end_timestamp: start + (j + 1) * 15 * 60 * 1000,
           marketprice: Math.round(interpolatedPrice * 100) / 100,
           renewable_share: null,
-          unit: current.unit
+          unit: current.unit,
+          interpolated: true
         });
       }
     } else {
@@ -40,7 +41,8 @@ function interpolateAwattarData(raw) {
           end_timestamp: start + (j + 1) * 15 * 60 * 1000,
           marketprice: currentPrice,
           renewable_share: null,
-          unit: current.unit
+          unit: current.unit,
+          interpolated: true
         });
       }
     }
