@@ -100,7 +100,8 @@ export class EnergyDataManager {
     const processedData: EnergyData[] = rawData.data.map((item: any) => ({
       timestamp: item.start_timestamp,
       marketPrice: item.marketprice || null, // EUR/MWh
-      renewableShare: item.renewable_share || null // Prozent
+      renewableShare: item.renewable_share || null, // Prozent
+      isMarketPriceInterpolated: item.interpolated || false
     }));
 
     console.log(`Processed ${processedData.length} data points (source: ${this.currentDataSource})`);
