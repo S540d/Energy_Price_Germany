@@ -68,8 +68,18 @@ export class EnergyDataManager {
 
       // Cache-busting Parameter hinzufügen
       const cacheBust = Date.now();
-      // Use relative path to work with GitHub Pages baseUrl
-      const response = await fetch(`./data/marketdata.json?v=${cacheBust}`);
+
+      // For native apps, use full URL to GitHub Pages
+      // For web, use relative path
+      const isWeb = typeof window !== 'undefined' && window.location?.hostname;
+      const dataUrl = isWeb && window.location.hostname === 'localhost'
+        ? `./data/marketdata.json?v=${cacheBust}`
+        : isWeb
+        ? `./data/marketdata.json?v=${cacheBust}`
+        : `https://s540d.github.io/Energy_Price_Germany/data/marketdata.json?v=${cacheBust}`;
+
+      console.log(`Fetching from: ${dataUrl}`);
+      const response = await fetch(dataUrl);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
