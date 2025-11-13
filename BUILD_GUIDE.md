@@ -1,5 +1,7 @@
 # Android Build Guide - EAS Build
 
+> **Note:** This is an older build guide. See [BUILD.md](BUILD.md) for the most recent build documentation.
+
 **Projekt:** Energy Price Germany
 **Build System:** Expo Application Services (EAS)
 **Platform:** Android (AAB für Google Play Store)

@@ -46,7 +46,7 @@ const translations = {
     repository: 'GitHub Repository',
     // Support Section
     supportSection: 'SUPPORT',
-    supportProject: 'Support the Project',
+    supportProject: 'support me',
     rateApp: 'Rate on Play Store',
     reportBug: 'Report a Bug',
     // Other
@@ -90,7 +90,7 @@ const translations = {
     repository: 'GitHub Repository',
     // Support Section
     supportSection: 'UNTERSTÜTZUNG',
-    supportProject: 'Projekt unterstützen',
+    supportProject: 'support me',
     rateApp: 'Im Play Store bewerten',
     reportBug: 'Fehler melden',
     // Other
@@ -361,9 +361,9 @@ function AppContent() {
               <TouchableOpacity
                 onPress={() => {
                   if (Platform.OS === 'web') {
-                    window.open('https://buymeacoffee.com/sven4321', '_blank');
+                    window.open('https://ko-fi.com/devsven', '_blank');
                   } else {
-                    Linking.openURL('https://buymeacoffee.com/sven4321');
+                    Linking.openURL('https://ko-fi.com/devsven');
                   }
                 }}
                 style={styles.menuLink}

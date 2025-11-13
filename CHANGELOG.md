@@ -222,9 +222,8 @@ MIT License - See LICENSE file for details
 
 ---
 
-## Contact & Support
+## Contact
 
 - GitHub: [Energy Price Germany](https://github.com/S540d/Energy_Price_Germany)
 - Web: [Live Demo](https://s540d.github.io/Energy_Price_Germany/)
 - Author: S540d
-- Support: [Buy Me a Coffee](https://buymeacoffee.com/sven4321)

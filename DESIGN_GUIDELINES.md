@@ -13,7 +13,7 @@ Um vollständige Compliance mit App Store Richtlinien zu gewährleisten und eine
 **Footer-Button mit direktem Support-Link:**
 ```tsx
 // FALSCH - zu prominent, könnte als Werbung interpretiert werden
-<TouchableOpacity onPress={() => window.open('https://buymeacoffee.com/...')}>
+<TouchableOpacity onPress={() => window.open('https://ko-fi.com/...')}>
   <Text>Support me</Text>
 </TouchableOpacity>
 ```
@@ -34,7 +34,7 @@ Um vollständige Compliance mit App Store Richtlinien zu gewährleisten und eine
 </TouchableOpacity>
 
 // Im Settings-Menü:
-<TouchableOpacity onPress={() => openExternalLink('https://buymeacoffee.com/...')}>
+<TouchableOpacity onPress={() => openExternalLink('https://ko-fi.com/...')}>
   <Text>💝 Support the Project</Text>
 </TouchableOpacity>
 ```

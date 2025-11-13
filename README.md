@@ -91,11 +91,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
-
-## Support
-
-If you find this project helpful, consider buying me a coffee: [Buy Me a Coffee](https://buymeacoffee.com/sven4321)
-
----
-
-Deployment triggered.
