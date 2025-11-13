@@ -231,6 +231,11 @@ export function RenewableBarChart({
             const barHeight = ((value - min) / range) * (chartHeight - padding - bottomPadding);
             const y = chartHeight - bottomPadding - barHeight;
             const isSelected = selectedIndex === index;
+            const isInterpolated = d.isRenewableShareInterpolated || false;
+
+            // Dimmed opacity for interpolated values
+            const baseOpacity = isInterpolated ? 0.4 : 0.9;
+            const selectedOpacity = isInterpolated ? 0.6 : 1.0;
 
             // Wenn Wert über 100%, Balken zweiteilen
             if (value > 100) {
@@ -247,7 +252,7 @@ export function RenewableBarChart({
                     width={barWidth}
                     height={baseHeight}
                     fill={getColor(100)}
-                    opacity={isSelected ? 1.0 : 0.9}
+                    opacity={isSelected ? selectedOpacity : baseOpacity}
                     stroke={isSelected ? '#999999' : 'none'}
                     strokeWidth={isSelected ? 2 : 0}
                   />
@@ -257,7 +262,7 @@ export function RenewableBarChart({
                     width={barWidth}
                     height={overHeight}
                     fill="#90A4AE"
-                    opacity={isSelected ? 1.0 : 0.9}
+                    opacity={isSelected ? selectedOpacity : baseOpacity}
                     stroke={isSelected ? '#999999' : 'none'}
                     strokeWidth={isSelected ? 2 : 0}
                   />
@@ -273,7 +278,7 @@ export function RenewableBarChart({
                 width={barWidth}
                 height={barHeight}
                 fill={getColor(value)}
-                opacity={isSelected ? 1.0 : 0.9}
+                opacity={isSelected ? selectedOpacity : baseOpacity}
                 stroke={isSelected ? '#999999' : 'none'}
                 strokeWidth={isSelected ? 2 : 0}
               />
