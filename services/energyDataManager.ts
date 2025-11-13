@@ -1,4 +1,5 @@
 import { EnergyData } from '../utils/metrics';
+import { Platform } from 'react-native';
 
 /**
  * Datenquelle-Typen
@@ -65,16 +66,14 @@ export class EnergyDataManager {
   private async fetchRawData(): Promise<any> {
     try {
       console.log('Loading energy data from marketdata.json...');
+      console.log('Platform.OS:', Platform.OS);
 
       // Cache-busting Parameter hinzufügen
       const cacheBust = Date.now();
 
-      // For native apps, use full URL to GitHub Pages
+      // For native apps (iOS/Android), use full URL to GitHub Pages
       // For web, use relative path
-      const isWeb = typeof window !== 'undefined' && window.location?.hostname;
-      const dataUrl = isWeb && window.location.hostname === 'localhost'
-        ? `./data/marketdata.json?v=${cacheBust}`
-        : isWeb
+      const dataUrl = Platform.OS === 'web'
         ? `./data/marketdata.json?v=${cacheBust}`
         : `https://s540d.github.io/Energy_Price_Germany/data/marketdata.json?v=${cacheBust}`;
 
@@ -86,6 +85,7 @@ export class EnergyDataManager {
 
       const data = await response.json();
       console.log(`Successfully loaded raw data with ${data.data?.length || 0} entries`);
+      console.log('Data source:', data.source);
       return data;
     } catch (error) {
       console.error('Failed to load marketdata.json:', error);
