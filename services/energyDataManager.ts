@@ -97,12 +97,16 @@ export class EnergyDataManager {
     this.currentDataSource = source === 'energy-charts' ? 'energy-charts' : 'awattar';
 
     // Transformiere Daten
-    const processedData: EnergyData[] = rawData.data.map((item: any) => ({
-      timestamp: item.start_timestamp,
-      marketPrice: item.marketprice || null, // EUR/MWh
-      renewableShare: item.renewable_share || null, // Prozent
-      isMarketPriceInterpolated: item.interpolated || false
-    }));
+    const processedData: EnergyData[] = rawData.data.map((item: any) => {
+      const isInterpolated = item.interpolated || false;
+      return {
+        timestamp: item.start_timestamp,
+        marketPrice: item.marketprice || null, // EUR/MWh
+        renewableShare: item.renewable_share || null, // Prozent
+        isMarketPriceInterpolated: isInterpolated,
+        isRenewableShareInterpolated: isInterpolated,
+      };
+    });
 
     console.log(`Processed ${processedData.length} data points (source: ${this.currentDataSource})`);
     return processedData;
@@ -122,6 +126,8 @@ export class EnergyDataManager {
         timestamp: now - (96 - i) * 15 * 60 * 1000,
         marketPrice: 30 + Math.sin(hour / 24 * Math.PI * 2) * 20 + Math.random() * 10,
         renewableShare: 60 + Math.sin((hour - 6) / 24 * Math.PI * 2) * 30 + Math.random() * 10,
+        isMarketPriceInterpolated: false,
+        isRenewableShareInterpolated: false,
       });
     }
 

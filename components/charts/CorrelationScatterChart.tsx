@@ -65,8 +65,13 @@ export function CorrelationScatterChart({
     absoluteMaxHeight
   ));
 
-  // Only use entries with both marketPrice and renewableShare for rendering points
-  const validData = data.filter(d => d.marketPrice !== null && d.renewableShare !== null);
+  // Only use entries with both marketPrice and renewableShare, excluding interpolated values
+  const validData = data.filter(d =>
+    d.marketPrice !== null &&
+    d.renewableShare !== null &&
+    !d.isMarketPriceInterpolated &&
+    !d.isRenewableShareInterpolated
+  );
 
   const priceInCentValues = validData.map(d => d.marketPrice! * 0.1);
   const renewableValues = validData.map(d => d.renewableShare!);
@@ -262,11 +267,6 @@ export function CorrelationScatterChart({
             const x = leftPadding + ((d.renewableShare! - minRenewable) / renewableRange) * (chartWidth - leftPadding - rightPadding);
             const y = chartHeight - bottomPadding - ((priceInCent - minPrice) / priceRange) * (chartHeight - padding - bottomPadding);
             const isSelected = selectedIndex === index;
-            const isInterpolated = d.isMarketPriceInterpolated || d.isRenewableShareInterpolated || false;
-
-            // Dimmed opacity for interpolated values
-            const baseOpacity = isInterpolated ? 0.3 : 0.7;
-            const selectedOpacity = isInterpolated ? 0.5 : 1.0;
 
             return (
               <Circle
@@ -275,7 +275,7 @@ export function CorrelationScatterChart({
                 cy={y}
                 r={isSelected ? 6 : 4}
                 fill={getTimeColor(d.timestamp)}
-                opacity={isSelected ? selectedOpacity : baseOpacity}
+                opacity={isSelected ? 1.0 : 0.7}
                 stroke={isSelected ? '#999999' : 'none'}
                 strokeWidth={isSelected ? 2 : 0}
               />

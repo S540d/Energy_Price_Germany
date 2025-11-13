@@ -1,8 +1,8 @@
 // Service Worker for Energy Price Germany PWA
 // Version: 1.1.0 - Auto-update: Removed manual update notifications, updates apply automatically
 
-const CACHE_VERSION = '1.1.0';
-const BUILD_DATE = '2025-11-12';
+const CACHE_VERSION = '1.2.1';
+const BUILD_DATE = '2025-11-13';
 const CACHE_NAME = `energy-price-germany-v${CACHE_VERSION}-${BUILD_DATE}`;
 const urlsToCache = [
   '/Energy_Price_Germany/',
@@ -13,6 +13,26 @@ const urlsToCache = [
 ];
 
 // Install event - cache essential files
+
+// Force update on activate
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => {
+      console.log('Cache cleaned, claiming clients');
+      return self.clients.claim();
+    })
+  );
+});
+
 self.addEventListener('install', (event) => {
   console.log('Service Worker: Installing...');
   event.waitUntil(
@@ -55,7 +75,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Network First for marketdata.json (always fresh data)
-  if (url.pathname.includes('/data/marketdata.json?v=1762358770820')) {
+  if (url.pathname.includes('/data/marketdata.json?v=1763031392661')) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
