@@ -10,7 +10,16 @@
     "privacy": "public",
     "primaryColor": "#4CAF50",
     "description": "Real-time visualization of electricity prices and renewable energy share in Germany. Track market prices, renewable energy percentages, and their correlation over time.",
-    "keywords": ["energy", "electricity", "prices", "renewable", "germany", "market", "visualization", "charts"],
+    "keywords": [
+      "energy",
+      "electricity",
+      "prices",
+      "renewable",
+      "germany",
+      "market",
+      "visualization",
+      "charts"
+    ],
     "category": "utilities",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -29,6 +38,8 @@
       "package": "com.sven4321.energypricegermany",
       "versionCode": 6,
       "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
         "INTERNET",
         "ACCESS_NETWORK_STATE"
       ],
@@ -50,7 +61,11 @@
     "updates": {
       "enabled": true,
       "checkAutomatically": "ON_LOAD",
-      "fallbackToCacheTimeout": 0
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/db5fda3f-4953-4286-8682-b0a4b31573f2"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }
