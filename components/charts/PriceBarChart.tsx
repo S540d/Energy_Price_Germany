@@ -337,7 +337,7 @@ export function PriceBarChart({
         <Text
           style={{
             position: 'absolute',
-            left: chartWidth - (isPhone ? 50 : 60),
+            right: rightPadding + 4,
             top: chartHeight - bottomPadding - ((avgMarketPrice - min) / range) * (chartHeight - padding - bottomPadding) - 12,
             fontSize: 12,
             color: textColor,

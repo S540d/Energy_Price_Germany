@@ -347,7 +347,7 @@ export function RenewableBarChart({
         <Text
           style={{
             position: 'absolute',
-            left: chartWidth - (isPhone ? 42 : 48),
+            right: rightPadding + 4,
             top: chartHeight - bottomPadding - ((avgValue - min) / range) * (chartHeight - padding - bottomPadding) - 12,
             fontSize: 12,
             color: textColor,
