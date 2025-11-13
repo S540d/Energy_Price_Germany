@@ -88,7 +88,6 @@ Wenn Ihnen die App gefällt, hinterlassen Sie bitte eine Bewertung! Feedback und
 🔗 MEHR INFORMATIONEN
 
 • GitHub: https://github.com/S540d/Energy_Price_Germany
-• Support: https://buymeacoffee.com/sven4321
 
 ---
 
@@ -162,7 +161,6 @@ If you like the app, please leave a review! Feedback and suggestions are always 
 🔗 MORE INFORMATION
 
 • GitHub: https://github.com/S540d/Energy_Price_Germany
-• Support: https://buymeacoffee.com/sven4321
 
 ---
 

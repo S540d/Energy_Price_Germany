@@ -445,6 +445,6 @@ Success? ──Yes──→ ✅ Complete
 
 ---
 
-**Last Updated**: 2025-10-18
-**Current Version**: 1.0.3
+**Last Updated**: 2025-11-13
+**Current Version**: 1.2.1
 **Maintainer**: S540d
