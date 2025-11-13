@@ -20,7 +20,6 @@ import { CorrelationScatterChart } from './components/charts/CorrelationScatterC
 import { MetricsView } from './components/MetricsView';
 import { calculateMetrics, EnergyData } from './utils/metrics';
 import { getThemeColors, Theme } from './utils/theme';
-import { interpolateMarketPrices, InterpolatedDataPoint } from './utils/dataInterpolation';
 
 const APP_VERSION = '1.2.0';
 
@@ -119,7 +118,7 @@ const translations = {
 };
 
 function AppContent() {
-  const [energyData, setEnergyData] = useState<InterpolatedDataPoint[]>([]);
+  const [energyData, setEnergyData] = useState<EnergyData[]>([]);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<Theme>('system');
   const [language, setLanguage] = useState<Language>(() => {
@@ -193,9 +192,7 @@ function AppContent() {
       try {
         setLoading(true);
         const data = await fetchEnergyData();
-        // Interpolate missing market prices
-        const interpolatedData = interpolateMarketPrices(data);
-        setEnergyData(interpolatedData);
+        setEnergyData(data);
       } catch (error) {
         console.error('Failed to load energy data:', error);
         setEnergyData([]);
