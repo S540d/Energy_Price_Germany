@@ -1,24 +1,25 @@
 {
-  "short_name": "1x1 Trainer",
-  "name": "1x1 Trainer - Lerne das Einmaleins",
-  "description": "Übe das kleine Einmaleins mit verschiedenen Spielmodi",
+  "short_name": "Energy Prices",
+  "name": "Energy Prices Germany",
+  "description": "Visualisierung von Energiepreisen und erneuerbaren Energien in Deutschland",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/Energy_Price_Germany/icon-192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/Energy_Price_Germany/icon-512.png",
       "type": "image/png",
       "sizes": "512x512"
     }
   ],
-  "start_url": "/",
+  "start_url": "/Energy_Price_Germany/",
+  "scope": "/Energy_Price_Germany/",
   "display": "standalone",
   "theme_color": "#6200EE",
   "background_color": "#ffffff",
   "orientation": "portrait",
-  "version": "1.0.0",
-  "build_date": "2025-10-14"
+  "version": "1.2.1",
+  "build_date": "2025-11-13"
 }

@@ -1,18 +1,38 @@
 // Service Worker for Energy Price Germany PWA
-// Version: 1.0.0
+// Version: 1.1.0 - Auto-update: Removed manual update notifications, updates apply automatically
 
-const CACHE_VERSION = '1.0.0';
-const BUILD_DATE = '2025-10-14';
+const CACHE_VERSION = '1.2.1';
+const BUILD_DATE = '2025-11-13';
 const CACHE_NAME = `energy-price-germany-v${CACHE_VERSION}-${BUILD_DATE}`;
 const urlsToCache = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
+  '/Energy_Price_Germany/',
+  '/Energy_Price_Germany/index.html',
+  '/Energy_Price_Germany/manifest.json',
+  '/Energy_Price_Germany/icon-192.png',
+  '/Energy_Price_Germany/icon-512.png',
 ];
 
 // Install event - cache essential files
+
+// Force update on activate
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => {
+      console.log('Cache cleaned, claiming clients');
+      return self.clients.claim();
+    })
+  );
+});
+
 self.addEventListener('install', (event) => {
   console.log('Service Worker: Installing...');
   event.waitUntil(
@@ -55,7 +75,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Network First for marketdata.json (always fresh data)
-  if (url.pathname.includes('/data/marketdata.json?v=1760459382785')) {
+  if (url.pathname.includes('/data/marketdata.json?v=1763031392661')) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
@@ -71,6 +91,24 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() => {
           // If network fails, try cache
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // Network First for index.html (CRITICAL: always get latest HTML with correct JS hash)
+  if (url.pathname.includes('index.html') || url.pathname.endsWith('/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+          return response;
+        })
+        .catch(() => {
           return caches.match(event.request);
         })
     );
@@ -120,40 +158,9 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Aggressive update checking and auto-reload notification
+// Handle messages from clients
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
 });
-
-// Update notification system
-let updatePending = false;
-
-self.addEventListener('updatefound', () => {
-  const newWorker = self.registration.installing;
-
-  newWorker.addEventListener('statechange', () => {
-    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-      // New version available
-      if (!updatePending) {
-        updatePending = true;
-
-        // Notify all clients about the update
-        self.clients.matchAll().then((clients) => {
-          clients.forEach((client) => {
-            client.postMessage({
-              type: 'UPDATE_AVAILABLE',
-              message: 'Eine neue Version ist verfügbar. Seite neu laden?'
-            });
-          });
-        });
-      }
-    }
-  });
-});
-
-// Periodic update checks
-setInterval(() => {
-  self.registration.update();
-}, 10000); // Check every 10 seconds
