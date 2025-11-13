@@ -6,7 +6,13 @@ import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 interface CorrelationScatterChartProps {
   title: string;
   subtitle?: string;
-  data: Array<{ timestamp: number; marketPrice: number | null; renewableShare: number | null }>;
+  data: Array<{
+    timestamp: number;
+    marketPrice: number | null;
+    renewableShare: number | null;
+    isMarketPriceInterpolated?: boolean;
+    isRenewableShareInterpolated?: boolean;
+  }>;
   backgroundColor: string;
   textColor: string;
   gridColor: string;
@@ -256,6 +262,11 @@ export function CorrelationScatterChart({
             const x = leftPadding + ((d.renewableShare! - minRenewable) / renewableRange) * (chartWidth - leftPadding - rightPadding);
             const y = chartHeight - bottomPadding - ((priceInCent - minPrice) / priceRange) * (chartHeight - padding - bottomPadding);
             const isSelected = selectedIndex === index;
+            const isInterpolated = d.isMarketPriceInterpolated || d.isRenewableShareInterpolated || false;
+
+            // Dimmed opacity for interpolated values
+            const baseOpacity = isInterpolated ? 0.3 : 0.7;
+            const selectedOpacity = isInterpolated ? 0.5 : 1.0;
 
             return (
               <Circle
@@ -264,7 +275,7 @@ export function CorrelationScatterChart({
                 cy={y}
                 r={isSelected ? 6 : 4}
                 fill={getTimeColor(d.timestamp)}
-                opacity={isSelected ? 1.0 : 0.7}
+                opacity={isSelected ? selectedOpacity : baseOpacity}
                 stroke={isSelected ? '#999999' : 'none'}
                 strokeWidth={isSelected ? 2 : 0}
               />

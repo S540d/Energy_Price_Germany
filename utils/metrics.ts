@@ -3,6 +3,7 @@ export type EnergyData = {
   marketPrice: number | null;
   renewableShare: number | null;
   isMarketPriceInterpolated?: boolean;
+  isRenewableShareInterpolated?: boolean;
 };
 
 export interface Metrics {
