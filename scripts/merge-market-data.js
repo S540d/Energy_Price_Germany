@@ -25,16 +25,18 @@ function interpolateAwattarData(raw) {
         const interpolationFactor = timeOffset / timeDiff;
         const interpolatedPrice = currentPrice + (priceDiff * interpolationFactor);
 
+        // First interval (j=0) is the real hourly value, rest are interpolated
         interpolated.push({
           start_timestamp: start + timeOffset,
           end_timestamp: start + (j + 1) * 15 * 60 * 1000,
           marketprice: Math.round(interpolatedPrice * 100) / 100,
           renewable_share: null,
           unit: current.unit,
-          interpolated: true
+          interpolated: j > 0  // Only mark as interpolated if j > 0
         });
       }
     } else {
+      // Last data point: first interval is real, rest are forward-filled
       for (let j = 0; j < intervals; j++) {
         interpolated.push({
           start_timestamp: start + j * 15 * 60 * 1000,
@@ -42,7 +44,7 @@ function interpolateAwattarData(raw) {
           marketprice: currentPrice,
           renewable_share: null,
           unit: current.unit,
-          interpolated: true
+          interpolated: j > 0  // Only mark as interpolated if j > 0
         });
       }
     }

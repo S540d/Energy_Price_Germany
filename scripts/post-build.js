@@ -8,7 +8,8 @@ const filesToCopy = [
   { src: 'public/service-worker.js', dest: 'dist/service-worker.js' },
   { src: 'public/icon-192.png', dest: 'dist/icon-192.png' },
   { src: 'public/icon-512.png', dest: 'dist/icon-512.png' },
-  { src: 'public/data/marketdata.json', dest: 'dist/data/marketdata.json' }
+  { src: 'public/data/marketdata.json', dest: 'dist/data/marketdata.json' },
+  { src: 'public/.well-known/assetlinks.json', dest: 'dist/.well-known/assetlinks.json' }
   // NOTE: index.html is NOT copied - we use the Expo-generated one with script tags
 ];
 
@@ -17,6 +18,11 @@ filesToCopy.forEach(({ src, dest }) => {
   const destPath = path.join(__dirname, '..', dest);
 
   if (fs.existsSync(srcPath)) {
+    // Create destination directory if it doesn't exist
+    const destDir = path.dirname(destPath);
+    if (!fs.existsSync(destDir)) {
+      fs.mkdirSync(destDir, { recursive: true });
+    }
     fs.copyFileSync(srcPath, destPath);
     console.log(`✓ Copied ${src} to ${dest}`);
   } else {
