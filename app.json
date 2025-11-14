@@ -45,7 +45,21 @@
       ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "playStoreUrl": "https://play.google.com/store/apps/details?id=com.sven4321.energypricegermany"
+      "playStoreUrl": "https://play.google.com/store/apps/details?id=com.sven4321.energypricegermany",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "s540d.github.io",
+              "pathPrefix": "/Energy_Price_Germany"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
