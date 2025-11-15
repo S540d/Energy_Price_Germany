@@ -97,14 +97,57 @@ try {
   // Sort final data
   finalData.sort((a, b) => a.start_timestamp - b.start_timestamp);
 
+  // Merge with existing data to preserve history
+  let mergedData = finalData;
+
+  if (fs.existsSync("public/data/marketdata.json")) {
+    try {
+      const existingData = JSON.parse(fs.readFileSync("public/data/marketdata.json", "utf8"));
+      if (existingData.data && Array.isArray(existingData.data)) {
+        console.log("Merging with existing " + existingData.data.length + " data points...");
+
+        // Create a map of new data by timestamp for quick lookup
+        const newDataMap = new Map();
+        finalData.forEach(item => {
+          newDataMap.set(item.start_timestamp, item);
+        });
+
+        // Keep old data that's not in new data (preserve history)
+        const oldDataToKeep = existingData.data.filter(item =>
+          !newDataMap.has(item.start_timestamp)
+        );
+
+        // Merge: old data + new data
+        mergedData = [...oldDataToKeep, ...finalData];
+
+        // Sort by timestamp
+        mergedData.sort((a, b) => a.start_timestamp - b.start_timestamp);
+
+        // Limit to last 48 hours to avoid unbounded growth
+        const maxAgeMs = 48 * 60 * 60 * 1000; // 48 hours
+        const cutoffTime = Date.now() - maxAgeMs;
+        const beforeCount = mergedData.length;
+        mergedData = mergedData.filter(item => item.start_timestamp >= cutoffTime);
+
+        if (beforeCount > mergedData.length) {
+          console.log("Removed " + (beforeCount - mergedData.length) + " old data points (> 48h)");
+        }
+
+        console.log("Merged: " + oldDataToKeep.length + " old + " + finalData.length + " new = " + mergedData.length + " total");
+      }
+    } catch (error) {
+      console.log("Could not merge with existing data: " + error.message);
+    }
+  }
+
   // Write final output
   fs.writeFileSync("public/data/marketdata_new.json", JSON.stringify({
     object: "list",
     source: source,
-    data: finalData
+    data: mergedData
   }, null, 2));
 
-  console.log("Final dataset: " + finalData.length + " points, source: " + source);
+  console.log("Final dataset: " + mergedData.length + " points, source: " + source);
   console.log("✓ Successfully created marketdata_new.json");
 
 } catch (error) {
