@@ -156,25 +156,72 @@ async function updateMarketData() {
   // Sort final data
   finalData.sort((a, b) => a.start_timestamp - b.start_timestamp);
 
+  // Merge with existing data to preserve history
+  const filePath = path.join(__dirname, 'public', 'data', 'marketdata.json');
+  let mergedData = finalData;
+
+  if (fs.existsSync(filePath)) {
+    try {
+      const existingData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      if (existingData.data && Array.isArray(existingData.data)) {
+        console.log(`📂 Merging with existing ${existingData.data.length} data points...`);
+
+        // Create a map of new data by timestamp for quick lookup
+        const newDataMap = new Map();
+        finalData.forEach(item => {
+          newDataMap.set(item.start_timestamp, item);
+        });
+
+        // Keep old data that's not in new data (preserve history)
+        const oldDataToKeep = existingData.data.filter(item =>
+          !newDataMap.has(item.start_timestamp)
+        );
+
+        // Merge: old data + new data
+        mergedData = [...oldDataToKeep, ...finalData];
+
+        // Sort by timestamp
+        mergedData.sort((a, b) => a.start_timestamp - b.start_timestamp);
+
+        // Limit to last 48 hours to avoid unbounded growth
+        const maxAgeMs = 48 * 60 * 60 * 1000; // 48 hours
+        const cutoffTime = Date.now() - maxAgeMs;
+        const beforeCount = mergedData.length;
+        mergedData = mergedData.filter(item => item.start_timestamp >= cutoffTime);
+
+        if (beforeCount > mergedData.length) {
+          console.log(`🧹 Removed ${beforeCount - mergedData.length} old data points (> 48h)`);
+        }
+
+        console.log(`✅ Merged: ${oldDataToKeep.length} old + ${finalData.length} new = ${mergedData.length} total`);
+      }
+    } catch (error) {
+      console.log('⚠️ Could not merge with existing data:', error.message);
+    }
+  }
+
   // Write to file
   const data = {
     object: "list",
     source: source,
-    data: finalData
+    data: mergedData
   };
 
-  const filePath = path.join(__dirname, 'public', 'data', 'marketdata.json');
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 
-  const firstDate = new Date(finalData[0].start_timestamp);
-  const lastDate = new Date(finalData[finalData.length - 1].end_timestamp);
+  const firstDate = new Date(mergedData[0].start_timestamp);
+  const lastDate = new Date(mergedData[mergedData.length - 1].end_timestamp);
   
   console.log(`\n✅ Updated marketdata.json:`);
-  console.log(`   📊 ${finalData.length} data points`);
+  console.log(`   📊 ${mergedData.length} data points`);
   console.log(`   🔌 Source: ${source}`);
   console.log(`   📅 From: ${firstDate.toLocaleString('de-DE')}`);
   console.log(`   📅 To: ${lastDate.toLocaleString('de-DE')}`);
-  console.log(`   ⏱️  Coverage: ${((finalData.length * 15) / 60).toFixed(1)} hours\n`);
+
+  // Calculate actual coverage (considering mixed 15-min and 60-min intervals)
+  const totalMs = lastDate.getTime() - firstDate.getTime();
+  const totalHours = totalMs / (1000 * 60 * 60);
+  console.log(`   ⏱️  Coverage: ${totalHours.toFixed(1)} hours\n`);
 }
 
 updateMarketData().catch(console.error);
