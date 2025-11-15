@@ -81,6 +81,9 @@ export function RenewableBarChart({
   // Durchschnittswert berechnen
   const avgValue = values.reduce((sum, v) => sum + v, 0) / values.length;
 
+  // Letzter gültiger Wert für fade-out Balken
+  const lastValidValue = validData.length > 0 ? validData[validData.length - 1].renewableShare! : avgValue;
+
   const handleBarInteraction = (index: number) => {
     setSelectedIndex(index === selectedIndex ? null : index);
   };
@@ -191,10 +194,10 @@ export function RenewableBarChart({
               // Seeded random for consistent but varied heights
               const seed = d.timestamp % 1000;
               const random = Math.sin(seed) * 10000;
-              const randomFactor = (random - Math.floor(random)) * 0.5 + 1.5; // Range: 1.5 to 2.0
+              const randomFactor = (random - Math.floor(random)) * 0.3 + 0.9; // Range: 0.9 to 1.2
 
-              // Calculate fade-out height: extended upward (1.5x to 2x average)
-              const fadeMaxValue = avgValue * randomFactor;
+              // Calculate fade-out height: based on last valid value (not average)
+              const fadeMaxValue = lastValidValue * randomFactor;
               const clampedFadeMax = Math.min(Math.max(fadeMaxValue, min), max);
               const fadeHeight = ((clampedFadeMax - min) / range) * (chartHeight - padding - bottomPadding);
               const fadeY = chartHeight - bottomPadding - fadeHeight;

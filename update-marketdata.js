@@ -8,52 +8,25 @@
 const fs = require('fs');
 const path = require('path');
 
-// Helper function to interpolate aWATTar data to 15-minute intervals
-function interpolateAwattarData(raw) {
+// Helper function to convert aWATTar hourly data to consistent format (NO interpolation)
+function convertAwattarData(raw) {
   raw.data.sort((a, b) => a.start_timestamp - b.start_timestamp);
-  const interpolated = [];
+  const converted = [];
 
   for (let i = 0; i < raw.data.length; i++) {
     const current = raw.data[i];
-    const next = raw.data[i + 1];
-    const start = current.start_timestamp;
-    const end = current.end_timestamp;
-    const currentPrice = current.marketprice;
-    const duration = end - start;
-    const intervals = Math.floor(duration / (15 * 60 * 1000));
 
-    if (next) {
-      const timeDiff = next.start_timestamp - current.start_timestamp;
-      const priceDiff = next.marketprice - current.marketprice;
-
-      for (let j = 0; j < intervals; j++) {
-        const timeOffset = j * 15 * 60 * 1000;
-        const interpolationFactor = timeOffset / timeDiff;
-        const interpolatedPrice = currentPrice + (priceDiff * interpolationFactor);
-
-        interpolated.push({
-          start_timestamp: start + timeOffset,
-          end_timestamp: start + (j + 1) * 15 * 60 * 1000,
-          marketprice: Math.round(interpolatedPrice * 100) / 100,
-          renewable_share: null,
-          unit: current.unit,
-          interpolated: true
-        });
-      }
-    } else {
-      for (let j = 0; j < intervals; j++) {
-        interpolated.push({
-          start_timestamp: start + j * 15 * 60 * 1000,
-          end_timestamp: start + (j + 1) * 15 * 60 * 1000,
-          marketprice: currentPrice,
-          renewable_share: null,
-          unit: current.unit,
-          interpolated: true
-        });
-      }
-    }
+    // Keep original hourly data without interpolation
+    converted.push({
+      start_timestamp: current.start_timestamp,
+      end_timestamp: current.end_timestamp,
+      marketprice: current.marketprice,
+      renewable_share: null,
+      unit: current.unit,
+      interpolated: false  // Mark as real data, not interpolated
+    });
   }
-  return interpolated;
+  return converted;
 }
 
 async function updateMarketData() {
@@ -118,9 +91,9 @@ async function updateMarketData() {
     }
 
     const raw = await response.json();
-    awattarData = interpolateAwattarData(raw);
+    awattarData = convertAwattarData(raw);
 
-    console.log(`✅ Loaded ${awattarData.length} data points from aWATTar`);
+    console.log(`✅ Loaded ${awattarData.length} hourly data points from aWATTar (no interpolation)`);
 
   } catch (error) {
     console.log('⚠️ aWATTar API failed:', error.message);

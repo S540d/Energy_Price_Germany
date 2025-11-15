@@ -40,7 +40,7 @@ Energy Charts available?
 │         
 └─ NO  → Load aWATTar as fallback
           Source: "awattar"
-          Data: AW only (interpolated)
+          Data: AW only (hourly, no interpolation)
 ```
 
 ## 📋 Merge Rules
@@ -63,27 +63,34 @@ Energy Charts available?
 
 ## 🔢 Data Format Consistency
 
-### Energy Charts Data Points
+### Energy Charts Data Points (15-minute intervals)
 ```json
 {
   "start_timestamp": 1728748800000,
-  "end_timestamp": 1728749700000,
+  "end_timestamp": 1728749700000,  // 15 minutes later
   "marketprice": 85.52,
   "renewable_share": 26.0,
-  "unit": "Eur/MWh"
+  "unit": "Eur/MWh",
+  "interpolated": false
 }
 ```
 
-### Supplemental aWATTar Data Points
+### Supplemental aWATTar Data Points (1-hour intervals, NO interpolation)
 ```json
 {
   "start_timestamp": 1728835200000,
-  "end_timestamp": 1728836100000,
+  "end_timestamp": 1728838800000,  // 1 hour later (NOT 15 min!)
   "marketprice": 93.45,
   "renewable_share": null,  // ← Always null for aWATTar
-  "unit": "Eur/MWh"
+  "unit": "Eur/MWh",
+  "interpolated": false  // ← Real hourly data, not interpolated
 }
 ```
+
+**Note**: aWATTar data keeps its original 1-hour intervals to preserve data integrity. This means:
+- Energy Charts: 4 data points per hour (15-min intervals)
+- aWATTar: 1 data point per hour (60-min intervals)
+- Charts display both at their native resolution
 
 ## 📈 Typical Results
 
@@ -95,9 +102,10 @@ Energy Charts available?
 
 ### After Supplementation
 - **Source**: Energy Charts (supplemented)
-- **Coverage**: ~43 hours
-- **Data points**: 172 (96 EC + 76 AW)
+- **Coverage**: ~46 hours
+- **Data points**: 118 (96 EC @ 15min + 22 AW @ 60min)
 - **Renewable data**: First 24h complete, then null
+- **Resolution**: Mixed (15-min for EC, 60-min for AW)
 
 ## 🛠️ Implementation Files
 
@@ -146,11 +154,11 @@ Result:
 ### Scenario 3: Energy Charts Failure (Fallback)
 ```
 Energy Charts: ✗ Failed
-aWATTar:       00:00 → 18:45 (76 points, 43h)
+aWATTar:       00:00 → 23:00 (24 points, 24h)
 
 Result:
-├─ Use: AW[00:00-18:45] only
-├─ Total: 76 points (interpolated to 15-min)
+├─ Use: AW[00:00-23:00] only
+├─ Total: 24 points (hourly, no interpolation)
 └─ Source: "awattar"
 ```
 
@@ -211,6 +219,18 @@ jq '.data[95:97] | .[] | {ts: .start_timestamp, renewable: .renewable_share}' pu
 
 ---
 
-**Last Updated**: October 12, 2025  
-**Strategy Version**: 1.0  
+**Last Updated**: November 15, 2025
+**Strategy Version**: 2.0 (no aWATTar interpolation)
 **Status**: ✅ Active in production
+
+## 📝 Version History
+
+### v2.0 (November 15, 2025)
+- **Removed aWATTar interpolation**: No longer interpolates hourly data to 15-minute intervals
+- **Data integrity**: aWATTar data keeps original 1-hour resolution
+- **Mixed resolution**: Charts now display EC (15-min) + AW (60-min) at native intervals
+- **Benefit**: No artificial data, only real measurements
+
+### v1.0 (October 12, 2025)
+- Initial hybrid data strategy
+- aWATTar data was interpolated to 15-minute intervals
