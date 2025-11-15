@@ -2,54 +2,25 @@
 
 const fs = require("fs");
 
-// Interpolate aWATTar data to 15-minute intervals to match Energy Charts resolution
-function interpolateAwattarData(raw) {
+// Convert aWATTar hourly data to consistent format (NO interpolation)
+function convertAwattarData(raw) {
   raw.data.sort((a, b) => a.start_timestamp - b.start_timestamp);
-  const interpolated = [];
+  const converted = [];
 
   for (let i = 0; i < raw.data.length; i++) {
     const current = raw.data[i];
-    const next = raw.data[i + 1];
-    const start = current.start_timestamp;
-    const end = current.end_timestamp;
-    const currentPrice = current.marketprice;
-    const duration = end - start;
-    const intervals = Math.floor(duration / (15 * 60 * 1000));
 
-    if (next) {
-      const timeDiff = next.start_timestamp - current.start_timestamp;
-      const priceDiff = next.marketprice - current.marketprice;
-
-      for (let j = 0; j < intervals; j++) {
-        const timeOffset = j * 15 * 60 * 1000;
-        const interpolationFactor = timeOffset / timeDiff;
-        const interpolatedPrice = currentPrice + (priceDiff * interpolationFactor);
-
-        // First interval (j=0) is the real hourly value, rest are interpolated
-        interpolated.push({
-          start_timestamp: start + timeOffset,
-          end_timestamp: start + (j + 1) * 15 * 60 * 1000,
-          marketprice: Math.round(interpolatedPrice * 100) / 100,
-          renewable_share: null,
-          unit: current.unit,
-          interpolated: j > 0  // Only mark as interpolated if j > 0
-        });
-      }
-    } else {
-      // Last data point: first interval is real, rest are forward-filled
-      for (let j = 0; j < intervals; j++) {
-        interpolated.push({
-          start_timestamp: start + j * 15 * 60 * 1000,
-          end_timestamp: start + (j + 1) * 15 * 60 * 1000,
-          marketprice: currentPrice,
-          renewable_share: null,
-          unit: current.unit,
-          interpolated: j > 0  // Only mark as interpolated if j > 0
-        });
-      }
-    }
+    // Keep original hourly data without interpolation
+    converted.push({
+      start_timestamp: current.start_timestamp,
+      end_timestamp: current.end_timestamp,
+      marketprice: current.marketprice,
+      renewable_share: null,
+      unit: current.unit,
+      interpolated: false  // Mark as real data, not interpolated
+    });
   }
-  return interpolated;
+  return converted;
 }
 
 // Main merge logic
@@ -67,11 +38,11 @@ try {
     const lastECDate = new Date(lastECTimestamp);
     console.log("Energy Charts last timestamp: " + lastECDate.toISOString());
 
-    // Load and interpolate aWATTar data
+    // Load aWATTar data (no interpolation)
     if (fs.existsSync("public/data/marketdata_raw.json")) {
       const awattarRaw = JSON.parse(fs.readFileSync("public/data/marketdata_raw.json", "utf8"));
-      const awattarData = interpolateAwattarData(awattarRaw);
-      console.log("aWATTar data interpolated to " + awattarData.length + " points");
+      const awattarData = convertAwattarData(awattarRaw);
+      console.log("aWATTar data converted to " + awattarData.length + " hourly points (no interpolation)");
 
       // Get last timestamp from aWATTar
       const lastAWTimestamp = awattarData[awattarData.length - 1].end_timestamp;
@@ -118,8 +89,9 @@ try {
       process.exit(1);
     }
     const awattarRaw = JSON.parse(fs.readFileSync("public/data/marketdata_raw.json", "utf8"));
-    finalData = interpolateAwattarData(awattarRaw);
+    finalData = convertAwattarData(awattarRaw);
     source = "awattar";
+    console.log("Using aWATTar data with " + finalData.length + " hourly points (no interpolation)");
   }
 
   // Sort final data
