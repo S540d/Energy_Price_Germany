@@ -75,22 +75,31 @@ Energy Charts available?
 }
 ```
 
-### Supplemental aWATTar Data Points (1-hour intervals, NO interpolation)
+### Supplemental aWATTar Data Points (interpolated to 15-minute intervals)
 ```json
 {
   "start_timestamp": 1728835200000,
-  "end_timestamp": 1728838800000,  // 1 hour later (NOT 15 min!)
+  "end_timestamp": 1728835900000,  // 15 minutes later
   "marketprice": 93.45,
   "renewable_share": null,  // ← Always null for aWATTar
   "unit": "Eur/MWh",
-  "interpolated": false  // ← Real hourly data, not interpolated
+  "interpolated": false  // ← First 15-min of hour = real data
+}
+{
+  "start_timestamp": 1728835900000,
+  "end_timestamp": 1728836800000,  // 15 minutes later
+  "marketprice": 93.45,
+  "renewable_share": null,
+  "unit": "Eur/MWh",
+  "interpolated": true  // ← 2nd, 3rd, 4th 15-min = interpolated
 }
 ```
 
-**Note**: aWATTar data keeps its original 1-hour intervals to preserve data integrity. This means:
-- Energy Charts: 4 data points per hour (15-min intervals)
-- aWATTar: 1 data point per hour (60-min intervals)
-- Charts display both at their native resolution
+**Note**: aWATTar hourly data is interpolated to 15-minute intervals:
+- First 15-min interval (j=0): `interpolated: false` (real hourly value)
+- Subsequent intervals (j>0): `interpolated: true` (interpolated from hourly)
+- Charts display interpolated values with dimmed opacity (0.4 vs 0.9)
+- New Energy Charts data automatically overwrites aWATTar+interpolated data
 
 ## 📈 Typical Results
 
@@ -103,9 +112,9 @@ Energy Charts available?
 ### After Supplementation
 - **Source**: Energy Charts (supplemented)
 - **Coverage**: ~46 hours
-- **Data points**: 118 (96 EC @ 15min + 22 AW @ 60min)
+- **Data points**: 184 (96 EC @ 15min + 88 AW interpolated @ 15min)
 - **Renewable data**: First 24h complete, then null
-- **Resolution**: Mixed (15-min for EC, 60-min for AW)
+- **Resolution**: Uniform 15-min (EC real, AW interpolated with markers)
 
 ## 🛠️ Implementation Files
 
@@ -220,10 +229,18 @@ jq '.data[95:97] | .[] | {ts: .start_timestamp, renewable: .renewable_share}' pu
 ---
 
 **Last Updated**: November 15, 2025
-**Strategy Version**: 2.0 (no aWATTar interpolation)
+**Strategy Version**: 2.1 (smart aWATTar interpolation with markers)
 **Status**: ✅ Active in production
 
 ## 📝 Version History
+
+### v2.1 (November 15, 2025)
+- **Re-enabled aWATTar interpolation** with proper marking
+- **Interpolation markers**: First 15-min = real data, rest = interpolated
+- **Visual distinction**: Interpolated values displayed with dimmed opacity (0.4)
+- **Auto-replacement**: New Energy Charts data overwrites aWATTar+interpolated data
+- **Extended retention**: Data kept for 7 days instead of 48 hours
+- **Benefit**: Smooth charts with clear indication of interpolated vs real data
 
 ### v2.0 (November 15, 2025)
 - **Removed aWATTar interpolation**: No longer interpolates hourly data to 15-minute intervals

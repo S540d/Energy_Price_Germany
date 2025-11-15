@@ -2,25 +2,30 @@
 
 const fs = require("fs");
 
-// Convert aWATTar hourly data to consistent format (NO interpolation)
-function convertAwattarData(raw) {
+// Interpolate aWATTar hourly data to 15-minute intervals
+function interpolateAwattarData(raw) {
   raw.data.sort((a, b) => a.start_timestamp - b.start_timestamp);
-  const converted = [];
+  const interpolated = [];
 
   for (let i = 0; i < raw.data.length; i++) {
     const current = raw.data[i];
 
-    // Keep original hourly data without interpolation
-    converted.push({
-      start_timestamp: current.start_timestamp,
-      end_timestamp: current.end_timestamp,
-      marketprice: current.marketprice,
-      renewable_share: null,
-      unit: current.unit,
-      interpolated: false  // Mark as real data, not interpolated
-    });
+    // Create 4 x 15-minute intervals from each hourly data point
+    for (let j = 0; j < 4; j++) {
+      const intervalStart = current.start_timestamp + j * 15 * 60 * 1000;
+      const intervalEnd = intervalStart + 15 * 60 * 1000;
+
+      interpolated.push({
+        start_timestamp: intervalStart,
+        end_timestamp: intervalEnd,
+        marketprice: current.marketprice,
+        renewable_share: null,
+        unit: current.unit,
+        interpolated: j > 0  // First interval (j=0) is real data, rest are interpolated
+      });
+    }
   }
-  return converted;
+  return interpolated;
 }
 
 // Main merge logic
@@ -41,8 +46,8 @@ try {
     // Load aWATTar data (no interpolation)
     if (fs.existsSync("public/data/marketdata_raw.json")) {
       const awattarRaw = JSON.parse(fs.readFileSync("public/data/marketdata_raw.json", "utf8"));
-      const awattarData = convertAwattarData(awattarRaw);
-      console.log("aWATTar data converted to " + awattarData.length + " hourly points (no interpolation)");
+      const awattarData = interpolateAwattarData(awattarRaw);
+      console.log("aWATTar data interpolated to " + awattarData.length + " points (15-min intervals)");
 
       // Get last timestamp from aWATTar
       const lastAWTimestamp = awattarData[awattarData.length - 1].end_timestamp;
@@ -89,9 +94,9 @@ try {
       process.exit(1);
     }
     const awattarRaw = JSON.parse(fs.readFileSync("public/data/marketdata_raw.json", "utf8"));
-    finalData = convertAwattarData(awattarRaw);
+    finalData = interpolateAwattarData(awattarRaw);
     source = "awattar";
-    console.log("Using aWATTar data with " + finalData.length + " hourly points (no interpolation)");
+    console.log("Using aWATTar data with " + finalData.length + " points (interpolated to 15-min)");
   }
 
   // Sort final data
@@ -123,14 +128,14 @@ try {
         // Sort by timestamp
         mergedData.sort((a, b) => a.start_timestamp - b.start_timestamp);
 
-        // Limit to last 48 hours to avoid unbounded growth
-        const maxAgeMs = 48 * 60 * 60 * 1000; // 48 hours
+        // Limit to last 7 days to avoid unbounded growth
+        const maxAgeMs = 7 * 24 * 60 * 60 * 1000; // 7 days
         const cutoffTime = Date.now() - maxAgeMs;
         const beforeCount = mergedData.length;
         mergedData = mergedData.filter(item => item.start_timestamp >= cutoffTime);
 
         if (beforeCount > mergedData.length) {
-          console.log("Removed " + (beforeCount - mergedData.length) + " old data points (> 48h)");
+          console.log("Removed " + (beforeCount - mergedData.length) + " old data points (> 7 days)");
         }
 
         console.log("Merged: " + oldDataToKeep.length + " old + " + finalData.length + " new = " + mergedData.length + " total");

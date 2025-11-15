@@ -8,25 +8,30 @@
 const fs = require('fs');
 const path = require('path');
 
-// Helper function to convert aWATTar hourly data to consistent format (NO interpolation)
-function convertAwattarData(raw) {
+// Helper function to interpolate aWATTar hourly data to 15-minute intervals
+function interpolateAwattarData(raw) {
   raw.data.sort((a, b) => a.start_timestamp - b.start_timestamp);
-  const converted = [];
+  const interpolated = [];
 
   for (let i = 0; i < raw.data.length; i++) {
     const current = raw.data[i];
 
-    // Keep original hourly data without interpolation
-    converted.push({
-      start_timestamp: current.start_timestamp,
-      end_timestamp: current.end_timestamp,
-      marketprice: current.marketprice,
-      renewable_share: null,
-      unit: current.unit,
-      interpolated: false  // Mark as real data, not interpolated
-    });
+    // Create 4 x 15-minute intervals from each hourly data point
+    for (let j = 0; j < 4; j++) {
+      const intervalStart = current.start_timestamp + j * 15 * 60 * 1000;
+      const intervalEnd = intervalStart + 15 * 60 * 1000;
+
+      interpolated.push({
+        start_timestamp: intervalStart,
+        end_timestamp: intervalEnd,
+        marketprice: current.marketprice,
+        renewable_share: null,
+        unit: current.unit,
+        interpolated: j > 0  // First interval (j=0) is real data, rest are interpolated
+      });
+    }
   }
-  return converted;
+  return interpolated;
 }
 
 async function updateMarketData() {
@@ -91,9 +96,9 @@ async function updateMarketData() {
     }
 
     const raw = await response.json();
-    awattarData = convertAwattarData(raw);
+    awattarData = interpolateAwattarData(raw);
 
-    console.log(`✅ Loaded ${awattarData.length} hourly data points from aWATTar (no interpolation)`);
+    console.log(`✅ Loaded ${awattarData.length} data points from aWATTar (interpolated to 15-min intervals)`);
 
   } catch (error) {
     console.log('⚠️ aWATTar API failed:', error.message);
@@ -183,14 +188,14 @@ async function updateMarketData() {
         // Sort by timestamp
         mergedData.sort((a, b) => a.start_timestamp - b.start_timestamp);
 
-        // Limit to last 48 hours to avoid unbounded growth
-        const maxAgeMs = 48 * 60 * 60 * 1000; // 48 hours
+        // Limit to last 7 days to avoid unbounded growth
+        const maxAgeMs = 7 * 24 * 60 * 60 * 1000; // 7 days
         const cutoffTime = Date.now() - maxAgeMs;
         const beforeCount = mergedData.length;
         mergedData = mergedData.filter(item => item.start_timestamp >= cutoffTime);
 
         if (beforeCount > mergedData.length) {
-          console.log(`🧹 Removed ${beforeCount - mergedData.length} old data points (> 48h)`);
+          console.log(`🧹 Removed ${beforeCount - mergedData.length} old data points (> 7 days)`);
         }
 
         console.log(`✅ Merged: ${oldDataToKeep.length} old + ${finalData.length} new = ${mergedData.length} total`);
