@@ -221,7 +221,7 @@ jq '.data[95:97] | .[] | {ts: .start_timestamp, renewable: .renewable_share}' pu
 
 ## 📝 Maintenance Notes
 
-- No path changes required (DATA-PATH-DOCUMENTATION.md still valid)
+- No path changes required (data paths remain consistent)
 - Config.js unchanged (only API logic modified)
 - Frontend components work transparently with supplemented data
 - Archive system continues to work as before
