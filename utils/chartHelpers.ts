@@ -18,16 +18,21 @@ export function getYAxisLabelCenterPosition(chartHeight: number, horizontalOffse
  * @param chartHeight - Höhe des Charts in Pixeln
  * @param horizontalOffset - Horizontale Verschiebung (höhere Werte = weiter rechts)
  * @param textColor - Textfarbe
+ * @param isPhone - Optional: Ob das Gerät ein Phone ist (für responsives Layout)
  * @returns Style-Objekt für die Y-Achsen-Beschriftung
  */
 export function getYAxisLabelStyle(
   chartHeight: number,
   horizontalOffset: number = 0,
-  textColor: string = '#333'
+  textColor: string = '#333',
+  isPhone: boolean = false
 ) {
+  // Auf Phones mehr Abstand zur Y-Achse für bessere Lesbarkeit
+  const leftOffset = isPhone ? -95 : -90;
+
   return {
     position: 'absolute' as const,
-    left: -90,  // Fester vertikaler Abstand vom oberen Rand
+    left: leftOffset,  // Responsiver Abstand vom oberen Rand
     top: getYAxisLabelCenterPosition(chartHeight, horizontalOffset),
     fontSize: 12,
     color: textColor,

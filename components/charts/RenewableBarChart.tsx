@@ -41,7 +41,7 @@ export function RenewableBarChart({
   // Responsive Chart-Größen - Viewport-bewusst für optimale Darstellung
   const leftPadding = isPhone ? 35 : 45;
   const padding = 40;
-  const rightPadding = isPhone ? 40 : 50;
+  const rightPadding = isPhone ? 20 : 50;  // Halved for phone to reduce right margin
   const bottomPadding = isPhone ? 35 : 40;
 
   // Margins (8px Grid)
@@ -438,7 +438,7 @@ export function RenewableBarChart({
         )}
 
         {/* Y-Achsen-Label */}
-        <Text style={getYAxisLabelStyle(chartHeight, -15, textColor)}>
+        <Text style={getYAxisLabelStyle(chartHeight, -15, textColor, isPhone)}>
           {labels.yAxis}
         </Text>
       </View>

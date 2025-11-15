@@ -44,7 +44,7 @@ export function CorrelationScatterChart({
   // Responsive Chart-Größen - Viewport-bewusst für optimale Darstellung
   const leftPadding = isPhone ? 35 : 45;
   const padding = 40;
-  const rightPadding = isPhone ? 40 : 50;
+  const rightPadding = isPhone ? 20 : 50;  // Halved for phone to reduce right margin
   const bottomPadding = isPhone ? 35 : 40;
 
   // Margins (8px Grid)
@@ -361,7 +361,7 @@ export function CorrelationScatterChart({
           style={{
             position: 'absolute',
             left: chartWidth / 2 - 60,
-            bottom: isPhone ? 2 : 5,
+            bottom: isPhone ? 0 : 3,  // Moved down by 2px for both
             fontSize: 12,
             color: textColor,
             fontWeight: '600',
@@ -369,7 +369,7 @@ export function CorrelationScatterChart({
         >
           {labels.xAxisRenewables}
         </Text>
-        <Text style={getYAxisLabelStyle(chartHeight, -15, textColor)}>
+        <Text style={getYAxisLabelStyle(chartHeight, -15, textColor, isPhone)}>
           {labels.yAxisPrice}
         </Text>
       </View>
