@@ -1,12 +1,10 @@
 name: Fetch energy market data
 on:
   schedule:
-    # Stündlich zwischen 13:00 und 21:00 deutscher Zeit
-    # Da Deutschland UTC+1 (MEZ) bzw. UTC+2 (MESZ) ist:
-    # MEZ (Winter): 13:00-21:00 MEZ = 12:00-20:00 UTC
-    # MESZ (Sommer): 13:00-21:00 MESZ = 11:00-19:00 UTC
-    # Wir nehmen 11:00-20:00 UTC, um beide Zeitzonen abzudecken
-    - cron: '0 11-20 * * *'
+    # Stündlich 24/7 für kontinuierliche Datenaktualisierung
+    # Dies stellt sicher, dass Daten nach Mitternacht verfügbar sind
+    # und die Renewable-Forecast-Daten von Energy Charts genutzt werden
+    - cron: '0 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -82,7 +80,13 @@ jobs:
               data: merged
             }, null, 2));
 
+            // Also save renewable data separately for use with aWATTar supplementation
+            fs.writeFileSync("public/data/renewable_map.json", JSON.stringify(
+              Object.fromEntries(renewableMap)
+            ));
+
             console.log("Successfully processed Energy Charts data");
+            console.log("Saved renewable map with " + renewableMap.size + " entries");
           } catch (error) {
             console.error("Error processing Energy Charts data:", error);
             process.exit(1);
