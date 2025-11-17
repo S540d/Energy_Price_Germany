@@ -227,40 +227,78 @@ jq '.data[95:97] | .[] | {ts: .start_timestamp, renewable: .renewable_share}' pu
 
 ### Current Storage Usage
 - **marketdata.json**: ~70-150KB (7 days of 15-min data = ~672 points)
-- **Archive per update**: ~70-150KB (full 7-day snapshot)
+- **Daily history file**: ~15KB (24h of 15-min data = 96 points)
+- **Archive per update**: ~70-150KB (full 7-day snapshot, for audit trail)
 - **Updates**: 2x daily (12:00 + 15:00 UTC)
 
 ### Retention Policy
 - **Live data** (`marketdata.json`): 7 days rolling window
-- **Archives**: 90 days retention, then auto-cleanup
+- **History files**: 90 days retention (for app historical data feature)
+- **Archives**: 90 days retention (audit trail, redundant backup)
 - **Cleanup**: Automatic during each data update
 
 ### Storage Calculations (100MB budget)
 ```
-Per update: ~150KB
-Per day: 2 × 150KB = 300KB
-Per month: 30 × 300KB = ~9MB
-90 days: 90 × 300KB = ~27MB
+History (optimized for app):
+- Per day: ~15KB (single day, 96 points)
+- 90 days: 90 × 15KB = ~1.4MB
 
-Total with buffer: ~30MB / 100MB = 30% utilization
-Runway: 100MB / 300KB = ~333 days (~11 months)
+Archives (audit/backup):
+- Per update: ~150KB
+- Per day: 2 × 150KB = 300KB
+- 90 days: 90 × 300KB = ~27MB
+
+Total: ~1.4MB (history) + ~27MB (archive) = ~28MB
+Storage utilization: ~28% of 100MB budget
 ```
 
-### Archive Structure
+### Storage Structure
 ```
 public/data/
-├── marketdata.json          # Current live data (7 days)
-└── archive/
-    ├── marketdata_2025-11-17T12.json
+├── marketdata.json              # Current live data (7 days rolling)
+├── history/                     # For app historical data feature
+│   ├── 2025-11-17.json         # ~15KB (96 points, single day)
+│   ├── 2025-11-16.json
+│   └── ... (90 days of daily files)
+└── archive/                     # Audit trail / backup
+    ├── marketdata_2025-11-17T12.json  # ~150KB (7-day snapshot)
     ├── marketdata_2025-11-17T15.json
     └── ... (90 days of snapshots)
 ```
 
+### Daily History File Format
+```json
+{
+  "date": "2025-11-17",
+  "source": "energy-charts",
+  "data": [
+    {
+      "start_timestamp": 1731801600000,
+      "end_timestamp": 1731802500000,
+      "marketprice": 85.52,
+      "renewable_share": 45.2,
+      "unit": "Eur/MWh",
+      "interpolated": false
+    },
+    // ... 96 entries (24h @ 15min)
+  ]
+}
+```
+
+### Benefits for App Historical Data
+1. **Small files** (~15KB) - Fast loading for mobile apps
+2. **Granular selection** - Load only the days you need
+3. **No decompression** - Direct JSON access
+4. **Predictable naming** - `YYYY-MM-DD.json` format
+5. **Complete days only** - Skips incomplete data (requires 92+ of 96 points)
+
 ### Cleanup Process
 The GitHub Actions workflow automatically:
-1. Creates new archive with timestamp
-2. Removes archives older than 90 days
-3. Commits both additions and deletions
+1. Creates new archive with timestamp (snapshot)
+2. Extracts yesterday's data into history file (if complete)
+3. Removes archives older than 90 days
+4. Removes history files older than 90 days
+5. Commits additions and deletions
 
 ## 📝 Maintenance Notes
 
