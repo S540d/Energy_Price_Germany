@@ -63,33 +63,13 @@ try {
       if (timeDiffHours >= 3) {
         console.log("Supplementing Energy Charts with aWATTar data (difference >= 3h)");
 
-        // Load renewable map if available (for enriching aWATTar data)
-        let renewableMap = new Map();
-        if (fs.existsSync("public/data/renewable_map.json")) {
-          const renewableData = JSON.parse(fs.readFileSync("public/data/renewable_map.json", "utf8"));
-          renewableMap = new Map(Object.entries(renewableData).map(([k, v]) => [parseInt(k), v]));
-          console.log("Loaded renewable map with " + renewableMap.size + " entries");
-        }
-
         // Filter aWATTar data: only data AFTER last Energy Charts timestamp
+        // Note: aWATTar data has renewable_share = null (no enrichment)
         const supplementalData = awattarData.filter(item =>
           item.start_timestamp >= lastECTimestamp
-        ).map(item => {
-          // Try to enrich with renewable data from Energy Charts
-          const renewableShare = renewableMap.get(item.start_timestamp);
-          if (renewableShare !== undefined) {
-            return {
-              ...item,
-              renewable_share: renewableShare
-            };
-          }
-          return item;
-        });
+        );
 
-        // Count how many were enriched
-        const enrichedCount = supplementalData.filter(item => item.renewable_share !== null).length;
         console.log("Adding " + supplementalData.length + " supplemental data points from aWATTar");
-        console.log("Enriched " + enrichedCount + " points with renewable data from Energy Charts");
 
         // Merge: Energy Charts + supplemental aWATTar
         finalData = [...energyChartsData.data, ...supplementalData];
@@ -180,14 +160,11 @@ try {
   console.error("Error merging data:", error);
   process.exit(1);
 } finally {
-  // Clean up
+  // Clean up temporary files
   if (fs.existsSync("public/data/marketdata_raw.json")) {
     fs.unlinkSync("public/data/marketdata_raw.json");
   }
   if (fs.existsSync("public/data/energycharts_temp.json")) {
     fs.unlinkSync("public/data/energycharts_temp.json");
-  }
-  if (fs.existsSync("public/data/renewable_map.json")) {
-    fs.unlinkSync("public/data/renewable_map.json");
   }
 }
