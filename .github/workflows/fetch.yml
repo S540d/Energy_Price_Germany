@@ -124,12 +124,46 @@ jobs:
           ARCHIVE_NAME="marketdata_$(date -u +"%Y-%m-%dT%H").json"
           mkdir -p public/data/archive
           cp public/data/marketdata_new.json "public/data/archive/$ARCHIVE_NAME"
-          
+
           # Replace main file
           mv public/data/marketdata_new.json public/data/marketdata.json
-          
+
           echo "✓ Updated marketdata.json"
           echo "✓ Created archive: $ARCHIVE_NAME"
+
+      - name: Cleanup old archives (keep 90 days)
+        if: steps.compare.outputs.new_data == 'true'
+        run: |
+          ARCHIVE_DIR="public/data/archive"
+          DAYS_TO_KEEP=90
+
+          # Count archives before cleanup
+          BEFORE_COUNT=$(ls -1 "$ARCHIVE_DIR"/*.json 2>/dev/null | wc -l)
+
+          # Find and remove archives older than 90 days
+          # Using filename pattern: marketdata_YYYY-MM-DDTHH.json
+          CUTOFF_DATE=$(date -u -d "$DAYS_TO_KEEP days ago" +"%Y-%m-%d" 2>/dev/null || date -u -v-${DAYS_TO_KEEP}d +"%Y-%m-%d")
+
+          DELETED=0
+          for file in "$ARCHIVE_DIR"/marketdata_*.json; do
+            if [ -f "$file" ]; then
+              # Extract date from filename (marketdata_2025-11-17T12.json -> 2025-11-17)
+              FILE_DATE=$(basename "$file" | sed 's/marketdata_\([0-9-]*\)T.*/\1/')
+              if [ "$FILE_DATE" \< "$CUTOFF_DATE" ]; then
+                rm "$file"
+                DELETED=$((DELETED + 1))
+              fi
+            fi
+          done
+
+          AFTER_COUNT=$(ls -1 "$ARCHIVE_DIR"/*.json 2>/dev/null | wc -l)
+
+          if [ $DELETED -gt 0 ]; then
+            echo "🧹 Cleaned up $DELETED old archives (> $DAYS_TO_KEEP days)"
+            echo "📁 Archive count: $BEFORE_COUNT → $AFTER_COUNT"
+          else
+            echo "✓ No old archives to clean up"
+          fi
 
       - name: Cleanup temporary file
         if: steps.compare.outputs.new_data == 'false'
@@ -146,14 +180,14 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add public/data/marketdata.json
-          git add public/data/archive/*.json
-          
+          git add -A public/data/archive/
+
           # Get current date/time for commit message
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H UTC")
-          
+
           # Get source from marketdata.json
           SOURCE=$(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).source)')
-          
+
           git commit -m "Update marketdata.json (source: $SOURCE @ $TIMESTAMP)"
           git push
 

@@ -223,12 +223,52 @@ jq '.data[95:97] | .[] | {ts: .start_timestamp, renewable: .renewable_share}' pu
 4. ✅ **Efficiency**: Only supplements when gap is significant (≥3h)
 5. ✅ **Transparency**: Source field clearly indicates data origin
 
+## 💾 Data Storage Strategy
+
+### Current Storage Usage
+- **marketdata.json**: ~70-150KB (7 days of 15-min data = ~672 points)
+- **Archive per update**: ~70-150KB (full 7-day snapshot)
+- **Updates**: 2x daily (12:00 + 15:00 UTC)
+
+### Retention Policy
+- **Live data** (`marketdata.json`): 7 days rolling window
+- **Archives**: 90 days retention, then auto-cleanup
+- **Cleanup**: Automatic during each data update
+
+### Storage Calculations (100MB budget)
+```
+Per update: ~150KB
+Per day: 2 × 150KB = 300KB
+Per month: 30 × 300KB = ~9MB
+90 days: 90 × 300KB = ~27MB
+
+Total with buffer: ~30MB / 100MB = 30% utilization
+Runway: 100MB / 300KB = ~333 days (~11 months)
+```
+
+### Archive Structure
+```
+public/data/
+├── marketdata.json          # Current live data (7 days)
+└── archive/
+    ├── marketdata_2025-11-17T12.json
+    ├── marketdata_2025-11-17T15.json
+    └── ... (90 days of snapshots)
+```
+
+### Cleanup Process
+The GitHub Actions workflow automatically:
+1. Creates new archive with timestamp
+2. Removes archives older than 90 days
+3. Commits both additions and deletions
+
 ## 📝 Maintenance Notes
 
 - No path changes required (data paths remain consistent)
 - Config.js unchanged (only API logic modified)
 - Frontend components work transparently with supplemented data
-- Archive system continues to work as before
+- Archive system automatically cleans up old files
+- Storage growth is bounded by 90-day retention limit
 
 ---
 
