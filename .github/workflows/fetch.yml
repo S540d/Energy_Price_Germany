@@ -1,10 +1,10 @@
 name: Fetch energy market data
 on:
   schedule:
-    # Stündlich 24/7 für kontinuierliche Datenaktualisierung
-    # Dies stellt sicher, dass Daten nach Mitternacht verfügbar sind
-    # und die Renewable-Forecast-Daten von Energy Charts genutzt werden
-    - cron: '0 * * * *'
+    # 2x täglich wenn neue Day-Ahead-Preise verfügbar sind
+    # 12:00 UTC = 13:00 CET / 14:00 CEST (nach Veröffentlichung)
+    # 15:00 UTC = 16:00 CET / 17:00 CEST (Nachmittags-Update)
+    - cron: '0 12,15 * * *'
   workflow_dispatch:
 
 permissions:
@@ -80,13 +80,7 @@ jobs:
               data: merged
             }, null, 2));
 
-            // Also save renewable data separately for use with aWATTar supplementation
-            fs.writeFileSync("public/data/renewable_map.json", JSON.stringify(
-              Object.fromEntries(renewableMap)
-            ));
-
-            console.log("Successfully processed Energy Charts data");
-            console.log("Saved renewable map with " + renewableMap.size + " entries");
+            console.log("Successfully processed Energy Charts data with " + merged.length + " points");
           } catch (error) {
             console.error("Error processing Energy Charts data:", error);
             process.exit(1);
@@ -106,28 +100,18 @@ jobs:
         id: compare
         run: |
           NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/marketdata_new.json)
-          NEW_RENEWABLE=$(jq '[.data[] | select(.renewable_share)] | length' public/data/marketdata_new.json)
-          NEW_COUNT=$(jq '.data | length' public/data/marketdata_new.json)
 
           if [ -f public/data/marketdata.json ]; then
             OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/marketdata.json)
-            OLD_RENEWABLE=$(jq '[.data[] | select(.renewable_share)] | length' public/data/marketdata.json)
-            OLD_COUNT=$(jq '.data | length' public/data/marketdata.json)
           else
             OLD_TS=""
-            OLD_RENEWABLE=0
-            OLD_COUNT=0
           fi
 
           echo "OLD_TS=$OLD_TS"
           echo "NEW_TS=$NEW_TS"
-          echo "OLD_RENEWABLE=$OLD_RENEWABLE"
-          echo "NEW_RENEWABLE=$NEW_RENEWABLE"
-          echo "OLD_COUNT=$OLD_COUNT"
-          echo "NEW_COUNT=$NEW_COUNT"
 
-          # Commit if: new timestamps OR more renewable data OR different data count
-          if [ "$OLD_TS" != "$NEW_TS" ] || [ "$OLD_RENEWABLE" != "$NEW_RENEWABLE" ] || [ "$OLD_COUNT" != "$NEW_COUNT" ]; then
+          # Commit if newer data available
+          if [ "$OLD_TS" != "$NEW_TS" ]; then
             echo "new_data=true" >> $GITHUB_OUTPUT
           else
             echo "new_data=false" >> $GITHUB_OUTPUT
