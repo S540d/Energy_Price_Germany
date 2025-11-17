@@ -81,7 +81,7 @@ Energy Charts available?
   "start_timestamp": 1728835200000,
   "end_timestamp": 1728835900000,  // 15 minutes later
   "marketprice": 93.45,
-  "renewable_share": null,  // ← Always null for aWATTar
+  "renewable_share": 47.3,  // ← Enriched from EC renewable forecast!
   "unit": "Eur/MWh",
   "interpolated": false  // ← First 15-min of hour = real data
 }
@@ -89,7 +89,7 @@ Energy Charts available?
   "start_timestamp": 1728835900000,
   "end_timestamp": 1728836800000,  // 15 minutes later
   "marketprice": 93.45,
-  "renewable_share": null,
+  "renewable_share": 47.8,  // ← Enriched from EC renewable forecast!
   "unit": "Eur/MWh",
   "interpolated": true  // ← 2nd, 3rd, 4th 15-min = interpolated
 }
@@ -98,6 +98,7 @@ Energy Charts available?
 **Note**: aWATTar hourly data is interpolated to 15-minute intervals:
 - First 15-min interval (j=0): `interpolated: false` (real hourly value)
 - Subsequent intervals (j>0): `interpolated: true` (interpolated from hourly)
+- **NEW (v2.2)**: aWATTar data is enriched with Energy Charts renewable forecasts
 - Charts display interpolated values with dimmed opacity (0.4 vs 0.9)
 - New Energy Charts data automatically overwrites aWATTar+interpolated data
 
@@ -207,9 +208,10 @@ jq '.data[95:97] | .[] | {ts: .start_timestamp, renewable: .renewable_share}' pu
 
 ## 📅 Update Schedule
 
-- **Frequency**: Hourly (08:00-20:00 UTC via GitHub Actions)
+- **Frequency**: Hourly 24/7 (every hour, `0 * * * *`)
 - **Trigger**: Cron schedule + manual dispatch available
 - **Auto-deploy**: Changes trigger automatic rebuild and deployment
+- **Compare Logic**: Commits when timestamps, renewable count, OR data count changes
 
 ## 🎯 Benefits
 
@@ -228,11 +230,19 @@ jq '.data[95:97] | .[] | {ts: .start_timestamp, renewable: .renewable_share}' pu
 
 ---
 
-**Last Updated**: November 15, 2025
-**Strategy Version**: 2.1 (smart aWATTar interpolation with markers)
+**Last Updated**: November 16, 2025
+**Strategy Version**: 2.2 (renewable enrichment for aWATTar data)
 **Status**: ✅ Active in production
 
 ## 📝 Version History
+
+### v2.2 (November 16, 2025)
+- **Renewable enrichment**: aWATTar data is enriched with EC renewable forecasts
+- **24/7 updates**: Changed from 11:00-20:00 UTC to hourly around the clock
+- **Improved compare logic**: Detects renewable data changes, not just timestamp changes
+- **Key insight**: EC renewable forecast extends 48h (vs 24h for prices)
+- **Result**: Tomorrow's aWATTar prices now include renewable share data!
+- **Technical**: Saves `renewable_map.json` temporarily for cross-source enrichment
 
 ### v2.1 (November 15, 2025)
 - **Re-enabled aWATTar interpolation** with proper marking
