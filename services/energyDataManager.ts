@@ -114,7 +114,8 @@ export class EnergyDataManager {
         marketPrice: item.marketprice || null, // EUR/MWh
         renewableShare: item.renewable_share || null, // Prozent
         isMarketPriceInterpolated: isInterpolated,
-        isRenewableShareInterpolated: isInterpolated,
+        // Renewable data is NEVER interpolated - it's either real EC data or null (missing)
+        isRenewableShareInterpolated: false,
       };
     });
 

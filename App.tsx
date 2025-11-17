@@ -143,8 +143,18 @@ function AppContent() {
 
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
 
+  // Filter data to show only 24h of past and all future data
+  const filteredEnergyData = useMemo(() => {
+    if (!energyData.length) return energyData;
+
+    const now = Date.now();
+    const past24h = now - (24 * 60 * 60 * 1000); // 24 hours ago
+
+    return energyData.filter(item => item.timestamp >= past24h);
+  }, [energyData]);
+
   // Memoized metrics calculations for better performance
-  const metrics = useMemo(() => calculateMetrics(energyData), [energyData]);
+  const metrics = useMemo(() => calculateMetrics(filteredEnergyData), [filteredEnergyData]);
 
   // Helper function to format date according to selected language
   const formatDate = (timestamp: number) => {
@@ -397,7 +407,7 @@ function AppContent() {
         style={[styles.scrollView, { backgroundColor: colors.background }]}
         contentContainerStyle={{ backgroundColor: colors.background }}
       >
-        {currentView === 'metrics' && energyData.length > 0 && metrics ? (
+        {currentView === 'metrics' && filteredEnergyData.length > 0 && metrics ? (
           <View style={styles.metricsContainer}>
             <TouchableOpacity
               style={[styles.backButton, { backgroundColor: colors.surface }]}
@@ -407,12 +417,12 @@ function AppContent() {
             </TouchableOpacity>
             <MetricsView metrics={metrics} colors={colors} />
           </View>
-        ) : energyData.length > 0 ? (
+        ) : filteredEnergyData.length > 0 ? (
           <>
             <RenewableBarChart
               title={t.renewableTitle}
-              subtitle={`${t.timeRange}: ${energyData.length > 0 ? formatDate(energyData[0].timestamp) : t.loadingData} - ${energyData.length > 0 ? formatDate(energyData[energyData.length - 1].timestamp) : t.loadingData}`}
-              data={energyData}
+              subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+              data={filteredEnergyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
               gridColor={colors.gridLine}
@@ -425,8 +435,8 @@ function AppContent() {
 
             <PriceBarChart
               title={t.priceTitle}
-              subtitle={`${t.timeRange}: ${energyData.length > 0 ? formatDate(energyData[0].timestamp) : t.loadingData} - ${energyData.length > 0 ? formatDate(energyData[energyData.length - 1].timestamp) : t.loadingData}`}
-              data={energyData}
+              subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+              data={filteredEnergyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
               gridColor={colors.gridLine}
@@ -442,8 +452,8 @@ function AppContent() {
 
             <CorrelationScatterChart
               title={t.correlationTitle}
-              subtitle={`${t.timeRange}: ${energyData.length > 0 ? formatDate(energyData[0].timestamp) : t.loadingData} - ${energyData.length > 0 ? formatDate(energyData[energyData.length - 1].timestamp) : t.loadingData}`}
-              data={energyData}
+              subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+              data={filteredEnergyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
               gridColor={colors.gridLine}
@@ -457,7 +467,7 @@ function AppContent() {
             />
           </>
         ) : null}
-        {energyData.length === 0 && (
+        {filteredEnergyData.length === 0 && (
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>
               {t.noData}
