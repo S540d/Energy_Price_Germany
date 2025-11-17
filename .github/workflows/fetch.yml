@@ -131,6 +131,50 @@ jobs:
           echo "✓ Updated marketdata.json"
           echo "✓ Created archive: $ARCHIVE_NAME"
 
+      - name: Create daily history file (for app historical data)
+        if: steps.compare.outputs.new_data == 'true'
+        run: |
+          mkdir -p public/data/history
+
+          # Extract yesterday's complete data (96 data points = 24h @ 15min)
+          node -e '
+          const fs = require("fs");
+          const data = JSON.parse(fs.readFileSync("public/data/marketdata.json", "utf8"));
+
+          // Get yesterday date (UTC)
+          const now = new Date();
+          const yesterday = new Date(now);
+          yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+          const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+          // Start and end of yesterday (UTC)
+          const dayStart = new Date(yesterdayStr + "T00:00:00Z").getTime();
+          const dayEnd = new Date(yesterdayStr + "T23:59:59Z").getTime();
+
+          // Filter data for yesterday
+          const yesterdayData = data.data.filter(item =>
+            item.start_timestamp >= dayStart && item.start_timestamp <= dayEnd
+          );
+
+          // Only save if we have complete data (96 points = 24h @ 15min)
+          const historyFile = "public/data/history/" + yesterdayStr + ".json";
+
+          if (yesterdayData.length >= 92) {  // Allow small gaps (92+ of 96)
+            if (!fs.existsSync(historyFile)) {
+              fs.writeFileSync(historyFile, JSON.stringify({
+                date: yesterdayStr,
+                source: data.source,
+                data: yesterdayData
+              }, null, 2));
+              console.log("✓ Created history file: " + yesterdayStr + ".json (" + yesterdayData.length + " points)");
+            } else {
+              console.log("✓ History file already exists: " + yesterdayStr + ".json");
+            }
+          } else {
+            console.log("⚠️ Incomplete data for " + yesterdayStr + " (" + yesterdayData.length + "/96 points) - skipping");
+          }
+          '
+
       - name: Cleanup old archives (keep 90 days)
         if: steps.compare.outputs.new_data == 'true'
         run: |
@@ -165,6 +209,38 @@ jobs:
             echo "✓ No old archives to clean up"
           fi
 
+      - name: Cleanup old history files (keep 90 days)
+        if: steps.compare.outputs.new_data == 'true'
+        run: |
+          HISTORY_DIR="public/data/history"
+          DAYS_TO_KEEP=90
+
+          if [ -d "$HISTORY_DIR" ]; then
+            BEFORE_COUNT=$(ls -1 "$HISTORY_DIR"/*.json 2>/dev/null | wc -l)
+            CUTOFF_DATE=$(date -u -d "$DAYS_TO_KEEP days ago" +"%Y-%m-%d" 2>/dev/null || date -u -v-${DAYS_TO_KEEP}d +"%Y-%m-%d")
+
+            DELETED=0
+            for file in "$HISTORY_DIR"/*.json; do
+              if [ -f "$file" ]; then
+                # Filename is date: 2025-11-17.json
+                FILE_DATE=$(basename "$file" .json)
+                if [ "$FILE_DATE" \< "$CUTOFF_DATE" ]; then
+                  rm "$file"
+                  DELETED=$((DELETED + 1))
+                fi
+              fi
+            done
+
+            AFTER_COUNT=$(ls -1 "$HISTORY_DIR"/*.json 2>/dev/null | wc -l)
+
+            if [ $DELETED -gt 0 ]; then
+              echo "🧹 Cleaned up $DELETED old history files (> $DAYS_TO_KEEP days)"
+              echo "📁 History count: $BEFORE_COUNT → $AFTER_COUNT"
+            else
+              echo "✓ No old history files to clean up"
+            fi
+          fi
+
       - name: Cleanup temporary file
         if: steps.compare.outputs.new_data == 'false'
         run: |
@@ -181,6 +257,7 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git add public/data/marketdata.json
           git add -A public/data/archive/
+          git add -A public/data/history/
 
           # Get current date/time for commit message
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H UTC")
