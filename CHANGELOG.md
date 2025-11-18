@@ -6,13 +6,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+- **Daily History Files** - Optimized storage for app historical data feature
+  - Daily JSON files (~15KB each) at `public/data/history/YYYY-MM-DD.json`
+  - Contains 96 data points (24h @ 15min intervals)
+  - Automatic 90-day retention with cleanup
+  - Only saves complete days (92+ of 96 points)
+  - Storage: ~1.4MB for 90 days (vs ~27MB for archives)
+  - Enables granular loading: load only needed days
+  - No decompression needed, predictable naming
+
+- **Automatic Archive Cleanup** - Bounded storage growth
+  - 90-day retention for both archives and history files
+  - Automatic cleanup during each data update
+  - Total storage: ~28MB (28% of 100MB budget)
+
 ### Fixed
+- **Renewable Interpolation Flag** - Corrected incorrect flag behavior
+  - `isRenewableShareInterpolated` now always false
+  - Renewable data is never interpolated (only market price is)
+  - Prevents incorrect interpolation markers on renewable chart
+
+- **24h Past Data Filter** - Improved chart focus
+  - Data stored for 7 days (history preservation)
+  - Display: only 24h past + all future data
+  - Reduces chart clutter, focuses on relevant timeframe
+  - Metrics calculations use filtered data
+
 - **Chart Layout Consistency** - Unified chart structure and positioning across all components
   - Y-axis labels now positioned consistently at 40% from top (horizontalOffset: -15)
   - Fixed right-side overflow in narrow browser windows (all X-calculations now use rightPadding)
   - Unified container heights across all three charts (removed inconsistent bottomPadding additions)
   - All chart elements (bars, touch areas, lines, labels) now respect rightPadding boundaries
   - Consistent layout structure: Y-labels inside chart container (not outside)
+
+### Changed
+- **Data Merge Strategy v3.0** - Simplified, robust approach
+  - Removed complex renewable enrichment (unreliable EC API)
+  - 2x daily updates: 12:00 + 15:00 UTC (Day-Ahead timing)
+  - Simple compare logic: only checks max timestamp
+  - Grey fading bars for missing renewable data
+  - Stable, predictable, transparent pipeline
+
+### Technical
+- Storage structure optimized for app historical data
+- Archive cleanup integrated into GitHub Actions workflow
+- Frontend 24h filter with useMemo optimization
+- Documentation updated in DATA-MERGE-STRATEGY.md
 
 ### Planned
 - Phase 5: Testing & Polish
