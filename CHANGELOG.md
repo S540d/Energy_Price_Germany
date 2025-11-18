@@ -54,6 +54,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Frontend 24h filter with useMemo optimization
 - Documentation updated in DATA-MERGE-STRATEGY.md
 
+### Known Limitations
+- **Energy Charts Publication Delay** - Documented API limitation
+  - Energy Charts publishes data with ~12-24h delay (shows "today", not "tomorrow")
+  - EPEX Day-Ahead prices published 12:00-13:00 CET, but EC makes them available next morning
+  - Hybrid approach compensates: EC for today (with renewable) + aWATTar for tomorrow (price only)
+  - This is not a bug - it's how Energy Charts API works
+  - See DATA-MERGE-STRATEGY.md for detailed analysis
+
 ### Planned
 - Phase 5: Testing & Polish
   - Unit tests for core data merging logic

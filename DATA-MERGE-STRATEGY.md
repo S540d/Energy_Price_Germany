@@ -207,10 +207,37 @@ jq '.data | length' public/data/marketdata.json
 jq '.data[95:97] | .[] | {ts: .start_timestamp, renewable: .renewable_share}' public/data/marketdata.json
 ```
 
+## ⚠️ Important Limitations
+
+### Energy Charts Publication Delay
+
+**Key Finding**: Energy Charts API has a ~12-24 hour publication delay compared to EPEX Spot.
+
+#### What this means:
+- **EPEX Spot**: Publishes Day-Ahead prices for November 18 around **12:00-13:00 CET on November 17**
+- **Energy Charts API**: Makes these prices available only **on November 18 morning** (after midnight)
+- **Result**: Energy Charts always shows "today" data, never "tomorrow" data
+
+#### Evidence:
+Testing on November 17, 2025:
+- 13:00 CET (12:00 UTC): Energy Charts last timestamp = `2025-11-17T23:00` (midnight only)
+- 16:00 CET (15:00 UTC): Energy Charts last timestamp = `2025-11-17T23:00` (still no Nov 18 data)
+- 20:12 CET (19:12 UTC): Energy Charts last timestamp = `2025-11-17T23:00` (still no Nov 18 data)
+- 12:41 CET (11:41 UTC) **Nov 18**: Energy Charts last timestamp = `2025-11-18T22:45` ✅ (Nov 18 data available)
+
+#### Why the hybrid approach works:
+1. **Energy Charts**: Provides today's data with renewable share (high quality)
+2. **aWATTar**: Provides tomorrow's prices (published same day by EPEX, ~14:00 CET)
+3. **Supplementation**: aWATTar fills the gap for tomorrow (renewable_share = null, shown as grey bars)
+
+This is **not a bug** - it's a fundamental limitation of Energy Charts API. The current strategy handles this optimally by combining both sources.
+
 ## 📅 Update Schedule
 
 - **Frequency**: 2x daily at 12:00 and 15:00 UTC (`0 12,15 * * *`)
-- **Why these times**: Day-Ahead prices are published ~12:00-13:00 CET
+- **What gets updated**:
+  - **12:00 UTC (13:00 CET)**: Today's Energy Charts data (published overnight) + tomorrow's aWATTar prices
+  - **15:00 UTC (16:00 CET)**: Refresh with any updated data + tomorrow's aWATTar prices (published ~14:00 CET)
 - **Trigger**: Cron schedule + manual dispatch available
 - **Auto-deploy**: Changes trigger automatic rebuild and deployment
 - **Compare Logic**: Commits when max timestamp changes (simple, reliable)
