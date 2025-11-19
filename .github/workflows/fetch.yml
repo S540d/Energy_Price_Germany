@@ -288,7 +288,20 @@ jobs:
           git push
 
           echo "✅ Changes committed and pushed"
-          echo "🚀 Deployment will be triggered by push to main"
+          echo "🚀 Triggering deployment workflow..."
+
+      - name: Trigger deployment
+        if: steps.compare.outputs.new_data == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'deploy.yml',
+              ref: 'main'
+            });
+            console.log('✅ Deployment workflow triggered');
 
       - name: Summary (new data)
         if: steps.compare.outputs.new_data == 'true'
