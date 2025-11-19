@@ -30,6 +30,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Total storage: ~28MB (28% of 100MB budget)
 
 ### Fixed
+- **Auto-Deploy After Data Updates** - Fixed deployment trigger issue
+  - Problem: GITHUB_TOKEN pushes don't trigger other workflows (GitHub security)
+  - Solution: Added automatic deployment trigger using github-script action
+  - Result: Website now auto-updates after every data commit
+  - No more manual intervention needed!
+
 - **Missing Tomorrow's Renewable Data** - Solved the grey bar problem! 🎉
   - Previously: Energy Charts 48h renewable forecast was DISCARDED (only used 24h with prices)
   - Now: Preserve ALL 192 renewable forecast points (not just 96 with prices)
@@ -73,6 +79,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Technical
 - Modified Energy Charts workflow processing to preserve 48h renewable forecast
 - Updated merge-market-data.js to enrich renewable-only points with aWATTar prices
+- Added automatic deployment trigger after data commits (github-script action)
 - Storage structure optimized for app historical data
 - Archive cleanup integrated into GitHub Actions workflow
 - Frontend 24h filter with useMemo optimization
