@@ -38,47 +38,69 @@ try {
     const energyChartsData = JSON.parse(fs.readFileSync("public/data/energycharts_temp.json", "utf8"));
     console.log("Energy Charts data available with " + energyChartsData.data.length + " points");
 
-    // Get last timestamp from Energy Charts
-    const lastECTimestamp = energyChartsData.data[energyChartsData.data.length - 1].end_timestamp;
-    const lastECDate = new Date(lastECTimestamp);
-    console.log("Energy Charts last timestamp: " + lastECDate.toISOString());
+    // Check if we have renewable-only data points (marketprice === null but renewable_share !== null)
+    const renewableOnlyPoints = energyChartsData.data.filter(p =>
+      p.marketprice === null && p.renewable_share !== null
+    );
+    const priceAndRenewablePoints = energyChartsData.data.filter(p =>
+      p.marketprice !== null
+    );
 
-    // Load aWATTar data (no interpolation)
-    if (fs.existsSync("public/data/marketdata_raw.json")) {
+    console.log("- Points with price+renewable: " + priceAndRenewablePoints.length);
+    console.log("- Points with renewable only: " + renewableOnlyPoints.length + " (need aWATTar prices)");
+
+    // Load aWATTar data if we have renewable-only points or for fallback
+    if (fs.existsSync("public/data/marketdata_raw.json") && renewableOnlyPoints.length > 0) {
       const awattarRaw = JSON.parse(fs.readFileSync("public/data/marketdata_raw.json", "utf8"));
       const awattarData = interpolateAwattarData(awattarRaw);
       console.log("aWATTar data interpolated to " + awattarData.length + " points (15-min intervals)");
 
-      // Get last timestamp from aWATTar
+      // Create timestamp map for aWATTar prices
+      const awattarPriceMap = new Map();
+      awattarData.forEach(item => {
+        awattarPriceMap.set(item.start_timestamp, {
+          price: item.marketprice,
+          interpolated: item.interpolated
+        });
+      });
+
+      // Enrich Energy Charts data with aWATTar prices where marketprice is null
+      let enrichedCount = 0;
+      const enrichedData = energyChartsData.data.map(item => {
+        if (item.marketprice === null && awattarPriceMap.has(item.start_timestamp)) {
+          const awPrice = awattarPriceMap.get(item.start_timestamp);
+          enrichedCount++;
+          return {
+            ...item,
+            marketprice: awPrice.price,
+            interpolated: awPrice.interpolated
+          };
+        }
+        return item;
+      });
+
+      console.log("✓ Enriched " + enrichedCount + " renewable-only points with aWATTar prices");
+      console.log("Result: " + enrichedData.length + " total points (EC renewable + AW prices for tomorrow)");
+
+      finalData = enrichedData;
+      source = "energy-charts";
+    } else if (fs.existsSync("public/data/marketdata_raw.json")) {
+      // No renewable-only points, but check if we need to supplement beyond EC range
+      const awattarRaw = JSON.parse(fs.readFileSync("public/data/marketdata_raw.json", "utf8"));
+      const awattarData = interpolateAwattarData(awattarRaw);
+
+      const lastECTimestamp = energyChartsData.data[energyChartsData.data.length - 1].end_timestamp;
       const lastAWTimestamp = awattarData[awattarData.length - 1].end_timestamp;
-      const lastAWDate = new Date(lastAWTimestamp);
-      console.log("aWATTar last timestamp: " + lastAWDate.toISOString());
+      const timeDiffHours = (lastAWTimestamp - lastECTimestamp) / (1000 * 60 * 60);
 
-      // Calculate time difference in hours
-      const timeDiffMs = lastAWTimestamp - lastECTimestamp;
-      const timeDiffHours = timeDiffMs / (1000 * 60 * 60);
-      console.log("Time difference: " + timeDiffHours.toFixed(2) + " hours");
-
-      // Only supplement if difference is >= 3 hours
       if (timeDiffHours >= 3) {
-        console.log("Supplementing Energy Charts with aWATTar data (difference >= 3h)");
-
-        // Filter aWATTar data: only data AFTER last Energy Charts timestamp
-        // Note: aWATTar data has renewable_share = null (no enrichment)
-        const supplementalData = awattarData.filter(item =>
-          item.start_timestamp >= lastECTimestamp
-        );
-
-        console.log("Adding " + supplementalData.length + " supplemental data points from aWATTar");
-
-        // Merge: Energy Charts + supplemental aWATTar
+        console.log("Supplementing with aWATTar data beyond EC range (+" + timeDiffHours.toFixed(1) + "h)");
+        const supplementalData = awattarData.filter(item => item.start_timestamp >= lastECTimestamp);
         finalData = [...energyChartsData.data, ...supplementalData];
-        source = "energy-charts";
       } else {
-        console.log("No supplement needed (difference < 3h), using Energy Charts only");
         finalData = energyChartsData.data;
-        source = "energy-charts";
       }
+      source = "energy-charts";
     } else {
       console.log("aWATTar data not available, using Energy Charts only");
       finalData = energyChartsData.data;

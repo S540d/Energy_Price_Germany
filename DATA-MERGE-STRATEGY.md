@@ -207,30 +207,34 @@ jq '.data | length' public/data/marketdata.json
 jq '.data[95:97] | .[] | {ts: .start_timestamp, renewable: .renewable_share}' public/data/marketdata.json
 ```
 
-## ⚠️ Important Limitations
+## 🎯 Key Innovation: 48h Renewable Forecast + aWATTar Prices
 
-### Energy Charts Publication Delay
+**Discovery (Nov 19, 2025)**: Energy Charts provides **48h renewable forecast** but only **24h price data**.
 
-**Key Finding**: Energy Charts API has a ~12-24 hour publication delay compared to EPEX Spot.
+### What this means:
+- **Energy Charts Renewable Forecast**: Extends 48 hours into the future (today + tomorrow)
+- **Energy Charts Prices**: Only available for today (~24h)
+- **aWATTar Prices**: Available for today + tomorrow (~24-48h)
 
-#### What this means:
-- **EPEX Spot**: Publishes Day-Ahead prices for November 18 around **12:00-13:00 CET on November 17**
-- **Energy Charts API**: Makes these prices available only **on November 18 morning** (after midnight)
-- **Result**: Energy Charts always shows "today" data, never "tomorrow" data
+### Smart Solution:
+Instead of discarding tomorrow's renewable forecast, we now **combine the best of both**:
 
-#### Evidence:
-Testing on November 17, 2025:
-- 13:00 CET (12:00 UTC): Energy Charts last timestamp = `2025-11-17T23:00` (midnight only)
-- 16:00 CET (15:00 UTC): Energy Charts last timestamp = `2025-11-17T23:00` (still no Nov 18 data)
-- 20:12 CET (19:12 UTC): Energy Charts last timestamp = `2025-11-17T23:00` (still no Nov 18 data)
-- 12:41 CET (11:41 UTC) **Nov 18**: Energy Charts last timestamp = `2025-11-18T22:45` ✅ (Nov 18 data available)
+1. **Today**: Energy Charts price + Energy Charts renewable ✅
+2. **Tomorrow**: aWATTar price + Energy Charts renewable ✅✅
 
-#### Why the hybrid approach works:
-1. **Energy Charts**: Provides today's data with renewable share (high quality)
-2. **aWATTar**: Provides tomorrow's prices (published same day by EPEX, ~14:00 CET)
-3. **Supplementation**: aWATTar fills the gap for tomorrow (renewable_share = null, shown as grey bars)
+### Result:
+- Full renewable share data for **48 hours** (no grey bars for tomorrow!)
+- Price data from optimal sources (EC for today, AW for tomorrow)
+- **No ENTSO-E needed** - we already have all the data!
 
-This is **not a bug** - it's a fundamental limitation of Energy Charts API. The current strategy handles this optimally by combining both sources.
+### Evidence:
+Testing on November 19, 2025:
+- Energy Charts **Prices**: 96 points (today 23:00 to tomorrow 22:45 UTC)
+- Energy Charts **Renewables**: 192 points (today 23:00 to day-after-tomorrow 22:45 UTC!)
+- aWATTar **Prices**: 24 points (today 19:00 to tomorrow 19:00 UTC)
+
+**Previous approach**: Discarded 96 renewable-only points → grey bars for tomorrow
+**New approach v3.1**: Enrich 96 renewable-only points with aWATTar prices → full green bars! 🎉
 
 ## 📅 Update Schedule
 
@@ -337,11 +341,21 @@ The GitHub Actions workflow automatically:
 
 ---
 
-**Last Updated**: November 17, 2025
-**Strategy Version**: 3.0 (simplified, robust, no enrichment)
+**Last Updated**: November 19, 2025
+**Strategy Version**: 3.1 (48h renewable forecast utilization)
 **Status**: ✅ Active in production
 
 ## 📝 Version History
+
+### v3.1 (November 19, 2025)
+- **48h Renewable Forecast**: Discovered Energy Charts provides 48h renewable forecast (vs 24h prices)
+- **Smart Enrichment**: Preserve ALL renewable timestamps (not just price timestamps)
+- **aWATTar Price Enrichment**: Fill missing prices with aWATTar data (keep renewable forecast!)
+- **Result**: Tomorrow now has BOTH price AND renewable data (no more grey bars!)
+- **Key Innovation**: Energy Charts renewable (48h) + aWATTar prices (48h) = Complete coverage
+- **Benefit**: Users see full renewable share forecast for tomorrow, not just prices
+- **Technical**: Modified workflow merge to use union of price+renewable timestamps
+- **Status**: No need for ENTSO-E - we already have all data from existing sources!
 
 ### v3.0 (November 17, 2025)
 - **Simplified strategy**: Removed complex renewable enrichment
@@ -351,6 +365,8 @@ The GitHub Actions workflow automatically:
 - **Grey fading bars**: Frontend shows missing renewable data clearly
 - **Rationale**: Previous enrichment was unreliable (EC API inconsistent)
 - **Result**: Stable, predictable, transparent data pipeline
+- **Limitation**: Tomorrow's data had grey bars (renewable_share = null)
+- **SUPERSEDED**: v3.1 solves the grey bar problem by utilizing 48h renewable forecast
 
 ### v2.2 (November 16, 2025)
 - **Renewable enrichment**: aWATTar data is enriched with EC renewable forecasts
