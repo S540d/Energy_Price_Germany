@@ -47,34 +47,52 @@ jobs:
             const renewable = JSON.parse(fs.readFileSync("public/data/renewable_raw.json", "utf8"));
             const price = JSON.parse(fs.readFileSync("public/data/price_raw.json", "utf8"));
 
-            // Merge price and renewable data based on unix_seconds timestamp
-            const merged = [];
+            // Create maps for price and renewable data
+            const priceMap = new Map();
             const renewableMap = new Map();
+            const allTimestamps = new Set();
+
+            // Index price data by timestamp
+            if (price.unix_seconds && price.price) {
+              price.unix_seconds.forEach((ts, i) => {
+                const timestamp_ms = ts * 1000;
+                priceMap.set(timestamp_ms, price.price[i]);
+                allTimestamps.add(timestamp_ms);
+              });
+            }
 
             // Index renewable data by timestamp
             if (renewable.unix_seconds && renewable.ren_share) {
               renewable.unix_seconds.forEach((ts, i) => {
-                renewableMap.set(ts * 1000, renewable.ren_share[i]); // Convert to ms
+                const timestamp_ms = ts * 1000;
+                renewableMap.set(timestamp_ms, renewable.ren_share[i]);
+                allTimestamps.add(timestamp_ms);
               });
             }
 
-            // Merge with price data
-            if (price.unix_seconds && price.price) {
-              price.unix_seconds.forEach((ts, i) => {
-                const timestamp_ms = ts * 1000;
-                merged.push({
-                  start_timestamp: timestamp_ms,
-                  end_timestamp: timestamp_ms + 15 * 60 * 1000, // 15 minutes
-                  marketprice: price.price[i],
-                  renewable_share: renewableMap.get(timestamp_ms) || null,
-                  unit: "Eur/MWh",
-                  interpolated: false
-                });
-              });
-            }
+            // Merge ALL timestamps (price + renewable, typically 24h price + 48h renewable)
+            const merged = Array.from(allTimestamps).map(timestamp_ms => ({
+              start_timestamp: timestamp_ms,
+              end_timestamp: timestamp_ms + 15 * 60 * 1000, // 15 minutes
+              marketprice: priceMap.get(timestamp_ms) || null,
+              renewable_share: renewableMap.get(timestamp_ms) || null,
+              unit: "Eur/MWh",
+              interpolated: false
+            }));
 
             // Sort by timestamp
             merged.sort((a, b) => a.start_timestamp - b.start_timestamp);
+
+            console.log("Successfully processed Energy Charts data:");
+            console.log("- Price points: " + priceMap.size);
+            console.log("- Renewable points: " + renewableMap.size);
+            console.log("- Total merged points: " + merged.length);
+
+            // Count points with both vs only renewable
+            const bothCount = merged.filter(p => p.marketprice !== null && p.renewable_share !== null).length;
+            const renewableOnlyCount = merged.filter(p => p.marketprice === null && p.renewable_share !== null).length;
+            console.log("- Points with both price+renewable: " + bothCount);
+            console.log("- Points with renewable only (for tomorrow): " + renewableOnlyCount);
 
             fs.writeFileSync("public/data/energycharts_temp.json", JSON.stringify({
               object: "list",
@@ -82,7 +100,6 @@ jobs:
               data: merged
             }, null, 2));
 
-            console.log("Successfully processed Energy Charts data with " + merged.length + " points");
           } catch (error) {
             console.error("Error processing Energy Charts data:", error);
             process.exit(1);

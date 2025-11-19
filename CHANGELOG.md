@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- **48h Renewable Forecast Utilization** - Game-changing improvement to data coverage
+  - Energy Charts renewable forecast extends 48h (not just 24h like prices!)
+  - Modified workflow to preserve ALL renewable timestamps (union of price+renewable)
+  - Enrich renewable-only points with aWATTar prices
+  - Result: Tomorrow's data now shows BOTH renewable share AND prices
+  - No more grey bars for tomorrow - full green renewable bars!
+  - Data Merge Strategy v3.1
+
 - **Daily History Files** - Optimized storage for app historical data feature
   - Daily JSON files (~15KB each) at `public/data/history/YYYY-MM-DD.json`
   - Contains 96 data points (24h @ 15min intervals)
@@ -22,6 +30,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Total storage: ~28MB (28% of 100MB budget)
 
 ### Fixed
+- **Missing Tomorrow's Renewable Data** - Solved the grey bar problem! 🎉
+  - Previously: Energy Charts 48h renewable forecast was DISCARDED (only used 24h with prices)
+  - Now: Preserve ALL 192 renewable forecast points (not just 96 with prices)
+  - Enrich renewable-only points (tomorrow) with aWATTar prices
+  - Result: Full renewable share data for 48h (no more grey bars for tomorrow!)
+  - This was the root cause of user's "neuesten Daten werden nicht angezeigt" issue
+  - Data Merge Strategy upgraded from v3.0 to v3.1
+
 - **Renewable Interpolation Flag** - Corrected incorrect flag behavior
   - `isRenewableShareInterpolated` now always false
   - Renewable data is never interpolated (only market price is)
@@ -41,7 +57,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Consistent layout structure: Y-labels inside chart container (not outside)
 
 ### Changed
-- **Data Merge Strategy v3.0** - Simplified, robust approach
+- **Data Merge Strategy v3.1** - Smart 48h renewable forecast utilization
+  - Preserve ALL Energy Charts renewable timestamps (union of price+renewable)
+  - Enrich renewable-only data points with aWATTar prices
+  - Result: 48h complete data (price + renewable for today AND tomorrow)
+  - Supersedes v3.0 which had grey bars for tomorrow
+
+- **Data Merge Strategy v3.0** - Simplified, robust approach (SUPERSEDED by v3.1)
   - Removed complex renewable enrichment (unreliable EC API)
   - 2x daily updates: 12:00 + 15:00 UTC (Day-Ahead timing)
   - Simple compare logic: only checks max timestamp
@@ -49,18 +71,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Stable, predictable, transparent pipeline
 
 ### Technical
+- Modified Energy Charts workflow processing to preserve 48h renewable forecast
+- Updated merge-market-data.js to enrich renewable-only points with aWATTar prices
 - Storage structure optimized for app historical data
 - Archive cleanup integrated into GitHub Actions workflow
 - Frontend 24h filter with useMemo optimization
 - Documentation updated in DATA-MERGE-STRATEGY.md
-
-### Known Limitations
-- **Energy Charts Publication Delay** - Documented API limitation
-  - Energy Charts publishes data with ~12-24h delay (shows "today", not "tomorrow")
-  - EPEX Day-Ahead prices published 12:00-13:00 CET, but EC makes them available next morning
-  - Hybrid approach compensates: EC for today (with renewable) + aWATTar for tomorrow (price only)
-  - This is not a bug - it's how Energy Charts API works
-  - See DATA-MERGE-STRATEGY.md for detailed analysis
 
 ### Planned
 - Phase 5: Testing & Polish
