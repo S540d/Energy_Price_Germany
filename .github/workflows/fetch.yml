@@ -288,20 +288,7 @@ jobs:
           git push
 
           echo "✅ Changes committed and pushed"
-          echo "🚀 Triggering deployment workflow..."
-
-      - name: Trigger deployment
-        if: steps.compare.outputs.new_data == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'deploy.yml',
-              ref: 'main'
-            });
-            console.log('✅ Deployment workflow triggered');
+          echo "🚀 Deployment will be triggered automatically by push to main"
 
       - name: Summary (new data)
         if: steps.compare.outputs.new_data == 'true'
@@ -311,7 +298,7 @@ jobs:
           echo "📊 **Source:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).source)')" >> $GITHUB_STEP_SUMMARY
           echo "📈 **Data points:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).data.length)')" >> $GITHUB_STEP_SUMMARY
           echo "⏰ **Updated at:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
-          echo "🚀 **Deployment:** Triggered by push to main (Fallback: scheduled at 4:00, 10:00, 16:00, 22:00 UTC)" >> $GITHUB_STEP_SUMMARY
+          echo "🚀 **Deployment:** Automatically triggered by push to main" >> $GITHUB_STEP_SUMMARY
 
       - name: Summary (no new data)
         if: steps.compare.outputs.new_data == 'false'
