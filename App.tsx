@@ -386,9 +386,9 @@ function AppContent() {
               <TouchableOpacity
                 onPress={() => {
                   if (Platform.OS === 'web') {
-                    window.open('https://github.com/S540d/EnergyPriceGermany/issues', '_blank');
+                    window.open('mailto:devsven@posteo.de?subject=Energy%20Price%20Germany%20-%20Bug%20Report', '_blank');
                   } else {
-                    Linking.openURL('https://github.com/S540d/EnergyPriceGermany/issues');
+                    Linking.openURL('mailto:devsven@posteo.de?subject=Energy%20Price%20Germany%20-%20Bug%20Report');
                   }
                 }}
                 style={styles.menuLink}
