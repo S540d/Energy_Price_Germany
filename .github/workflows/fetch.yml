@@ -6,7 +6,7 @@ on:
     # aWATTar: Day-Ahead Daten für "morgen" ab ~14:00 CET verfügbar
     # 12:00 UTC = 13:00 CET / 14:00 CEST (EC heute + AW morgen)
     # 15:00 UTC = 16:00 CET / 17:00 CEST (Refresh + aktuelle AW Daten)
-    - cron: '0 12,15 * * *'
+    - cron: '0 12,15,17,20 * * *'
   workflow_dispatch:
 
 permissions:
