@@ -196,6 +196,66 @@ Diese Richtlinien gelten für alle folgenden Projekte:
 
 ---
 
+## 🌍 Internationalisierung (i18n)
+
+### Grundsatz: Kein hartcodierter Text
+
+**REGEL: Alle sichtbaren Texte MÜSSEN über das Übersetzungssystem laufen.**
+
+### ❌ NICHT erlaubt
+
+```tsx
+// FALSCH - hartcodierter Text
+<Text>Settings</Text>
+<Text>Open Source • MIT</Text>
+<TouchableOpacity aria-label="Settings">
+```
+
+### ✅ EMPFOHLEN
+
+```tsx
+// RICHTIG - über translations-Objekt
+<Text>{t.settings}</Text>
+<Text>{t.appLicense}</Text>
+<TouchableOpacity aria-label={t.settings}>
+```
+
+### Ausnahmen
+
+Folgende Texte dürfen hartcodiert bleiben:
+- ✅ **App-Name** (z.B. "Energy Price Germany") - wenn bewusst mehrsprachig
+- ✅ **Technische Bezeichnungen** (z.B. "Energy Charts", "API", "GitHub")
+- ✅ **Versionsnummern** (z.B. "1.2.0")
+- ✅ **URLs und E-Mail-Adressen**
+- ✅ **Emojis** (universell verständlich)
+
+### Translations-Struktur
+
+```tsx
+const translations = {
+  en: {
+    settings: 'Settings',
+    appLicense: 'Open Source • MIT',
+    // ... weitere englische Texte
+  },
+  de: {
+    settings: 'Einstellungen',
+    appLicense: 'Open Source • MIT',
+    // ... weitere deutsche Texte
+  },
+};
+```
+
+### Warum wichtig?
+
+- 🌍 Mehrsprachigkeit out-of-the-box
+- 🔧 Zentrale Verwaltung aller Texte
+- 🐛 Keine vergessenen Übersetzungen
+- 📱 Bessere User Experience für internationale Nutzer
+- 🔍 Einfaches Auffinden und Ändern von Texten
+
+---
+
 ## 🔄 Migration Checklist
 
 Bei bestehenden Apps:
@@ -204,6 +264,8 @@ Bei bestehenden Apps:
 - [ ] Settings/About-Menü erstellen (falls nicht vorhanden)
 - [ ] Support-Link unter "Support the Project" in Settings einfügen
 - [ ] Text von "Support me" zu "Support the Project" ändern
+- [ ] **Alle hartcodierten Texte identifizieren und ins translations-Objekt verschieben**
+- [ ] Sicherstellen, dass alle sichtbaren Texte über `t.key` referenziert werden
 - [ ] Testen auf allen Plattformen (Web, Android, iOS)
 - [ ] Store Listings überprüfen ("Contains Ads" = NO)
 - [ ] Commit mit Hinweis auf Store Compliance
@@ -222,6 +284,7 @@ Bei bestehenden Apps:
 
 | Version | Datum | Änderung |
 |---------|-------|----------|
+| 1.1.0 | 2025-11-21 | Added i18n Guidelines - Kein hartcodierter Text |
 | 1.0.0 | 2025-11-01 | Initial Guidelines - Support Link Platzierung |
 
 ---
