@@ -12,6 +12,7 @@ import {
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Updates from 'expo-updates';
 import { fetchEnergyData, getCurrentDataSource } from './services/energyDataManager';
 import { RenewableBarChart } from './components/charts/RenewableBarChart';
@@ -21,7 +22,7 @@ import { MetricsView } from './components/MetricsView';
 import { calculateMetrics, EnergyData } from './utils/metrics';
 import { getThemeColors, Theme } from './utils/theme';
 
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.2.2';
 
 type ViewMode = 'charts' | 'metrics';
 type Language = 'en' | 'de';
@@ -121,21 +122,7 @@ function AppContent() {
   const [energyData, setEnergyData] = useState<EnergyData[]>([]);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<Theme>('system');
-  const [language, setLanguage] = useState<Language>(() => {
-    // Load saved language preference or detect browser language
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      try {
-        const saved = window.localStorage?.getItem('language') as Language | null;
-        if (saved) return saved;
-        // Auto-detect browser language
-        const browserLang = window.navigator?.language?.toLowerCase() || 'en';
-        return browserLang.startsWith('de') ? 'de' : 'en';
-      } catch (e) {
-        return 'en';
-      }
-    }
-    return 'en';
-  });
+  const [language, setLanguage] = useState<Language>('en'); // Will be loaded from storage in useEffect
   const [menuVisible, setMenuVisible] = useState(false);
   const [currentView, setCurrentView] = useState<ViewMode>('charts');
   const systemTheme = useColorScheme();
@@ -168,15 +155,51 @@ function AppContent() {
     });
   };
 
+  // Load language preference on mount
+  useEffect(() => {
+    async function loadLanguage() {
+      try {
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          // Web: Use localStorage
+          const saved = window.localStorage?.getItem('language') as Language | null;
+          if (saved) {
+            setLanguage(saved);
+          } else {
+            // Auto-detect browser language
+            const browserLang = window.navigator?.language?.toLowerCase() || 'en';
+            const detected = browserLang.startsWith('de') ? 'de' : 'en';
+            setLanguage(detected);
+          }
+        } else {
+          // Mobile: Use AsyncStorage
+          const saved = await AsyncStorage.getItem('language') as Language | null;
+          if (saved) {
+            setLanguage(saved);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load language preference:', e);
+      }
+    }
+    loadLanguage();
+  }, []);
+
   // Save language preference when it changes
   useEffect(() => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    async function saveLanguage() {
       try {
-        window.localStorage?.setItem('language', language);
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          // Web: Use localStorage
+          window.localStorage?.setItem('language', language);
+        } else {
+          // Mobile: Use AsyncStorage
+          await AsyncStorage.setItem('language', language);
+        }
       } catch (e) {
         console.error('Failed to save language preference:', e);
       }
     }
+    saveLanguage();
   }, [language]);
 
   useEffect(() => {
