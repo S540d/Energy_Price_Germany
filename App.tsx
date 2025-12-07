@@ -428,7 +428,7 @@ function AppContent() {
       {/* Main Content */}
       <ScrollView
         style={[styles.scrollView, { backgroundColor: colors.background }]}
-        contentContainerStyle={{ backgroundColor: colors.background }}
+        contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.background }}
       >
         {currentView === 'metrics' && filteredEnergyData.length > 0 && metrics ? (
           <View style={styles.metricsContainer}>
