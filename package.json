@@ -25,7 +25,9 @@
     "data:update": "node update-marketdata.js",
     "version:update": "npm version patch --no-git-tag-version && node update-cache-version.js",
     "deploy": "npm run build:web && npm run deploy:gh-pages",
-    "deploy:gh-pages": "gh-pages -d dist -t --dotfiles"
+    "deploy:gh-pages": "gh-pages -d dist -t --dotfiles",
+    "validate": "./scripts/validate-release.sh",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
@@ -44,6 +46,7 @@
     "@types/react": "~19.1.0",
     "eas-cli": "^16.26.0",
     "gh-pages": "^6.3.0",
+    "husky": "^9.1.7",
     "typescript": "~5.9.2"
   },
   "private": true

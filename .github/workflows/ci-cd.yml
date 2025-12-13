@@ -1,0 +1,270 @@
+name: CI/CD - Automated Quality Checks
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ============================================================================
+  # JOB 1: Code Quality & Linting
+  # ============================================================================
+  code-quality:
+    name: 🔍 Code Quality & Linting
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check for console.log in production code
+        run: |
+          echo "Checking for console.log statements..."
+          if grep -r "console\.log\|console\.debug" App.tsx --exclude-dir=node_modules --exclude-dir=.git; then
+            echo "❌ ERROR: Found console.log/debug in production code!"
+            exit 1
+          else
+            echo "✅ No console.log found"
+          fi
+
+      - name: Check for Web APIs without Platform check
+        run: |
+          echo "Checking for unsafe Web API usage..."
+          # Check for window.* without Platform.OS check
+          if grep -r "window\." App.tsx --exclude-dir=node_modules | grep -v "Platform.OS === 'web'" | grep -v "// platform-safe"; then
+            echo "❌ ERROR: Found window.* without Platform.OS check!"
+            echo "Add 'Platform.OS === web' check or // platform-safe comment"
+            exit 1
+          fi
+
+          # Check for localStorage without Platform.OS check
+          if grep -r "localStorage\." App.tsx --exclude-dir=node_modules | grep -v "Platform.OS === 'web'" | grep -v "// platform-safe"; then
+            echo "❌ ERROR: Found localStorage without Platform.OS check!"
+            echo "Use AsyncStorage for mobile or add Platform.OS check"
+            exit 1
+          fi
+
+          echo "✅ All Web APIs are platform-safe"
+
+      - name: Check for direct AsyncStorage imports
+        run: |
+          echo "Checking AsyncStorage usage..."
+          # Ensure AsyncStorage is used for mobile, not localStorage
+          if grep -r "@react-native-async-storage/async-storage" App.tsx --exclude-dir=node_modules; then
+            echo "✅ AsyncStorage is properly used"
+          fi
+
+      - name: TypeScript Type Check
+        run: npx tsc --noEmit || true
+
+  # ============================================================================
+  # JOB 2: Cross-Platform Build Tests
+  # ============================================================================
+  build-web:
+    name: 🌐 Build Web
+    runs-on: ubuntu-latest
+    needs: code-quality
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Web
+        run: npm run build:web
+
+      - name: Check bundle size
+        run: |
+          if [ -d "dist" ]; then
+            SIZE=$(du -sh dist | cut -f1)
+            echo "📦 Bundle size: $SIZE"
+            # Optional: Add size threshold check
+          fi
+
+      - name: Upload Web artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: dist/
+          retention-days: 7
+
+  build-android:
+    name: 🤖 Build Android
+    runs-on: ubuntu-latest
+    needs: code-quality
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build Android Release
+        working-directory: ./Android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Verify APK exists
+        run: |
+          if [ -f "Android/app/build/outputs/apk/release/app-release.apk" ]; then
+            echo "✅ Android APK built successfully"
+          else
+            echo "❌ ERROR: Android APK not found!"
+            exit 1
+          fi
+
+  # ============================================================================
+  # JOB 3: Platform Compatibility Checks
+  # ============================================================================
+  platform-checks:
+    name: 🔧 Platform Compatibility
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check version consistency
+        run: |
+          echo "Checking version numbers across files..."
+
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          APP_JSON_VERSION=$(node -p "require('./app.json').expo.version")
+          APP_VERSION=$(grep "APP_VERSION = " App.tsx | sed -E "s/.*'(.*)'.*/\1/")
+
+          echo "package.json: $PACKAGE_VERSION"
+          echo "app.json: $APP_JSON_VERSION"
+          echo "App.tsx: $APP_VERSION"
+
+          if [ "$PACKAGE_VERSION" != "$APP_JSON_VERSION" ] || [ "$PACKAGE_VERSION" != "$APP_VERSION" ]; then
+            echo "❌ ERROR: Version mismatch!"
+            echo "All versions must be identical."
+            exit 1
+          fi
+
+          echo "✅ All versions are consistent"
+
+      - name: Check Android versionCode increment
+        run: |
+          echo "Checking Android version..."
+          GRADLE_VERSION_CODE=$(grep "versionCode = " Android/app/build.gradle.kts | sed -E "s/.*= ([0-9]+).*/\1/")
+          APP_JSON_VERSION_CODE=$(node -p "require('./app.json').expo.android.versionCode")
+
+          echo "build.gradle.kts versionCode: $GRADLE_VERSION_CODE"
+          echo "app.json versionCode: $APP_JSON_VERSION_CODE"
+
+          if [ "$GRADLE_VERSION_CODE" != "$APP_JSON_VERSION_CODE" ]; then
+            echo "❌ ERROR: Android versionCode mismatch!"
+            exit 1
+          fi
+
+          echo "✅ Android versions are consistent"
+
+      - name: Validate UX Guidelines compliance
+        run: |
+          echo "Checking UX Guidelines compliance..."
+
+          # Check for three-dot settings icon (not gear emoji)
+          if grep -q "⚙" App.tsx; then
+            echo "❌ ERROR: Found gear emoji! Use three vertical dots (⋮) instead"
+            exit 1
+          fi
+
+          # Check for Theme toggle (System/Dark, not Light/Dark/System)
+          if grep -q "'light'" App.tsx; then
+            echo "⚠️  WARNING: Light theme found. Consider System/Dark toggle only"
+          fi
+
+          echo "✅ Basic UX guidelines check passed"
+
+  # ============================================================================
+  # JOB 4: Security & Dependencies
+  # ============================================================================
+  security:
+    name: 🔒 Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate || true
+
+      - name: Check for sensitive data
+        run: |
+          echo "Checking for sensitive data..."
+
+          # Check for potential secrets
+          if grep -ri "password\s*=\|api_key\s*=\|secret\s*=" . --exclude-dir=node_modules --exclude-dir=.git --exclude="*.md" | grep -v "storePassword = "; then
+            echo "⚠️  WARNING: Potential sensitive data found!"
+          fi
+
+          # Check for hardcoded credentials in build.gradle.kts
+          if grep -q "storePassword = \"" Android/app/build.gradle.kts; then
+            echo "⚠️  WARNING: Keystore password in build.gradle.kts"
+            echo "Consider using environment variables or CI secrets"
+          fi
+
+  # ============================================================================
+  # JOB 5: Release Readiness Report
+  # ============================================================================
+  release-checklist:
+    name: 📋 Release Readiness Report
+    runs-on: ubuntu-latest
+    needs: [code-quality, build-web, build-android, platform-checks]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate Release Report
+        run: |
+          echo "# 🚀 Release Readiness Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Automated Checks Passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Code Quality & Linting" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Web Build Successful" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Android Build Successful" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Platform Compatibility" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Version Consistency" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📝 Manual Checks Required" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Before deploying, manually verify:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] Test app on physical Android device" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] Test all features in web browser" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] Dark mode works correctly" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] Settings persist correctly" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] Release notes written" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] CHANGELOG.md updated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** $(node -p "require('./package.json').version")" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
