@@ -101,7 +101,7 @@ export function calculateMetrics(data: EnergyData[]): Metrics | null {
       avg: todayMarketPriceAvg,
       min: todayMarketPriceMin,
       max: todayMarketPriceMax,
-      current: currentHourData?.marketPrice !== null && currentHourData?.marketPrice !== undefined
+      current: currentHourData?.marketPrice != null
         ? currentHourData.marketPrice * 0.1
         : null,
     },
@@ -109,7 +109,7 @@ export function calculateMetrics(data: EnergyData[]): Metrics | null {
       avg: todayMarketPriceAvg + GRID_FEES_AND_TAXES,
       min: todayMarketPriceMin + GRID_FEES_AND_TAXES,
       max: todayMarketPriceMax + GRID_FEES_AND_TAXES,
-      current: currentHourData?.marketPrice !== null && currentHourData?.marketPrice !== undefined
+      current: currentHourData?.marketPrice != null
         ? currentHourData.marketPrice * 0.1 + GRID_FEES_AND_TAXES
         : null,
     },
