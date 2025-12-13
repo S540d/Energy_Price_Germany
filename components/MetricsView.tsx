@@ -91,6 +91,58 @@ export function MetricsView({ metrics, colors }: MetricsViewProps) {
             </Text>
           </View>
         </View>
+
+        {/* Energy Mix Visualization - Bubble Chart */}
+        <View style={{ marginTop: 16, alignItems: 'center' }}>
+          <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 12 }}>
+            Energiemix (Durchschnitt)
+          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 20 }}>
+            {/* Renewable bubble */}
+            <View style={{ alignItems: 'center' }}>
+              <View
+                style={{
+                  width: Math.max(40, displayMetrics.renewable.avg * 1.2),
+                  height: Math.max(40, displayMetrics.renewable.avg * 1.2),
+                  borderRadius: Math.max(20, displayMetrics.renewable.avg * 0.6),
+                  backgroundColor: '#4CAF50',
+                  opacity: 0.8,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ color: '#fff', fontSize: 14, fontWeight: 'bold' }}>
+                  {displayMetrics.renewable.avg.toFixed(0)}%
+                </Text>
+              </View>
+              <Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 4 }}>
+                Erneuerbar
+              </Text>
+            </View>
+
+            {/* Non-renewable bubble */}
+            <View style={{ alignItems: 'center' }}>
+              <View
+                style={{
+                  width: Math.max(40, (100 - displayMetrics.renewable.avg) * 1.2),
+                  height: Math.max(40, (100 - displayMetrics.renewable.avg) * 1.2),
+                  borderRadius: Math.max(20, (100 - displayMetrics.renewable.avg) * 0.6),
+                  backgroundColor: '#9E9E9E',
+                  opacity: 0.8,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ color: '#fff', fontSize: 14, fontWeight: 'bold' }}>
+                  {(100 - displayMetrics.renewable.avg).toFixed(0)}%
+                </Text>
+              </View>
+              <Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 4 }}>
+                Konventionell
+              </Text>
+            </View>
+          </View>
+        </View>
       </View>
 
       {/* Börsenstrompreis */}

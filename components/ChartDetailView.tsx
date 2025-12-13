@@ -86,51 +86,53 @@ export function ChartDetailView({
 
   const renderContent = () => (
     <View style={{ flex: 1 }}>
-      {/* Toggle buttons */}
-      <View style={styles.toggleContainer}>
-        <TouchableOpacity
-          style={[
-            styles.toggleButton,
-            !showMetrics && styles.toggleButtonActive,
-            { 
-              backgroundColor: !showMetrics ? colors.primary : colors.gridLine,
-              borderColor: colors.gridLine,
-            }
-          ]}
-          onPress={() => setShowMetrics(false)}
-        >
-          <Text style={{ 
-            color: !showMetrics ? '#fff' : colors.text, 
-            fontSize: 12, 
-            fontWeight: '600' 
-          }}>
-            Grafik
-          </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[
-            styles.toggleButton,
-            showMetrics && styles.toggleButtonActive,
-            { 
-              backgroundColor: showMetrics ? colors.primary : colors.gridLine,
-              borderColor: colors.gridLine,
-            }
-          ]}
-          onPress={() => setShowMetrics(true)}
-        >
-          <Text style={{ 
-            color: showMetrics ? '#fff' : colors.text, 
-            fontSize: 12, 
-            fontWeight: '600' 
-          }}>
-            Metrik
-          </Text>
-        </TouchableOpacity>
-      </View>
+      {/* Toggle buttons - only show if metrics are available */}
+      {metrics && (
+        <View style={styles.toggleContainer}>
+          <TouchableOpacity
+            style={[
+              styles.toggleButton,
+              !showMetrics && styles.toggleButtonActive,
+              { 
+                backgroundColor: !showMetrics ? colors.primary : colors.gridLine,
+                borderColor: colors.gridLine,
+              }
+            ]}
+            onPress={() => setShowMetrics(false)}
+          >
+            <Text style={{ 
+              color: !showMetrics ? '#fff' : colors.text, 
+              fontSize: 12, 
+              fontWeight: '600' 
+            }}>
+              Grafik
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[
+              styles.toggleButton,
+              showMetrics && styles.toggleButtonActive,
+              { 
+                backgroundColor: showMetrics ? colors.primary : colors.gridLine,
+                borderColor: colors.gridLine,
+              }
+            ]}
+            onPress={() => setShowMetrics(true)}
+          >
+            <Text style={{ 
+              color: showMetrics ? '#fff' : colors.text, 
+              fontSize: 12, 
+              fontWeight: '600' 
+            }}>
+              Metrik
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Content */}
-      {showMetrics ? renderMetricsView() : children}
+      {showMetrics && metrics ? renderMetricsView() : children}
     </View>
   );
 
