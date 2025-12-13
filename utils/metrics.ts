@@ -44,6 +44,10 @@ export interface Metrics {
   };
 }
 
+// Constants
+export const GRID_FEES_AND_TAXES = 20; // Cent/kWh - Netzentgelte und Steuern
+const CURRENT_HOUR_TOLERANCE_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
+
 /**
  * Berechnet Metriken aus Energiedaten
  */
@@ -64,10 +68,8 @@ export function calculateMetrics(data: EnergyData[]): Metrics | null {
   
   // Find current hour's data (closest to now)
   const currentHourData = data
-    .filter(d => Math.abs(d.timestamp - now.getTime()) < 30 * 60 * 1000) // Within 30 minutes
+    .filter(d => Math.abs(d.timestamp - now.getTime()) < CURRENT_HOUR_TOLERANCE_MS)
     .sort((a, b) => Math.abs(a.timestamp - now.getTime()) - Math.abs(b.timestamp - now.getTime()))[0];
-
-  const GRID_FEES_AND_TAXES = 20; // Cent/kWh
 
   const todayMetrics = todayData.length > 0 ? {
     date: now.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }),

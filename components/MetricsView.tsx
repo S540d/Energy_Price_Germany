@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Metrics } from '../utils/metrics';
+import { Metrics, GRID_FEES_AND_TAXES } from '../utils/metrics';
 import { ThemeColors } from '../utils/theme';
 
 interface MetricsViewProps {
@@ -21,9 +21,9 @@ export function MetricsView({ metrics, colors }: MetricsViewProps) {
       current: null,
     },
     endCustomerPrice: {
-      avg: metrics.marketPrice.avg + 20,
-      min: metrics.marketPrice.min + 20,
-      max: metrics.marketPrice.max + 20,
+      avg: metrics.marketPrice.avg + GRID_FEES_AND_TAXES,
+      min: metrics.marketPrice.min + GRID_FEES_AND_TAXES,
+      max: metrics.marketPrice.max + GRID_FEES_AND_TAXES,
       current: null,
     },
   };
