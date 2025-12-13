@@ -38,6 +38,9 @@ const translations = {
     language: 'LANGUAGE',
     english: 'English',
     german: 'German',
+    viewMode: 'VIEW MODE',
+    charts: 'Charts',
+    metrics: 'Metrics',
     // About Section
     about: 'ABOUT',
     version: 'Version',
@@ -82,6 +85,9 @@ const translations = {
     language: 'SPRACHE',
     english: 'English',
     german: 'Deutsch',
+    viewMode: 'ANSICHTSMODUS',
+    charts: 'Grafik',
+    metrics: 'Metrik',
     // About Section
     about: 'ÜBER',
     version: 'Version',
@@ -359,6 +365,31 @@ function AppContent() {
                   onPress={() => setLanguage('de')}
                 >
                   <Text style={{ color: language === 'de' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.german}</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* View Mode */}
+              <Text style={[styles.settingLabel, { color: colors.text, marginTop: 12 }]}>{t.viewMode}</Text>
+              <View style={styles.themeToggle}>
+                <TouchableOpacity
+                  style={[
+                    styles.themeButton,
+                    currentView === 'charts' && styles.themeButtonActive,
+                    { backgroundColor: currentView === 'charts' ? colors.primary : colors.gridLine }
+                  ]}
+                  onPress={() => setCurrentView('charts')}
+                >
+                  <Text style={{ color: currentView === 'charts' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.charts}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.themeButton,
+                    currentView === 'metrics' && styles.themeButtonActive,
+                    { backgroundColor: currentView === 'metrics' ? colors.primary : colors.gridLine }
+                  ]}
+                  onPress={() => setCurrentView('metrics')}
+                >
+                  <Text style={{ color: currentView === 'metrics' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.metrics}</Text>
                 </TouchableOpacity>
               </View>
             </View>
