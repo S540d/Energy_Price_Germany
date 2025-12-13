@@ -91,6 +91,70 @@ export function MetricsView({ metrics, colors }: MetricsViewProps) {
             </Text>
           </View>
         </View>
+
+        {/* Energy Mix Visualization - Bubble Chart */}
+        <View style={{ marginTop: 16, alignItems: 'center' }}>
+          <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 12 }}>
+            Energiemix (Durchschnitt)
+          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 20 }}>
+            {(() => {
+              const BUBBLE_MIN_SIZE = 40;
+              const BUBBLE_SCALE_FACTOR = 1.2;
+              const BUBBLE_MIN_RADIUS = 20;
+              const BUBBLE_RADIUS_FACTOR = 0.6;
+              const nonRenewablePercentage = 100 - displayMetrics.renewable.avg;
+
+              return (
+                <>
+                  {/* Renewable bubble */}
+                  <View style={{ alignItems: 'center' }}>
+                    <View
+                      style={{
+                        width: Math.max(BUBBLE_MIN_SIZE, displayMetrics.renewable.avg * BUBBLE_SCALE_FACTOR),
+                        height: Math.max(BUBBLE_MIN_SIZE, displayMetrics.renewable.avg * BUBBLE_SCALE_FACTOR),
+                        borderRadius: Math.max(BUBBLE_MIN_RADIUS, displayMetrics.renewable.avg * BUBBLE_RADIUS_FACTOR),
+                        backgroundColor: '#4CAF50',
+                        opacity: 0.8,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 14, fontWeight: 'bold' }}>
+                        {displayMetrics.renewable.avg.toFixed(0)}%
+                      </Text>
+                    </View>
+                    <Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 4 }}>
+                      Erneuerbar
+                    </Text>
+                  </View>
+
+                  {/* Non-renewable bubble */}
+                  <View style={{ alignItems: 'center' }}>
+                    <View
+                      style={{
+                        width: Math.max(BUBBLE_MIN_SIZE, nonRenewablePercentage * BUBBLE_SCALE_FACTOR),
+                        height: Math.max(BUBBLE_MIN_SIZE, nonRenewablePercentage * BUBBLE_SCALE_FACTOR),
+                        borderRadius: Math.max(BUBBLE_MIN_RADIUS, nonRenewablePercentage * BUBBLE_RADIUS_FACTOR),
+                        backgroundColor: '#9E9E9E',
+                        opacity: 0.8,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 14, fontWeight: 'bold' }}>
+                        {nonRenewablePercentage.toFixed(0)}%
+                      </Text>
+                    </View>
+                    <Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 4 }}>
+                      Konventionell
+                    </Text>
+                  </View>
+                </>
+              );
+            })()}
+          </View>
+        </View>
       </View>
 
       {/* Börsenstrompreis */}

@@ -19,7 +19,8 @@ import { RenewableBarChart } from './components/charts/RenewableBarChart';
 import { PriceBarChart } from './components/charts/PriceBarChart';
 import { CorrelationScatterChart } from './components/charts/CorrelationScatterChart';
 import { MetricsView } from './components/MetricsView';
-import { calculateMetrics, EnergyData } from './utils/metrics';
+import { ChartDetailView } from './components/ChartDetailView';
+import { calculateMetrics, EnergyData, GRID_FEES_AND_TAXES } from './utils/metrics';
 import { getThemeColors, Theme } from './utils/theme';
 
 const APP_VERSION = '1.2.2';
@@ -473,52 +474,87 @@ function AppContent() {
           </View>
         ) : filteredEnergyData.length > 0 ? (
           <>
-            <RenewableBarChart
+            <ChartDetailView
               title={t.renewableTitle}
-              subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
-              data={filteredEnergyData}
-              backgroundColor={colors.surface}
-              textColor={colors.text}
-              gridColor={colors.gridLine}
-              labels={{
-                yAxis: t.renewablePercent,
-                now: t.now,
-                average: t.average,
-              }}
-            />
+              colors={colors}
+              chartType="renewable"
+              metrics={metrics ? {
+                min: metrics.renewable.min,
+                max: metrics.renewable.max,
+                avg: metrics.renewable.avg,
+                current: metrics.today?.renewable.current,
+                unit: '%',
+                label: t.renewablePercent,
+              } : undefined}
+            >
+              <RenewableBarChart
+                title={t.renewableTitle}
+                subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+                data={filteredEnergyData}
+                backgroundColor={colors.surface}
+                textColor={colors.text}
+                gridColor={colors.gridLine}
+                labels={{
+                  yAxis: t.renewablePercent,
+                  now: t.now,
+                  average: t.average,
+                }}
+              />
+            </ChartDetailView>
 
-            <PriceBarChart
+            <ChartDetailView
               title={t.priceTitle}
-              subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
-              data={filteredEnergyData}
-              backgroundColor={colors.surface}
-              textColor={colors.text}
-              gridColor={colors.gridLine}
-              labels={{
-                yAxis: t.pricePerKwh,
-                now: t.now,
-                average: t.average,
-                marketPrice: t.marketPrice,
-                gridFeesAndTaxes: t.gridFeesAndTaxes,
-                interpolated: t.interpolated,
-              }}
-            />
+              colors={colors}
+              chartType="price"
+              metrics={metrics ? {
+                min: metrics.marketPrice.min,
+                max: metrics.marketPrice.max,
+                avg: metrics.marketPrice.avg,
+                current: metrics.today?.marketPrice.current,
+                unit: '¢',
+                label: t.pricePerKwh,
+              } : undefined}
+            >
+              <PriceBarChart
+                title={t.priceTitle}
+                subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+                data={filteredEnergyData}
+                backgroundColor={colors.surface}
+                textColor={colors.text}
+                gridColor={colors.gridLine}
+                labels={{
+                  yAxis: t.pricePerKwh,
+                  now: t.now,
+                  average: t.average,
+                  marketPrice: t.marketPrice,
+                  gridFeesAndTaxes: t.gridFeesAndTaxes,
+                  interpolated: t.interpolated,
+                }}
+              />
+            </ChartDetailView>
 
-            <CorrelationScatterChart
+            <ChartDetailView
               title={t.correlationTitle}
-              subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
-              data={filteredEnergyData}
-              backgroundColor={colors.surface}
-              textColor={colors.text}
-              gridColor={colors.gridLine}
-              labels={{
-                yAxisPrice: t.pricePerKwh,
-                xAxisRenewables: t.renewablePercent,
-                night: t.night,
-                morningEvening: t.morningEvening,
-                day: t.day,
-              }}
-            />
+              colors={colors}
+              chartType="correlation"
+              metrics={undefined}
+            >
+              <CorrelationScatterChart
+                title={t.correlationTitle}
+                subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+                data={filteredEnergyData}
+                backgroundColor={colors.surface}
+                textColor={colors.text}
+                gridColor={colors.gridLine}
+                labels={{
+                  yAxisPrice: t.pricePerKwh,
+                  xAxisRenewables: t.renewablePercent,
+                  night: t.night,
+                  morningEvening: t.morningEvening,
+                  day: t.day,
+                }}
+              />
+            </ChartDetailView>
           </>
         ) : null}
         {filteredEnergyData.length === 0 && (
