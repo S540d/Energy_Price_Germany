@@ -146,7 +146,7 @@ export function ChartDetailView({
             onPress={() => setIsExpanded(true)}
           >
             <Text style={[styles.expandButtonText, { color: colors.primary }]}>
-              ⛶ Details
+              📊 Details
             </Text>
           </TouchableOpacity>
         </View>
@@ -170,7 +170,7 @@ export function ChartDetailView({
               style={styles.closeButton}
             >
               <Text style={[styles.closeButtonText, { color: colors.primary }]}>
-                ✕ Schließen
+                × Schließen
               </Text>
             </TouchableOpacity>
           </View>
