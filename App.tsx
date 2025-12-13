@@ -63,6 +63,7 @@ const translations = {
     noData: 'No data available',
     noDataMessage: 'The energy data could not be loaded. Please try again later.',
     noCommercialUse: 'No commercial use without permission',
+    chartInteractionHint: 'Tap on bars/points to see details',
     // Chart labels
     renewablePercent: 'Renewables (%)',
     pricePerKwh: 'Price (¢/kWh)',
@@ -110,6 +111,7 @@ const translations = {
     noData: 'Keine Daten verfügbar',
     noDataMessage: 'Die Energiedaten konnten nicht geladen werden. Bitte versuchen Sie es später erneut.',
     noCommercialUse: 'Keine kommerzielle Nutzung ohne Genehmigung',
+    chartInteractionHint: 'Tippen Sie auf Balken/Punkte für Details',
     // Chart labels
     renewablePercent: 'Erneuerbare (%)',
     pricePerKwh: 'Preis (¢/kWh)',
@@ -167,12 +169,12 @@ function AppContent() {
       try {
         if (Platform.OS === 'web' && typeof window !== 'undefined') {
           // Web: Use localStorage
-          const saved = window.localStorage?.getItem('language') as Language | null;
+          const saved = window.localStorage?.getItem('language') as Language | null; // platform-safe
           if (saved) {
             setLanguage(saved);
           } else {
             // Auto-detect browser language
-            const browserLang = window.navigator?.language?.toLowerCase() || 'en';
+            const browserLang = window.navigator?.language?.toLowerCase() || 'en'; // platform-safe
             const detected = browserLang.startsWith('de') ? 'de' : 'en';
             setLanguage(detected);
           }
@@ -196,7 +198,7 @@ function AppContent() {
       try {
         if (Platform.OS === 'web' && typeof window !== 'undefined') {
           // Web: Use localStorage
-          window.localStorage?.setItem('language', language);
+          window.localStorage?.setItem('language', language); // platform-safe
         } else {
           // Mobile: Use AsyncStorage
           await AsyncStorage.setItem('language', language);
@@ -425,7 +427,7 @@ function AppContent() {
               <TouchableOpacity
                 onPress={() => {
                   if (Platform.OS === 'web') {
-                    window.open('https://ko-fi.com/devsven', '_blank');
+                    window.open('https://ko-fi.com/devsven', '_blank'); // platform-safe
                   } else {
                     Linking.openURL('https://ko-fi.com/devsven');
                   }
@@ -440,7 +442,7 @@ function AppContent() {
               <TouchableOpacity
                 onPress={() => {
                   if (Platform.OS === 'web') {
-                    window.open('mailto:devsven@posteo.de?subject=Energy%20Price%20Germany%20-%20Bug%20Report', '_blank');
+                    window.open('mailto:devsven@posteo.de?subject=Energy%20Price%20Germany%20-%20Bug%20Report', '_blank'); // platform-safe
                   } else {
                     Linking.openURL('mailto:devsven@posteo.de?subject=Energy%20Price%20Germany%20-%20Bug%20Report');
                   }
@@ -476,6 +478,7 @@ function AppContent() {
             <RenewableBarChart
               title={t.renewableTitle}
               subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+              interactionHint={t.chartInteractionHint}
               data={filteredEnergyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
@@ -490,6 +493,7 @@ function AppContent() {
             <PriceBarChart
               title={t.priceTitle}
               subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+              interactionHint={t.chartInteractionHint}
               data={filteredEnergyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
@@ -507,6 +511,7 @@ function AppContent() {
             <CorrelationScatterChart
               title={t.correlationTitle}
               subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+              interactionHint={t.chartInteractionHint}
               data={filteredEnergyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
