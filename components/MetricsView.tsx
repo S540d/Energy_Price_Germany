@@ -12,8 +12,14 @@ export function MetricsView({ metrics, colors }: MetricsViewProps) {
   // Use today's metrics if available, otherwise fall back to all-time metrics
   const displayMetrics = metrics.today || {
     date: 'Keine Daten',
-    renewable: metrics.renewable,
-    marketPrice: metrics.marketPrice,
+    renewable: {
+      ...metrics.renewable,
+      current: null,
+    },
+    marketPrice: {
+      ...metrics.marketPrice,
+      current: null,
+    },
     endCustomerPrice: {
       avg: metrics.marketPrice.avg + 20,
       min: metrics.marketPrice.min + 20,
