@@ -67,9 +67,21 @@ export function calculateMetrics(data: EnergyData[]): Metrics | null {
   const todayValidPrice = todayData.filter(d => d.marketPrice !== null);
   
   // Find current hour's data (closest to now)
+  const nowMs = now.getTime();
   const currentHourData = data
-    .filter(d => Math.abs(d.timestamp - now.getTime()) < CURRENT_HOUR_TOLERANCE_MS)
-    .sort((a, b) => Math.abs(a.timestamp - now.getTime()) - Math.abs(b.timestamp - now.getTime()))[0];
+    .filter(d => Math.abs(d.timestamp - nowMs) < CURRENT_HOUR_TOLERANCE_MS)
+    .sort((a, b) => Math.abs(a.timestamp - nowMs) - Math.abs(b.timestamp - nowMs))[0];
+
+  // Calculate today's market price stats (reused for end customer price)
+  const todayMarketPriceAvg = todayValidPrice.length > 0
+    ? todayValidPrice.reduce((sum, d) => sum + d.marketPrice! * 0.1, 0) / todayValidPrice.length
+    : 0;
+  const todayMarketPriceMin = todayValidPrice.length > 0
+    ? Math.min(...todayValidPrice.map(d => d.marketPrice!)) * 0.1
+    : 0;
+  const todayMarketPriceMax = todayValidPrice.length > 0
+    ? Math.max(...todayValidPrice.map(d => d.marketPrice!)) * 0.1
+    : 0;
 
   const todayMetrics = todayData.length > 0 ? {
     date: now.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }),
@@ -86,29 +98,17 @@ export function calculateMetrics(data: EnergyData[]): Metrics | null {
       current: currentHourData?.renewableShare ?? null,
     },
     marketPrice: {
-      avg: todayValidPrice.length > 0
-        ? todayValidPrice.reduce((sum, d) => sum + d.marketPrice! * 0.1, 0) / todayValidPrice.length
-        : 0,
-      min: todayValidPrice.length > 0
-        ? Math.min(...todayValidPrice.map(d => d.marketPrice!)) * 0.1
-        : 0,
-      max: todayValidPrice.length > 0
-        ? Math.max(...todayValidPrice.map(d => d.marketPrice!)) * 0.1
-        : 0,
+      avg: todayMarketPriceAvg,
+      min: todayMarketPriceMin,
+      max: todayMarketPriceMax,
       current: currentHourData?.marketPrice !== null && currentHourData?.marketPrice !== undefined
         ? currentHourData.marketPrice * 0.1
         : null,
     },
     endCustomerPrice: {
-      avg: todayValidPrice.length > 0
-        ? todayValidPrice.reduce((sum, d) => sum + d.marketPrice! * 0.1, 0) / todayValidPrice.length + GRID_FEES_AND_TAXES
-        : 0,
-      min: todayValidPrice.length > 0
-        ? Math.min(...todayValidPrice.map(d => d.marketPrice!)) * 0.1 + GRID_FEES_AND_TAXES
-        : 0,
-      max: todayValidPrice.length > 0
-        ? Math.max(...todayValidPrice.map(d => d.marketPrice!)) * 0.1 + GRID_FEES_AND_TAXES
-        : 0,
+      avg: todayMarketPriceAvg + GRID_FEES_AND_TAXES,
+      min: todayMarketPriceMin + GRID_FEES_AND_TAXES,
+      max: todayMarketPriceMax + GRID_FEES_AND_TAXES,
       current: currentHourData?.marketPrice !== null && currentHourData?.marketPrice !== undefined
         ? currentHourData.marketPrice * 0.1 + GRID_FEES_AND_TAXES
         : null,
