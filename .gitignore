@@ -52,7 +52,7 @@ FooterSpezifikation.md
 
 # Local GitHub templates (from .templates submodule)
 # Only track via submodule, ignore local copies
-.github/ISSUE_TEMPLATE/
-.github/PULL_REQUEST_TEMPLATE/
+# .github/ISSUE_TEMPLATE/  # Now tracked directly in this repo
+# .github/PULL_REQUEST_TEMPLATE/  # Already tracked directly
 .github/scripts/
 .github/workflows/implement-issue.yml
