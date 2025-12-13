@@ -98,49 +98,61 @@ export function MetricsView({ metrics, colors }: MetricsViewProps) {
             Energiemix (Durchschnitt)
           </Text>
           <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 20 }}>
-            {/* Renewable bubble */}
-            <View style={{ alignItems: 'center' }}>
-              <View
-                style={{
-                  width: Math.max(40, displayMetrics.renewable.avg * 1.2),
-                  height: Math.max(40, displayMetrics.renewable.avg * 1.2),
-                  borderRadius: Math.max(20, displayMetrics.renewable.avg * 0.6),
-                  backgroundColor: '#4CAF50',
-                  opacity: 0.8,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ color: '#fff', fontSize: 14, fontWeight: 'bold' }}>
-                  {displayMetrics.renewable.avg.toFixed(0)}%
-                </Text>
-              </View>
-              <Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 4 }}>
-                Erneuerbar
-              </Text>
-            </View>
+            {(() => {
+              const BUBBLE_MIN_SIZE = 40;
+              const BUBBLE_SCALE_FACTOR = 1.2;
+              const BUBBLE_MIN_RADIUS = 20;
+              const BUBBLE_RADIUS_FACTOR = 0.6;
+              const nonRenewablePercentage = 100 - displayMetrics.renewable.avg;
 
-            {/* Non-renewable bubble */}
-            <View style={{ alignItems: 'center' }}>
-              <View
-                style={{
-                  width: Math.max(40, (100 - displayMetrics.renewable.avg) * 1.2),
-                  height: Math.max(40, (100 - displayMetrics.renewable.avg) * 1.2),
-                  borderRadius: Math.max(20, (100 - displayMetrics.renewable.avg) * 0.6),
-                  backgroundColor: '#9E9E9E',
-                  opacity: 0.8,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ color: '#fff', fontSize: 14, fontWeight: 'bold' }}>
-                  {(100 - displayMetrics.renewable.avg).toFixed(0)}%
-                </Text>
-              </View>
-              <Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 4 }}>
-                Konventionell
-              </Text>
-            </View>
+              return (
+                <>
+                  {/* Renewable bubble */}
+                  <View style={{ alignItems: 'center' }}>
+                    <View
+                      style={{
+                        width: Math.max(BUBBLE_MIN_SIZE, displayMetrics.renewable.avg * BUBBLE_SCALE_FACTOR),
+                        height: Math.max(BUBBLE_MIN_SIZE, displayMetrics.renewable.avg * BUBBLE_SCALE_FACTOR),
+                        borderRadius: Math.max(BUBBLE_MIN_RADIUS, displayMetrics.renewable.avg * BUBBLE_RADIUS_FACTOR),
+                        backgroundColor: '#4CAF50',
+                        opacity: 0.8,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 14, fontWeight: 'bold' }}>
+                        {displayMetrics.renewable.avg.toFixed(0)}%
+                      </Text>
+                    </View>
+                    <Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 4 }}>
+                      Erneuerbar
+                    </Text>
+                  </View>
+
+                  {/* Non-renewable bubble */}
+                  <View style={{ alignItems: 'center' }}>
+                    <View
+                      style={{
+                        width: Math.max(BUBBLE_MIN_SIZE, nonRenewablePercentage * BUBBLE_SCALE_FACTOR),
+                        height: Math.max(BUBBLE_MIN_SIZE, nonRenewablePercentage * BUBBLE_SCALE_FACTOR),
+                        borderRadius: Math.max(BUBBLE_MIN_RADIUS, nonRenewablePercentage * BUBBLE_RADIUS_FACTOR),
+                        backgroundColor: '#9E9E9E',
+                        opacity: 0.8,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 14, fontWeight: 'bold' }}>
+                        {nonRenewablePercentage.toFixed(0)}%
+                      </Text>
+                    </View>
+                    <Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 4 }}>
+                      Konventionell
+                    </Text>
+                  </View>
+                </>
+              );
+            })()}
           </View>
         </View>
       </View>
