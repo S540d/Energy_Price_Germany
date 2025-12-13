@@ -99,9 +99,9 @@ assignees: ''
 
 <!-- Technische Details für Entwickler -->
 
-- **Dateien:** [z.B. App.tsx, components/Chart.tsx]
-- **Services:** [z.B. energyDataManager.ts]
-- **Workflows:** [z.B. fetch.yml]
+- **Dateien:** [z.B. src/App.tsx, src/components/ChartComponent.tsx]
+- **Services:** [z.B. src/services/dataService.ts]
+- **Workflows:** [z.B. .github/workflows/workflow-name.yml]
 
 ## Akzeptanzkriterien
 
