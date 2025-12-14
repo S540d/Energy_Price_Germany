@@ -23,6 +23,7 @@ interface PriceBarChartProps {
     gridFeesAndTaxes: string;
     interpolated: string;
   };
+  interactionHint?: string;
 }
 
 export function PriceBarChart({
@@ -33,6 +34,7 @@ export function PriceBarChart({
   textColor,
   gridColor,
   labels,
+  interactionHint,
 }: PriceBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -161,6 +163,11 @@ export function PriceBarChart({
           {subtitle && (
             <Text style={{ fontSize: 12, color: textColor, opacity: 0.7, marginBottom: 2 }}>
               {subtitle}
+            </Text>
+          )}
+          {interactionHint && (
+            <Text style={{ fontSize: 12, fontStyle: 'italic', opacity: 0.5, color: textColor }} accessibilityRole="text" accessibilityLabel={interactionHint}>
+              💡 {interactionHint}
             </Text>
           )}
         </View>
