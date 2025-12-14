@@ -23,6 +23,7 @@ interface CorrelationScatterChartProps {
     morningEvening: string;
     day: string;
   };
+  interactionHint?: string;
 }
 
 export function CorrelationScatterChart({
@@ -33,6 +34,7 @@ export function CorrelationScatterChart({
   textColor,
   gridColor,
   labels,
+  interactionHint,
 }: CorrelationScatterChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -373,6 +375,16 @@ export function CorrelationScatterChart({
           {labels.yAxisPrice}
         </Text>
       </View>
+      {interactionHint && (
+        <Text 
+          accessible={true} 
+          accessibilityRole="text" 
+          accessibilityLabel={interactionHint}
+          style={{ fontSize: 12, color: textColor, opacity: 0.5, fontStyle: 'italic', marginTop: 8 }}
+        >
+          💡 {interactionHint}
+        </Text>
+      )}
     </View>
   );
 }
