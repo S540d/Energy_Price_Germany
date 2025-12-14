@@ -194,6 +194,11 @@ export function CorrelationScatterChart({
               {subtitle}
             </Text>
           )}
+          {interactionHint && (
+            <Text style={{ fontSize: 12, fontStyle: 'italic', opacity: 0.5, color: textColor }} accessibilityRole="text" accessibilityLabel={interactionHint}>
+              💡 {interactionHint}
+            </Text>
+          )}
         </View>
         {!isPhone && (
           <View style={{ flexDirection: 'row', gap: 8 }}>
