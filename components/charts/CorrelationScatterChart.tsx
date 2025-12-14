@@ -6,6 +6,7 @@ import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 interface CorrelationScatterChartProps {
   title: string;
   subtitle?: string;
+  interactionHint?: string;
   data: Array<{
     timestamp: number;
     marketPrice: number | null;
@@ -28,6 +29,7 @@ interface CorrelationScatterChartProps {
 export function CorrelationScatterChart({
   title,
   subtitle,
+  interactionHint,
   data,
   backgroundColor,
   textColor,
@@ -210,6 +212,11 @@ export function CorrelationScatterChart({
           </View>
         )}
       </View>
+      {interactionHint && (
+        <Text accessible={true} accessibilityRole="text" accessibilityLabel={interactionHint} style={{ fontSize: 12, fontStyle: 'italic', opacity: 0.5, color: textColor, marginTop: 4 }}>
+          💡 {interactionHint}
+        </Text>
+      )}
       <View style={{ height: chartHeight, width: chartWidth }}>
         {/* Grid Lines */}
         {[0, 1, 2, 3, 4].map(i => {

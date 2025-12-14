@@ -6,6 +6,7 @@ import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 interface PriceBarChartProps {
   title: string;
   subtitle?: string;
+  interactionHint?: string;
   data: Array<{
     timestamp: number;
     marketPrice: number | null;
@@ -28,6 +29,7 @@ interface PriceBarChartProps {
 export function PriceBarChart({
   title,
   subtitle,
+  interactionHint,
   data,
   backgroundColor,
   textColor,
@@ -181,6 +183,11 @@ export function PriceBarChart({
           </View>
         )}
       </View>
+      {interactionHint && (
+        <Text accessible={true} accessibilityRole="text" accessibilityLabel={interactionHint} style={{ fontSize: 12, fontStyle: 'italic', opacity: 0.5, color: textColor, marginTop: 4 }}>
+          💡 {interactionHint}
+        </Text>
+      )}
       <View style={{ height: chartHeight, width: chartWidth, position: 'relative' }}>
         {/* Grid Lines */}
         {[0, 1, 2, 3, 4].map(i => {
