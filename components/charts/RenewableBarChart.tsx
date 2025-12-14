@@ -6,6 +6,7 @@ import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 interface RenewableBarChartProps {
   title: string;
   subtitle?: string;
+  interactionHint?: string;
   data: Array<{
     timestamp: number;
     marketPrice: number | null;
@@ -25,6 +26,7 @@ interface RenewableBarChartProps {
 export function RenewableBarChart({
   title,
   subtitle,
+  interactionHint,
   data,
   backgroundColor,
   textColor,
@@ -159,6 +161,15 @@ export function RenewableBarChart({
       {subtitle && (
         <Text style={{ fontSize: 12, color: textColor, opacity: 0.7, marginBottom: 2 }}>
           {subtitle}
+        </Text>
+      )}
+      {interactionHint && (
+        <Text
+          accessibilityLabel={interactionHint}
+          accessibilityRole="text"
+          style={{ fontSize: 12, color: textColor, opacity: 0.5, fontStyle: 'italic', marginTop: 4 }}
+        >
+          💡 {interactionHint}
         </Text>
       )}
       <View style={{ height: chartHeight, width: chartWidth, position: 'relative' }}>
