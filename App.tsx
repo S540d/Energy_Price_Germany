@@ -18,14 +18,12 @@ import { fetchEnergyData, getCurrentDataSource } from './services/energyDataMana
 import { RenewableBarChart } from './components/charts/RenewableBarChart';
 import { PriceBarChart } from './components/charts/PriceBarChart';
 import { CorrelationScatterChart } from './components/charts/CorrelationScatterChart';
-import { MetricsView } from './components/MetricsView';
 import { ChartDetailView } from './components/ChartDetailView';
 import { calculateMetrics, EnergyData, GRID_FEES_AND_TAXES } from './utils/metrics';
 import { getThemeColors, Theme } from './utils/theme';
 
 const APP_VERSION = '1.2.2';
 
-type ViewMode = 'charts' | 'metrics';
 type Language = 'en' | 'de';
 
 const translations = {
@@ -39,9 +37,6 @@ const translations = {
     language: 'LANGUAGE',
     english: 'English',
     german: 'German',
-    viewMode: 'VIEW MODE',
-    charts: 'Charts',
-    metrics: 'Metrics',
     // About Section
     about: 'ABOUT',
     version: 'Version',
@@ -56,7 +51,6 @@ const translations = {
     reportBug: 'Report a Bug',
     // Other
     loadingData: 'Loading energy data...',
-    backToCharts: '← Back to Charts',
     renewableTitle: 'Share of Renewable Energy in Load',
     priceTitle: 'Market and End Customer Electricity Price',
     correlationTitle: 'Correlation: Price vs. Renewables',
@@ -86,9 +80,6 @@ const translations = {
     language: 'SPRACHE',
     english: 'English',
     german: 'Deutsch',
-    viewMode: 'ANSICHTSMODUS',
-    charts: 'Grafik',
-    metrics: 'Metrik',
     // About Section
     about: 'ÜBER',
     version: 'Version',
@@ -103,7 +94,6 @@ const translations = {
     reportBug: 'Fehler melden',
     // Other
     loadingData: 'Lade Energiedaten...',
-    backToCharts: '← Zurück zu Diagrammen',
     renewableTitle: 'Anteil Erneuerbarer Energien an der Last',
     priceTitle: 'Börsen- und Endkundenstrompreis',
     correlationTitle: 'Korrelation: Preis vs. Erneuerbare',
@@ -131,7 +121,6 @@ function AppContent() {
   const [theme, setTheme] = useState<Theme>('system');
   const [language, setLanguage] = useState<Language>('en'); // Will be loaded from storage in useEffect
   const [menuVisible, setMenuVisible] = useState(false);
-  const [currentView, setCurrentView] = useState<ViewMode>('charts');
   const systemTheme = useColorScheme();
   const t = translations[language];
 
@@ -368,31 +357,6 @@ function AppContent() {
                   <Text style={{ color: language === 'de' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.german}</Text>
                 </TouchableOpacity>
               </View>
-
-              {/* View Mode */}
-              <Text style={[styles.settingLabel, { color: colors.text, marginTop: 12 }]}>{t.viewMode}</Text>
-              <View style={styles.themeToggle}>
-                <TouchableOpacity
-                  style={[
-                    styles.themeButton,
-                    currentView === 'charts' && styles.themeButtonActive,
-                    { backgroundColor: currentView === 'charts' ? colors.primary : colors.gridLine }
-                  ]}
-                  onPress={() => setCurrentView('charts')}
-                >
-                  <Text style={{ color: currentView === 'charts' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.charts}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.themeButton,
-                    currentView === 'metrics' && styles.themeButtonActive,
-                    { backgroundColor: currentView === 'metrics' ? colors.primary : colors.gridLine }
-                  ]}
-                  onPress={() => setCurrentView('metrics')}
-                >
-                  <Text style={{ color: currentView === 'metrics' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.metrics}</Text>
-                </TouchableOpacity>
-              </View>
             </View>
 
             <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
@@ -462,17 +426,7 @@ function AppContent() {
         style={[styles.scrollView, { backgroundColor: colors.background }]}
         contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.background }}
       >
-        {currentView === 'metrics' && filteredEnergyData.length > 0 && metrics ? (
-          <View style={styles.metricsContainer}>
-            <TouchableOpacity
-              style={[styles.backButton, { backgroundColor: colors.surface }]}
-              onPress={() => setCurrentView('charts')}
-            >
-              <Text style={[styles.backButtonText, { color: colors.primary }]}>  {t.backToCharts}</Text>
-            </TouchableOpacity>
-            <MetricsView metrics={metrics} colors={colors} />
-          </View>
-        ) : filteredEnergyData.length > 0 ? (
+        {filteredEnergyData.length > 0 ? (
           <>
             <ChartDetailView
               title={t.renewableTitle}
@@ -698,26 +652,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     marginTop: 16,
-  },
-  metricsContainer: {
-    padding: 12,
-  },
-  backButton: {
-    padding: 12,
-    marginHorizontal: 12,
-    marginTop: 12,
-    marginBottom: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  backButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
   },
   header: {
     flexDirection: 'row',
