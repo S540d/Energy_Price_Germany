@@ -20,6 +20,7 @@ interface RenewableBarChartProps {
     now: string;
     average: string;
   };
+  interactionHint?: string;
 }
 
 export function RenewableBarChart({
@@ -30,6 +31,7 @@ export function RenewableBarChart({
   textColor,
   gridColor,
   labels,
+  interactionHint,
 }: RenewableBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -442,6 +444,16 @@ export function RenewableBarChart({
           {labels.yAxis}
         </Text>
       </View>
+      {interactionHint && (
+        <Text
+          accessible={true}
+          accessibilityRole="text"
+          accessibilityLabel={interactionHint}
+          style={{ fontSize: 12, color: textColor, opacity: 0.5, fontStyle: 'italic', marginTop: 4 }}
+        >
+          💡 {interactionHint}
+        </Text>
+      )}
     </View>
   );
 }
