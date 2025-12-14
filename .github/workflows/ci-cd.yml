@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main, develop]
 
+# Security: Explicitly set minimal permissions
+permissions:
+  contents: read
+
 jobs:
   # ============================================================================
   # JOB 1: Code Quality & Linting
