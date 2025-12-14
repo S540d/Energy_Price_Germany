@@ -75,6 +75,7 @@ const translations = {
     marketPrice: 'Market Price',
     gridFeesAndTaxes: 'Grid Fees & Taxes',
     interpolated: 'Interpolated',
+    interactionHint: 'Tap a bar or point to view details',
   },
   de: {
     settings: 'Einstellungen',
@@ -122,6 +123,7 @@ const translations = {
     marketPrice: 'Börsenstrompreis',
     gridFeesAndTaxes: 'Netzentgelte & Steuern',
     interpolated: 'Interpoliert',
+    interactionHint: 'Tippen Sie auf einen Balken oder Punkt für Details',
   },
 };
 
@@ -499,6 +501,7 @@ function AppContent() {
                   now: t.now,
                   average: t.average,
                 }}
+                interactionHint={t.interactionHint}
               />
             </ChartDetailView>
 
@@ -530,6 +533,7 @@ function AppContent() {
                   gridFeesAndTaxes: t.gridFeesAndTaxes,
                   interpolated: t.interpolated,
                 }}
+                interactionHint={t.interactionHint}
               />
             </ChartDetailView>
 
@@ -553,6 +557,7 @@ function AppContent() {
                   morningEvening: t.morningEvening,
                   day: t.day,
                 }}
+                interactionHint={t.interactionHint}
               />
             </ChartDetailView>
           </>
