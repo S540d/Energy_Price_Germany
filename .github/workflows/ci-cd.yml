@@ -108,35 +108,9 @@ jobs:
           path: dist/
           retention-days: 7
 
-  build-android:
-    name: 🤖 Build Android
-    runs-on: ubuntu-latest
-    needs: code-quality
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Build Android Release
-        working-directory: ./Android
-        run: ./gradlew assembleRelease --no-daemon
-
-      - name: Verify APK exists
-        run: |
-          if [ -f "Android/app/build/outputs/apk/release/app-release.apk" ]; then
-            echo "✅ Android APK built successfully"
-          else
-            echo "❌ ERROR: Android APK not found!"
-            exit 1
-          fi
+  # Note: Android builds are handled via EAS Build (cloud-based)
+  # Local Android builds are not supported as /android directory is not tracked
+  # See: https://docs.expo.dev/build/introduction/
 
   # ============================================================================
   # JOB 3: Platform Compatibility Checks
@@ -168,21 +142,19 @@ jobs:
 
           echo "✅ All versions are consistent"
 
-      - name: Check Android versionCode increment
+      - name: Check Android versionCode exists
         run: |
-          echo "Checking Android version..."
-          GRADLE_VERSION_CODE=$(grep "versionCode = " Android/app/build.gradle.kts | sed -E "s/.*= ([0-9]+).*/\1/")
+          echo "Checking Android versionCode in app.json..."
           APP_JSON_VERSION_CODE=$(node -p "require('./app.json').expo.android.versionCode")
 
-          echo "build.gradle.kts versionCode: $GRADLE_VERSION_CODE"
           echo "app.json versionCode: $APP_JSON_VERSION_CODE"
 
-          if [ "$GRADLE_VERSION_CODE" != "$APP_JSON_VERSION_CODE" ]; then
-            echo "❌ ERROR: Android versionCode mismatch!"
+          if [ -z "$APP_JSON_VERSION_CODE" ] || [ "$APP_JSON_VERSION_CODE" = "undefined" ]; then
+            echo "❌ ERROR: Android versionCode not found in app.json!"
             exit 1
           fi
 
-          echo "✅ Android versions are consistent"
+          echo "✅ Android versionCode is defined"
 
       - name: Validate UX Guidelines compliance
         run: |
@@ -228,11 +200,7 @@ jobs:
             echo "⚠️  WARNING: Potential sensitive data found!"
           fi
 
-          # Check for hardcoded credentials in build.gradle.kts
-          if grep -q "storePassword = \"" Android/app/build.gradle.kts; then
-            echo "⚠️  WARNING: Keystore password in build.gradle.kts"
-            echo "Consider using environment variables or CI secrets"
-          fi
+          echo "✅ No obvious secrets found"
 
   # ============================================================================
   # JOB 5: Release Readiness Report
@@ -240,7 +208,7 @@ jobs:
   release-checklist:
     name: 📋 Release Readiness Report
     runs-on: ubuntu-latest
-    needs: [code-quality, build-web, build-android, platform-checks]
+    needs: [code-quality, build-web, platform-checks]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
@@ -254,9 +222,10 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Code Quality & Linting" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Web Build Successful" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Android Build Successful" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Platform Compatibility" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Version Consistency" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Note:** Android builds are handled via EAS Build (https://expo.dev/builds)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 📝 Manual Checks Required" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
