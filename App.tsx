@@ -424,7 +424,7 @@ function AppContent() {
       {/* Main Content */}
       <ScrollView
         style={[styles.scrollView, { backgroundColor: colors.background }]}
-        contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.background }}
+        contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.background, paddingBottom: 20 }}
       >
         {filteredEnergyData.length > 0 ? (
           <>
@@ -699,9 +699,15 @@ const styles = StyleSheet.create({
 
 // Wrap the app with SafeAreaProvider for proper edge-to-edge support on Android 15+
 export default function App() {
+  // Get system theme for wrapper background
+  const systemTheme = useColorScheme();
+  const wrapperBg = systemTheme === 'dark' ? '#121212' : '#FFFFFF';
+
   return (
     <SafeAreaProvider>
-      <AppContent />
+      <View style={{ flex: 1, backgroundColor: wrapperBg }}>
+        <AppContent />
+      </View>
     </SafeAreaProvider>
   );
 }
