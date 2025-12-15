@@ -68,6 +68,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - All chart elements (bars, touch areas, lines, labels) now respect rightPadding boundaries
   - Consistent layout structure: Y-labels inside chart container (not outside)
 
+- **Dark Mode UI: White block under last chart** - Fixed mobile display issue
+  - Added paddingBottom to ScrollView contentContainerStyle
+  - Added wrapper View with dynamic background color in SafeAreaProvider
+  - Ensures proper theme background on all screen sizes and devices
+  - No more white blocks appearing below content in Dark Mode
+
 ### Changed
 - **Data Merge Strategy v3.1** - Smart 48h renewable forecast utilization
   - Preserve ALL Energy Charts renewable timestamps (union of price+renewable)
