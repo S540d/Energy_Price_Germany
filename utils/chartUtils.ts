@@ -1,47 +1,68 @@
-import { Dimensions, useColorScheme } from 'react-native';
+import { useMemo } from 'react';
+import { Dimensions } from 'react-native';
 
 export interface ChartDimensions {
   chartHeight: number;
   chartWidth: number;
   leftPadding: number;
   padding: number;
+  rightPadding: number;
   bottomPadding: number;
+  margin: number;
+  cardPadding: number;
   isPhone: boolean;
   isSmallScreen: boolean;
+  screenWidth: number;
+  screenHeight: number;
 }
 
 /**
  * Berechnet responsive Chart-Dimensionen basierend auf Bildschirmgröße
+ * Viewport-bewusst für optimale Darstellung auf allen Geräten
  */
 export function useChartDimensions(): ChartDimensions {
-  const screenWidth = Dimensions.get('window').width;
-  const screenHeight = Dimensions.get('window').height;
+  const screenWidth = useMemo(() => Dimensions.get('window').width, []);
+  const screenHeight = useMemo(() => Dimensions.get('window').height, []);
   const isSmallScreen = screenWidth < 768;
   const isPhone = screenWidth < 480;
 
-  // Responsive Chart-Größen
-  const chartHeight = isPhone ? 140 : isSmallScreen ? 160 : 180;
+  // Responsive Padding-Werte
   const leftPadding = isPhone ? 35 : 45;
   const padding = 40;
-  const bottomPadding = isPhone ? 40 : 50;
+  const rightPadding = isPhone ? 20 : 50;
+  const bottomPadding = isPhone ? 35 : 40;
 
-  // Maximale Chart-Breite basierend auf Bildschirmgröße
-  const maxChartWidth = isPhone
-    ? screenWidth - 24  // Fast voller Bildschirm auf Phone
-    : isSmallScreen
-    ? Math.min(chartHeight * 2.5, screenWidth - 24)
-    : Math.min(chartHeight * 3.5, screenWidth - 48);
+  // Margins (8px Grid)
+  const margin = isPhone ? 8 : 16;
+  const cardPadding = isPhone ? 12 : 16;
 
-  const chartWidth = maxChartWidth;
+  // Breite: Nutze verfügbare Bildschirmbreite optimal (minus Margins)
+  const chartWidth = screenWidth - (margin * 2);
+
+  // Höhe: Viewport-bewusst, sodass alle 3 Charts gut sichtbar sind
+  const baseAspectRatio = 2.5;
+  const availableHeight = screenHeight - 200; // Header + Overhead
+  const maxChartHeight = availableHeight / 3.3; // 3 Charts + Gaps
+  const absoluteMaxHeight = isPhone ? 200 : isSmallScreen ? 280 : 320; // Absolute Obergrenze
+  const chartHeight = Math.round(Math.min(
+    chartWidth / baseAspectRatio,
+    maxChartHeight,
+    absoluteMaxHeight
+  ));
 
   return {
     chartHeight,
     chartWidth,
     leftPadding,
     padding,
+    rightPadding,
     bottomPadding,
+    margin,
+    cardPadding,
     isPhone,
     isSmallScreen,
+    screenWidth,
+    screenHeight,
   };
 }
 
