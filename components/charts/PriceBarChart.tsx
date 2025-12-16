@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, Dimensions, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, Dimensions, Platform } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
+import { GRID_FEES_AND_TAXES } from '../../utils/metrics';
 
 interface PriceBarChartProps {
   title: string;
@@ -81,7 +82,6 @@ export function PriceBarChart({
   // Only use entries with valid marketPrice for rendering bars and calculations
   const validData = data.filter(d => d.marketPrice !== null);
   const pricesInCent = validData.map(d => d.marketPrice! * 0.1);
-  const GRID_FEES_AND_TAXES = 18;
 
   const maxMarketPrice = Math.max(...pricesInCent);
   const maxTotal = maxMarketPrice + GRID_FEES_AND_TAXES;
@@ -308,7 +308,6 @@ export function PriceBarChart({
           const marketPrice = d.marketPrice !== null ? d.marketPrice * 0.1 : null;
           if (marketPrice === null) return null;
 
-          const totalPrice = marketPrice + GRID_FEES_AND_TAXES;
           const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
           const barWidth = ((chartWidth - leftPadding - rightPadding) / data.length) * 0.8;
 

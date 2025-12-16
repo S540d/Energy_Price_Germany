@@ -1,10 +1,27 @@
 import { EnergyData } from '../utils/metrics';
 import { Platform } from 'react-native';
+import { logger } from '../utils/logger';
 
 /**
  * Datenquelle-Typen
  */
 export type DataSource = 'energy-charts' | 'awattar' | 'none';
+
+/**
+ * API Response Types
+ */
+interface MarketDataItem {
+  start_timestamp: number;
+  end_timestamp: number;
+  marketprice: number | null;
+  renewable_share: number | null;
+  interpolated?: boolean;
+}
+
+interface MarketDataResponse {
+  source: string;
+  data: MarketDataItem[];
+}
 
 /**
  * Cache-Konfiguration
@@ -63,10 +80,10 @@ export class EnergyDataManager {
   /**
    * Lädt Rohdaten von der API
    */
-  private async fetchRawData(): Promise<any> {
+  private async fetchRawData(): Promise<MarketDataResponse> {
     try {
-      console.log('Loading energy data from marketdata.json...');
-      console.log('Platform.OS:', Platform.OS);
+      logger.debug('Loading energy data from marketdata.json...');
+      logger.debug('Platform.OS:', Platform.OS);
 
       // Cache-busting Parameter hinzufügen
       const cacheBust = Date.now();
@@ -77,18 +94,18 @@ export class EnergyDataManager {
         ? `./data/marketdata.json?v=${cacheBust}`
         : `https://s540d.github.io/Energy_Price_Germany/data/marketdata.json?v=${cacheBust}`;
 
-      console.log(`Fetching from: ${dataUrl}`);
+      logger.debug(`Fetching from: ${dataUrl}`);
       const response = await fetch(dataUrl);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log(`Successfully loaded raw data with ${data.data?.length || 0} entries`);
-      console.log('Data source:', data.source);
+      logger.debug(`Successfully loaded raw data with ${data.data?.length || 0} entries`);
+      logger.debug('Data source:', data.source);
       return data;
     } catch (error) {
-      console.error('Failed to load marketdata.json:', error);
+      logger.error('Failed to load marketdata.json:', error);
       throw error;
     }
   }
@@ -96,9 +113,9 @@ export class EnergyDataManager {
   /**
    * Verarbeitet Rohdaten in das interne Format
    */
-  private processRawData(rawData: any): EnergyData[] {
+  private processRawData(rawData: MarketDataResponse): EnergyData[] {
     if (!rawData.data || !Array.isArray(rawData.data)) {
-      console.warn('Invalid data format received');
+      logger.warn('Invalid data format received');
       return [];
     }
 
@@ -107,7 +124,7 @@ export class EnergyDataManager {
     this.currentDataSource = source === 'energy-charts' ? 'energy-charts' : 'awattar';
 
     // Transformiere Daten
-    const processedData: EnergyData[] = rawData.data.map((item: any) => {
+    const processedData: EnergyData[] = rawData.data.map((item) => {
       const isInterpolated = item.interpolated || false;
       return {
         timestamp: item.start_timestamp,
@@ -119,7 +136,7 @@ export class EnergyDataManager {
       };
     });
 
-    console.log(`Processed ${processedData.length} data points (source: ${this.currentDataSource})`);
+    logger.debug(`Processed ${processedData.length} data points (source: ${this.currentDataSource})`);
     return processedData;
   }
 
@@ -127,7 +144,7 @@ export class EnergyDataManager {
    * Generiert Mock-Daten für Fallback
    */
   private generateMockData(): EnergyData[] {
-    console.log('Generating mock data as fallback');
+    logger.debug('Generating mock data as fallback');
     const mockData: EnergyData[] = [];
     const now = Date.now();
 
@@ -159,7 +176,7 @@ export class EnergyDataManager {
     // Prüfe Cache
     if (this.isCacheValid()) {
       const age = Date.now() - this.cacheTimestamp;
-      console.log(`Using cached energy data (age: ${Math.round(age / 1000 / 60)} minutes, source: ${this.currentDataSource})`);
+      logger.debug(`Using cached energy data (age: ${Math.round(age / 1000 / 60)} minutes, source: ${this.currentDataSource})`);
       return this.cachedData!;
     }
 
@@ -194,7 +211,7 @@ export class EnergyDataManager {
       return processedData;
 
     } catch (error) {
-      console.error('Data loading failed, using mock data:', error);
+      logger.error('Data loading failed, using mock data:', error);
 
       // Fallback auf Mock-Daten
       const mockData = this.generateMockData();
@@ -212,7 +229,7 @@ export class EnergyDataManager {
     this.cachedData = null;
     this.cacheTimestamp = 0;
     this.currentDataSource = 'none';
-    console.log('Cache invalidated');
+    logger.debug('Cache invalidated');
   }
 
   /**
