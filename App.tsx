@@ -19,6 +19,7 @@ import { RenewableBarChart } from './components/charts/RenewableBarChart';
 import { PriceBarChart } from './components/charts/PriceBarChart';
 import { CorrelationScatterChart } from './components/charts/CorrelationScatterChart';
 import { ChartDetailView } from './components/ChartDetailView';
+import { AboutView } from './components/AboutView';
 import { calculateMetrics, EnergyData, GRID_FEES_AND_TAXES } from './utils/metrics';
 import { getThemeColors, Theme } from './utils/theme';
 import { logger } from './utils/logger';
@@ -122,6 +123,7 @@ function AppContent() {
   const [theme, setTheme] = useState<Theme>('system');
   const [language, setLanguage] = useState<Language>('en'); // Will be loaded from storage in useEffect
   const [menuVisible, setMenuVisible] = useState(false);
+  const [aboutVisible, setAboutVisible] = useState(false);
   const systemTheme = useColorScheme();
   const t = translations[language];
 
@@ -260,7 +262,7 @@ function AppContent() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right', 'bottom']}>
         <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
         <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -273,7 +275,7 @@ function AppContent() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
 
       {/* Header with Settings Button */}
@@ -362,59 +364,17 @@ function AppContent() {
 
             <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
-            {/* ABOUT */}
+            {/* ABOUT BUTTON */}
             <View style={styles.menuSection}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.about}</Text>
-              <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-                {t.version} {APP_VERSION}
-              </Text>
-              <Text style={[styles.legendText, { color: colors.textSecondary, marginTop: 8 }]}>
-                {t.dataSource}: {getDataSourceInfo().name}
-              </Text>
-              <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-                {t.dataLicense}: {getDataSourceInfo().license}
-              </Text>
-              <Text style={[styles.legendText, { color: colors.textSecondary, marginTop: 8 }]}>
-                {t.appLicense}: Open Source • MIT
-              </Text>
-              <Text style={[styles.legendText, { color: colors.textSecondary, fontSize: 11 }]}>
-                {t.noCommercialUse}
-              </Text>
-            </View>
-
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-            {/* SUPPORT */}
-            <View style={styles.menuSection}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.supportSection}</Text>
-
               <TouchableOpacity
                 onPress={() => {
-                  if (Platform.OS === 'web') {
-                    window.open('https://ko-fi.com/devsven', '_blank'); // platform-safe
-                  } else {
-                    Linking.openURL('https://ko-fi.com/devsven');
-                  }
+                  setAboutVisible(true);
+                  setMenuVisible(false);
                 }}
-                style={styles.menuLink}
+                style={[styles.aboutButton, { backgroundColor: colors.surface, borderColor: colors.gridLine }]}
               >
-                <Text style={[styles.legendText, { color: colors.primary }]}>
-                  {t.supportProject}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => {
-                  if (Platform.OS === 'web') {
-                    window.open('mailto:devsven@posteo.de?subject=Energy%20Price%20Germany%20-%20Bug%20Report', '_blank'); // platform-safe
-                  } else {
-                    Linking.openURL('mailto:devsven@posteo.de?subject=Energy%20Price%20Germany%20-%20Bug%20Report');
-                  }
-                }}
-                style={styles.menuLink}
-              >
-                <Text style={[styles.legendText, { color: colors.primary }]}>
-                  {t.reportBug}
+                <Text style={[styles.aboutButtonText, { color: colors.primary }]}>
+                  ℹ️ {t.about}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -426,6 +386,7 @@ function AppContent() {
       <ScrollView
         style={[styles.scrollView, { backgroundColor: colors.background }]}
         contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.background, paddingBottom: 20 }}
+        bounces={false}
       >
         {filteredEnergyData.length > 0 ? (
           <>
@@ -523,6 +484,16 @@ function AppContent() {
           </View>
         )}
       </ScrollView>
+
+      {/* About View Modal */}
+      <AboutView
+        visible={aboutVisible}
+        onClose={() => setAboutVisible(false)}
+        colors={colors}
+        translations={t}
+        appVersion={APP_VERSION}
+        dataSourceInfo={getDataSourceInfo()}
+      />
 
     </SafeAreaView>
   );
@@ -696,19 +667,24 @@ const styles = StyleSheet.create({
   menuLink: {
     paddingVertical: 8,
   },
+  aboutButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  aboutButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });
 
 // Wrap the app with SafeAreaProvider for proper edge-to-edge support on Android 15+
 export default function App() {
-  // Get system theme for wrapper background
-  const systemTheme = useColorScheme();
-  const wrapperBg = systemTheme === 'dark' ? '#121212' : '#FFFFFF';
-
   return (
-    <SafeAreaProvider>
-      <View style={{ flex: 1, backgroundColor: wrapperBg }}>
-        <AppContent />
-      </View>
+    <SafeAreaProvider style={{ flex: 1 }}>
+      <AppContent />
     </SafeAreaProvider>
   );
 }
