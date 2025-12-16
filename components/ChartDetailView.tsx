@@ -132,7 +132,17 @@ export function ChartDetailView({
       )}
 
       {/* Content */}
-      {showMetrics && metrics ? renderMetricsView() : children}
+      {showMetrics && metrics ? (
+        renderMetricsView()
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={true}
+          contentContainerStyle={{ flexGrow: 1 }}
+        >
+          {children}
+        </ScrollView>
+      )}
     </View>
   );
 
@@ -150,7 +160,13 @@ export function ChartDetailView({
             </Text>
           </TouchableOpacity>
         </View>
-        {children}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={true}
+          contentContainerStyle={{ flexGrow: 1 }}
+        >
+          {children}
+        </ScrollView>
       </View>
 
       {/* Expanded detail modal */}
