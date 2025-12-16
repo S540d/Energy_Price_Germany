@@ -146,7 +146,7 @@ export function ChartDetailView({
             onPress={() => setIsExpanded(true)}
           >
             <Text style={[styles.expandButtonText, { color: colors.primary }]}>
-              📊 Details
+              Details
             </Text>
           </TouchableOpacity>
         </View>
