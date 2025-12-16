@@ -101,7 +101,18 @@ export function PriceBarChart({
   };
 
   return (
-    <View style={{ backgroundColor, margin, padding: cardPadding, borderRadius: 12, alignSelf: 'stretch' }}>
+    <View style={{
+      backgroundColor,
+      margin,
+      padding: cardPadding,
+      borderRadius: 18,
+      alignSelf: 'stretch',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.12,
+      shadowRadius: 16,
+      elevation: 4,
+    }}>
       {selectedIndex !== null && (() => {
         const item = data[selectedIndex];
         if (!item || item.marketPrice === null) return null;
@@ -122,19 +133,24 @@ export function PriceBarChart({
           <View style={{
             paddingVertical: 6,
             paddingHorizontal: 12,
-            backgroundColor: backgroundColor,
-            borderWidth: 1,
+            backgroundColor: Platform.OS === 'web'
+              ? (textColor === '#E8E8E8' ? 'rgba(26, 26, 26, 0.95)' : 'rgba(250, 250, 250, 0.95)')
+              : backgroundColor,
+            borderWidth: Platform.OS === 'web' ? 0 : 1,
             borderColor: textColor,
-            borderRadius: 6,
+            borderRadius: 10,
             position: 'absolute',
             top: cardPadding + 30,
             left: tooltipLeft,
             zIndex: 10,
             shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
-            shadowRadius: 4,
-            elevation: 5,
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.2,
+            shadowRadius: 20,
+            elevation: 8,
+            ...(Platform.OS === 'web' && {
+              backdropFilter: 'blur(10px)',
+            }),
           }}>
             <Text style={{ color: textColor, fontSize: 14, fontWeight: 'bold' }}>
               {totalPrice.toFixed(2)} ¢/kWh
@@ -174,24 +190,25 @@ export function PriceBarChart({
         )}
       </View>
       <View style={{ height: chartHeight, width: chartWidth, position: 'relative' }}>
-        {/* Grid Lines */}
-        {[0, 1, 2, 3, 4].map(i => {
-          const y = padding + (i / 4) * (chartHeight - padding - bottomPadding);
-          return (
-            <View
-              key={`grid-${i}`}
-              style={{
-                position: 'absolute',
-                left: leftPadding,
-                top: y,
-                width: chartWidth - leftPadding - rightPadding,
-                height: 1,
-                backgroundColor: gridColor,
-                opacity: 0.3,
-              }}
-            />
-          );
-        })}
+        {/* Grid Lines - Modern gestrichelt */}
+        <Svg width={chartWidth} height={chartHeight} style={{ position: 'absolute' }}>
+          {[0, 1, 2, 3, 4].map(i => {
+            const y = padding + (i / 4) * (chartHeight - padding - bottomPadding);
+            return (
+              <Line
+                key={`grid-${i}`}
+                x1={leftPadding}
+                y1={y}
+                x2={chartWidth - rightPadding}
+                y2={y}
+                stroke={gridColor}
+                strokeWidth="1"
+                strokeDasharray="4,8"
+                opacity={0.15}
+              />
+            );
+          })}
+        </Svg>
 
         {/* Bars (SVG) */}
         <Svg width={chartWidth} height={chartHeight}>

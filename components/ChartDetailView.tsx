@@ -211,8 +211,13 @@ const styles = StyleSheet.create({
   expandButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: 10,
     borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   expandButtonText: {
     fontSize: 12,
@@ -249,10 +254,15 @@ const styles = StyleSheet.create({
   toggleButton: {
     paddingHorizontal: 24,
     paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
+    borderRadius: 12,
+    borderWidth: 0,
     minWidth: 100,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   toggleButtonActive: {
     // Active style handled via backgroundColor prop
@@ -260,7 +270,12 @@ const styles = StyleSheet.create({
   metricsContainer: {
     margin: 16,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
   },
   metricsTitle: {
     fontSize: 18,
@@ -269,9 +284,14 @@ const styles = StyleSheet.create({
   },
   currentValueContainer: {
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     marginBottom: 16,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 1,
   },
   currentLabel: {
     fontSize: 12,
