@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, Dimensions, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Platform } from 'react-native';
 import Svg, { Circle, Line } from 'react-native-svg';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
+import { useChartDimensions } from '../../utils/chartUtils';
 
 interface CorrelationScatterChartProps {
   title: string;
@@ -38,34 +39,18 @@ export function CorrelationScatterChart({
 }: CorrelationScatterChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  const screenWidth = useMemo(() => Dimensions.get('window').width, []);
-  const screenHeight = useMemo(() => Dimensions.get('window').height, []);
-  const isSmallScreen = screenWidth < 768;
-  const isPhone = screenWidth < 480;
-
-  // Responsive Chart-Größen - Viewport-bewusst für optimale Darstellung
-  const leftPadding = isPhone ? 35 : 45;
-  const padding = 40;
-  const rightPadding = isPhone ? 20 : 50;  // Halved for phone to reduce right margin
-  const bottomPadding = isPhone ? 35 : 40;
-
-  // Margins (8px Grid)
-  const margin = isPhone ? 8 : 16;
-  const cardPadding = isPhone ? 12 : 16;
-
-  // Breite: Nutze verfügbare Bildschirmbreite optimal (minus Margins)
-  const chartWidth = screenWidth - (margin * 2);
-
-  // Höhe: Viewport-bewusst, sodass alle 3 Charts gut sichtbar sind
-  const baseAspectRatio = 2.5;
-  const availableHeight = screenHeight - 200; // Header + Overhead
-  const maxChartHeight = availableHeight / 3.3; // 3 Charts + Gaps
-  const absoluteMaxHeight = isPhone ? 200 : isSmallScreen ? 280 : 320; // Absolute Obergrenze
-  const chartHeight = Math.round(Math.min(
-    chartWidth / baseAspectRatio,
-    maxChartHeight,
-    absoluteMaxHeight
-  ));
+  // Use centralized chart dimensions hook
+  const {
+    chartWidth,
+    chartHeight,
+    leftPadding,
+    padding,
+    rightPadding,
+    bottomPadding,
+    margin,
+    cardPadding,
+    isPhone,
+  } = useChartDimensions();
 
   // Only use entries with both marketPrice and renewableShare, excluding interpolated values
   const validData = data.filter(d =>
