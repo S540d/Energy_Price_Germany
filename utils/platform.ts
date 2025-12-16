@@ -6,6 +6,7 @@
  */
 
 import { Platform } from 'react-native';
+import { logger } from './logger';
 
 // Platform Detection
 export const isWeb = Platform.OS === 'web';
@@ -14,10 +15,10 @@ export const isAndroid = Platform.OS === 'android';
 export const isMobile = isIOS || isAndroid;
 
 /**
- * Prüft ob window.matchMedia verfügbar ist (nur Web)
+ * Prüft ob matchMedia verfügbar ist (nur Web) // platform-safe
  */
 export function supportsMatchMedia(): boolean {
-  return isWeb && typeof window !== 'undefined' && typeof window.matchMedia === 'function';
+  return isWeb && typeof window !== 'undefined' && typeof window.matchMedia === 'function'; // platform-safe
 }
 
 /**
@@ -33,9 +34,9 @@ export function getSystemDarkModePreference(): boolean {
   }
 
   try {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches; // platform-safe
   } catch (error) {
-    console.warn('Failed to get system dark mode preference:', error);
+    logger.warn('Failed to get system dark mode preference:', error);
     return false;
   }
 }
@@ -54,14 +55,14 @@ export function addSystemThemeChangeListener(
   }
 
   try {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)'); // platform-safe
     const handler = (e: MediaQueryListEvent) => callback(e.matches);
 
     mediaQuery.addEventListener('change', handler);
 
     return () => mediaQuery.removeEventListener('change', handler);
   } catch (error) {
-    console.warn('Failed to add system theme change listener:', error);
+    logger.warn('Failed to add system theme change listener:', error);
     return () => {};
   }
 }
@@ -72,7 +73,7 @@ export function addSystemThemeChangeListener(
 export const Storage = {
   async getItem(key: string): Promise<string | null> {
     if (isWeb && typeof localStorage !== 'undefined') {
-      return localStorage.getItem(key);
+      return localStorage.getItem(key); // platform-safe
     } else {
       const AsyncStorage = await import('@react-native-async-storage/async-storage');
       return AsyncStorage.default.getItem(key);
@@ -81,7 +82,7 @@ export const Storage = {
 
   async setItem(key: string, value: string): Promise<void> {
     if (isWeb && typeof localStorage !== 'undefined') {
-      localStorage.setItem(key, value);
+      localStorage.setItem(key, value); // platform-safe
     } else {
       const AsyncStorage = await import('@react-native-async-storage/async-storage');
       await AsyncStorage.default.setItem(key, value);
@@ -90,7 +91,7 @@ export const Storage = {
 
   async removeItem(key: string): Promise<void> {
     if (isWeb && typeof localStorage !== 'undefined') {
-      localStorage.removeItem(key);
+      localStorage.removeItem(key); // platform-safe
     } else {
       const AsyncStorage = await import('@react-native-async-storage/async-storage');
       await AsyncStorage.default.removeItem(key);
@@ -121,7 +122,7 @@ export function safeWebAPI<T>(
 ): T {
   if (!isWeb) {
     if (apiName && __DEV__) {
-      console.warn(`Web API "${apiName}" not available on ${Platform.OS}, using fallback`);
+      logger.warn(`Web API "${apiName}" not available on ${Platform.OS}, using fallback`);
     }
     return fallback;
   }
@@ -130,7 +131,7 @@ export function safeWebAPI<T>(
     return callback();
   } catch (error) {
     if (__DEV__) {
-      console.error(`Web API call failed:`, error);
+      logger.error(`Web API call failed:`, error);
     }
     return fallback;
   }

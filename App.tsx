@@ -8,10 +8,10 @@ import {
   useColorScheme,
   Platform,
   Linking,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Updates from 'expo-updates';
 import { fetchEnergyData, getCurrentDataSource } from './services/energyDataManager';
@@ -21,6 +21,7 @@ import { CorrelationScatterChart } from './components/charts/CorrelationScatterC
 import { ChartDetailView } from './components/ChartDetailView';
 import { calculateMetrics, EnergyData, GRID_FEES_AND_TAXES } from './utils/metrics';
 import { getThemeColors, Theme } from './utils/theme';
+import { logger } from './utils/logger';
 
 const APP_VERSION = '1.2.2';
 
@@ -174,7 +175,7 @@ function AppContent() {
           }
         }
       } catch (e) {
-        console.error('Failed to load language preference:', e);
+        logger.error('Failed to load language preference:', e);
       }
     }
     loadLanguage();
@@ -192,7 +193,7 @@ function AppContent() {
           await AsyncStorage.setItem('language', language);
         }
       } catch (e) {
-        console.error('Failed to save language preference:', e);
+        logger.error('Failed to save language preference:', e);
       }
     }
     saveLanguage();
@@ -208,7 +209,7 @@ function AppContent() {
             await Updates.reloadAsync();
           }
         } catch (error) {
-          console.error('Error checking for updates:', error);
+          logger.error('Error checking for updates:', error);
         }
       }
     }
@@ -223,7 +224,7 @@ function AppContent() {
         const data = await fetchEnergyData();
         setEnergyData(data);
       } catch (error) {
-        console.error('Failed to load energy data:', error);
+        logger.error('Failed to load energy data:', error);
         setEnergyData([]);
       } finally {
         setLoading(false);
