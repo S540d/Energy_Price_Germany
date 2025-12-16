@@ -127,7 +127,18 @@ export function CorrelationScatterChart({
   };
 
   return (
-    <View style={{ backgroundColor, margin, padding: cardPadding, borderRadius: 12, alignSelf: 'stretch' }}>
+    <View style={{
+      backgroundColor,
+      margin,
+      padding: cardPadding,
+      borderRadius: 18,
+      alignSelf: 'stretch',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.12,
+      shadowRadius: 16,
+      elevation: 4,
+    }}>
       {selectedIndex !== null && validData[selectedIndex] && (() => {
         const item = validData[selectedIndex];
         const priceInCent = item.marketPrice! * 0.1;
@@ -146,19 +157,24 @@ export function CorrelationScatterChart({
           <View style={{
             paddingVertical: 6,
             paddingHorizontal: 12,
-            backgroundColor: backgroundColor,
-            borderWidth: 1,
+            backgroundColor: Platform.OS === 'web'
+              ? (textColor === '#E8E8E8' ? 'rgba(26, 26, 26, 0.95)' : 'rgba(250, 250, 250, 0.95)')
+              : backgroundColor,
+            borderWidth: Platform.OS === 'web' ? 0 : 1,
             borderColor: textColor,
-            borderRadius: 6,
+            borderRadius: 10,
             position: 'absolute',
             top: cardPadding + 30,
             left: tooltipLeft,
             zIndex: 10,
             shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
-            shadowRadius: 4,
-            elevation: 5,
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.2,
+            shadowRadius: 20,
+            elevation: 8,
+            ...(Platform.OS === 'web' && {
+              backdropFilter: 'blur(10px)',
+            }),
           }}>
             <Text style={{ color: textColor, fontSize: 14, fontWeight: 'bold' }}>
               {new Date(item.timestamp).toLocaleString('de-DE', {
@@ -203,42 +219,41 @@ export function CorrelationScatterChart({
         )}
       </View>
       <View style={{ height: chartHeight, width: chartWidth }}>
-        {/* Grid Lines */}
-        {[0, 1, 2, 3, 4].map(i => {
-          const y = padding + (i / 4) * (chartHeight - padding - bottomPadding);
-          return (
-            <View
-              key={`hgrid-${i}`}
-              style={{
-                position: 'absolute',
-                left: leftPadding,
-                top: y,
-                width: chartWidth - leftPadding - rightPadding,
-                height: 1,
-                backgroundColor: gridColor,
-                opacity: 0.3,
-              }}
-            />
-          );
-        })}
-
-        {[0, 1, 2, 3, 4].map(i => {
-          const x = leftPadding + (i / 4) * (chartWidth - leftPadding - rightPadding);
-          return (
-            <View
-              key={`vgrid-${i}`}
-              style={{
-                position: 'absolute',
-                left: x,
-                top: padding,
-                width: 1,
-                height: chartHeight - padding - bottomPadding,
-                backgroundColor: gridColor,
-                opacity: 0.3,
-              }}
-            />
-          );
-        })}
+        {/* Grid Lines - Modern gestrichelt */}
+        <Svg width={chartWidth} height={chartHeight} style={{ position: 'absolute' }}>
+          {[0, 1, 2, 3, 4].map(i => {
+            const y = padding + (i / 4) * (chartHeight - padding - bottomPadding);
+            return (
+              <Line
+                key={`hgrid-${i}`}
+                x1={leftPadding}
+                y1={y}
+                x2={chartWidth - rightPadding}
+                y2={y}
+                stroke={gridColor}
+                strokeWidth="1"
+                strokeDasharray="4,8"
+                opacity={0.15}
+              />
+            );
+          })}
+          {[0, 1, 2, 3, 4].map(i => {
+            const x = leftPadding + (i / 4) * (chartWidth - leftPadding - rightPadding);
+            return (
+              <Line
+                key={`vgrid-${i}`}
+                x1={x}
+                y1={padding}
+                x2={x}
+                y2={chartHeight - bottomPadding}
+                stroke={gridColor}
+                strokeWidth="1"
+                strokeDasharray="4,8"
+                opacity={0.15}
+              />
+            );
+          })}
+        </Svg>
 
         {/* Scatter Points */}
         <Svg width={chartWidth} height={chartHeight}>
