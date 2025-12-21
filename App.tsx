@@ -262,7 +262,7 @@ function AppContent() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right', 'bottom']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
         <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
         <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -275,7 +275,7 @@ function AppContent() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
 
       {/* Header with Settings Button */}
@@ -682,11 +682,8 @@ const styles = StyleSheet.create({
 
 // Wrap the app with SafeAreaProvider for proper edge-to-edge support on Android 15+
 export default function App() {
-  const systemTheme = useColorScheme();
-  const backgroundColor = systemTheme === 'dark' ? '#000000' : '#FFFFFF';
-
   return (
-    <SafeAreaProvider style={{ flex: 1, backgroundColor }}>
+    <SafeAreaProvider style={{ flex: 1 }}>
       <AppContent />
     </SafeAreaProvider>
   );
