@@ -682,8 +682,11 @@ const styles = StyleSheet.create({
 
 // Wrap the app with SafeAreaProvider for proper edge-to-edge support on Android 15+
 export default function App() {
+  const systemTheme = useColorScheme();
+  const backgroundColor = systemTheme === 'dark' ? '#000000' : '#FFFFFF';
+
   return (
-    <SafeAreaProvider style={{ flex: 1 }}>
+    <SafeAreaProvider style={{ flex: 1, backgroundColor }}>
       <AppContent />
     </SafeAreaProvider>
   );
