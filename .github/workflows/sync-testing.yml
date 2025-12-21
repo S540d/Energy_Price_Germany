@@ -1,0 +1,79 @@
+name: Sync Testing Branch
+
+on:
+  # Automatic trigger when main branch is updated
+  push:
+    branches: [ main ]
+  # Allow manual trigger
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-testing:
+    name: 🔄 Sync main → testing
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for proper merge
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch all branches
+        run: git fetch --all
+
+      - name: Sync main to testing
+        run: |
+          echo "Current branch: $(git branch --show-current)"
+          echo "Switching to testing branch..."
+          git checkout testing
+
+          echo "Attempting to merge main into testing..."
+          if git merge origin/main --no-edit -m "chore: Auto-sync main → testing
+
+          This commit automatically syncs the main branch into testing to keep them aligned.
+
+          🤖 Automated by GitHub Actions"; then
+            echo "✅ Merge successful"
+            git push origin testing
+            echo "✅ Successfully synced main to testing"
+          else
+            echo "❌ Merge conflict detected!"
+            echo "::warning::Unable to auto-sync main to testing due to merge conflicts. Manual intervention required."
+            git merge --abort
+            exit 1
+          fi
+
+      - name: Summary
+        if: success()
+        run: |
+          echo "## 🔄 Testing Branch Synced" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Successfully merged \`main\` into \`testing\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Latest commits in testing:**" >> $GITHUB_STEP_SUMMARY
+          git log --oneline -5 >> $GITHUB_STEP_SUMMARY
+
+      - name: Conflict Summary
+        if: failure()
+        run: |
+          echo "## ⚠️ Sync Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Unable to automatically merge \`main\` into \`testing\` due to conflicts." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Action required:** Manually resolve conflicts:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "git checkout testing" >> $GITHUB_STEP_SUMMARY
+          echo "git merge main" >> $GITHUB_STEP_SUMMARY
+          echo "# Resolve conflicts" >> $GITHUB_STEP_SUMMARY
+          echo "git commit" >> $GITHUB_STEP_SUMMARY
+          echo "git push origin testing" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
