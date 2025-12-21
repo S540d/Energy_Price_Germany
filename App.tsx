@@ -129,6 +129,13 @@ function AppContent() {
 
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
 
+  // Set body background color dynamically on web
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.body.style.backgroundColor = colors.background;
+    }
+  }, [colors.background]);
+
   // Filter data to show only 24h of past and all future data
   const filteredEnergyData = useMemo(() => {
     if (!energyData.length) return energyData;
