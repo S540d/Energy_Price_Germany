@@ -48,7 +48,7 @@ const translations = {
     // Support Section
     supportSection: 'SUPPORT',
     feedback: 'Send Feedback',
-    supportProject: 'support me',
+    supportProject: 'Support me',
     rateApp: 'Rate on Play Store',
     reportBug: 'Report a Bug',
     // Other
@@ -91,7 +91,7 @@ const translations = {
     // Support Section
     supportSection: 'UNTERSTÜTZUNG',
     feedback: 'Feedback senden',
-    supportProject: 'support me',
+    supportProject: 'Support me',
     rateApp: 'Im Play Store bewerten',
     reportBug: 'Fehler melden',
     // Other
