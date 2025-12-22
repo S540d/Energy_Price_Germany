@@ -382,7 +382,7 @@ function AppContent() {
 
             <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
-            {/* FEEDBACK AND SUPPORT LINKS */}
+            {/* FEEDBACK, SUPPORT & ABOUT - Three Links in One Row */}
             <View style={[styles.menuSection, styles.menuSectionRow]}>
               <TouchableOpacity
                 style={styles.menuLinkFlex}
@@ -402,30 +402,15 @@ function AppContent() {
               >
                 <Text style={[styles.menuLinkText, { color: colors.primary }]}>{t.supportProject}</Text>
               </TouchableOpacity>
-            </View>
-
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-            {/* SUPPORT LINKS */}
-            <View style={[styles.menuSection, styles.menuSectionRow]}>
               <TouchableOpacity
                 style={styles.menuLinkFlex}
                 onPress={() => {
-                  Linking.openURL('https://ko-fi.com/devsven');
+                  setAboutVisible(true);
                   setMenuVisible(false);
                 }}
               >
-                <Text style={[styles.menuLinkText, { color: colors.primary }]}>{t.supportProject}</Text>
+                <Text style={[styles.menuLinkText, { color: colors.primary }]}>{t.about}</Text>
               </TouchableOpacity>
-            </View>
-
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-            {/* ABOUT Section */}
-            <View style={styles.menuSection}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.about}</Text>
-              <Text style={[styles.aboutInfoText, { color: colors.textSecondary }]}>{t.version} {APP_VERSION}</Text>
-              <Text style={[styles.aboutInfoText, { color: colors.textSecondary }]}>{t.appLicense}</Text>
             </View>
           </View>
         </>
