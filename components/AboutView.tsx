@@ -180,11 +180,7 @@ export function AboutView({
           </View>
 
           {/* Credits */}
-          <View style={[styles.section, { paddingBottom: 40 }]}>
-            <Text style={[styles.infoText, { color: colors.textSecondary, fontSize: 12, textAlign: 'center' }]}>
-              Made with ❤️ by Sven
-            </Text>
-          </View>
+          <View style={[styles.section, { paddingBottom: 40 }]}></View>
         </ScrollView>
       </View>
     </Modal>

@@ -31,9 +31,8 @@ type Language = 'en' | 'de';
 const translations = {
   en: {
     settings: 'Settings',
-    // App Settings Section
-    appSettings: 'APP SETTINGS',
     appearance: 'APPEARANCE',
+    light: 'Light',
     dark: 'Dark',
     system: 'System',
     language: 'LANGUAGE',
@@ -48,6 +47,7 @@ const translations = {
     repository: 'GitHub Repository',
     // Support Section
     supportSection: 'SUPPORT',
+    feedback: 'Send Feedback',
     supportProject: 'support me',
     rateApp: 'Rate on Play Store',
     reportBug: 'Report a Bug',
@@ -74,9 +74,8 @@ const translations = {
   },
   de: {
     settings: 'Einstellungen',
-    // App Settings Section
-    appSettings: 'APP-EINSTELLUNGEN',
     appearance: 'ERSCHEINUNGSBILD',
+    light: 'Hell',
     dark: 'Dunkel',
     system: 'System',
     language: 'SPRACHE',
@@ -91,6 +90,7 @@ const translations = {
     repository: 'GitHub Repository',
     // Support Section
     supportSection: 'UNTERSTÜTZUNG',
+    feedback: 'Feedback senden',
     supportProject: 'support me',
     rateApp: 'Im Play Store bewerten',
     reportBug: 'Fehler melden',
@@ -293,7 +293,7 @@ function AppContent() {
           style={styles.settingsHeaderButton}
           aria-label="Settings"
         >
-          <Text style={[styles.settingsHeaderButtonText, { color: colors.primary }]}>⋮</Text>
+          <Text style={[styles.settingsHeaderButtonText, { color: colors.text }]}>⋮</Text>
         </TouchableOpacity>
       </View>
 
@@ -310,17 +310,24 @@ function AppContent() {
             <View style={[styles.menuHeader, { borderBottomColor: colors.gridLine }]}>
               <Text style={[styles.menuTitle, { color: colors.text }]}>{t.settings}</Text>
               <TouchableOpacity onPress={() => setMenuVisible(false)}>
-                <Text style={[styles.closeButton, { color: colors.text }]}>×</Text>
+                <Text style={[styles.closeButton, { color: colors.text }]}>✕</Text>
               </TouchableOpacity>
             </View>
 
-            {/* APP SETTINGS */}
+            {/* APPEARANCE Section */}
             <View style={styles.menuSection}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.appSettings}</Text>
-
-              {/* Appearance */}
-              <Text style={[styles.settingLabel, { color: colors.text }]}>{t.appearance}</Text>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.appearance}</Text>
               <View style={styles.themeToggle}>
+                <TouchableOpacity
+                  style={[
+                    styles.themeButton,
+                    theme === 'light' && styles.themeButtonActive,
+                    { backgroundColor: theme === 'light' ? colors.primary : colors.gridLine }
+                  ]}
+                  onPress={() => setTheme('light')}
+                >
+                  <Text style={{ color: theme === 'light' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.light}</Text>
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={[
                     styles.themeButton,
@@ -342,9 +349,13 @@ function AppContent() {
                   <Text style={{ color: theme === 'system' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.system}</Text>
                 </TouchableOpacity>
               </View>
+            </View>
 
-              {/* Language */}
-              <Text style={[styles.settingLabel, { color: colors.text, marginTop: 12 }]}>{t.language}</Text>
+            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+            {/* LANGUAGE Section */}
+            <View style={styles.menuSection}>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.language}</Text>
               <View style={styles.themeToggle}>
                 <TouchableOpacity
                   style={[
@@ -371,18 +382,34 @@ function AppContent() {
 
             <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
-            {/* ABOUT BUTTON */}
-            <View style={styles.menuSection}>
+            {/* FEEDBACK, SUPPORT & ABOUT - Three Links in One Row */}
+            <View style={[styles.menuSection, styles.menuSectionRow]}>
               <TouchableOpacity
+                style={styles.menuLinkFlex}
+                onPress={() => {
+                  Linking.openURL('mailto:devsven@posteo.de?subject=Energy Price Germany Feedback');
+                  setMenuVisible(false);
+                }}
+              >
+                <Text style={[styles.menuLinkText, { color: colors.primary }]}>{t.feedback}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.menuLinkFlex}
+                onPress={() => {
+                  Linking.openURL('https://ko-fi.com/devsven');
+                  setMenuVisible(false);
+                }}
+              >
+                <Text style={[styles.menuLinkText, { color: colors.primary }]}>{t.supportProject}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.menuLinkFlex}
                 onPress={() => {
                   setAboutVisible(true);
                   setMenuVisible(false);
                 }}
-                style={[styles.aboutButton, { backgroundColor: colors.surface, borderColor: colors.gridLine }]}
               >
-                <Text style={[styles.aboutButtonText, { color: colors.primary }]}>
-                  ℹ️ {t.about}
-                </Text>
+                <Text style={[styles.menuLinkText, { color: colors.primary }]}>{t.about}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -674,6 +701,18 @@ const styles = StyleSheet.create({
   menuLink: {
     paddingVertical: 8,
   },
+  menuLinkFlex: {
+    flex: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.1)',
+  },
+  menuLinkText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
   aboutButton: {
     paddingVertical: 14,
     paddingHorizontal: 16,
@@ -684,6 +723,12 @@ const styles = StyleSheet.create({
   aboutButtonText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  aboutInfoText: {
+    fontSize: 13,
+    fontWeight: '400',
+    marginTop: 4,
+    lineHeight: 1.5,
   },
 });
 
