@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Dimensions } from 'react-native';
 
 export interface ChartDimensions {
@@ -12,6 +12,7 @@ export interface ChartDimensions {
   cardPadding: number;
   isPhone: boolean;
   isSmallScreen: boolean;
+  isLandscape: boolean;
   screenWidth: number;
   screenHeight: number;
 }
@@ -19,12 +20,27 @@ export interface ChartDimensions {
 /**
  * Berechnet responsive Chart-Dimensionen basierend auf Bildschirmgröße
  * Viewport-bewusst für optimale Darstellung auf allen Geräten
+ * Reagiert auf Orientation-Änderungen (Landscape/Portrait)
  */
 export function useChartDimensions(): ChartDimensions {
-  const screenWidth = useMemo(() => Dimensions.get('window').width, []);
-  const screenHeight = useMemo(() => Dimensions.get('window').height, []);
+  const [screenWidth, setScreenWidth] = useState(() => Dimensions.get('window').width);
+  const [screenHeight, setScreenHeight] = useState(() => Dimensions.get('window').height);
+
+  // Listen to dimension changes (orientation changes)
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', ({ window: windowDims }) => {
+      // platform-safe: Dimensions API is cross-platform
+      setScreenWidth(windowDims.width);
+      setScreenHeight(windowDims.height);
+    });
+
+    return () => {
+      subscription?.remove();
+    };
+  }, []);
   const isSmallScreen = screenWidth < 768;
   const isPhone = screenWidth < 480;
+  const isLandscape = screenWidth > screenHeight;
 
   // Responsive Padding-Werte
   const leftPadding = isPhone ? 35 : 45;
@@ -41,9 +57,20 @@ export function useChartDimensions(): ChartDimensions {
 
   // Höhe: Viewport-bewusst, sodass alle 3 Charts gut sichtbar sind
   const baseAspectRatio = 2.5;
-  const availableHeight = screenHeight - 200; // Header + Overhead
-  const maxChartHeight = availableHeight / 3.3; // 3 Charts + Gaps
-  const absoluteMaxHeight = isPhone ? 200 : isSmallScreen ? 280 : 320; // Absolute Obergrenze
+
+  // In Landscape-Mode: Charts sollten höher sein und besser nutzbar
+  const headerOverhead = isLandscape ? 120 : 200;
+  const availableHeight = screenHeight - headerOverhead;
+
+  // Bessere Aufteilung je nach Orientierung
+  const maxChartHeight = isLandscape
+    ? availableHeight * 0.9  // Landscape: Charts füllen mehr Höhe
+    : availableHeight / 3.3;  // Portrait: 3 Charts nebeneinander
+
+  const absoluteMaxHeight = isLandscape
+    ? isPhone ? 300 : 400  // Landscape: größere Max-Höhe
+    : isPhone ? 200 : isSmallScreen ? 280 : 320; // Portrait: original Werte
+
   const chartHeight = Math.round(Math.min(
     chartWidth / baseAspectRatio,
     maxChartHeight,
@@ -61,6 +88,7 @@ export function useChartDimensions(): ChartDimensions {
     cardPadding,
     isPhone,
     isSmallScreen,
+    isLandscape,
     screenWidth,
     screenHeight,
   };
