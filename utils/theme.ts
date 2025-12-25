@@ -87,7 +87,7 @@ export function getThemeColors(theme: Theme, systemTheme: 'light' | 'dark'): The
         // Light Mode - frische, moderne Farben
         background: colorScales.neutral[50],      // #FAFAFA
         surface: colorScales.neutral[100],        // #F5F5F5
-        surfaceSecondary: colorScales.neutral[200], // #EFEFEF
+        surfaceSecondary: colorScales.neutral[300], // #E5E5E5 (darker for better contrast)
         card: '#FFFFFF',                          // Weiß für Karten
 
         text: colorScales.neutral[900],           // #1A1A1A
