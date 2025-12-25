@@ -34,18 +34,18 @@ export function ChartDetailView({
     if (!metrics) return null;
 
     return (
-      <View style={[styles.metricsContainer, { backgroundColor: colors.surface }]}>
+      <View style={[styles.metricsContainer, { backgroundColor: colors.surfaceSecondary }]}>
         <Text style={[styles.metricsTitle, { color: colors.text }]}>
           {metrics.label}
         </Text>
-        
+
         {/* Current Value if available */}
         {metrics.current !== null && metrics.current !== undefined && (
-          <View style={[styles.currentValueContainer, { backgroundColor: colors.background }]}>
+          <View style={[styles.currentValueContainer, { backgroundColor: colors.surface }]}>
             <Text style={[styles.currentLabel, { color: colors.textSecondary }]}>
               Aktuell
             </Text>
-            <Text style={[styles.currentValue, { color: colors.text }]}>
+            <Text style={[styles.currentValue, { color: colors.primary }]}>
               {metrics.current.toFixed(chartType === 'renewable' ? 1 : 2)} {metrics.unit}
             </Text>
           </View>
