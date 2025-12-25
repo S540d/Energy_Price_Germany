@@ -1,45 +1,72 @@
+/* ============================================ */
+/* Modern Design System - Global Web Styles */
+/* ============================================ */
+
+/* CSS Variables for Design Tokens */
+:root {
+    /* Spacing Scale (8px grid) */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 24px;
+    --spacing-xxl: 32px;
+
+    /* Border Radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+
+    /* Typography */
+    --font-size-xs: 10px;
+    --font-size-sm: 12px;
+    --font-size-base: 14px;
+    --font-size-lg: 16px;
+    --font-size-xl: 18px;
+
+    /* Color Palette */
+    --color-blue-400: #60A5FA;
+    --color-blue-600: #2563EB;
+    --color-purple-400: #C084FC;
+    --color-green-400: #4ADE80;
+    --color-orange-400: #FB923C;
+    --color-red-400: #F87171;
+
+    /* Transitions */
+    --transition-fast: 100ms;
+    --transition-normal: 200ms;
+    --transition-slow: 300ms;
+}
+
+/* Dark Mode Overrides */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --color-bg: #0A0A0A;
+        --color-surface: #1A1A1A;
+        --color-text: #FAFAFA;
+        --color-text-secondary: #D0D0D0;
+    }
+}
+
+/* Light Mode Defaults */
+@media (prefers-color-scheme: light) {
+    :root {
+        --color-bg: #FAFAFA;
+        --color-surface: #F5F5F5;
+        --color-text: #1A1A1A;
+        --color-text-secondary: #666666;
+    }
+}
 
 /* ============================================ */
-/* Sync Status Indicator (Phase 4: Offline-Support) */
+/* Animations */
 /* ============================================ */
 
-.offline-indicator-content {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.offline-dot,
-.pending-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
-.offline-dot {
-    background-color: #f56565; /* red */
-    animation: pulse-red 2s ease-in-out infinite;
-}
-
-.pending-dot {
-    background-color: #ecc94b; /* yellow */
-    animation: pulse-yellow 2s ease-in-out infinite;
-}
-
-.syncing-spinner {
-    width: 14px;
-    height: 14px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    flex-shrink: 0;
-}
-
-.pending-count {
-    opacity: 0.8;
-    font-size: 0.9em;
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 @keyframes pulse-red {
@@ -60,8 +87,104 @@
     }
 }
 
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
+@keyframes fadeIn {
+    from {
+        opacity: 0;
     }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* ============================================ */
+/* Sync Status Indicator (Offline-Support) */
+/* ============================================ */
+
+.offline-indicator-content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+    transition: opacity var(--transition-normal);
+}
+
+.offline-dot,
+.pending-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: opacity var(--transition-normal);
+}
+
+.offline-dot {
+    background-color: var(--color-red-400);
+    animation: pulse-red 2s ease-in-out infinite;
+}
+
+.pending-dot {
+    background-color: var(--color-orange-400);
+    animation: pulse-yellow 2s ease-in-out infinite;
+}
+
+.syncing-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    flex-shrink: 0;
+}
+
+.pending-count {
+    opacity: 0.8;
+    font-weight: 500;
+    font-size: var(--font-size-sm);
+}
+
+/* ============================================ */
+/* Utility Classes */
+/* ============================================ */
+
+/* Text utilities */
+.text-xs { font-size: var(--font-size-xs); }
+.text-sm { font-size: var(--font-size-sm); }
+.text-base { font-size: var(--font-size-base); }
+.text-lg { font-size: var(--font-size-lg); }
+.text-xl { font-size: var(--font-size-xl); }
+
+/* Spacing utilities */
+.p-sm { padding: var(--spacing-sm); }
+.p-md { padding: var(--spacing-md); }
+.p-lg { padding: var(--spacing-lg); }
+
+.gap-sm { gap: var(--spacing-sm); }
+.gap-md { gap: var(--spacing-md); }
+.gap-lg { gap: var(--spacing-lg); }
+
+/* Modern micro-interactions */
+.interactive {
+    transition: all var(--transition-normal);
+    cursor: pointer;
+}
+
+.interactive:hover {
+    opacity: 0.8;
+}
+
+.interactive:active {
+    opacity: 0.9;
+    transform: scale(0.98);
 }
