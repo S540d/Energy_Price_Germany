@@ -93,37 +93,37 @@ export function ChartDetailView({
             style={[
               styles.toggleButton,
               !showMetrics && styles.toggleButtonActive,
-              { 
+              {
                 backgroundColor: !showMetrics ? colors.primary : colors.gridLine,
                 borderColor: colors.gridLine,
               }
             ]}
             onPress={() => setShowMetrics(false)}
           >
-            <Text style={{ 
-              color: !showMetrics ? '#fff' : colors.text, 
-              fontSize: 12, 
-              fontWeight: '600' 
+            <Text style={{
+              color: !showMetrics ? '#fff' : colors.text,
+              fontSize: 12,
+              fontWeight: '600'
             }}>
               Grafik
             </Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={[
               styles.toggleButton,
               showMetrics && styles.toggleButtonActive,
-              { 
+              {
                 backgroundColor: showMetrics ? colors.primary : colors.gridLine,
                 borderColor: colors.gridLine,
               }
             ]}
             onPress={() => setShowMetrics(true)}
           >
-            <Text style={{ 
-              color: showMetrics ? '#fff' : colors.text, 
-              fontSize: 12, 
-              fontWeight: '600' 
+            <Text style={{
+              color: showMetrics ? '#fff' : colors.text,
+              fontSize: 12,
+              fontWeight: '600'
             }}>
               Metrik
             </Text>
@@ -135,13 +135,9 @@ export function ChartDetailView({
       {showMetrics && metrics ? (
         renderMetricsView()
       ) : (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={true}
-          contentContainerStyle={{ flexGrow: 1 }}
-        >
+        <View style={styles.chartContainer}>
           {children}
-        </ScrollView>
+        </View>
       )}
     </View>
   );
@@ -160,13 +156,9 @@ export function ChartDetailView({
             </Text>
           </TouchableOpacity>
         </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={true}
-          contentContainerStyle={{ flexGrow: 1 }}
-        >
+        <View style={styles.chartContainer}>
           {children}
-        </ScrollView>
+        </View>
       </View>
 
       {/* Expanded detail modal */}
@@ -202,6 +194,11 @@ export function ChartDetailView({
 }
 
 const styles = StyleSheet.create({
+  chartContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   headerContainer: {
     position: 'absolute',
     top: 12,
