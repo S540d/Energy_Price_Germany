@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Fixed
+- **Issue #98: Immediate Loading Indicator** - Visual feedback before React hydration
+  - Added CSS spinner in HTML that appears immediately on page load
+  - MutationObserver detects React rendering and fades out the loading screen
+  - Fallback timeout (5s) hides loading even if React fails
+  - Users see instant visual feedback instead of blank screen
+
+- **Issue #100: Landscape Mode Chart Responsiveness** - Dynamic chart sizing
+  - Added Dimensions.addEventListener to react to orientation changes
+  - Charts now properly adapt to landscape vs portrait orientation
+  - Landscape mode: charts fill 90% of available height for better usability
+  - Portrait mode: 3 charts fit optimally without excessive scrolling
+
+- **Issue #101: Modern Design System** - Consistent, professional UI
+  - Created designSystem.ts with comprehensive design tokens
+  - 8px grid system for spacing (4px to 48px scale)
+  - Modern color palette with semantic colors and proper contrast
+  - Unified theme system supporting light/dark modes
+  - Updated style.css with CSS variables and utility classes
+  - All components now use consistent, accessible colors
+
+- **Metrics Display Contrast** - Fixed unreadable metrics values
+  - Light mode: surfaceSecondary changed from #EFEFEF to #E5E5E5 (darker background)
+  - Text labels now use colors.text (#1A1A1A) instead of textSecondary for better contrast
+  - Metric values use colors.primary (#2563EB in light, #60A5FA in dark) for vibrant, readable display
+  - WCAG AA contrast compliance for accessibility
+
 ### Added
 - **48h Renewable Forecast Utilization** - Game-changing improvement to data coverage
   - Energy Charts renewable forecast extends 48h (not just 24h like prices!)
