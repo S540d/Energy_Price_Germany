@@ -129,15 +129,22 @@ export function PriceBarChart({
         if (tooltipLeft < 0) tooltipLeft = 8;
         if (tooltipLeft + tooltipWidth > chartWidth) tooltipLeft = chartWidth - tooltipWidth - 8;
 
+        // Determine if we're in dark or light mode for tooltip text color
+        const isDarkMode = textColor === '#E8E8E8';
+        const tooltipTextColor = isDarkMode ? '#1A1A1A' : '#E8E8E8'; // Inverse of background
+        const tooltipLabelColor = isDarkMode ? '#4CAF50' : '#90EE90'; // Lighter green for dark background
+        const tooltipGridColor = isDarkMode ? '#757575' : '#B0B0B0'; // Lighter gray for dark background
+        const tooltipDividerColor = isDarkMode ? '#333333' : '#CCCCCC'; // Lighter divider for dark background
+
         return (
           <View style={{
             paddingVertical: 10,
             paddingHorizontal: 12,
             backgroundColor: Platform.OS === 'web'
-              ? (textColor === '#E8E8E8' ? 'rgba(26, 26, 26, 0.95)' : 'rgba(250, 250, 250, 0.95)')
+              ? (isDarkMode ? 'rgba(26, 26, 26, 0.95)' : 'rgba(250, 250, 250, 0.95)')
               : backgroundColor,
             borderWidth: Platform.OS === 'web' ? 0 : 1,
-            borderColor: textColor,
+            borderColor: isDarkMode ? '#555555' : '#CCCCCC',
             borderRadius: 10,
             position: 'absolute',
             top: cardPadding + 30,
@@ -155,20 +162,20 @@ export function PriceBarChart({
           }}>
             {/* Market Price */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-              <Text style={{ color: '#4CAF50', fontSize: 11 }}>
+              <Text style={{ color: tooltipLabelColor, fontSize: 11 }}>
                 Börsenpreis:
               </Text>
-              <Text style={{ color: textColor, fontSize: 11, fontWeight: '600' }}>
+              <Text style={{ color: tooltipTextColor, fontSize: 11, fontWeight: '600' }}>
                 {marketPriceCent.toFixed(2)} ¢
               </Text>
             </View>
 
             {/* Grid Fees */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-              <Text style={{ color: '#757575', fontSize: 11 }}>
+              <Text style={{ color: tooltipGridColor, fontSize: 11 }}>
                 + Netzentgelte:
               </Text>
-              <Text style={{ color: textColor, fontSize: 11, fontWeight: '600' }}>
+              <Text style={{ color: tooltipTextColor, fontSize: 11, fontWeight: '600' }}>
                 {GRID_FEES_AND_TAXES.toFixed(2)} ¢
               </Text>
             </View>
@@ -176,17 +183,17 @@ export function PriceBarChart({
             {/* Divider */}
             <View style={{
               height: 1,
-              backgroundColor: textColor,
+              backgroundColor: tooltipDividerColor,
               marginVertical: 6,
-              opacity: 0.3,
+              opacity: 0.5,
             }} />
 
             {/* Total Price */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{ color: textColor, fontSize: 12, fontWeight: '600' }}>
+              <Text style={{ color: tooltipTextColor, fontSize: 12, fontWeight: '600' }}>
                 Endkunde:
               </Text>
-              <Text style={{ color: textColor, fontSize: 12, fontWeight: '700' }}>
+              <Text style={{ color: tooltipTextColor, fontSize: 12, fontWeight: '700' }}>
                 {totalPrice.toFixed(2)} ¢
               </Text>
             </View>
