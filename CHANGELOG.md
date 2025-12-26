@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+---
+
+## [1.2.3] - 2025-12-26
+
+### Fixed
+- **Price Chart Legend Responsiveness** - Legend now hides on phone, shows on tablet/desktop
+  - Improved visual hierarchy and space usage across different screen sizes
+  - Better user experience on mobile devices
+
+- **Tooltip Text Contrast** - Enhanced readability of price information
+  - Fixed tooltip text contrast issues in price chart
+  - Users can now clearly read price values on all backgrounds
+
+### Changed
+- **Theme-Aware Chart Colors** - Consistent color system across all charts
+  - Applied centralized theme colors to all chart components
+  - PriceBarChart, RenewableBarChart, and CorrelationScatterChart now use unified color palette
+  - Improved visual consistency across the application
+  - Better dark/light mode support
+
+### Technical
+- Version bumped from 1.2.2 to 1.2.3
+- Android versionCode increased from 7 to 8
+- Build ready for Google Play Store distribution
+
+---
+
+## [Unreleased (Next Release)]
+
 ### Fixed
 - **Issue #98: Immediate Loading Indicator** - Visual feedback before React hydration
   - Added CSS spinner in HTML that appears immediately on page load
