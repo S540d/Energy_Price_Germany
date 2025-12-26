@@ -73,7 +73,10 @@ const translations = {
     interpolated: 'Interpolated',
     // Legend Section
     legend: 'LEGEND',
-    legendExplanation: 'End-customer price = Market price + ~20 ¢/kWh (Grid fees & taxes)',
+    legendExplanationPrefix: 'End-customer price = Market price +',
+    legendExplanationSuffix: '¢/kWh (Grid fees & taxes)',
+    marketPriceLabel: 'Market Price',
+    gridFeesLabel: 'Grid Fees & Taxes',
   },
   de: {
     settings: 'Einstellungen',
@@ -119,7 +122,10 @@ const translations = {
     interpolated: 'Interpoliert',
     // Legend Section
     legend: 'LEGENDE',
-    legendExplanation: 'Endkundenstrompreis = Börsenstrompreis + ca. 20 ¢/kWh (Netzentgelte & Steuern)',
+    legendExplanationPrefix: 'Endkundenstrompreis = Börsenstrompreis +',
+    legendExplanationSuffix: '¢/kWh (Netzentgelte & Steuern)',
+    marketPriceLabel: 'Börsenstrompreis',
+    gridFeesLabel: 'Netzentgelte & Steuern',
   },
 };
 
@@ -391,21 +397,55 @@ function AppContent() {
             {/* LEGEND Section */}
             <View style={{ paddingHorizontal: 20, paddingVertical: 12 }}>
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.legend}</Text>
+
+              {/* Price Legend - Visual chart elements */}
               <View style={{
                 marginTop: 8,
                 padding: 12,
                 backgroundColor: colors.surface,
                 borderRadius: 8,
-                borderLeftWidth: 3,
-                borderLeftColor: colors.primary
+                gap: 10
               }}>
-                <Text style={[{
-                  color: colors.text,
-                  fontSize: 14,
-                  lineHeight: 20
-                }]}>
-                  {t.legendExplanation}
-                </Text>
+                {/* Price Breakdown Explanation */}
+                <View>
+                  <Text style={[{
+                    color: colors.text,
+                    fontSize: 13,
+                    fontWeight: '600',
+                    marginBottom: 8
+                  }]}>
+                    {t.legendExplanationPrefix} {GRID_FEES_AND_TAXES} {t.legendExplanationSuffix}
+                  </Text>
+                </View>
+
+                {/* Visual Legend - Chart Elements */}
+                <View style={{ gap: 6 }}>
+                  {/* Market Price */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={{
+                      width: 16,
+                      height: 16,
+                      backgroundColor: '#4CAF50',
+                      borderRadius: 2
+                    }} />
+                    <Text style={{ color: colors.text, fontSize: 12 }}>
+                      {t.marketPriceLabel}
+                    </Text>
+                  </View>
+
+                  {/* Grid Fees */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={{
+                      width: 16,
+                      height: 16,
+                      backgroundColor: '#757575',
+                      borderRadius: 2
+                    }} />
+                    <Text style={{ color: colors.text, fontSize: 12 }}>
+                      {t.gridFeesLabel} ({GRID_FEES_AND_TAXES} ¢/kWh)
+                    </Text>
+                  </View>
+                </View>
               </View>
             </View>
 

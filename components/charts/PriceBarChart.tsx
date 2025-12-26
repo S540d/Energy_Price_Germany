@@ -207,22 +207,28 @@ export function PriceBarChart({
             </Text>
           )}
         </View>
-        {!isPhone && (
-          <View style={{ flexDirection: 'row', gap: 8, paddingRight: 10 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-              <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50' }} />
-              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.marketPrice}</Text>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-              <View style={{ width: 12, height: 12, backgroundColor: '#757575' }} />
-              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.gridFeesAndTaxes}</Text>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-              <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50', opacity: 0.4 }} />
-              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.interpolated}</Text>
-            </View>
+        {/* Legend - visible on all platforms */}
+        <View style={{
+          flexDirection: isPhone ? 'column' : 'row',
+          gap: isPhone ? 6 : 12,
+          paddingRight: isPhone ? 0 : 10,
+          paddingTop: isPhone ? 8 : 0
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50' }} />
+            <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.marketPrice}</Text>
           </View>
-        )}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={{ width: 12, height: 12, backgroundColor: '#757575' }} />
+            <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>
+              {labels.gridFeesAndTaxes} ({GRID_FEES_AND_TAXES} ¢/kWh)
+            </Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50', opacity: 0.4 }} />
+            <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.interpolated}</Text>
+          </View>
+        </View>
       </View>
       <View style={{ height: chartHeight, width: chartWidth, position: 'relative' }}>
         {/* Grid Lines - Modern gestrichelt */}
