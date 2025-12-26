@@ -71,6 +71,9 @@ const translations = {
     marketPrice: 'Market Price',
     gridFeesAndTaxes: 'Grid Fees & Taxes',
     interpolated: 'Interpolated',
+    // Legend Section
+    legend: 'LEGEND',
+    legendExplanation: 'End-customer price = Market price + ~20 ¢/kWh (Grid fees & taxes)',
   },
   de: {
     settings: 'Einstellungen',
@@ -114,6 +117,9 @@ const translations = {
     marketPrice: 'Börsenstrompreis',
     gridFeesAndTaxes: 'Netzentgelte & Steuern',
     interpolated: 'Interpoliert',
+    // Legend Section
+    legend: 'LEGENDE',
+    legendExplanation: 'Endkundenstrompreis = Börsenstrompreis + ca. 20 ¢/kWh (Netzentgelte & Steuern)',
   },
 };
 
@@ -382,6 +388,29 @@ function AppContent() {
 
             <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
+            {/* LEGEND Section */}
+            <View style={{ paddingHorizontal: 20, paddingVertical: 12 }}>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.legend}</Text>
+              <View style={{
+                marginTop: 8,
+                padding: 12,
+                backgroundColor: colors.surface,
+                borderRadius: 8,
+                borderLeftWidth: 3,
+                borderLeftColor: colors.primary
+              }}>
+                <Text style={[{
+                  color: colors.text,
+                  fontSize: 14,
+                  lineHeight: 20
+                }]}>
+                  {t.legendExplanation}
+                </Text>
+              </View>
+            </View>
+
+            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
             {/* FEEDBACK, SUPPORT & ABOUT - Three Links in One Row */}
             <View style={[styles.menuSection, styles.menuSectionRow]}>
               <TouchableOpacity
@@ -457,10 +486,20 @@ function AppContent() {
               colors={colors}
               chartType="price"
               metrics={metrics ? {
-                min: metrics.marketPrice.min,
-                max: metrics.marketPrice.max,
-                avg: metrics.marketPrice.avg,
-                current: metrics.today?.marketPrice.current,
+                marketPrice: {
+                  min: metrics.marketPrice.min,
+                  max: metrics.marketPrice.max,
+                  avg: metrics.marketPrice.avg,
+                  current: metrics.today?.marketPrice.current,
+                },
+                endCustomerPrice: {
+                  min: metrics.marketPrice.min + GRID_FEES_AND_TAXES,
+                  max: metrics.marketPrice.max + GRID_FEES_AND_TAXES,
+                  avg: metrics.marketPrice.avg + GRID_FEES_AND_TAXES,
+                  current: metrics.today?.marketPrice.current
+                    ? metrics.today.marketPrice.current + GRID_FEES_AND_TAXES
+                    : undefined,
+                },
                 unit: '¢',
                 label: t.pricePerKwh,
               } : undefined}

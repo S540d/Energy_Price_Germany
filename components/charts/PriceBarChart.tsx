@@ -131,7 +131,7 @@ export function PriceBarChart({
 
         return (
           <View style={{
-            paddingVertical: 6,
+            paddingVertical: 10,
             paddingHorizontal: 12,
             backgroundColor: Platform.OS === 'web'
               ? (textColor === '#E8E8E8' ? 'rgba(26, 26, 26, 0.95)' : 'rgba(250, 250, 250, 0.95)')
@@ -143,6 +143,7 @@ export function PriceBarChart({
             top: cardPadding + 30,
             left: tooltipLeft,
             zIndex: 10,
+            minWidth: 180,
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 8 },
             shadowOpacity: 0.2,
@@ -152,9 +153,43 @@ export function PriceBarChart({
               backdropFilter: 'blur(10px)',
             }),
           }}>
-            <Text style={{ color: textColor, fontSize: 14, fontWeight: 'bold' }}>
-              {totalPrice.toFixed(2)} ¢/kWh
-            </Text>
+            {/* Market Price */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+              <Text style={{ color: '#4CAF50', fontSize: 11 }}>
+                Börsenpreis:
+              </Text>
+              <Text style={{ color: textColor, fontSize: 11, fontWeight: '600' }}>
+                {marketPriceCent.toFixed(2)} ¢
+              </Text>
+            </View>
+
+            {/* Grid Fees */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+              <Text style={{ color: '#757575', fontSize: 11 }}>
+                + Netzentgelte:
+              </Text>
+              <Text style={{ color: textColor, fontSize: 11, fontWeight: '600' }}>
+                {GRID_FEES_AND_TAXES.toFixed(2)} ¢
+              </Text>
+            </View>
+
+            {/* Divider */}
+            <View style={{
+              height: 1,
+              backgroundColor: textColor,
+              marginVertical: 6,
+              opacity: 0.3,
+            }} />
+
+            {/* Total Price */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Text style={{ color: textColor, fontSize: 12, fontWeight: '600' }}>
+                Endkunde:
+              </Text>
+              <Text style={{ color: textColor, fontSize: 12, fontWeight: '700' }}>
+                {totalPrice.toFixed(2)} ¢
+              </Text>
+            </View>
           </View>
         );
       })()}
