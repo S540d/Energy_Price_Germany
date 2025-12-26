@@ -551,6 +551,7 @@ function AppContent() {
                 backgroundColor={colors.surface}
                 textColor={colors.text}
                 gridColor={colors.gridLine}
+                colors={colors}
                 labels={{
                   yAxis: t.pricePerKwh,
                   now: t.now,
