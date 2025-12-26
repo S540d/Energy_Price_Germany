@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, ScrollView, StyleSheet } from 'react-native';
 import { ThemeColors } from '../utils/theme';
-import { Metrics } from '../utils/metrics';
+import { Metrics, GRID_FEES_AND_TAXES } from '../utils/metrics';
 
 type MetricsData =
   | {
@@ -179,7 +179,7 @@ export function ChartDetailView({
               marginTop: 8,
               fontStyle: 'italic'
             }]}>
-              💡 +20 ¢/kWh Netzentgelte & Steuern
+              💡 +{GRID_FEES_AND_TAXES} ¢/kWh Netzentgelte & Steuern
             </Text>
           </View>
         </View>
