@@ -513,6 +513,7 @@ function AppContent() {
                 backgroundColor={colors.surface}
                 textColor={colors.text}
                 gridColor={colors.gridLine}
+                colors={colors}
                 labels={{
                   yAxis: t.renewablePercent,
                   now: t.now,
@@ -576,6 +577,7 @@ function AppContent() {
                 backgroundColor={colors.surface}
                 textColor={colors.text}
                 gridColor={colors.gridLine}
+                colors={colors}
                 labels={{
                   yAxisPrice: t.pricePerKwh,
                   xAxisRenewables: t.renewablePercent,

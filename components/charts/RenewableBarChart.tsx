@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Platform } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
+import { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 import { useChartDimensions } from '../../utils/chartUtils';
 
@@ -16,6 +17,7 @@ interface RenewableBarChartProps {
   backgroundColor: string;
   textColor: string;
   gridColor: string;
+  colors: ThemeColors;
   labels: {
     yAxis: string;
     now: string;
@@ -31,6 +33,7 @@ export function RenewableBarChart({
   backgroundColor,
   textColor,
   gridColor,
+  colors,
   labels,
   interactionHint,
 }: RenewableBarChartProps) {
@@ -129,15 +132,16 @@ export function RenewableBarChart({
         if (tooltipLeft < 0) tooltipLeft = 8;
         if (tooltipLeft + tooltipWidth > chartWidth) tooltipLeft = chartWidth - tooltipWidth - 8;
 
+        // Use theme colors for proper contrast
+        const tooltipBgColor = backgroundColor === colors.surface ? colors.background : colors.surface;
+
         return (
           <View style={{
             paddingVertical: 6,
             paddingHorizontal: 12,
-            backgroundColor: Platform.OS === 'web'
-              ? (textColor === '#E8E8E8' ? 'rgba(26, 26, 26, 0.95)' : 'rgba(250, 250, 250, 0.95)')
-              : backgroundColor,
-            borderWidth: Platform.OS === 'web' ? 0 : 1,
-            borderColor: textColor,
+            backgroundColor: tooltipBgColor,
+            borderWidth: 1,
+            borderColor: colors.gridLine,
             borderRadius: 10,
             position: 'absolute',
             top: cardPadding + 30,
@@ -152,7 +156,7 @@ export function RenewableBarChart({
               backdropFilter: 'blur(10px)',
             }),
           }}>
-            <Text style={{ color: textColor, fontSize: 14, fontWeight: 'bold' }}>
+            <Text style={{ color: colors.text, fontSize: 14, fontWeight: 'bold' }}>
               {renewablePercent.toFixed(1)}%
             </Text>
           </View>
