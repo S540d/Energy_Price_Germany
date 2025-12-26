@@ -33,6 +33,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Metric values use colors.primary (#2563EB in light, #60A5FA in dark) for vibrant, readable display
   - WCAG AA contrast compliance for accessibility
 
+- **Issue #105: Missing Details Button on Android** - Fixed invisible button
+  - Increased Details button z-index from 10 to 100
+  - Resolves z-index conflict with chart touch areas
+  - Button now clickable on all platforms (web, Android, iOS)
+
+### Added
+- **Issue #104: Legend Section in Settings Menu** - Educational price breakdown
+  - New LEGEND section in settings explaining end-customer price calculation
+  - Shows visual elements matching chart colors (green market price, gray grid fees)
+  - Dynamic display using centralized GRID_FEES_AND_TAXES constant (20 ¢/kWh)
+  - Visible on all platforms (mobile, tablet, desktop)
+  - Translations: English and German with localized descriptions
+
+- **Issue #106: Dual Price Display in Metrics** - Complete price transparency
+  - Metrics modal now shows both prices when viewing price chart details:
+    - **End-customer price** (top, primary) - what consumers actually pay
+    - **Market price** (bottom, secondary) - wholesale electricity price
+    - Visual separation with divider and informative note
+  - Enhanced tooltip on bar hover showing price breakdown:
+    - Börsenpreis (market price)
+    - + Netzentgelte (grid fees: 20 ¢/kWh)
+    - = Endkunde (total customer price)
+  - Price legend now visible on all platforms
+    - Desktop: horizontal layout
+    - Mobile: vertical layout with full descriptions
+
+- **Enhanced Price Chart Legend** - Improved visibility and information
+  - Legend elements now visible on mobile (was desktop-only before)
+  - Shows all components with color-coded boxes:
+    - Green box: Market Price (Börsenstrompreis)
+    - Gray box: Grid Fees & Taxes (20 ¢/kWh)
+    - Faded green: Interpolated data indicator
+  - Grid fees amount displayed inline: "(20 ¢/kWh)"
+
+- **Centralized Grid Fees Constant** - Single source of truth for markup
+  - All price references now use `GRID_FEES_AND_TAXES` from `utils/metrics.ts`
+  - Eliminates hardcoded "20" values throughout codebase
+  - Easy to update: change constant in one place affects entire app
+  - Applied to: Settings legend, metrics display, price tooltips, chart legend
+  - Currently set to 20 ¢/kWh (represents grid fees and taxes)
+
 ### Added
 - **48h Renewable Forecast Utilization** - Game-changing improvement to data coverage
   - Energy Charts renewable forecast extends 48h (not just 24h like prices!)
