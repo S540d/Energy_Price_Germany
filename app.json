@@ -2,7 +2,7 @@
   "expo": {
     "name": "Energy Prices Germany",
     "slug": "Energy_Price_Germany",
-    "version": "1.2.2",
+    "version": "1.2.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -36,7 +36,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.sven4321.energypricegermany",
-      "versionCode": 7,
+      "versionCode": 8,
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE",
