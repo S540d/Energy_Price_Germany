@@ -3,18 +3,39 @@ import { View, Text, TouchableOpacity, Modal, ScrollView, StyleSheet } from 'rea
 import { ThemeColors } from '../utils/theme';
 import { Metrics } from '../utils/metrics';
 
+type MetricsData =
+  | {
+      // For renewable chart (single value)
+      min: number;
+      max: number;
+      avg: number;
+      current?: number | null;
+      unit: string;
+      label: string;
+    }
+  | {
+      // For price chart (dual values)
+      marketPrice: {
+        min: number;
+        max: number;
+        avg: number;
+        current?: number | null;
+      };
+      endCustomerPrice: {
+        min: number;
+        max: number;
+        avg: number;
+        current?: number | null;
+      };
+      unit: string;
+      label: string;
+    };
+
 interface ChartDetailViewProps {
   children: React.ReactNode;
   title: string;
   colors: ThemeColors;
-  metrics?: {
-    min: number;
-    max: number;
-    avg: number;
-    current?: number | null;
-    unit: string;
-    label: string;
-  };
+  metrics?: MetricsData;
   chartType: 'renewable' | 'price' | 'correlation';
   onToggleView?: () => void;
 }
@@ -33,6 +54,139 @@ export function ChartDetailView({
   const renderMetricsView = () => {
     if (!metrics) return null;
 
+    // Check if this is price chart (has marketPrice/endCustomerPrice)
+    const isPriceChart = 'marketPrice' in metrics && 'endCustomerPrice' in metrics;
+
+    if (isPriceChart) {
+      // Render BOTH prices for price chart
+      return (
+        <View style={[styles.metricsContainer, { backgroundColor: colors.surfaceSecondary }]}>
+          <Text style={[styles.metricsTitle, { color: colors.text }]}>
+            {metrics.label}
+          </Text>
+
+          {/* END-CUSTOMER PRICE (Top, Primary) */}
+          <View style={{ marginTop: 12 }}>
+            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+              Endkundenstrompreis
+            </Text>
+
+            {/* Current End-Customer Price */}
+            {metrics.endCustomerPrice.current !== null &&
+             metrics.endCustomerPrice.current !== undefined && (
+              <View style={[styles.currentValueContainer, {
+                backgroundColor: colors.surface,
+                borderLeftWidth: 3,
+                borderLeftColor: colors.primary
+              }]}>
+                <Text style={[styles.currentLabel, { color: colors.text }]}>
+                  Aktuell
+                </Text>
+                <Text style={[styles.currentValue, { color: colors.primary }]}>
+                  {metrics.endCustomerPrice.current.toFixed(2)} {metrics.unit}
+                </Text>
+              </View>
+            )}
+
+            {/* Min/Max/Avg End-Customer Price */}
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <Text style={[styles.statLabel, { color: colors.text }]}>
+                  Minimum
+                </Text>
+                <Text style={[styles.statValue, { color: colors.primary }]}>
+                  {metrics.endCustomerPrice.min.toFixed(2)} {metrics.unit}
+                </Text>
+              </View>
+
+              <View style={styles.statItem}>
+                <Text style={[styles.statLabel, { color: colors.text }]}>
+                  Durchschnitt
+                </Text>
+                <Text style={[styles.statValue, { color: colors.primary }]}>
+                  {metrics.endCustomerPrice.avg.toFixed(2)} {metrics.unit}
+                </Text>
+              </View>
+
+              <View style={styles.statItem}>
+                <Text style={[styles.statLabel, { color: colors.text }]}>
+                  Maximum
+                </Text>
+                <Text style={[styles.statValue, { color: colors.primary }]}>
+                  {metrics.endCustomerPrice.max.toFixed(2)} {metrics.unit}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* MARKET PRICE (Bottom, Secondary) */}
+          <View style={{ marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.gridLine }}>
+            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+              Börsenstrompreis
+            </Text>
+
+            {/* Current Market Price */}
+            {metrics.marketPrice.current !== null &&
+             metrics.marketPrice.current !== undefined && (
+              <View style={[styles.currentValueContainer, {
+                backgroundColor: colors.surface,
+                borderLeftWidth: 3,
+                borderLeftColor: '#4CAF50'
+              }]}>
+                <Text style={[styles.currentLabel, { color: colors.text }]}>
+                  Aktuell
+                </Text>
+                <Text style={[styles.currentValue, { color: '#4CAF50' }]}>
+                  {metrics.marketPrice.current.toFixed(2)} {metrics.unit}
+                </Text>
+              </View>
+            )}
+
+            {/* Min/Max/Avg Market Price */}
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <Text style={[styles.statLabel, { color: colors.text }]}>
+                  Minimum
+                </Text>
+                <Text style={[styles.statValue, { color: '#4CAF50' }]}>
+                  {metrics.marketPrice.min.toFixed(2)} {metrics.unit}
+                </Text>
+              </View>
+
+              <View style={styles.statItem}>
+                <Text style={[styles.statLabel, { color: colors.text }]}>
+                  Durchschnitt
+                </Text>
+                <Text style={[styles.statValue, { color: '#4CAF50' }]}>
+                  {metrics.marketPrice.avg.toFixed(2)} {metrics.unit}
+                </Text>
+              </View>
+
+              <View style={styles.statItem}>
+                <Text style={[styles.statLabel, { color: colors.text }]}>
+                  Maximum
+                </Text>
+                <Text style={[styles.statValue, { color: '#4CAF50' }]}>
+                  {metrics.marketPrice.max.toFixed(2)} {metrics.unit}
+                </Text>
+              </View>
+            </View>
+
+            {/* Info note */}
+            <Text style={[{
+              color: colors.textSecondary,
+              fontSize: 12,
+              marginTop: 8,
+              fontStyle: 'italic'
+            }]}>
+              💡 +20 ¢/kWh Netzentgelte & Steuern
+            </Text>
+          </View>
+        </View>
+      );
+    }
+
+    // Existing single-value rendering for renewable chart
     return (
       <View style={[styles.metricsContainer, { backgroundColor: colors.surfaceSecondary }]}>
         <Text style={[styles.metricsTitle, { color: colors.text }]}>
@@ -203,7 +357,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     right: 12,
-    zIndex: 10,
+    zIndex: 100,
   },
   expandButton: {
     paddingHorizontal: 12,
@@ -312,5 +466,12 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });
