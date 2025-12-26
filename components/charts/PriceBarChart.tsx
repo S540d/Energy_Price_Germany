@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Platform } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
+import { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 import { GRID_FEES_AND_TAXES } from '../../utils/metrics';
 import { useChartDimensions } from '../../utils/chartUtils';
@@ -17,6 +18,7 @@ interface PriceBarChartProps {
   backgroundColor: string;
   textColor: string;
   gridColor: string;
+  colors: ThemeColors;
   labels: {
     yAxis: string;
     now: string;
@@ -35,6 +37,7 @@ export function PriceBarChart({
   backgroundColor,
   textColor,
   gridColor,
+  colors,
   labels,
   interactionHint,
 }: PriceBarChartProps) {
@@ -129,22 +132,18 @@ export function PriceBarChart({
         if (tooltipLeft < 0) tooltipLeft = 8;
         if (tooltipLeft + tooltipWidth > chartWidth) tooltipLeft = chartWidth - tooltipWidth - 8;
 
-        // Determine if we're in dark or light mode for tooltip text color
-        const isDarkMode = textColor === '#E8E8E8';
-        const tooltipTextColor = isDarkMode ? '#1A1A1A' : '#E8E8E8'; // Inverse of background
-        const tooltipLabelColor = isDarkMode ? '#4CAF50' : '#90EE90'; // Lighter green for dark background
-        const tooltipGridColor = isDarkMode ? '#757575' : '#B0B0B0'; // Lighter gray for dark background
-        const tooltipDividerColor = isDarkMode ? '#333333' : '#CCCCCC'; // Lighter divider for dark background
+        // Use theme colors for proper contrast (theme-aware, not hardcoded)
+        // Tooltip background should be inverted to main background
+        const tooltipBgColor = backgroundColor === colors.surface ? colors.background : colors.surface;
+        const tooltipTextColor = tooltipBgColor === colors.surface ? colors.text : colors.background === colors.background ? colors.text : colors.text;
 
         return (
           <View style={{
             paddingVertical: 10,
             paddingHorizontal: 12,
-            backgroundColor: Platform.OS === 'web'
-              ? (isDarkMode ? 'rgba(26, 26, 26, 0.95)' : 'rgba(250, 250, 250, 0.95)')
-              : backgroundColor,
-            borderWidth: Platform.OS === 'web' ? 0 : 1,
-            borderColor: isDarkMode ? '#555555' : '#CCCCCC',
+            backgroundColor: tooltipBgColor,
+            borderWidth: 1,
+            borderColor: colors.gridLine,
             borderRadius: 10,
             position: 'absolute',
             top: cardPadding + 30,
@@ -162,20 +161,20 @@ export function PriceBarChart({
           }}>
             {/* Market Price */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-              <Text style={{ color: tooltipLabelColor, fontSize: 11 }}>
+              <Text style={{ color: '#4CAF50', fontSize: 11 }}>
                 Börsenpreis:
               </Text>
-              <Text style={{ color: tooltipTextColor, fontSize: 11, fontWeight: '600' }}>
+              <Text style={{ color: colors.text, fontSize: 11, fontWeight: '600' }}>
                 {marketPriceCent.toFixed(2)} ¢
               </Text>
             </View>
 
             {/* Grid Fees */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-              <Text style={{ color: tooltipGridColor, fontSize: 11 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 11 }}>
                 + Netzentgelte:
               </Text>
-              <Text style={{ color: tooltipTextColor, fontSize: 11, fontWeight: '600' }}>
+              <Text style={{ color: colors.text, fontSize: 11, fontWeight: '600' }}>
                 {GRID_FEES_AND_TAXES.toFixed(2)} ¢
               </Text>
             </View>
@@ -183,17 +182,17 @@ export function PriceBarChart({
             {/* Divider */}
             <View style={{
               height: 1,
-              backgroundColor: tooltipDividerColor,
+              backgroundColor: colors.gridLine,
               marginVertical: 6,
               opacity: 0.5,
             }} />
 
             {/* Total Price */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{ color: tooltipTextColor, fontSize: 12, fontWeight: '600' }}>
+              <Text style={{ color: colors.text, fontSize: 12, fontWeight: '600' }}>
                 Endkunde:
               </Text>
-              <Text style={{ color: tooltipTextColor, fontSize: 12, fontWeight: '700' }}>
+              <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>
                 {totalPrice.toFixed(2)} ¢
               </Text>
             </View>
