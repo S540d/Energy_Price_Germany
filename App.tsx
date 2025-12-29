@@ -24,7 +24,7 @@ import { calculateMetrics, EnergyData, GRID_FEES_AND_TAXES } from './utils/metri
 import { getThemeColors, Theme } from './utils/theme';
 import { logger } from './utils/logger';
 
-const APP_VERSION = '1.2.2';
+const APP_VERSION = '1.2.3';
 
 type Language = 'en' | 'de';
 
