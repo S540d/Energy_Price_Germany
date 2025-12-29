@@ -62,10 +62,9 @@ export function RenewableBarChart({
   // Only use entries with valid renewableShare for rendering bars and calculations
   const validData = data.filter(d => d.renewableShare !== null);
   const values = validData.map(d => d.renewableShare!);
-  const dataMax = Math.max(...values);
   const min = 0; // Immer bei 0 starten
-  // Y-Achse: Minimum 0-100%, aber erweitere wenn Werte >100%
-  const max = dataMax > 100 ? dataMax : 100;
+  // Y-Achse: Fest auf 0-100% fixiert, um Sprünge bei Mitternacht zu vermeiden
+  const max = 100;
   const range = max - min;
 
   // Durchschnittswert berechnen
