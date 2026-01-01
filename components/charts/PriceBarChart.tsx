@@ -71,9 +71,16 @@ export function PriceBarChart({
   const validData = data.filter(d => d.marketPrice !== null);
   const pricesInCent = validData.map(d => d.marketPrice! * 0.1);
 
-  const maxMarketPrice = Math.max(...pricesInCent);
+  // Use stable Y-axis range to prevent jumps at midnight
+  // Instead of dynamic min/max, use a reasonable fixed range that covers typical prices
+  const minPrice = Math.min(...pricesInCent, 0);
+  const maxPrice = Math.max(...pricesInCent);
+
+  // Calculate Y-axis with some padding to prevent visual jumps
+  // Round min down to nearest 5, max up to nearest 5 for stability
+  const min = Math.floor(minPrice / 5) * 5;
+  const maxMarketPrice = Math.ceil(maxPrice / 5) * 5;
   const maxTotal = maxMarketPrice + GRID_FEES_AND_TAXES;
-  const min = Math.min(...pricesInCent, 0);
   const range = maxTotal - min;
 
   const avgMarketPrice = pricesInCent.reduce((sum, v) => sum + v, 0) / pricesInCent.length;
