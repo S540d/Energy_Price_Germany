@@ -25,6 +25,23 @@ interface MarketDataResponse {
 }
 
 /**
+ * Regional Data API Response Type
+ * Response from Energy Charts Signal API
+ */
+interface RegionalDataResponse {
+  unix_seconds: number[];  // Timestamps in seconds since epoch
+  share: number[];         // Renewable energy share percentages
+}
+
+/**
+ * Regional Data Cache Entry
+ */
+interface RegionalCacheEntry {
+  data: RegionalDataResponse;
+  timestamp: number;
+}
+
+/**
  * Cache-Konfiguration
  */
 interface CacheConfig {
@@ -45,7 +62,7 @@ export class EnergyDataManager {
   private loadingPromise: Promise<EnergyData[]> | null = null;
   
   // Regional data cache
-  private regionalCache: Map<string, { data: any; timestamp: number }> = new Map();
+  private regionalCache: Map<string, RegionalCacheEntry> = new Map();
   private readonly regionalCacheDuration = 15 * 60 * 1000; // 15 minutes
 
   // Cache-Konfiguration
@@ -84,8 +101,9 @@ export class EnergyDataManager {
 
   /**
    * Fetches regional renewable data from Energy Charts Signal API
+   * @returns Regional data or null if fetch fails
    */
-  private async fetchRegionalData(postalCode: string): Promise<any> {
+  private async fetchRegionalData(postalCode: string): Promise<RegionalDataResponse | null> {
     try {
       // Check regional cache first
       const cached = this.regionalCache.get(postalCode);
@@ -102,7 +120,7 @@ export class EnergyDataManager {
         throw new Error(`Regional API HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data: RegionalDataResponse = await response.json();
       logger.debug(`Regional data fetched successfully for PLZ ${postalCode}`);
       
       // Cache the regional data
@@ -124,7 +142,7 @@ export class EnergyDataManager {
    * - We convert by multiplying by 1000 to ensure proper timestamp matching
    * - This allows O(1) lookups when merging data by timestamp
    */
-  private mergeRegionalData(nationalData: EnergyData[], regionalData: any): EnergyData[] {
+  private mergeRegionalData(nationalData: EnergyData[], regionalData: RegionalDataResponse | null): EnergyData[] {
     if (!regionalData || !regionalData.unix_seconds || !regionalData.share) {
       return nationalData;
     }

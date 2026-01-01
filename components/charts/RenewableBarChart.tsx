@@ -5,6 +5,12 @@ import { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 import { useChartDimensions } from '../../utils/chartUtils';
 
+/**
+ * Type alias for renewable share data keys in EnergyData
+ * This ensures type safety when extending with new renewable data fields
+ */
+type RenewableDataKey = 'renewableShare' | 'renewableShareRegional';
+
 interface RenewableBarChartProps {
   title: string;
   subtitle?: string;
@@ -25,7 +31,7 @@ interface RenewableBarChartProps {
     average: string;
   };
   interactionHint?: string;
-  dataKey?: 'renewableShare' | 'renewableShareRegional';
+  dataKey?: RenewableDataKey;
 }
 
 export function RenewableBarChart({

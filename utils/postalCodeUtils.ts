@@ -5,10 +5,14 @@
 /**
  * Validates if a postal code is valid for API calls
  * @param postalCode - The postal code to validate
- * @returns true if the postal code is exactly 5 digits
+ * @returns true if the postal code is exactly 5 numeric digits
  */
 export function isValidPostalCode(postalCode: string | undefined): boolean {
-  return typeof postalCode === 'string' && postalCode.length === 5;
+  if (typeof postalCode !== 'string') {
+    return false;
+  }
+  // Must be exactly 5 numeric digits
+  return /^[0-9]{5}$/.test(postalCode);
 }
 
 /**
