@@ -12,6 +12,7 @@ interface RenewableBarChartProps {
     timestamp: number;
     marketPrice: number | null;
     renewableShare: number | null;
+    renewableShareRegional?: number | null;
     isRenewableShareInterpolated?: boolean;
   }>;
   backgroundColor: string;
@@ -24,6 +25,7 @@ interface RenewableBarChartProps {
     average: string;
   };
   interactionHint?: string;
+  dataKey?: 'renewableShare' | 'renewableShareRegional';
 }
 
 export function RenewableBarChart({
@@ -36,6 +38,7 @@ export function RenewableBarChart({
   colors,
   labels,
   interactionHint,
+  dataKey = 'renewableShare',
 }: RenewableBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -59,9 +62,9 @@ export function RenewableBarChart({
   const maxTime = Math.max(...timestamps);
   const timeRange = maxTime - minTime;
 
-  // Only use entries with valid renewableShare for rendering bars and calculations
-  const validData = data.filter(d => d.renewableShare !== null);
-  const values = validData.map(d => d.renewableShare!);
+  // Only use entries with valid data for the selected key
+  const validData = data.filter(d => d[dataKey] !== null && d[dataKey] !== undefined);
+  const values = validData.map(d => d[dataKey]!);
   const min = 0; // Immer bei 0 starten
   // Y-Achse: Fest auf 0-100% fixiert, um Sprünge bei Mitternacht zu vermeiden
   const max = 100;
@@ -71,7 +74,7 @@ export function RenewableBarChart({
   const avgValue = values.reduce((sum, v) => sum + v, 0) / values.length;
 
   // Letzter gültiger Wert für fade-out Balken
-  const lastValidValue = validData.length > 0 ? validData[validData.length - 1].renewableShare! : avgValue;
+  const lastValidValue = validData.length > 0 ? validData[validData.length - 1][dataKey]! : avgValue;
 
   const handleBarInteraction = (index: number) => {
     setSelectedIndex(index === selectedIndex ? null : index);
@@ -118,9 +121,9 @@ export function RenewableBarChart({
       shadowRadius: 16,
       elevation: 4,
     }}>
-      {selectedIndex !== null && data[selectedIndex]?.renewableShare !== null && (() => {
+      {selectedIndex !== null && data[selectedIndex]?.[dataKey] !== null && data[selectedIndex]?.[dataKey] !== undefined && (() => {
         const item = data[selectedIndex];
-        const renewablePercent = item.renewableShare!;
+        const renewablePercent = item[dataKey]!;
 
         // Berechne Position des Tooltips über dem Balken
         const x = leftPadding + ((item.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
@@ -196,10 +199,10 @@ export function RenewableBarChart({
         {/* Bars (SVG) */}
         <Svg width={chartWidth} height={chartHeight}>
           {data.map((d, index) => {
-            const value = d.renewableShare;
+            const value = d[dataKey];
 
             // Render gray fading bar for missing data
-            if (value === null) {
+            if (value === null || value === undefined) {
               const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
               const barWidth = ((chartWidth - leftPadding - rightPadding) / data.length) * 0.8;
 
@@ -328,8 +331,8 @@ export function RenewableBarChart({
 
         {/* Invisible touch/hover areas for bars - rendered AFTER SVG to receive events */}
         {data.map((d, index) => {
-          const value = d.renewableShare;
-          if (value === null) return null;
+          const value = d[dataKey];
+          if (value === null || value === undefined) return null;
 
           const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
           const barWidth = ((chartWidth - leftPadding - rightPadding) / data.length) * 0.8;

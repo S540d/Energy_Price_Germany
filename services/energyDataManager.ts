@@ -42,6 +42,10 @@ export class EnergyDataManager {
   private currentDataSource: DataSource = 'none';
   private isLoading: boolean = false;
   private loadingPromise: Promise<EnergyData[]> | null = null;
+  
+  // Regional data cache
+  private regionalCache: Map<string, { data: any; timestamp: number }> = new Map();
+  private readonly regionalCacheDuration = 15 * 60 * 1000; // 15 minutes
 
   // Cache-Konfiguration
   private readonly cacheConfig: CacheConfig = {
@@ -75,6 +79,75 @@ export class EnergyDataManager {
     if (!this.cachedData) return false;
     const age = Date.now() - this.cacheTimestamp;
     return age < this.cacheConfig.duration;
+  }
+
+  /**
+   * Fetches regional renewable data from Energy Charts Signal API
+   */
+  private async fetchRegionalData(postalCode: string): Promise<any> {
+    try {
+      // Check regional cache first
+      const cached = this.regionalCache.get(postalCode);
+      if (cached && Date.now() - cached.timestamp < this.regionalCacheDuration) {
+        logger.debug(`Using cached regional data for PLZ ${postalCode}`);
+        return cached.data;
+      }
+
+      logger.debug(`Fetching regional data for postal code: ${postalCode}`);
+      const url = `https://api.energy-charts.info/signal?country=de&postal_code=${postalCode}`;
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Regional API HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      logger.debug(`Regional data fetched successfully for PLZ ${postalCode}`);
+      
+      // Cache the regional data
+      this.regionalCache.set(postalCode, { data, timestamp: Date.now() });
+      
+      return data;
+    } catch (error) {
+      logger.error(`Failed to fetch regional data for PLZ ${postalCode}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Merges regional data into the national energy data
+   */
+  private mergeRegionalData(nationalData: EnergyData[], regionalData: any): EnergyData[] {
+    if (!regionalData || !regionalData.unix_seconds || !regionalData.share) {
+      return nationalData;
+    }
+
+    try {
+      // Create a map of regional data by timestamp
+      const regionalMap = new Map<number, number>();
+      
+      for (let i = 0; i < regionalData.unix_seconds.length; i++) {
+        const timestampMs = regionalData.unix_seconds[i] * 1000; // Convert seconds to ms
+        const share = regionalData.share[i];
+        if (share !== null && share !== undefined) {
+          regionalMap.set(timestampMs, share);
+        }
+      }
+
+      logger.debug(`Merging ${regionalMap.size} regional data points into national data`);
+
+      // Merge regional data into national data by matching timestamps
+      return nationalData.map(item => {
+        const regionalShare = regionalMap.get(item.timestamp);
+        return {
+          ...item,
+          renewableShareRegional: regionalShare !== undefined ? regionalShare : null,
+        };
+      });
+    } catch (error) {
+      logger.error('Error merging regional data:', error);
+      return nationalData;
+    }
   }
 
   /**
@@ -167,8 +240,9 @@ export class EnergyDataManager {
   /**
    * Lädt und verarbeitet Energiedaten
    * Verwendet Cache wenn verfügbar und gültig
+   * @param postalCode Optional postal code for regional data
    */
-  public async loadEnergyData(): Promise<EnergyData[]> {
+  public async loadEnergyData(postalCode?: string): Promise<EnergyData[]> {
     // Wenn bereits ein Ladevorgang läuft, warte darauf
     if (this.isLoading && this.loadingPromise) {
       return this.loadingPromise;
@@ -178,12 +252,21 @@ export class EnergyDataManager {
     if (this.isCacheValid()) {
       const age = Date.now() - this.cacheTimestamp;
       logger.debug(`Using cached energy data (age: ${Math.round(age / 1000 / 60)} minutes, source: ${this.currentDataSource})`);
+      
+      // If postal code is provided, merge regional data
+      if (postalCode && postalCode.length === 5) {
+        const regionalData = await this.fetchRegionalData(postalCode);
+        if (regionalData) {
+          return this.mergeRegionalData(this.cachedData!, regionalData);
+        }
+      }
+      
       return this.cachedData!;
     }
 
     // Starte Ladevorgang
     this.isLoading = true;
-    this.loadingPromise = this.performDataLoad();
+    this.loadingPromise = this.performDataLoad(postalCode);
 
     try {
       const data = await this.loadingPromise;
@@ -197,17 +280,25 @@ export class EnergyDataManager {
   /**
    * Führt den eigentlichen Datenlade-Vorgang aus
    */
-  private async performDataLoad(): Promise<EnergyData[]> {
+  private async performDataLoad(postalCode?: string): Promise<EnergyData[]> {
     try {
       // Lade Rohdaten
       const rawData = await this.fetchRawData();
 
       // Verarbeite Daten
-      const processedData = this.processRawData(rawData);
+      let processedData = this.processRawData(rawData);
 
       // Cache die verarbeiteten Daten
       this.cachedData = processedData;
       this.cacheTimestamp = Date.now();
+
+      // If postal code is provided, fetch and merge regional data
+      if (postalCode && postalCode.length === 5) {
+        const regionalData = await this.fetchRegionalData(postalCode);
+        if (regionalData) {
+          processedData = this.mergeRegionalData(processedData, regionalData);
+        }
+      }
 
       return processedData;
 
@@ -252,8 +343,8 @@ export class EnergyDataManager {
 export const energyDataManager = EnergyDataManager.getInstance();
 
 // Legacy-Funktionen für Abwärtskompatibilität
-export async function fetchEnergyData(): Promise<EnergyData[]> {
-  return energyDataManager.loadEnergyData();
+export async function fetchEnergyData(postalCode?: string): Promise<EnergyData[]> {
+  return energyDataManager.loadEnergyData(postalCode);
 }
 
 export function getCurrentDataSource(): DataSource {
