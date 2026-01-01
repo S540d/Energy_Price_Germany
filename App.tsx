@@ -9,6 +9,7 @@ import {
   Platform,
   Linking,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -23,6 +24,7 @@ import { AboutView } from './components/AboutView';
 import { calculateMetrics, EnergyData, GRID_FEES_AND_TAXES } from './utils/metrics';
 import { getThemeColors, Theme } from './utils/theme';
 import { logger } from './utils/logger';
+import { isValidPostalCode, sanitizePostalCodeInput } from './utils/postalCodeUtils';
 
 const APP_VERSION = '1.2.3';
 
@@ -38,6 +40,12 @@ const translations = {
     language: 'LANGUAGE',
     english: 'English',
     german: 'German',
+    // Region Section
+    region: 'REGION',
+    postalCode: 'Postal Code',
+    postalCodeHint: 'Enter 5-digit postal code (PLZ)',
+    regionalData: 'Regional',
+    nationalData: 'National',
     // About Section
     about: 'ABOUT',
     version: 'Version',
@@ -87,6 +95,12 @@ const translations = {
     language: 'SPRACHE',
     english: 'English',
     german: 'Deutsch',
+    // Region Section
+    region: 'REGION',
+    postalCode: 'Postleitzahl',
+    postalCodeHint: '5-stellige PLZ eingeben',
+    regionalData: 'Regional',
+    nationalData: 'National',
     // About Section
     about: 'ÜBER',
     version: 'Version',
@@ -134,6 +148,7 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<Theme>('system');
   const [language, setLanguage] = useState<Language>('en'); // Will be loaded from storage in useEffect
+  const [postalCode, setPostalCode] = useState<string>(''); // Postal code for regional data
   const [menuVisible, setMenuVisible] = useState(false);
   const [aboutVisible, setAboutVisible] = useState(false);
   const systemTheme = useColorScheme();
@@ -220,6 +235,44 @@ function AppContent() {
     saveLanguage();
   }, [language]);
 
+  // Load postal code preference on mount
+  useEffect(() => {
+    async function loadPostalCode() {
+      try {
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          // Web: Use localStorage
+          const saved = window.localStorage?.getItem('postalCode') || ''; // platform-safe
+          setPostalCode(saved);
+        } else {
+          // Mobile: Use AsyncStorage
+          const saved = (await AsyncStorage.getItem('postalCode')) || '';
+          setPostalCode(saved);
+        }
+      } catch (e) {
+        logger.error('Failed to load postal code:', e);
+      }
+    }
+    loadPostalCode();
+  }, []);
+
+  // Save postal code when it changes
+  useEffect(() => {
+    async function savePostalCode() {
+      try {
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          // Web: Use localStorage
+          window.localStorage?.setItem('postalCode', postalCode); // platform-safe
+        } else {
+          // Mobile: Use AsyncStorage
+          await AsyncStorage.setItem('postalCode', postalCode);
+        }
+      } catch (e) {
+        logger.error('Failed to save postal code:', e);
+      }
+    }
+    savePostalCode();
+  }, [postalCode]);
+
   useEffect(() => {
     async function checkAndApplyUpdates() {
       if (!__DEV__) {
@@ -242,7 +295,7 @@ function AppContent() {
     async function loadData() {
       try {
         setLoading(true);
-        const data = await fetchEnergyData();
+        const data = await fetchEnergyData(postalCode || undefined);
         setEnergyData(data);
       } catch (error) {
         logger.error('Failed to load energy data:', error);
@@ -252,7 +305,7 @@ function AppContent() {
       }
     }
     loadData();
-  }, []);
+  }, [postalCode]);
 
   const getDataSourceInfo = () => {
     const source = getCurrentDataSource();
@@ -394,6 +447,38 @@ function AppContent() {
 
             <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
+            {/* REGION Section */}
+            <View style={styles.menuSection}>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.region}</Text>
+              <View style={{ marginTop: 8 }}>
+                <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 8 }}>
+                  {t.postalCodeHint}
+                </Text>
+                <TextInput
+                  style={{
+                    backgroundColor: colors.surface,
+                    color: colors.text,
+                    borderWidth: 1,
+                    borderColor: colors.gridLine,
+                    borderRadius: 8,
+                    paddingHorizontal: 12,
+                    paddingVertical: 10,
+                    fontSize: 14,
+                  }}
+                  placeholder={t.postalCode}
+                  placeholderTextColor={colors.textSecondary}
+                  value={postalCode}
+                  onChangeText={(text) => {
+                    setPostalCode(sanitizePostalCodeInput(text));
+                  }}
+                  keyboardType="numeric"
+                  maxLength={5}
+                />
+              </View>
+            </View>
+
+            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
             {/* LEGEND Section */}
             <View style={{ paddingHorizontal: 20, paddingVertical: 12 }}>
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.legend}</Text>
@@ -493,34 +578,96 @@ function AppContent() {
       >
         {filteredEnergyData.length > 0 ? (
           <>
-            <ChartDetailView
-              title={t.renewableTitle}
-              colors={colors}
-              chartType="renewable"
-              metrics={metrics ? {
-                min: metrics.renewable.min,
-                max: metrics.renewable.max,
-                avg: metrics.renewable.avg,
-                current: metrics.today?.renewable.current,
-                unit: '%',
-                label: t.renewablePercent,
-              } : undefined}
-            >
-              <RenewableBarChart
+            {/* If postal code is set, show both National and Regional charts */}
+            {isValidPostalCode(postalCode) ? (
+              <>
+                {/* National Chart */}
+                <ChartDetailView
+                  title={`${t.renewableTitle} - ${t.nationalData}`}
+                  colors={colors}
+                  chartType="renewable"
+                  metrics={metrics ? {
+                    min: metrics.renewable.min,
+                    max: metrics.renewable.max,
+                    avg: metrics.renewable.avg,
+                    current: metrics.today?.renewable.current,
+                    unit: '%',
+                    label: t.renewablePercent,
+                  } : undefined}
+                >
+                  <RenewableBarChart
+                    title={`${t.renewableTitle} - ${t.nationalData}`}
+                    subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+                    data={filteredEnergyData}
+                    backgroundColor={colors.surface}
+                    textColor={colors.text}
+                    gridColor={colors.gridLine}
+                    colors={colors}
+                    labels={{
+                      yAxis: t.renewablePercent,
+                      now: t.now,
+                      average: t.average,
+                    }}
+                    dataKey="renewableShare"
+                  />
+                </ChartDetailView>
+
+                {/* Regional Chart */}
+                <ChartDetailView
+                  title={`${t.renewableTitle} - ${t.regionalData} (${postalCode})`}
+                  colors={colors}
+                  chartType="renewable"
+                  metrics={undefined}
+                >
+                  <RenewableBarChart
+                    title={`${t.renewableTitle} - ${t.regionalData} (${postalCode})`}
+                    subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+                    data={filteredEnergyData}
+                    backgroundColor={colors.surface}
+                    textColor={colors.text}
+                    gridColor={colors.gridLine}
+                    colors={colors}
+                    labels={{
+                      yAxis: t.renewablePercent,
+                      now: t.now,
+                      average: t.average,
+                    }}
+                    dataKey="renewableShareRegional"
+                  />
+                </ChartDetailView>
+              </>
+            ) : (
+              /* No postal code set - show single national chart */
+              <ChartDetailView
                 title={t.renewableTitle}
-                subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
-                data={filteredEnergyData}
-                backgroundColor={colors.surface}
-                textColor={colors.text}
-                gridColor={colors.gridLine}
                 colors={colors}
-                labels={{
-                  yAxis: t.renewablePercent,
-                  now: t.now,
-                  average: t.average,
-                }}
-              />
-            </ChartDetailView>
+                chartType="renewable"
+                metrics={metrics ? {
+                  min: metrics.renewable.min,
+                  max: metrics.renewable.max,
+                  avg: metrics.renewable.avg,
+                  current: metrics.today?.renewable.current,
+                  unit: '%',
+                  label: t.renewablePercent,
+                } : undefined}
+              >
+                <RenewableBarChart
+                  title={t.renewableTitle}
+                  subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+                  data={filteredEnergyData}
+                  backgroundColor={colors.surface}
+                  textColor={colors.text}
+                  gridColor={colors.gridLine}
+                  colors={colors}
+                  labels={{
+                    yAxis: t.renewablePercent,
+                    now: t.now,
+                    average: t.average,
+                  }}
+                  dataKey="renewableShare"
+                />
+              </ChartDetailView>
+            )}
 
             <ChartDetailView
               title={t.priceTitle}

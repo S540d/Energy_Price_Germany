@@ -98,6 +98,37 @@ export function AboutView({
             </TouchableOpacity>
           </View>
 
+          {/* Regional Data Source */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Regional Data
+            </Text>
+            <Text style={[styles.infoText, { color: colors.textSecondary }]}>
+              Energy Charts Signal API (Fraunhofer ISE)
+            </Text>
+            <Text style={[styles.infoText, { color: colors.textSecondary }]}>
+              License: CC BY 4.0
+            </Text>
+            <Text style={[styles.infoText, { color: colors.textSecondary, fontSize: 12, marginTop: 4 }]}>
+              Regional renewable energy share based on postal code (PLZ).
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                const url = 'https://api.energy-charts.info';
+                if (Platform.OS === 'web') {
+                  window.open(url, '_blank'); // platform-safe
+                } else {
+                  Linking.openURL(url);
+                }
+              }}
+              style={styles.link}
+            >
+              <Text style={[styles.linkText, { color: colors.primary }]}>
+                api.energy-charts.info
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           {/* App License */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
