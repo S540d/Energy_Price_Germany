@@ -24,6 +24,7 @@ import { AboutView } from './components/AboutView';
 import { calculateMetrics, EnergyData, GRID_FEES_AND_TAXES } from './utils/metrics';
 import { getThemeColors, Theme } from './utils/theme';
 import { logger } from './utils/logger';
+import { isValidPostalCode, sanitizePostalCodeInput } from './utils/postalCodeUtils';
 
 const APP_VERSION = '1.2.3';
 
@@ -468,9 +469,7 @@ function AppContent() {
                   placeholderTextColor={colors.textSecondary}
                   value={postalCode}
                   onChangeText={(text) => {
-                    // Only allow digits and limit to 5 characters
-                    const filtered = text.replace(/[^0-9]/g, '').substring(0, 5);
-                    setPostalCode(filtered);
+                    setPostalCode(sanitizePostalCodeInput(text));
                   }}
                   keyboardType="numeric"
                   maxLength={5}
@@ -580,7 +579,7 @@ function AppContent() {
         {filteredEnergyData.length > 0 ? (
           <>
             {/* If postal code is set, show both National and Regional charts */}
-            {postalCode && postalCode.length === 5 ? (
+            {isValidPostalCode(postalCode) ? (
               <>
                 {/* National Chart */}
                 <ChartDetailView

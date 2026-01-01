@@ -1,6 +1,7 @@
 import { EnergyData } from '../utils/metrics';
 import { Platform } from 'react-native';
 import { logger } from '../utils/logger';
+import { isValidPostalCode } from '../utils/postalCodeUtils';
 
 /**
  * Datenquelle-Typen
@@ -116,6 +117,12 @@ export class EnergyDataManager {
 
   /**
    * Merges regional data into the national energy data
+   * 
+   * Note on timestamp conversion:
+   * - Energy Charts Signal API returns timestamps in unix_seconds (seconds since epoch)
+   * - The rest of the system uses JavaScript timestamps (milliseconds since epoch)
+   * - We convert by multiplying by 1000 to ensure proper timestamp matching
+   * - This allows O(1) lookups when merging data by timestamp
    */
   private mergeRegionalData(nationalData: EnergyData[], regionalData: any): EnergyData[] {
     if (!regionalData || !regionalData.unix_seconds || !regionalData.share) {
@@ -123,11 +130,12 @@ export class EnergyDataManager {
     }
 
     try {
-      // Create a map of regional data by timestamp
+      // Create a map of regional data by timestamp for O(1) lookup
       const regionalMap = new Map<number, number>();
       
       for (let i = 0; i < regionalData.unix_seconds.length; i++) {
-        const timestampMs = regionalData.unix_seconds[i] * 1000; // Convert seconds to ms
+        // Convert unix_seconds (from API) to milliseconds (used internally)
+        const timestampMs = regionalData.unix_seconds[i] * 1000;
         const share = regionalData.share[i];
         if (share !== null && share !== undefined) {
           regionalMap.set(timestampMs, share);
@@ -254,8 +262,8 @@ export class EnergyDataManager {
       logger.debug(`Using cached energy data (age: ${Math.round(age / 1000 / 60)} minutes, source: ${this.currentDataSource})`);
       
       // If postal code is provided, merge regional data
-      if (postalCode && postalCode.length === 5) {
-        const regionalData = await this.fetchRegionalData(postalCode);
+      if (isValidPostalCode(postalCode)) {
+        const regionalData = await this.fetchRegionalData(postalCode!);
         if (regionalData) {
           return this.mergeRegionalData(this.cachedData!, regionalData);
         }
@@ -293,8 +301,8 @@ export class EnergyDataManager {
       this.cacheTimestamp = Date.now();
 
       // If postal code is provided, fetch and merge regional data
-      if (postalCode && postalCode.length === 5) {
-        const regionalData = await this.fetchRegionalData(postalCode);
+      if (isValidPostalCode(postalCode)) {
+        const regionalData = await this.fetchRegionalData(postalCode!);
         if (regionalData) {
           processedData = this.mergeRegionalData(processedData, regionalData);
         }
