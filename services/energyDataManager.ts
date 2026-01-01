@@ -147,11 +147,21 @@ export class EnergyDataManager {
       return nationalData;
     }
 
+    // Validate that both arrays have the same length to prevent index mismatches
+    if (regionalData.unix_seconds.length !== regionalData.share.length) {
+      logger.warn(
+        `Regional data array length mismatch: unix_seconds=${regionalData.unix_seconds.length}, share=${regionalData.share.length}. Skipping regional data merge.`
+      );
+      return nationalData;
+    }
+
     try {
       // Create a map of regional data by timestamp for O(1) lookup
       const regionalMap = new Map<number, number>();
       
-      for (let i = 0; i < regionalData.unix_seconds.length; i++) {
+      // Safe to iterate as we've validated array lengths are equal
+      const arrayLength = Math.min(regionalData.unix_seconds.length, regionalData.share.length);
+      for (let i = 0; i < arrayLength; i++) {
         // Convert unix_seconds (from API) to milliseconds (used internally)
         const timestampMs = regionalData.unix_seconds[i] * 1000;
         const share = regionalData.share[i];
