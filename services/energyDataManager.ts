@@ -160,8 +160,7 @@ export class EnergyDataManager {
       const regionalMap = new Map<number, number>();
       
       // Safe to iterate as we've validated array lengths are equal
-      const arrayLength = Math.min(regionalData.unix_seconds.length, regionalData.share.length);
-      for (let i = 0; i < arrayLength; i++) {
+      for (let i = 0; i < regionalData.unix_seconds.length; i++) {
         // Convert unix_seconds (from API) to milliseconds (used internally)
         const timestampMs = regionalData.unix_seconds[i] * 1000;
         const share = regionalData.share[i];

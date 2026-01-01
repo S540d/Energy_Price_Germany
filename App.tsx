@@ -245,7 +245,7 @@ function AppContent() {
           setPostalCode(saved);
         } else {
           // Mobile: Use AsyncStorage
-          const saved = await AsyncStorage.getItem('postalCode') || '';
+          const saved = (await AsyncStorage.getItem('postalCode')) || '';
           setPostalCode(saved);
         }
       } catch (e) {
