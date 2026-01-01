@@ -1,6 +1,7 @@
 import { EnergyData } from '../utils/metrics';
 import { Platform } from 'react-native';
 import { logger } from '../utils/logger';
+import { isValidPostalCode } from '../utils/postalCodeUtils';
 
 /**
  * Datenquelle-Typen
@@ -24,6 +25,23 @@ interface MarketDataResponse {
 }
 
 /**
+ * Regional Data API Response Type
+ * Response from Energy Charts Signal API
+ */
+interface RegionalDataResponse {
+  unix_seconds: number[];  // Timestamps in seconds since epoch
+  share: number[];         // Renewable energy share percentages
+}
+
+/**
+ * Regional Data Cache Entry
+ */
+interface RegionalCacheEntry {
+  data: RegionalDataResponse;
+  timestamp: number;
+}
+
+/**
  * Cache-Konfiguration
  */
 interface CacheConfig {
@@ -42,6 +60,10 @@ export class EnergyDataManager {
   private currentDataSource: DataSource = 'none';
   private isLoading: boolean = false;
   private loadingPromise: Promise<EnergyData[]> | null = null;
+  
+  // Regional data cache
+  private regionalCache: Map<string, RegionalCacheEntry> = new Map();
+  private readonly regionalCacheDuration = 15 * 60 * 1000; // 15 minutes
 
   // Cache-Konfiguration
   private readonly cacheConfig: CacheConfig = {
@@ -75,6 +97,92 @@ export class EnergyDataManager {
     if (!this.cachedData) return false;
     const age = Date.now() - this.cacheTimestamp;
     return age < this.cacheConfig.duration;
+  }
+
+  /**
+   * Fetches regional renewable data from Energy Charts Signal API
+   * @returns Regional data or null if fetch fails
+   */
+  private async fetchRegionalData(postalCode: string): Promise<RegionalDataResponse | null> {
+    try {
+      // Check regional cache first
+      const cached = this.regionalCache.get(postalCode);
+      if (cached && Date.now() - cached.timestamp < this.regionalCacheDuration) {
+        logger.debug(`Using cached regional data for PLZ ${postalCode}`);
+        return cached.data;
+      }
+
+      logger.debug(`Fetching regional data for postal code: ${postalCode}`);
+      const url = `https://api.energy-charts.info/signal?country=de&postal_code=${postalCode}`;
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Regional API HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data: RegionalDataResponse = await response.json();
+      logger.debug(`Regional data fetched successfully for PLZ ${postalCode}`);
+      
+      // Cache the regional data
+      this.regionalCache.set(postalCode, { data, timestamp: Date.now() });
+      
+      return data;
+    } catch (error) {
+      logger.error(`Failed to fetch regional data for PLZ ${postalCode}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Merges regional data into the national energy data
+   * 
+   * Note on timestamp conversion:
+   * - Energy Charts Signal API returns timestamps in unix_seconds (seconds since epoch)
+   * - The rest of the system uses JavaScript timestamps (milliseconds since epoch)
+   * - We convert by multiplying by 1000 to ensure proper timestamp matching
+   * - This allows O(1) lookups when merging data by timestamp
+   */
+  private mergeRegionalData(nationalData: EnergyData[], regionalData: RegionalDataResponse | null): EnergyData[] {
+    if (!regionalData || !regionalData.unix_seconds || !regionalData.share) {
+      return nationalData;
+    }
+
+    // Validate that both arrays have the same length to prevent index mismatches
+    if (regionalData.unix_seconds.length !== regionalData.share.length) {
+      logger.warn(
+        `Regional data array length mismatch: unix_seconds=${regionalData.unix_seconds.length}, share=${regionalData.share.length}. Skipping regional data merge.`
+      );
+      return nationalData;
+    }
+
+    try {
+      // Create a map of regional data by timestamp for O(1) lookup
+      const regionalMap = new Map<number, number>();
+      
+      // Safe to iterate as we've validated array lengths are equal
+      for (let i = 0; i < regionalData.unix_seconds.length; i++) {
+        // Convert unix_seconds (from API) to milliseconds (used internally)
+        const timestampMs = regionalData.unix_seconds[i] * 1000;
+        const share = regionalData.share[i];
+        if (share !== null && share !== undefined) {
+          regionalMap.set(timestampMs, share);
+        }
+      }
+
+      logger.debug(`Merging ${regionalMap.size} regional data points into national data`);
+
+      // Merge regional data into national data by matching timestamps
+      return nationalData.map(item => {
+        const regionalShare = regionalMap.get(item.timestamp);
+        return {
+          ...item,
+          renewableShareRegional: regionalShare !== undefined ? regionalShare : null,
+        };
+      });
+    } catch (error) {
+      logger.error('Error merging regional data:', error);
+      return nationalData;
+    }
   }
 
   /**
@@ -167,8 +275,9 @@ export class EnergyDataManager {
   /**
    * Lädt und verarbeitet Energiedaten
    * Verwendet Cache wenn verfügbar und gültig
+   * @param postalCode Optional postal code for regional data
    */
-  public async loadEnergyData(): Promise<EnergyData[]> {
+  public async loadEnergyData(postalCode?: string): Promise<EnergyData[]> {
     // Wenn bereits ein Ladevorgang läuft, warte darauf
     if (this.isLoading && this.loadingPromise) {
       return this.loadingPromise;
@@ -178,12 +287,21 @@ export class EnergyDataManager {
     if (this.isCacheValid()) {
       const age = Date.now() - this.cacheTimestamp;
       logger.debug(`Using cached energy data (age: ${Math.round(age / 1000 / 60)} minutes, source: ${this.currentDataSource})`);
+      
+      // If postal code is provided, merge regional data
+      if (isValidPostalCode(postalCode)) {
+        const regionalData = await this.fetchRegionalData(postalCode!);
+        if (regionalData) {
+          return this.mergeRegionalData(this.cachedData!, regionalData);
+        }
+      }
+      
       return this.cachedData!;
     }
 
     // Starte Ladevorgang
     this.isLoading = true;
-    this.loadingPromise = this.performDataLoad();
+    this.loadingPromise = this.performDataLoad(postalCode);
 
     try {
       const data = await this.loadingPromise;
@@ -197,17 +315,25 @@ export class EnergyDataManager {
   /**
    * Führt den eigentlichen Datenlade-Vorgang aus
    */
-  private async performDataLoad(): Promise<EnergyData[]> {
+  private async performDataLoad(postalCode?: string): Promise<EnergyData[]> {
     try {
       // Lade Rohdaten
       const rawData = await this.fetchRawData();
 
       // Verarbeite Daten
-      const processedData = this.processRawData(rawData);
+      let processedData = this.processRawData(rawData);
 
       // Cache die verarbeiteten Daten
       this.cachedData = processedData;
       this.cacheTimestamp = Date.now();
+
+      // If postal code is provided, fetch and merge regional data
+      if (isValidPostalCode(postalCode)) {
+        const regionalData = await this.fetchRegionalData(postalCode!);
+        if (regionalData) {
+          processedData = this.mergeRegionalData(processedData, regionalData);
+        }
+      }
 
       return processedData;
 
@@ -252,8 +378,8 @@ export class EnergyDataManager {
 export const energyDataManager = EnergyDataManager.getInstance();
 
 // Legacy-Funktionen für Abwärtskompatibilität
-export async function fetchEnergyData(): Promise<EnergyData[]> {
-  return energyDataManager.loadEnergyData();
+export async function fetchEnergyData(postalCode?: string): Promise<EnergyData[]> {
+  return energyDataManager.loadEnergyData(postalCode);
 }
 
 export function getCurrentDataSource(): DataSource {
