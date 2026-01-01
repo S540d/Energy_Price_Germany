@@ -128,8 +128,9 @@ export class EnergyDataManager {
       const isInterpolated = item.interpolated || false;
       return {
         timestamp: item.start_timestamp,
-        marketPrice: item.marketprice || null, // EUR/MWh
-        renewableShare: item.renewable_share || null, // Prozent
+        // Use nullish coalescing to preserve 0 and negative values
+        marketPrice: item.marketprice ?? null, // EUR/MWh
+        renewableShare: item.renewable_share ?? null, // Prozent
         isMarketPriceInterpolated: isInterpolated,
         // Renewable data is NEVER interpolated - it's either real EC data or null (missing)
         isRenewableShareInterpolated: false,
