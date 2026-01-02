@@ -126,7 +126,10 @@
       }, 5000);
     </script>
     <script>
-      if ('serviceWorker' in navigator) {
+      // Only register service worker in production (GitHub Pages)
+      const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+
+      if ('serviceWorker' in navigator && isProduction) {
         window.addEventListener('load', () => {
           navigator.serviceWorker
             .register('/Energy_Price_Germany/service-worker.js', { scope: '/Energy_Price_Germany/' })
@@ -164,6 +167,14 @@
             .catch((registrationError) => {
               console.log('SW registration failed: ', registrationError);
             });
+        });
+      } else if ('serviceWorker' in navigator && !isProduction) {
+        // On localhost, unregister any existing service workers to prevent caching issues
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          registrations.forEach((registration) => {
+            console.log('Unregistering service worker on localhost:', registration);
+            registration.unregister();
+          });
         });
       }
 

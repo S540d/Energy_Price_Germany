@@ -128,7 +128,16 @@ export class EnergyDataManager {
       
       return data;
     } catch (error) {
-      logger.error(`Failed to fetch regional data for PLZ ${postalCode}:`, error);
+      // Check if it's a CORS error (common on localhost)
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('CORS') || errorMessage.includes('Load failed')) {
+        logger.warn(
+          `⚠️ Regional data blocked by CORS policy. This is expected on localhost. ` +
+          `Regional data will work on production (GitHub Pages). PLZ: ${postalCode}`
+        );
+      } else {
+        logger.error(`Failed to fetch regional data for PLZ ${postalCode}:`, error);
+      }
       return null;
     }
   }
@@ -163,22 +172,33 @@ export class EnergyDataManager {
       for (let i = 0; i < regionalData.unix_seconds.length; i++) {
         // Convert unix_seconds (from API) to milliseconds (used internally)
         const timestampMs = regionalData.unix_seconds[i] * 1000;
-        const share = regionalData.share[i];
+        let share = regionalData.share[i];
+
         if (share !== null && share !== undefined) {
+          // Validate and cap share values to 0-100 range
+          // The API sometimes returns values > 100, which we need to cap
+          share = Math.max(0, Math.min(100, share));
           regionalMap.set(timestampMs, share);
         }
       }
 
       logger.debug(`Merging ${regionalMap.size} regional data points into national data`);
+      logger.debug(`National data timestamps - first:`, nationalData[0]?.timestamp, 'last:', nationalData[nationalData.length - 1]?.timestamp);
+      logger.debug(`Regional data timestamps - first:`, Array.from(regionalMap.keys())[0], 'last:', Array.from(regionalMap.keys()).pop());
 
       // Merge regional data into national data by matching timestamps
-      return nationalData.map(item => {
+      const merged = nationalData.map(item => {
         const regionalShare = regionalMap.get(item.timestamp);
         return {
           ...item,
           renewableShareRegional: regionalShare !== undefined ? regionalShare : null,
         };
       });
+
+      const matchedCount = merged.filter(item => item.renewableShareRegional !== null).length;
+      logger.debug(`Matched ${matchedCount} out of ${nationalData.length} national data points with regional data`);
+
+      return merged;
     } catch (error) {
       logger.error('Error merging regional data:', error);
       return nationalData;
@@ -317,11 +337,15 @@ export class EnergyDataManager {
    */
   private async performDataLoad(postalCode?: string): Promise<EnergyData[]> {
     try {
+      logger.debug('[DataManager] performDataLoad called with postalCode:', postalCode);
+
       // Lade Rohdaten
       const rawData = await this.fetchRawData();
+      logger.debug('[DataManager] Raw data loaded, items:', rawData.data?.length || 0);
 
       // Verarbeite Daten
       let processedData = this.processRawData(rawData);
+      logger.debug('[DataManager] Processed data length:', processedData.length);
 
       // Cache die verarbeiteten Daten
       this.cachedData = processedData;
@@ -329,16 +353,21 @@ export class EnergyDataManager {
 
       // If postal code is provided, fetch and merge regional data
       if (isValidPostalCode(postalCode)) {
+        logger.debug('[DataManager] Valid postal code, fetching regional data:', postalCode);
         const regionalData = await this.fetchRegionalData(postalCode!);
         if (regionalData) {
+          logger.debug('[DataManager] Merging regional data');
           processedData = this.mergeRegionalData(processedData, regionalData);
         }
+      } else {
+        logger.debug('[DataManager] No valid postal code, skipping regional data');
       }
 
+      logger.debug('[DataManager] Returning processed data length:', processedData.length);
       return processedData;
 
     } catch (error) {
-      logger.error('Data loading failed, using mock data:', error);
+      logger.error('[DataManager] Data loading failed, using mock data:', error);
 
       // Fallback auf Mock-Daten
       const mockData = this.generateMockData();

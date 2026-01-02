@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -15,7 +15,7 @@ import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Updates from 'expo-updates';
-import { fetchEnergyData, getCurrentDataSource } from './services/energyDataManager';
+import { fetchEnergyData, getCurrentDataSource, energyDataManager } from './services/energyDataManager';
 import { RenewableBarChart } from './components/charts/RenewableBarChart';
 import { PriceBarChart } from './components/charts/PriceBarChart';
 import { CorrelationScatterChart } from './components/charts/CorrelationScatterChart';
@@ -148,7 +148,8 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<Theme>('system');
   const [language, setLanguage] = useState<Language>('en'); // Will be loaded from storage in useEffect
-  const [postalCode, setPostalCode] = useState<string>(''); // Postal code for regional data
+  const [postalCode, setPostalCode] = useState<string>(''); // Postal code input (immediate)
+  const [debouncedPostalCode, setDebouncedPostalCode] = useState<string>(''); // Debounced for API calls
   const [menuVisible, setMenuVisible] = useState(false);
   const [aboutVisible, setAboutVisible] = useState(false);
   const systemTheme = useColorScheme();
@@ -170,8 +171,24 @@ function AppContent() {
     const now = Date.now();
     const past24h = now - (24 * 60 * 60 * 1000); // 24 hours ago
 
-    return energyData.filter(item => item.timestamp >= past24h);
+    logger.debug('[App] Filtering data. Now:', new Date(now).toISOString());
+    logger.debug('[App] Past 24h cutoff:', new Date(past24h).toISOString());
+    logger.debug('[App] First data timestamp:', energyData[0] ? new Date(energyData[0].timestamp).toISOString() : 'none');
+    logger.debug('[App] Last data timestamp:', energyData[energyData.length - 1] ? new Date(energyData[energyData.length - 1].timestamp).toISOString() : 'none');
+
+    const filtered = energyData.filter(item => item.timestamp >= past24h);
+    logger.debug('[App] After filter - filtered data length:', filtered.length);
+
+    return filtered;
   }, [energyData]);
+
+  // Check if regional data is available
+  const hasRegionalData = useMemo(() => {
+    return filteredEnergyData.some(item =>
+      item.renewableShareRegional !== null &&
+      item.renewableShareRegional !== undefined
+    );
+  }, [filteredEnergyData]);
 
   // Memoized metrics calculations for better performance
   const metrics = useMemo(() => calculateMetrics(filteredEnergyData), [filteredEnergyData]);
@@ -242,14 +259,24 @@ function AppContent() {
         if (Platform.OS === 'web' && typeof window !== 'undefined') {
           // Web: Use localStorage
           const saved = window.localStorage?.getItem('postalCode') || ''; // platform-safe
+          logger.debug('[App] Loaded postalCode from localStorage:', saved);
           setPostalCode(saved);
+          // If it's already a valid postal code, set it immediately (no debounce on load)
+          if (saved.length === 5) {
+            setDebouncedPostalCode(saved);
+          }
         } else {
           // Mobile: Use AsyncStorage
           const saved = (await AsyncStorage.getItem('postalCode')) || '';
+          logger.debug('[App] Loaded postalCode from AsyncStorage:', saved);
           setPostalCode(saved);
+          // If it's already a valid postal code, set it immediately (no debounce on load)
+          if (saved.length === 5) {
+            setDebouncedPostalCode(saved);
+          }
         }
       } catch (e) {
-        logger.error('Failed to load postal code:', e);
+        logger.error('[App] Failed to load postal code:', e);
       }
     }
     loadPostalCode();
@@ -291,21 +318,50 @@ function AppContent() {
     checkAndApplyUpdates();
   }, []);
 
+  // Debounce postal code input: only trigger API call after 1s of no typing AND 5 digits
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // Only update debounced value if it's exactly 5 digits or empty
+      if (postalCode.length === 5 || postalCode.length === 0) {
+        logger.debug('[App] Debouncing postal code:', postalCode);
+        setDebouncedPostalCode(postalCode);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [postalCode]);
+
+  // Track initial mount to avoid invalidating cache on first load
+  const isInitialMount = useRef(true);
+
   useEffect(() => {
     async function loadData() {
       try {
         setLoading(true);
-        const data = await fetchEnergyData(postalCode || undefined);
+        logger.debug('[App] Loading energy data with debouncedPostalCode:', debouncedPostalCode);
+
+        // Invalidate cache when postal code changes (but not on initial mount)
+        // This forces reload with/without regional data
+        if (!isInitialMount.current) {
+          logger.debug('[App] Postal code changed, invalidating cache');
+          energyDataManager.invalidateCache();
+        } else {
+          isInitialMount.current = false;
+        }
+
+        const data = await fetchEnergyData(debouncedPostalCode || undefined);
+        logger.debug('[App] Received data length:', data.length);
+        logger.debug('[App] First 3 items:', data.slice(0, 3));
         setEnergyData(data);
       } catch (error) {
-        logger.error('Failed to load energy data:', error);
+        logger.error('[App] Failed to load energy data:', error);
         setEnergyData([]);
       } finally {
         setLoading(false);
       }
     }
     loadData();
-  }, [postalCode]);
+  }, [debouncedPostalCode]);
 
   const getDataSourceInfo = () => {
     const source = getCurrentDataSource();
@@ -578,8 +634,8 @@ function AppContent() {
       >
         {filteredEnergyData.length > 0 ? (
           <>
-            {/* If postal code is set, show both National and Regional charts */}
-            {isValidPostalCode(postalCode) ? (
+            {/* If postal code is set AND regional data is available, show both charts */}
+            {isValidPostalCode(debouncedPostalCode) && hasRegionalData ? (
               <>
                 {/* National Chart */}
                 <ChartDetailView
@@ -612,15 +668,15 @@ function AppContent() {
                   />
                 </ChartDetailView>
 
-                {/* Regional Chart */}
+                {/* Regional Chart - only shown when data is available */}
                 <ChartDetailView
-                  title={`${t.renewableTitle} - ${t.regionalData} (${postalCode})`}
+                  title={`${t.renewableTitle} - ${t.regionalData} (${debouncedPostalCode})`}
                   colors={colors}
                   chartType="renewable"
                   metrics={undefined}
                 >
                   <RenewableBarChart
-                    title={`${t.renewableTitle} - ${t.regionalData} (${postalCode})`}
+                    title={`${t.renewableTitle} - ${t.regionalData} (${debouncedPostalCode})`}
                     subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
                     data={filteredEnergyData}
                     backgroundColor={colors.surface}
@@ -637,7 +693,7 @@ function AppContent() {
                 </ChartDetailView>
               </>
             ) : (
-              /* No postal code set - show single national chart */
+              /* No postal code or no regional data - show single national chart */
               <ChartDetailView
                 title={t.renewableTitle}
                 colors={colors}
