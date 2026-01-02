@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Platform } from 'react-native';
-import Svg, { Rect, Line } from 'react-native-svg';
+import Svg, { Rect, Line, Polyline } from 'react-native-svg';
 import { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 import { useChartDimensions } from '../../utils/chartUtils';
@@ -29,9 +29,11 @@ interface RenewableBarChartProps {
     yAxis: string;
     now: string;
     average: string;
+    regional?: string; // Label für regionale Linie
   };
   interactionHint?: string;
   dataKey?: RenewableDataKey;
+  showRegionalLine?: boolean; // Zeigt gestrichelte Linie für regionale Daten
 }
 
 export function RenewableBarChart({
@@ -45,6 +47,7 @@ export function RenewableBarChart({
   labels,
   interactionHint,
   dataKey = 'renewableShare',
+  showRegionalLine = false,
 }: RenewableBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -322,6 +325,57 @@ export function RenewableBarChart({
             strokeDasharray="8,4"
             opacity={0.5}
           />
+
+          {/* Regionale Datenlinie - gestrichelt */}
+          {showRegionalLine && (() => {
+            // Filtere Datenpunkte mit gültigen regionalen Werten
+            const regionalPoints = data
+              .map((d, index) => ({
+                x: leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding),
+                y: d.renewableShareRegional !== null && d.renewableShareRegional !== undefined
+                  ? chartHeight - bottomPadding - ((d.renewableShareRegional - min) / range) * (chartHeight - padding - bottomPadding)
+                  : null,
+                value: d.renewableShareRegional,
+              }))
+              .filter(p => p.y !== null);
+
+            if (regionalPoints.length === 0) return null;
+
+            // Berechne Polyline-Punkte String
+            const pointsString = regionalPoints.map(p => `${p.x},${p.y}`).join(' ');
+
+            // Berechne regionalen Durchschnitt für Label
+            const regionalAvg = regionalPoints.reduce((sum, p) => sum + (p.value || 0), 0) / regionalPoints.length;
+
+            return (
+              <>
+                <Polyline
+                  points={pointsString}
+                  stroke="#FF9800" // Orange für regionale Linie
+                  strokeWidth="3"
+                  strokeDasharray="6,6"
+                  fill="none"
+                  opacity={0.8}
+                />
+                {/* Regionale Durchschnittslinie Label */}
+                {labels.regional && (
+                  <Text
+                    style={{
+                      position: 'absolute',
+                      right: rightPadding + 4,
+                      top: chartHeight - bottomPadding - ((regionalAvg - min) / range) * (chartHeight - padding - bottomPadding) + 12,
+                      fontSize: 12,
+                      color: '#FF9800',
+                      fontWeight: '600',
+                      opacity: 0.9,
+                    }}
+                  >
+                    {labels.regional} {regionalAvg.toFixed(1)}%
+                  </Text>
+                )}
+              </>
+            );
+          })()}
 
           {/* "Jetzt" Markierung */}
           {now >= minTime && now <= maxTime && (
