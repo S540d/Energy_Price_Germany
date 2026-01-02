@@ -76,8 +76,10 @@ export function RenewableBarChart({
   const max = 100;
   const range = max - min;
 
-  // Durchschnittswert berechnen
-  const avgValue = values.reduce((sum, v) => sum + v, 0) / values.length;
+  // Durchschnittswert berechnen - handle empty values array to avoid NaN
+  const avgValue = values.length > 0
+    ? values.reduce((sum, v) => sum + v, 0) / values.length
+    : 50; // Default to 50% if no valid data
 
   // Letzter gültiger Wert für fade-out Balken
   const lastValidValue = validData.length > 0 ? validData[validData.length - 1][dataKey]! : avgValue;
