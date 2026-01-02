@@ -634,96 +634,42 @@ function AppContent() {
       >
         {filteredEnergyData.length > 0 ? (
           <>
-            {/* If postal code is set AND regional data is available, show both charts */}
-            {isValidPostalCode(debouncedPostalCode) && hasRegionalData ? (
-              <>
-                {/* National Chart */}
-                <ChartDetailView
-                  title={`${t.renewableTitle} - ${t.nationalData}`}
-                  colors={colors}
-                  chartType="renewable"
-                  metrics={metrics ? {
-                    min: metrics.renewable.min,
-                    max: metrics.renewable.max,
-                    avg: metrics.renewable.avg,
-                    current: metrics.today?.renewable.current,
-                    unit: '%',
-                    label: t.renewablePercent,
-                  } : undefined}
-                >
-                  <RenewableBarChart
-                    title={`${t.renewableTitle} - ${t.nationalData}`}
-                    subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
-                    data={filteredEnergyData}
-                    backgroundColor={colors.surface}
-                    textColor={colors.text}
-                    gridColor={colors.gridLine}
-                    colors={colors}
-                    labels={{
-                      yAxis: t.renewablePercent,
-                      now: t.now,
-                      average: t.average,
-                    }}
-                    dataKey="renewableShare"
-                  />
-                </ChartDetailView>
-
-                {/* Regional Chart - only shown when data is available */}
-                <ChartDetailView
-                  title={`${t.renewableTitle} - ${t.regionalData} (${debouncedPostalCode})`}
-                  colors={colors}
-                  chartType="renewable"
-                  metrics={undefined}
-                >
-                  <RenewableBarChart
-                    title={`${t.renewableTitle} - ${t.regionalData} (${debouncedPostalCode})`}
-                    subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
-                    data={filteredEnergyData}
-                    backgroundColor={colors.surface}
-                    textColor={colors.text}
-                    gridColor={colors.gridLine}
-                    colors={colors}
-                    labels={{
-                      yAxis: t.renewablePercent,
-                      now: t.now,
-                      average: t.average,
-                    }}
-                    dataKey="renewableShareRegional"
-                  />
-                </ChartDetailView>
-              </>
-            ) : (
-              /* No postal code or no regional data - show single national chart */
-              <ChartDetailView
-                title={t.renewableTitle}
+            {/* Renewable Energy Chart - shows national data as bars, regional as dashed line */}
+            <ChartDetailView
+              title={isValidPostalCode(debouncedPostalCode) && hasRegionalData
+                ? `${t.renewableTitle} (${t.nationalData} & ${t.regionalData})`
+                : t.renewableTitle}
+              colors={colors}
+              chartType="renewable"
+              metrics={metrics ? {
+                min: metrics.renewable.min,
+                max: metrics.renewable.max,
+                avg: metrics.renewable.avg,
+                current: metrics.today?.renewable.current,
+                unit: '%',
+                label: t.renewablePercent,
+              } : undefined}
+            >
+              <RenewableBarChart
+                title={isValidPostalCode(debouncedPostalCode) && hasRegionalData
+                  ? `${t.renewableTitle} (${t.nationalData} & ${t.regionalData})`
+                  : t.renewableTitle}
+                subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+                data={filteredEnergyData}
+                backgroundColor={colors.surface}
+                textColor={colors.text}
+                gridColor={colors.gridLine}
                 colors={colors}
-                chartType="renewable"
-                metrics={metrics ? {
-                  min: metrics.renewable.min,
-                  max: metrics.renewable.max,
-                  avg: metrics.renewable.avg,
-                  current: metrics.today?.renewable.current,
-                  unit: '%',
-                  label: t.renewablePercent,
-                } : undefined}
-              >
-                <RenewableBarChart
-                  title={t.renewableTitle}
-                  subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
-                  data={filteredEnergyData}
-                  backgroundColor={colors.surface}
-                  textColor={colors.text}
-                  gridColor={colors.gridLine}
-                  colors={colors}
-                  labels={{
-                    yAxis: t.renewablePercent,
-                    now: t.now,
-                    average: t.average,
-                  }}
-                  dataKey="renewableShare"
-                />
-              </ChartDetailView>
-            )}
+                labels={{
+                  yAxis: t.renewablePercent,
+                  now: t.now,
+                  average: t.average,
+                  regional: t.regionalData,
+                }}
+                dataKey="renewableShare"
+                showRegionalLine={isValidPostalCode(debouncedPostalCode) && hasRegionalData}
+              />
+            </ChartDetailView>
 
             <ChartDetailView
               title={t.priceTitle}
