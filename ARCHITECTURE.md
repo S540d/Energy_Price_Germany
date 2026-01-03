@@ -20,6 +20,11 @@ Energy Price Germany is a cross-platform React Native/Expo application for visua
 │  • ~24h forecast                      • Day-ahead prices    │
 │  • Renewable share data               • Interpolated data   │
 │                                                              │
+│  Energy Charts Signal API (Regional)                        │
+│  • Renewable share by postal code (PLZ)                    │
+│  • 15-min resolution                                        │
+│  • Live regional grid data                                  │
+│                                                              │
 └──────────────────┬──────────────────┬──────────────────────┘
                    │                  │
                    └──────┬───────────┘
@@ -30,16 +35,21 @@ Energy Price Germany is a cross-platform React Native/Expo application for visua
                    └──────┬────────┘
                           │
                    ┌──────▼──────────┐
-                   │ Merged Dataset  │
+                   │ National Data   │
                    │ (43+ hours)     │
                    └──────┬──────────┘
                           │
-            ┌─────────────┴────────────────┐
-            │                              │
-    ┌───────▼────────┐          ┌─────────▼────────┐
-    │ GitHub Pages   │          │ Local Storage    │
-    │ (Deployment)   │          │ (Offline Cache)  │
-    └────────────────┘          └──────────────────┘
+            ┌─────────────┴──────────────┬──────────────────┐
+            │                            │                  │
+    ┌───────▼────────┐        ┌─────────▼────────┐        │
+    │ Regional Data  │        │ GitHub Pages     │        │
+    │ Fetch (if PLZ) │        │ (Deployment)     │        │
+    └───────┬────────┘        └──────────────────┘        │
+            │                                              │
+    ┌───────▼────────────┐                   ┌────────────▼─────┐
+    │ Merged National +  │                   │ Local Storage    │
+    │ Regional Dataset   │                   │ (Offline Cache)  │
+    └────────────────────┘                   └──────────────────┘
 ```
 
 **Merge Algorithm:**
@@ -51,6 +61,11 @@ Energy Price Germany is a cross-platform React Native/Expo application for visua
    - Otherwise: use Energy Charts only
 4. If Energy Charts unavailable: use aWATTar as fallback
 5. Store merged dataset with source attribution
+6. **Regional Data (Optional):**
+   - If user provides postal code (PLZ), fetch from Energy Charts Signal API
+   - Merge regional renewable share data by matching timestamps
+   - Cache regional data for 15 minutes
+   - Display both national and regional charts side-by-side
 
 See [DATA-MERGE-STRATEGY.md](DATA-MERGE-STRATEGY.md) for detailed algorithm.
 
@@ -288,6 +303,17 @@ Live: https://s540d.github.io/Energy_Price_Germany/
 - **Endpoint**: https://api.awattar.de/v1/marketdata
 - **Data Points**: Day-ahead and future prices
 - **Resolution**: Hourly (interpolated to 15-min)
+- **Coverage**: 48+ hours
+- **Format**: Unix timestamps (milliseconds) + array of objects
+
+#### Energy Charts Signal API (Regional Data)
+- **Endpoint**: https://api.energy-charts.info/signal?country=de&postal_code={PLZ}
+- **Data Points**: Regional renewable energy share based on postal code
+- **Resolution**: 15 minutes
+- **Coverage**: Real-time and forecast data
+- **Format**: Unix timestamps (seconds) + share percentage arrays
+- **Cache**: 15-minute TTL per postal code
+- **Usage**: Optional - user must provide 5-digit postal code in settings
 - **Coverage**: 48+ hours
 - **Format**: Unix timestamps (milliseconds) + array of objects
 
