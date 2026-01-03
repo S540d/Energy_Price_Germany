@@ -4,14 +4,22 @@
   "description": "Visualisierung von Energiepreisen und erneuerbaren Energien in Deutschland",
   "icons": [
     {
+      "src": "/Energy_Price_Germany/icon-180.png",
+      "type": "image/png",
+      "sizes": "180x180",
+      "purpose": "any maskable"
+    },
+    {
       "src": "/Energy_Price_Germany/icon-192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "/Energy_Price_Germany/icon-512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
   "start_url": "/Energy_Price_Germany/",
@@ -20,6 +28,6 @@
   "theme_color": "#6200EE",
   "background_color": "#ffffff",
   "orientation": "portrait",
-  "version": "1.2.1",
-  "build_date": "2025-11-15"
+  "version": "1.2.3",
+  "build_date": "2026-01-03"
 }
