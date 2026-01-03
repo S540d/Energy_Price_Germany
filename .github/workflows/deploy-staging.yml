@@ -54,23 +54,32 @@ jobs:
       - name: Create .nojekyll file
         run: touch dist/.nojekyll
 
-      - name: Checkout gh-pages branch
+      - name: Save build artifacts
+        run: |
+          mkdir -p /tmp/staging-build
+          cp -r dist/* /tmp/staging-build/
+          echo "Build artifacts saved to /tmp/staging-build"
+
+      - name: Checkout gh-pages branch (clean)
         run: |
           git fetch origin gh-pages
+          # Discard all local changes and checkout gh-pages
+          git reset --hard
+          git clean -fd
           git checkout gh-pages
 
       - name: Deploy to staging folder
         run: |
-          # Remove old staging folder if exists
-          rm -rf staging
-
-          # Copy new build to staging folder
-          mkdir -p staging
-          cp -r dist/* staging/
-
           # Configure git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Remove old staging folder if exists
+          rm -rf staging
+
+          # Copy new build to staging folder from temp location
+          mkdir -p staging
+          cp -r /tmp/staging-build/* staging/
 
           # Add and commit changes
           git add staging/
