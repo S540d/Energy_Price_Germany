@@ -5,7 +5,6 @@ A React Native/Expo app for visualizing energy prices and renewable energy share
 ## Features
 
 - **Real-time Data**: Fetches current energy market data from reliable sources
-- **Regional Data**: Optional postal code-based regional renewable energy data
 - **Interactive Charts**: Visualize price trends and renewable energy share over time with hover/touch interactions
 - **Correlation Analysis**: See the relationship between energy prices and renewable energy availability
 - **Bilingual Support**: Full German/English localization with automatic language detection
@@ -27,40 +26,11 @@ The app uses a **hybrid data strategy** for maximum forecast coverage:
    - Interpolated to 15-minute intervals
    - Used as fallback when Energy Charts unavailable
 
-3. **Energy Charts Signal API** - Regional data (optional, user-configured)
-   - Regional renewable energy share based on postal code (PLZ)
-   - 15-minute resolution with real-time updates
-   - Cached for 15 minutes to minimize API calls
-   - Displayed alongside national data for local grid insight
-
-4. **Mock Data** - Generated demonstration data when APIs fail
+3. **Mock Data** - Generated demonstration data when both APIs fail
 
 **Result**: Up to 43+ hours of forecast data with high-quality renewable share information for the first 24 hours.
 
 📖 See [DATA-MERGE-STRATEGY.md](DATA-MERGE-STRATEGY.md) for detailed information about the data merging logic.
-
-## Regional Data Feature
-
-The app now supports **regional renewable energy data** based on your postal code:
-
-### How to Use:
-1. Open the settings menu (⋮ icon in the top right)
-2. Scroll to the "REGION" section
-3. Enter your 5-digit postal code (PLZ)
-4. The app will display two charts:
-   - **National**: Germany-wide renewable energy share
-   - **Regional (PLZ)**: Local grid renewable energy share for your area
-
-### What You'll See:
-- Side-by-side comparison of national vs. regional renewable energy
-- Gray bars indicate missing regional data (API doesn't have data for that time)
-- Regional data updates automatically every 15 minutes
-- Works without internet if you've loaded data previously (cached)
-
-### Privacy:
-- Your postal code is stored locally on your device only
-- No data is sent to any server except the Energy Charts API
-- You can clear your postal code at any time in settings
 
 ## Installation
 
