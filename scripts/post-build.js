@@ -6,7 +6,6 @@ const filesToCopy = [
   { src: 'public/.nojekyll', dest: 'dist/.nojekyll' },
   { src: 'public/manifest.json', dest: 'dist/manifest.json' },
   { src: 'public/service-worker.js', dest: 'dist/service-worker.js' },
-  { src: 'public/icon-180.png', dest: 'dist/icon-180.png' },
   { src: 'public/icon-192.png', dest: 'dist/icon-192.png' },
   { src: 'public/icon-512.png', dest: 'dist/icon-512.png' },
   { src: 'public/data/marketdata.json', dest: 'dist/data/marketdata.json' },
