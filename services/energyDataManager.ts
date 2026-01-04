@@ -108,35 +108,45 @@ export class EnergyDataManager {
       // Check regional cache first
       const cached = this.regionalCache.get(postalCode);
       if (cached && Date.now() - cached.timestamp < this.regionalCacheDuration) {
-        logger.debug(`Using cached regional data for PLZ ${postalCode}`);
+        logger.debug(`[fetchRegionalData] Using cached regional data for PLZ ${postalCode}`);
         return cached.data;
       }
 
-      logger.debug(`Fetching regional data for postal code: ${postalCode}`);
+      logger.debug(`[fetchRegionalData] Fetching regional data for postal code: ${postalCode}`);
       const url = `https://api.energy-charts.info/signal?country=de&postal_code=${postalCode}`;
-      
+      logger.debug(`[fetchRegionalData] API URL: ${url}`);
+
       const response = await fetch(url);
+
       if (!response.ok) {
         throw new Error(`Regional API HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data: RegionalDataResponse = await response.json();
-      logger.debug(`Regional data fetched successfully for PLZ ${postalCode}`);
-      
+
+      logger.debug(`[fetchRegionalData] Regional data fetched successfully for PLZ ${postalCode}`);
+      logger.debug(`[fetchRegionalData] Response data points: ${data.unix_seconds?.length || 0}`);
+
+      if (data.unix_seconds && data.unix_seconds.length > 0) {
+        const first = new Date(data.unix_seconds[0] * 1000).toISOString();
+        const last = new Date(data.unix_seconds[data.unix_seconds.length - 1] * 1000).toISOString();
+        logger.debug(`[fetchRegionalData] Time range: ${first} to ${last}`);
+      }
+
       // Cache the regional data
       this.regionalCache.set(postalCode, { data, timestamp: Date.now() });
-      
+
       return data;
     } catch (error) {
       // Check if it's a CORS error (common on localhost)
       const errorMessage = error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('CORS') || errorMessage.includes('Load failed')) {
         logger.warn(
-          `⚠️ Regional data blocked by CORS policy. This is expected on localhost. ` +
+          `[fetchRegionalData] ⚠️ Regional data blocked by CORS policy. This is expected on localhost. ` +
           `Regional data will work on production (GitHub Pages). PLZ: ${postalCode}`
         );
       } else {
-        logger.error(`Failed to fetch regional data for PLZ ${postalCode}:`, error);
+        logger.error(`[fetchRegionalData] Failed to fetch regional data for PLZ ${postalCode}:`, error);
       }
       return null;
     }
@@ -144,15 +154,16 @@ export class EnergyDataManager {
 
   /**
    * Merges regional data into the national energy data
-   * 
+   *
    * Note on timestamp conversion:
    * - Energy Charts Signal API returns timestamps in unix_seconds (seconds since epoch)
    * - The rest of the system uses JavaScript timestamps (milliseconds since epoch)
    * - We convert by multiplying by 1000 to ensure proper timestamp matching
-   * - This allows O(1) lookups when merging data by timestamp
+   * - Uses fuzzy matching (within 60 seconds) to handle timing offsets
    */
   private mergeRegionalData(nationalData: EnergyData[], regionalData: RegionalDataResponse | null): EnergyData[] {
     if (!regionalData || !regionalData.unix_seconds || !regionalData.share) {
+      logger.debug('[mergeRegionalData] No regional data provided, returning national data unchanged');
       return nationalData;
     }
 
@@ -165,10 +176,9 @@ export class EnergyDataManager {
     }
 
     try {
-      // Create a map of regional data by timestamp for O(1) lookup
-      const regionalMap = new Map<number, number>();
-      
-      // Safe to iterate as we've validated array lengths are equal
+      // Create a list of regional data with timestamps for fuzzy matching
+      const regionalList: Array<{ timestamp: number; share: number }> = [];
+
       for (let i = 0; i < regionalData.unix_seconds.length; i++) {
         // Convert unix_seconds (from API) to milliseconds (used internally)
         const timestampMs = regionalData.unix_seconds[i] * 1000;
@@ -178,29 +188,51 @@ export class EnergyDataManager {
           // Validate and cap share values to 0-100 range
           // The API sometimes returns values > 100, which we need to cap
           share = Math.max(0, Math.min(100, share));
-          regionalMap.set(timestampMs, share);
+          regionalList.push({ timestamp: timestampMs, share });
         }
       }
 
-      logger.debug(`Merging ${regionalMap.size} regional data points into national data`);
-      logger.debug(`National data timestamps - first:`, nationalData[0]?.timestamp, 'last:', nationalData[nationalData.length - 1]?.timestamp);
-      logger.debug(`Regional data timestamps - first:`, Array.from(regionalMap.keys())[0], 'last:', Array.from(regionalMap.keys()).pop());
+      logger.debug(`[mergeRegionalData] Received ${regionalList.length} regional data points`);
+      if (regionalList.length > 0) {
+        logger.debug(`[mergeRegionalData] Regional timestamps: first=${regionalList[0].timestamp}, last=${regionalList[regionalList.length - 1].timestamp}`);
+      }
+      if (nationalData.length > 0) {
+        logger.debug(`[mergeRegionalData] National timestamps: first=${nationalData[0].timestamp}, last=${nationalData[nationalData.length - 1].timestamp}`);
+      }
 
-      // Merge regional data into national data by matching timestamps
+      // Merge regional data into national data using fuzzy matching (within 60 seconds)
+      const TIMESTAMP_TOLERANCE_MS = 60 * 1000; // 60 seconds tolerance
+
       const merged = nationalData.map(item => {
-        const regionalShare = regionalMap.get(item.timestamp);
+        // Try exact match first
+        let regional = regionalList.find(r => r.timestamp === item.timestamp);
+
+        // If no exact match, try fuzzy match (within tolerance)
+        if (!regional) {
+          regional = regionalList.find(r =>
+            Math.abs(r.timestamp - item.timestamp) <= TIMESTAMP_TOLERANCE_MS
+          );
+        }
+
         return {
           ...item,
-          renewableShareRegional: regionalShare !== undefined ? regionalShare : null,
+          renewableShareRegional: regional ? regional.share : null,
         };
       });
 
       const matchedCount = merged.filter(item => item.renewableShareRegional !== null).length;
-      logger.debug(`Matched ${matchedCount} out of ${nationalData.length} national data points with regional data`);
+      logger.debug(`[mergeRegionalData] Successfully matched ${matchedCount} out of ${nationalData.length} national data points with regional data`);
+
+      if (matchedCount === 0 && regionalList.length > 0) {
+        logger.warn(`[mergeRegionalData] ⚠️ No timestamp matches found! Regional data may be from different time range.`);
+        logger.warn(`[mergeRegionalData] Sample national timestamp: ${nationalData[0]?.timestamp}`);
+        logger.warn(`[mergeRegionalData] Sample regional timestamp: ${regionalList[0]?.timestamp}`);
+        logger.warn(`[mergeRegionalData] Difference: ${Math.abs((nationalData[0]?.timestamp || 0) - (regionalList[0]?.timestamp || 0))} ms`);
+      }
 
       return merged;
     } catch (error) {
-      logger.error('Error merging regional data:', error);
+      logger.error('[mergeRegionalData] Error merging regional data:', error);
       return nationalData;
     }
   }
