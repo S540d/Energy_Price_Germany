@@ -532,6 +532,6 @@ Success? ──Yes──→ ✅ Complete
 
 ---
 
-**Last Updated**: 2025-11-13
-**Current Version**: 1.2.1
+**Last Updated**: 2026-01-04
+**Current Version**: 1.3.0
 **Maintainer**: S540d
