@@ -341,11 +341,143 @@ The GitHub Actions workflow automatically:
 
 ---
 
-**Last Updated**: November 19, 2025
-**Strategy Version**: 3.1 (48h renewable forecast utilization)
+## 🌍 Regional Data Caching Strategy (v1.3.0 - January 2026)
+
+### Problem
+- Energy Charts Signal API called every 15 minutes for regional data
+- ~96 API calls per day per postal code
+- Unnecessary requests for same data within same day
+- Regional data doesn't change significantly hourly
+
+### Solution: Daily Regional Cache with Persistent Storage
+
+**Caching Architecture:**
+```
+┌─────────────────────────────────────────┐
+│   Request Regional Data                  │
+└──────────────┬──────────────────────────┘
+               │
+               ├─→ Check Persistent Storage
+               │   ├─ Valid postal code? ✓
+               │   ├─ Same day? ✓
+               │   └─ YES → Return cached data ✓
+               │
+               ├─→ Check Memory Cache (15 min TTL)
+               │   └─ YES → Return cached data ✓
+               │
+               └─→ Fetch from Energy Charts API
+                   ├─ Save to memory cache (15 min)
+                   └─ Save to persistent storage (daily TTL)
+```
+
+**Key Features:**
+- **Dual-Layer Caching**: Memory (15 min) + Persistent (daily)
+- **Postal Code Specific**: Only current PLZ cached, invalidates on change
+- **Automatic Invalidation**: After midnight (local time)
+- **Cross-Platform**: localStorage (Web) + AsyncStorage (iOS/Android)
+- **Error Resilience**: Fire-and-forget storage writes, graceful degradation
+
+**Implementation Details:**
+
+```typescript
+// Cache entry structure
+interface PersistentRegionalCacheEntry {
+  postalCode: string;
+  data: RegionalDataResponse;
+  cachedDate: string;  // YYYY-MM-DD format
+  timestamp: number;   // Unix timestamp
+}
+
+// Key methods in energyDataManager.ts
+- getCurrentDateString(): string  // Returns YYYY-MM-DD format
+- loadRegionalCacheFromStorage(postalCode): Promise<RegionalDataResponse | null>
+- saveRegionalCacheToStorage(postalCode, data): Promise<void>
+- invalidateRegionalCache(): Promise<void>  // Clears both caches
+```
+
+**Fetch Logic in `fetchRegionalData()`:**
+
+1. **Check persistent storage** (daily validation)
+   - Validate postal code matches
+   - Validate date hasn't changed
+   - Return if valid
+
+2. **Check memory cache** (15 min fallback)
+   - Return if within TTL
+
+3. **Fetch from API**
+   - Energy Charts Signal API
+   - Handle errors gracefully
+
+4. **Save to both caches**
+   - Memory cache with 15-min TTL
+   - Persistent storage with daily TTL
+
+**Performance Gains:**
+```
+Before: ~96 API calls per day per postal code
+After:  1-2 API calls per day per postal code
+Result: 95% reduction in API calls! 🎉
+```
+
+**Benefits:**
+- ✅ Faster app startup (no API wait)
+- ✅ Reduced server load
+- ✅ Better offline support
+- ✅ Consistent regional data throughout the day
+- ✅ Cross-platform persistence (Web, iOS, Android)
+
+---
+
+## 🔍 Fuzzy Timestamp Matching (Data Merge Enhancement)
+
+### Problem
+- Energy Charts and regional renewable forecasts have slightly different timestamps
+- Direct timestamp comparison fails for ~60 second variations
+- Causes missed merges or duplicate entries
+
+### Solution: ±60 Second Tolerance Window
+
+```typescript
+// Fuzzy timestamp matching algorithm
+const TIMESTAMP_TOLERANCE_MS = 60 * 1000;  // ±60 seconds
+
+function isTimestampMatch(ts1: number, ts2: number): boolean {
+  return Math.abs(ts1 - ts2) <= TIMESTAMP_TOLERANCE_MS;
+}
+```
+
+**When Used:**
+- Merging Energy Charts prices with renewable forecasts
+- Checking if data points already exist
+- Preventing duplicate entries from API variations
+
+**Example:**
+```
+Energy Charts timestamp:  1704067200000 (exact)
+Renewable forecast:       1704067218000 (+18 seconds)
+
+Is match? |1704067200000 - 1704067218000| = 18000ms <= 60000ms ✓ YES
+```
+
+---
+
+**Last Updated**: January 4, 2026
+**Strategy Version**: 3.1 + Regional Cache v1.3.0
 **Status**: ✅ Active in production
 
 ## 📝 Version History
+
+### v3.2 + Regional Cache v1.0 (January 4, 2026)
+- **Regional Data Caching**: New persistent storage strategy for regional renewable data
+- **Dual-Layer Caching**: Memory (15 min TTL) + Persistent (daily TTL)
+- **Fuzzy Timestamp Matching**: ±60 second tolerance for timestamp comparisons
+- **95% API Call Reduction**: From ~96/day to 1-2/day per postal code
+- **Cross-Platform Support**: localStorage (Web) + AsyncStorage (iOS/Android)
+- **Automatic Invalidation**: After midnight (local time)
+- **Fire-and-Forget Storage**: Non-blocking persistent storage writes
+- **Benefits**: Faster app startup, reduced server load, better offline support, consistent regional data
+- **Status**: Merged to main, deployed to production v1.3.0
 
 ### v3.1 (November 19, 2025)
 - **48h Renewable Forecast**: Discovered Energy Charts provides 48h renewable forecast (vs 24h prices)
