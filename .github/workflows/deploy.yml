@@ -79,6 +79,8 @@ jobs:
 
           # Copy new production build from temp location
           cp -r /tmp/production-build/* .
+          # Explicitly copy .nojekyll (hidden files are not copied with /*)
+          cp /tmp/production-build/.nojekyll . 2>/dev/null || touch .nojekyll
 
           # Restore staging folder if it was backed up
           if [ -d "staging.bak" ]; then
@@ -86,8 +88,8 @@ jobs:
             mv staging.bak staging
           fi
 
-          # Add and commit changes
-          git add -A
+          # Add and commit changes (including .nojekyll)
+          git add -A .nojekyll
           git commit -m "chore: Deploy production build from ${{ github.sha }}
 
           🚀 Production deployment
