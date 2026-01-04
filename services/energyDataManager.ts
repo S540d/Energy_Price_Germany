@@ -118,10 +118,11 @@ export class EnergyDataManager {
 
       // Use CORS proxy to bypass CORS restrictions (api.energy-charts.info doesn't allow cross-origin requests)
       // The API itself only allows requests from https://www.api.energy-charts.info
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`;
+      // Using cors-anywhere as it's more reliable than corsproxy.io
+      const proxyUrl = `https://cors-anywhere.herokuapp.com/${apiUrl}`;
 
       logger.debug(`[fetchRegionalData] API URL: ${apiUrl}`);
-      logger.debug(`[fetchRegionalData] Using CORS proxy: corsproxy.io`);
+      logger.debug(`[fetchRegionalData] Using CORS proxy: cors-anywhere.herokuapp.com`);
 
       const response = await fetch(proxyUrl);
 
