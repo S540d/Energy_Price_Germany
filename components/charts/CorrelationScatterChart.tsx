@@ -206,17 +206,22 @@ export function CorrelationScatterChart({
           )}
         </View>
         {!isPhone && (
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2196F3' }} />
+          <View style={{
+            flexDirection: 'row',
+            gap: 12,
+            paddingRight: 10,
+            paddingTop: 0
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#2196F3' }} />
               <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.night}</Text>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF9800' }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#FF9800' }} />
               <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.morningEvening}</Text>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFEB3B' }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#FFEB3B' }} />
               <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.day}</Text>
             </View>
           </View>
