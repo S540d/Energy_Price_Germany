@@ -74,6 +74,12 @@ jobs:
           tar -xf artifact.tar
           cd ..
 
+      - name: Save build artifacts
+        run: |
+          mkdir -p /tmp/production-build
+          cp -r artifact/* /tmp/production-build/
+          echo "Build artifacts saved to /tmp/production-build"
+
       - name: Checkout gh-pages branch
         run: |
           git fetch origin gh-pages || git checkout --orphan gh-pages
@@ -94,8 +100,8 @@ jobs:
           # Remove old production files (but keep staging)
           find . -maxdepth 1 ! -name 'staging.bak' ! -name '.git' ! -name '.' ! -name '..' -exec rm -rf {} + 2>/dev/null || true
 
-          # Copy new production build
-          cp -r artifact/* .
+          # Copy new production build from temp location
+          cp -r /tmp/production-build/* .
 
           # Restore staging folder if it was backed up
           if [ -d "staging.bak" ]; then
