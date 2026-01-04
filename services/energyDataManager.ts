@@ -2,6 +2,7 @@ import { EnergyData } from '../utils/metrics';
 import { Platform } from 'react-native';
 import { logger } from '../utils/logger';
 import { isValidPostalCode } from '../utils/postalCodeUtils';
+import { Storage } from '../utils/platform';
 
 /**
  * Datenquelle-Typen
@@ -132,10 +133,6 @@ export class EnergyDataManager {
    */
   private async loadRegionalCacheFromStorage(postalCode: string): Promise<RegionalDataResponse | null> {
     try {
-      // Dynamically import Storage to avoid issues with platform detection
-      const StorageModule = await import('../utils/platform');
-      const { Storage } = StorageModule;
-
       const cached = await Storage.getItem(this.REGIONAL_CACHE_STORAGE_KEY);
 
       if (!cached) {
@@ -176,9 +173,6 @@ export class EnergyDataManager {
     data: RegionalDataResponse
   ): Promise<void> {
     try {
-      const StorageModule = await import('../utils/platform');
-      const { Storage } = StorageModule;
-
       const cacheEntry: PersistentRegionalCacheEntry = {
         postalCode,
         data,
@@ -541,8 +535,6 @@ export class EnergyDataManager {
       logger.debug('[invalidateRegionalCache] Memory cache cleared');
 
       // Clear persistent storage cache
-      const StorageModule = await import('../utils/platform');
-      const { Storage } = StorageModule;
       await Storage.removeItem(this.REGIONAL_CACHE_STORAGE_KEY);
       logger.debug('[invalidateRegionalCache] Persistent storage cache cleared');
     } catch (error) {
