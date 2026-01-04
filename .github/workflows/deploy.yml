@@ -89,7 +89,7 @@ jobs:
           fi
 
           # Add and commit changes (including .nojekyll)
-          git add -A .nojekyll
+          git add -A
           git commit -m "chore: Deploy production build from ${{ github.sha }}
 
           🚀 Production deployment
