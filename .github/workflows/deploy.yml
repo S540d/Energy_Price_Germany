@@ -22,12 +22,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout main branch
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -40,49 +42,24 @@ jobs:
 
       - name: Build for web
         run: npm run build:web
+        env:
+          NODE_ENV: production
 
       - name: Create .nojekyll file
         run: touch dist/.nojekyll
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: './dist'
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          ref: main
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: github-pages
-          path: ./artifact
-
-      - name: Extract artifact
-        run: |
-          cd artifact
-          tar -xf artifact.tar
-          cd ..
-
       - name: Save build artifacts
         run: |
           mkdir -p /tmp/production-build
-          cp -r artifact/* /tmp/production-build/
+          cp -r dist/* /tmp/production-build/
           echo "Build artifacts saved to /tmp/production-build"
 
-      - name: Checkout gh-pages branch
+      - name: Checkout gh-pages branch (clean)
         run: |
           git fetch origin gh-pages || git checkout --orphan gh-pages
+          # Discard all local changes and checkout gh-pages
+          git reset --hard
+          git clean -fd
           git checkout gh-pages
 
       - name: Deploy to root (preserve staging folder)
