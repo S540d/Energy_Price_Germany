@@ -175,17 +175,51 @@ export function RenewableBarChart({
           </View>
         );
       })()}
-      <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: 0, color: textColor }}>{title}</Text>
-      {subtitle && (
-        <Text style={{ fontSize: 12, color: textColor, opacity: 0.7, marginBottom: 2 }}>
-          {subtitle}
-        </Text>
-      )}
-      {interactionHint && (
-        <Text style={{ fontSize: 12, fontStyle: 'italic', opacity: 0.5, color: textColor }} accessibilityRole="text" accessibilityLabel={interactionHint}>
-          💡 {interactionHint}
-        </Text>
-      )}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 0 }}>
+        <View>
+          <Text style={{ fontSize: isPhone ? 16 : 18, fontWeight: 'bold', marginBottom: 0, color: textColor }}>{title}</Text>
+          {subtitle && (
+            <Text style={{ fontSize: 12, color: textColor, opacity: 0.7, marginBottom: 2 }}>
+              {subtitle}
+            </Text>
+          )}
+          {interactionHint && (
+            <Text style={{ fontSize: 12, fontStyle: 'italic', opacity: 0.5, color: textColor }} accessibilityRole="text" accessibilityLabel={interactionHint}>
+              💡 {interactionHint}
+            </Text>
+          )}
+        </View>
+        {/* Legend - hidden on phone, visible on tablet/desktop */}
+        {!isPhone && (
+          <View style={{
+            flexDirection: 'row',
+            gap: 12,
+            paddingRight: 10,
+            paddingTop: 0
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{
+                width: 12,
+                height: 2,
+                backgroundColor: textColor,
+                opacity: 0.5
+              }} />
+              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.average}</Text>
+            </View>
+            {showRegionalLine && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={{
+                  width: 12,
+                  height: 2,
+                  backgroundColor: '#FF9800',
+                  opacity: 0.8
+                }} />
+                <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.regional}</Text>
+              </View>
+            )}
+          </View>
+        )}
+      </View>
       <View style={{ height: chartHeight, width: chartWidth, position: 'relative' }}>
         {/* Grid Lines - Modern gestrichelt */}
         <Svg width={chartWidth} height={chartHeight} style={{ position: 'absolute' }}>

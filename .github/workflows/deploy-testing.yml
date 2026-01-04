@@ -1,0 +1,107 @@
+name: Deploy Testing to GitHub Pages
+
+on:
+  # Trigger on push to testing branch
+  push:
+    branches: [ testing ]
+  # Allow manual trigger
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy-testing:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout testing branch
+        uses: actions/checkout@v4
+        with:
+          ref: testing
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Modify app.json for testing baseUrl
+        run: |
+          echo "Updating baseUrl for testing deployment..."
+          sed -i 's|"baseUrl": "/Energy_Price_Germany"|"baseUrl": "/Energy_Price_Germany/testing"|g' app.json
+          echo "Updated app.json:"
+          grep -A2 '"web"' app.json
+
+      - name: Modify index.html for testing service worker path
+        run: |
+          echo "Updating service worker path for testing..."
+          sed -i "s|'/Energy_Price_Germany/service-worker.js'|'/Energy_Price_Germany/testing/service-worker.js'|g" public/index.html
+          sed -i "s|scope: '/Energy_Price_Germany/'|scope: '/Energy_Price_Germany/testing/'|g" public/index.html
+          echo "Updated service worker paths in index.html"
+
+      - name: Build for web (testing)
+        run: npm run build:web
+        env:
+          NODE_ENV: production
+
+      - name: Create .nojekyll file
+        run: touch dist/.nojekyll
+
+      - name: Save build artifacts
+        run: |
+          mkdir -p /tmp/testing-build
+          cp -r dist/* /tmp/testing-build/
+          echo "Build artifacts saved to /tmp/testing-build"
+
+      - name: Checkout gh-pages branch (clean)
+        run: |
+          git fetch origin gh-pages
+          # Discard all local changes and checkout gh-pages
+          git reset --hard
+          git clean -fd
+          git checkout gh-pages
+
+      - name: Deploy to testing folder
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Remove old testing folder if exists
+          rm -rf testing
+
+          # Copy new build to testing folder from temp location
+          mkdir -p testing
+          cp -r /tmp/testing-build/* testing/
+
+          # Add and commit changes
+          git add testing/
+          git commit -m "chore: Deploy testing build from ${{ github.sha }}
+
+          🚀 Testing deployment
+          📦 Branch: testing
+          🔗 URL: https://s540d.github.io/Energy_Price_Germany/testing/
+
+          🤖 Automated by GitHub Actions" || echo "No changes to commit"
+
+          # Push to gh-pages
+          git push origin gh-pages
+
+      - name: Summary
+        run: |
+          echo "## 🚀 Testing Deployed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Successfully deployed to testing environment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Testing URL:** https://s540d.github.io/Energy_Price_Germany/testing/" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** testing" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ Note: Changes may take 1-2 minutes to appear due to CDN caching" >> $GITHUB_STEP_SUMMARY

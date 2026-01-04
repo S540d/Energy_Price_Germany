@@ -62,6 +62,29 @@ The app now supports **regional renewable energy data** based on your postal cod
 - No data is sent to any server except the Energy Charts API
 - You can clear your postal code at any time in settings
 
+### Technical Details: Cloudflare Worker (CORS Proxy)
+
+The regional data feature uses a **Cloudflare Worker** to proxy requests to the Energy Charts Signal API. This is necessary because the Energy Charts Signal API doesn't support CORS headers by default, which prevents direct browser access.
+
+**What the Cloudflare Worker does:**
+1. **Accepts requests** with postal code parameter: `/api/regional?plz=12345`
+2. **Fetches data** from Energy Charts Signal API: `https://api.energy-charts.info/signal?country=de&postal_code={plz}`
+3. **Adds CORS headers** to the response, allowing browser requests from any origin
+4. **Caches responses**:
+   - Browser cache: 15 minutes (900s)
+   - Cloudflare cache: 1 hour (3600s)
+5. **Handles errors** gracefully with proper HTTP status codes
+
+**Why it's needed:**
+- Browsers enforce CORS (Cross-Origin Resource Sharing) for security
+- Energy Charts API doesn't provide CORS headers for the Signal endpoint
+- The Worker acts as a transparent proxy with CORS support
+
+**Deployment:**
+- Hosted on Cloudflare Pages
+- Automatically deployed via GitHub Actions
+- No API keys or authentication required (public data only)
+
 ## Installation
 
 1. Clone the repository:

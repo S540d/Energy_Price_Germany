@@ -315,7 +315,68 @@ Live: https://s540d.github.io/Energy_Price_Germany/
 - **Cache**: 15-minute TTL per postal code
 - **Usage**: Optional - user must provide 5-digit postal code in settings
 - **Coverage**: 48+ hours
-- **Format**: Unix timestamps (milliseconds) + array of objects
+
+---
+
+### Cloudflare Worker (CORS Proxy for Regional Data)
+
+The application uses a **Cloudflare Worker** to enable regional data fetching from the Energy Charts Signal API.
+
+#### Problem Solved
+The Energy Charts Signal API (`/signal` endpoint) does **not include CORS headers**, which prevents direct browser access due to browser security policies. A proxy with CORS support is required.
+
+#### Worker Architecture
+```
+Browser Request (with PLZ)
+    ↓
+Cloudflare Worker (/api/regional?plz=12345)
+    ├─ 1. Check Cloudflare Cache (1 hour TTL)
+    │   └─ Hit? Return cached response
+    │
+    ├─ 2. Fetch from Energy Charts API
+    │   └─ GET https://api.energy-charts.info/signal?country=de&postal_code={plz}
+    │
+    ├─ 3. Add CORS Headers
+    │   └─ Access-Control-Allow-Origin: *
+    │
+    ├─ 4. Set Cache Headers
+    │   ├─ Browser: max-age=900s (15 minutes)
+    │   └─ Cloudflare: s-maxage=3600s (1 hour)
+    │
+    └─ 5. Return Response to Browser
+```
+
+#### File Location
+- **Worker Code**: `/cloudflare-worker.js`
+- **Deployment**: Cloudflare Pages
+- **Trigger**: HTTP GET requests to Cloudflare Pages function
+
+#### Key Features
+1. **Parameter Validation**: Requires `plz` query parameter (postal code)
+2. **Dual-Layer Caching**:
+   - Cloudflare Edge Cache: 1 hour (reduces upstream API calls)
+   - Browser Cache: 15 minutes (reduces network requests)
+3. **CORS Preflight Handling**: Responds to OPTIONS requests for CORS negotiation
+4. **Error Handling**:
+   - 400: Missing postal code parameter
+   - 502: Upstream API error
+   - 500: Worker error (network issues, JSON parsing, etc.)
+5. **User-Agent Header**: Identifies requests as `EnergyPriceGermany-App/1.0`
+
+#### Security & Privacy
+- ✅ No authentication required (public data)
+- ✅ No credentials stored in code
+- ✅ CORS allows requests from any origin (safe for public data)
+- ✅ User postal code only sent to Energy Charts API (via Worker proxy)
+- ✅ No additional data collection or tracking
+
+#### Deployment
+The worker is deployed via GitHub Actions:
+1. Cloudflare Pages project configured as `EnergyPriceGermany-Worker`
+2. `cloudflare-worker.js` is the entry point
+3. Accessible at Cloudflare Pages URL (configured in `energyDataManager.ts`)
+
+---
 
 #### Data Merge Strategy
 See [DATA-MERGE-STRATEGY.md](DATA-MERGE-STRATEGY.md) for:
