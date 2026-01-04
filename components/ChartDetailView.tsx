@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemeColors } from '../utils/theme';
 import { Metrics, GRID_FEES_AND_TAXES } from '../utils/metrics';
 
@@ -321,27 +322,31 @@ export function ChartDetailView({
         animationType="slide"
         onRequestClose={() => setIsExpanded(false)}
       >
-        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
           {/* Header */}
           <View style={[styles.modalHeader, { backgroundColor: colors.surface, borderBottomColor: colors.gridLine }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>
               {title}
             </Text>
-            <TouchableOpacity
-              onPress={() => setIsExpanded(false)}
-              style={styles.closeButton}
-            >
-              <Text style={[styles.closeButtonText, { color: colors.primary }]}>
-                × Schließen
-              </Text>
-            </TouchableOpacity>
           </View>
 
           {/* Content */}
           <ScrollView style={{ flex: 1 }}>
             {renderContent()}
           </ScrollView>
-        </View>
+
+          {/* Close button at bottom */}
+          <View style={[styles.closeButtonContainer, { backgroundColor: colors.surface, borderTopColor: colors.gridLine }]}>
+            <TouchableOpacity
+              onPress={() => setIsExpanded(false)}
+              style={[styles.closeButton, { backgroundColor: colors.primary }]}
+            >
+              <Text style={styles.closeButtonText}>
+                Schließen
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
       </Modal>
     </View>
   );
@@ -378,23 +383,37 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    flex: 1,
+  },
+  closeButtonContainer: {
+    padding: 16,
+    borderTopWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   closeButton: {
-    padding: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   closeButtonText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
+    color: '#fff',
   },
   toggleContainer: {
     flexDirection: 'row',
