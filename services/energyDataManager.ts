@@ -34,11 +34,22 @@ interface RegionalDataResponse {
 }
 
 /**
- * Regional Data Cache Entry
+ * Regional Data Cache Entry (In-Memory)
  */
 interface RegionalCacheEntry {
   data: RegionalDataResponse;
   timestamp: number;
+}
+
+/**
+ * Persistent Regional Cache Entry (localStorage/AsyncStorage)
+ * Stored as JSON with date-based validation
+ */
+interface PersistentRegionalCacheEntry {
+  postalCode: string;        // PLZ für diese Cache-Einträge
+  data: RegionalDataResponse; // Tatsächliche regionale Daten
+  cachedDate: string;        // YYYY-MM-DD Format (Datum der Cache-Erstellung)
+  timestamp: number;         // Exakter Zeitstempel für Debugging
 }
 
 /**
@@ -61,9 +72,12 @@ export class EnergyDataManager {
   private isLoading: boolean = false;
   private loadingPromise: Promise<EnergyData[]> | null = null;
   
-  // Regional data cache
+  // Regional data cache (in-memory)
   private regionalCache: Map<string, RegionalCacheEntry> = new Map();
   private readonly regionalCacheDuration = 15 * 60 * 1000; // 15 minutes
+
+  // Persistent regional cache storage key
+  private readonly REGIONAL_CACHE_STORAGE_KEY = 'energy_regional_cache_v1';
 
   // Cache-Konfiguration
   private readonly cacheConfig: CacheConfig = {
@@ -100,31 +114,124 @@ export class EnergyDataManager {
   }
 
   /**
-   * Fetches regional renewable data from Energy Charts Signal API
-   * Uses a CORS proxy to bypass CORS restrictions
+   * Returns current date in YYYY-MM-DD format (local time)
+   * Used for daily cache validation
+   */
+  private getCurrentDateString(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  /**
+   * Loads regional cache from persistent storage (localStorage/AsyncStorage)
+   * Returns null if no valid cache exists
+   * Validates: correct postal code and same day
+   */
+  private async loadRegionalCacheFromStorage(postalCode: string): Promise<RegionalDataResponse | null> {
+    try {
+      // Dynamically import Storage to avoid issues with platform detection
+      const StorageModule = await import('../utils/platform');
+      const { Storage } = StorageModule;
+
+      const cached = await Storage.getItem(this.REGIONAL_CACHE_STORAGE_KEY);
+
+      if (!cached) {
+        logger.debug('[loadRegionalCacheFromStorage] No cached data found in storage');
+        return null;
+      }
+
+      const parsedCache: PersistentRegionalCacheEntry = JSON.parse(cached);
+      const currentDate = this.getCurrentDateString();
+
+      // Validate: correct postal code
+      if (parsedCache.postalCode !== postalCode) {
+        logger.debug(`[loadRegionalCacheFromStorage] Postal code mismatch: cached=${parsedCache.postalCode}, requested=${postalCode}`);
+        return null;
+      }
+
+      // Validate: same day
+      if (parsedCache.cachedDate !== currentDate) {
+        logger.debug(`[loadRegionalCacheFromStorage] Cache expired (day changed): cached=${parsedCache.cachedDate}, current=${currentDate}`);
+        return null;
+      }
+
+      logger.debug(`[loadRegionalCacheFromStorage] Valid cache found for PLZ ${postalCode} from ${parsedCache.cachedDate}`);
+      return parsedCache.data;
+
+    } catch (error) {
+      logger.error('[loadRegionalCacheFromStorage] Error loading from storage:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Saves regional cache to persistent storage (localStorage/AsyncStorage)
+   * Fire-and-forget: errors are logged but don't block execution
+   */
+  private async saveRegionalCacheToStorage(
+    postalCode: string,
+    data: RegionalDataResponse
+  ): Promise<void> {
+    try {
+      const StorageModule = await import('../utils/platform');
+      const { Storage } = StorageModule;
+
+      const cacheEntry: PersistentRegionalCacheEntry = {
+        postalCode,
+        data,
+        cachedDate: this.getCurrentDateString(),
+        timestamp: Date.now(),
+      };
+
+      await Storage.setItem(
+        this.REGIONAL_CACHE_STORAGE_KEY,
+        JSON.stringify(cacheEntry)
+      );
+
+      logger.debug(`[saveRegionalCacheToStorage] Saved cache for PLZ ${postalCode} (${this.getCurrentDateString()})`);
+
+    } catch (error) {
+      // Non-blocking: just log the error
+      logger.error('[saveRegionalCacheToStorage] Error saving to storage:', error);
+    }
+  }
+
+  /**
+   * Fetches regional renewable data via a serverless proxy function
+   * Uses dual-layer caching: persistent storage (daily) + memory (15 min)
+   * This avoids CORS issues and API rate limits by caching requests on the server side
    * @returns Regional data or null if fetch fails
    */
   private async fetchRegionalData(postalCode: string): Promise<RegionalDataResponse | null> {
     try {
-      // Check regional cache first
-      const cached = this.regionalCache.get(postalCode);
-      if (cached && Date.now() - cached.timestamp < this.regionalCacheDuration) {
-        logger.debug(`[fetchRegionalData] Using cached regional data for PLZ ${postalCode}`);
-        return cached.data;
+      // STEP 1: Check persistent storage cache first (daily validation)
+      const persistentCache = await this.loadRegionalCacheFromStorage(postalCode);
+      if (persistentCache) {
+        logger.debug(`[fetchRegionalData] Using persistent storage cache for PLZ ${postalCode}`);
+        // Also populate memory cache for faster subsequent access
+        this.regionalCache.set(postalCode, { data: persistentCache, timestamp: Date.now() });
+        return persistentCache;
       }
 
-      logger.debug(`[fetchRegionalData] Fetching regional data for postal code: ${postalCode}`);
-      const apiUrl = `https://api.energy-charts.info/signal?country=de&postal_code=${postalCode}`;
+      // STEP 2: Check in-memory cache (15-minute fallback)
+      const memoryCache = this.regionalCache.get(postalCode);
+      if (memoryCache && Date.now() - memoryCache.timestamp < this.regionalCacheDuration) {
+        logger.debug(`[fetchRegionalData] Using memory cache for PLZ ${postalCode}`);
+        return memoryCache.data;
+      }
 
-      // Use CORS proxy to bypass CORS restrictions (api.energy-charts.info doesn't allow cross-origin requests)
-      // The API itself only allows requests from https://www.api.energy-charts.info
-      // Using cors-anywhere as it's more reliable than corsproxy.io
-      const proxyUrl = `https://cors-anywhere.herokuapp.com/${apiUrl}`;
+      // STEP 3: Fetch from API
+      logger.debug(`[fetchRegionalData] No valid cache found, fetching regional data for postal code: ${postalCode}`);
 
-      logger.debug(`[fetchRegionalData] API URL: ${apiUrl}`);
-      logger.debug(`[fetchRegionalData] Using CORS proxy: cors-anywhere.herokuapp.com`);
+      const SERVERLESS_PROXY_URL = 'https://energypricegermany.sven4321.workers.dev/';
+      const url = `${SERVERLESS_PROXY_URL}?plz=${postalCode}`;
 
-      const response = await fetch(proxyUrl);
+      logger.debug(`[fetchRegionalData] Fetching from proxy: ${url}`);
+
+      const response = await fetch(url);
 
       if (!response.ok) {
         throw new Error(`Regional API HTTP ${response.status}: ${response.statusText}`);
@@ -141,13 +248,16 @@ export class EnergyDataManager {
         logger.debug(`[fetchRegionalData] Time range: ${first} to ${last}`);
       }
 
-      // Cache the regional data
+      // STEP 4: Save to both caches
+      // Persistent cache (daily): survives app restart
+      await this.saveRegionalCacheToStorage(postalCode, data);
+      // Memory cache (15-min): faster for repeated access
       this.regionalCache.set(postalCode, { data, timestamp: Date.now() });
 
       return data;
     } catch (error) {
       logger.error(`[fetchRegionalData] Failed to fetch regional data for PLZ ${postalCode}:`, error);
-      logger.warn(`[fetchRegionalData] Regional renewable data could not be loaded. This is expected if the API is unreachable or the CORS proxy is down.`);
+      logger.warn(`[fetchRegionalData] Regional renewable data could not be loaded. Check if the serverless proxy is deployed and accessible.`);
       return null;
     }
   }
@@ -418,6 +528,26 @@ export class EnergyDataManager {
     this.cacheTimestamp = 0;
     this.currentDataSource = 'none';
     logger.debug('Cache invalidated');
+  }
+
+  /**
+   * Invalidates regional cache (both memory and persistent storage)
+   * Called when postal code changes
+   */
+  public async invalidateRegionalCache(): Promise<void> {
+    try {
+      // Clear in-memory regional cache
+      this.regionalCache.clear();
+      logger.debug('[invalidateRegionalCache] Memory cache cleared');
+
+      // Clear persistent storage cache
+      const StorageModule = await import('../utils/platform');
+      const { Storage } = StorageModule;
+      await Storage.removeItem(this.REGIONAL_CACHE_STORAGE_KEY);
+      logger.debug('[invalidateRegionalCache] Persistent storage cache cleared');
+    } catch (error) {
+      logger.error('[invalidateRegionalCache] Error clearing regional cache:', error);
+    }
   }
 
   /**

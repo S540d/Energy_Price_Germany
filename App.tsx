@@ -85,6 +85,7 @@ const translations = {
     legendExplanationSuffix: '¢/kWh (Grid fees & taxes)',
     marketPriceLabel: 'Market Price',
     gridFeesLabel: 'Grid Fees & Taxes',
+    regionalDataLabel: 'Regional Data',
   },
   de: {
     settings: 'Einstellungen',
@@ -140,6 +141,7 @@ const translations = {
     legendExplanationSuffix: '¢/kWh (Netzentgelte & Steuern)',
     marketPriceLabel: 'Börsenstrompreis',
     gridFeesLabel: 'Netzentgelte & Steuern',
+    regionalDataLabel: 'Regionale Daten',
   },
 };
 
@@ -344,7 +346,8 @@ function AppContent() {
         // This forces reload with/without regional data
         if (!isInitialMount.current) {
           logger.debug('[App] Postal code changed, invalidating cache');
-          energyDataManager.invalidateCache();
+          energyDataManager.invalidateCache(); // National data cache
+          await energyDataManager.invalidateRegionalCache(); // Regional data cache
         } else {
           isInitialMount.current = false;
         }
@@ -584,6 +587,19 @@ function AppContent() {
                     }} />
                     <Text style={{ color: colors.text, fontSize: 12 }}>
                       {t.gridFeesLabel} ({GRID_FEES_AND_TAXES} ¢/kWh)
+                    </Text>
+                  </View>
+
+                  {/* Regional Data Line */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={{
+                      width: 16,
+                      height: 3,
+                      backgroundColor: '#FF9800',
+                      borderRadius: 1.5
+                    }} />
+                    <Text style={{ color: colors.text, fontSize: 12 }}>
+                      {t.regionalDataLabel}
                     </Text>
                   </View>
                 </View>
