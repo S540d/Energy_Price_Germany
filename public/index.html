@@ -9,16 +9,20 @@
     />
     <title>Energy Prices Germany</title>
     <meta name="description" content="Visualisierung von Energiepreisen und erneuerbaren Energien in Deutschland" />
-    <link rel="manifest" href="/Energy_Price_Germany/manifest.json" />
+    <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#6200EE" />
 
     <!-- iOS PWA Support -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Energy Prices Germany" />
-    <link rel="apple-touch-icon" href="/Energy_Price_Germany/icon-192.png" />
-    <link rel="apple-touch-icon" sizes="192x192" href="/Energy_Price_Germany/icon-192.png" />
-    <link rel="apple-touch-icon" sizes="512x512" href="/Energy_Price_Germany/icon-512.png" />
+    <link rel="apple-touch-icon" href="/icon-192.png?v=2" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png?v=2" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png?v=2" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png?v=2" />
+    <!-- Optional: Safari Pinned Tab Icon (requires SVG)
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#6200EE" />
+    -->
     <style>
       #root,
       body,
@@ -122,7 +126,10 @@
       }, 5000);
     </script>
     <script>
-      if ('serviceWorker' in navigator) {
+      // Only register service worker in production (GitHub Pages)
+      const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+
+      if ('serviceWorker' in navigator && isProduction) {
         window.addEventListener('load', () => {
           navigator.serviceWorker
             .register('/Energy_Price_Germany/service-worker.js', { scope: '/Energy_Price_Germany/' })
@@ -160,6 +167,14 @@
             .catch((registrationError) => {
               console.log('SW registration failed: ', registrationError);
             });
+        });
+      } else if ('serviceWorker' in navigator && !isProduction) {
+        // On localhost, unregister any existing service workers to prevent caching issues
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          registrations.forEach((registration) => {
+            console.log('Unregistering service worker on localhost:', registration);
+            registration.unregister();
+          });
         });
       }
 
