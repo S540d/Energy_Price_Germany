@@ -66,7 +66,8 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Network First for marketdata.json (always fresh data)
-  if (url.pathname.includes('/data/marketdata.json?v=1767520569384')) {
+  // Use flexible pattern matching for any cache-busting version
+  if (url.pathname.includes('/data/marketdata.json')) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
