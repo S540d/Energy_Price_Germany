@@ -1,8 +1,8 @@
 // Service Worker for Energy Price Germany PWA
 // Version: 1.1.0 - Auto-update: Removed manual update notifications, updates apply automatically
 
-const CACHE_VERSION = '1.2.3';
-const BUILD_DATE = '2026-01-03';
+const CACHE_VERSION = '1.2.4';
+const BUILD_DATE = '2026-01-04';
 const CACHE_NAME = `energy-price-germany-v${CACHE_VERSION}-${BUILD_DATE}`;
 const urlsToCache = [
   '/Energy_Price_Germany/',
@@ -68,7 +68,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Network First for marketdata.json (always fresh data)
-  if (url.pathname.includes('/data/marketdata.json?v=1767425643998')) {
+  if (url.pathname.includes('/data/marketdata.json?v=1767510384485')) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
