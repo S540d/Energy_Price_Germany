@@ -26,7 +26,7 @@ import { getThemeColors, Theme } from './utils/theme';
 import { logger } from './utils/logger';
 import { isValidPostalCode, sanitizePostalCodeInput } from './utils/postalCodeUtils';
 
-const APP_VERSION = '1.2.3';
+const APP_VERSION = '1.2.4';
 
 type Language = 'en' | 'de';
 
