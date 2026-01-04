@@ -21,13 +21,11 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     }).then(() => {
-      console.log('Cache cleaned, claiming clients');
       return self.clients.claim();
     })
   );
@@ -68,7 +66,8 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Network First for marketdata.json (always fresh data)
-  if (url.pathname.includes('/data/marketdata.json?v=1767520569384')) {
+  // Use flexible pattern matching for any cache-busting version
+  if (url.pathname.includes('/data/marketdata.json?v=1767539389312')) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
