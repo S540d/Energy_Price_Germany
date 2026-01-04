@@ -101,6 +101,7 @@ export class EnergyDataManager {
 
   /**
    * Fetches regional renewable data from Energy Charts Signal API
+   * Uses a CORS proxy to bypass CORS restrictions
    * @returns Regional data or null if fetch fails
    */
   private async fetchRegionalData(postalCode: string): Promise<RegionalDataResponse | null> {
@@ -113,10 +114,16 @@ export class EnergyDataManager {
       }
 
       logger.debug(`[fetchRegionalData] Fetching regional data for postal code: ${postalCode}`);
-      const url = `https://api.energy-charts.info/signal?country=de&postal_code=${postalCode}`;
-      logger.debug(`[fetchRegionalData] API URL: ${url}`);
+      const apiUrl = `https://api.energy-charts.info/signal?country=de&postal_code=${postalCode}`;
 
-      const response = await fetch(url);
+      // Use CORS proxy to bypass CORS restrictions (api.energy-charts.info doesn't allow cross-origin requests)
+      // The API itself only allows requests from https://www.api.energy-charts.info
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`;
+
+      logger.debug(`[fetchRegionalData] API URL: ${apiUrl}`);
+      logger.debug(`[fetchRegionalData] Using CORS proxy: corsproxy.io`);
+
+      const response = await fetch(proxyUrl);
 
       if (!response.ok) {
         throw new Error(`Regional API HTTP ${response.status}: ${response.statusText}`);
@@ -138,16 +145,8 @@ export class EnergyDataManager {
 
       return data;
     } catch (error) {
-      // Check if it's a CORS error (common on localhost)
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes('CORS') || errorMessage.includes('Load failed')) {
-        logger.warn(
-          `[fetchRegionalData] ⚠️ Regional data blocked by CORS policy. This is expected on localhost. ` +
-          `Regional data will work on production (GitHub Pages). PLZ: ${postalCode}`
-        );
-      } else {
-        logger.error(`[fetchRegionalData] Failed to fetch regional data for PLZ ${postalCode}:`, error);
-      }
+      logger.error(`[fetchRegionalData] Failed to fetch regional data for PLZ ${postalCode}:`, error);
+      logger.warn(`[fetchRegionalData] Regional renewable data could not be loaded. This is expected if the API is unreachable or the CORS proxy is down.`);
       return null;
     }
   }
