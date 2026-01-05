@@ -94,7 +94,7 @@ const translations = {
   },
   de: {
     settings: 'Einstellungen',
-    customize: 'Personalisiere',
+    customize: 'Personalisieren',
     appearance: 'ERSCHEINUNGSBILD',
     light: 'Hell',
     dark: 'Dunkel',
@@ -822,12 +822,15 @@ function AppContent() {
                   onChangeText={(text) => {
                     // Allow only numbers and decimal point
                     const sanitized = text.replace(/[^0-9.]/g, '');
+                    
+                    // If empty, keep current value (don't update state)
+                    if (sanitized === '') {
+                      return;
+                    }
+                    
                     const value = parseFloat(sanitized);
                     if (!isNaN(value) && value > 0) {
                       setGridFees(value);
-                    } else if (sanitized === '' || sanitized === '.') {
-                      // Allow temporary empty or just decimal point while typing
-                      setGridFees(GRID_FEES_AND_TAXES);
                     }
                   }}
                   keyboardType="numeric"
