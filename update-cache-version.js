@@ -128,6 +128,14 @@ function updateManifest() {
 
 // 4. Create version info file in dist
 function createVersionInfo() {
+    const distPath = path.join(__dirname, 'dist');
+    
+    // Check if dist directory exists
+    if (!fs.existsSync(distPath)) {
+        console.log('⚠️  dist directory not found, skipping version.json');
+        return;
+    }
+
     const versionInfo = {
         version: require('./package.json').version,
         buildDate: buildDate,
@@ -137,7 +145,7 @@ function createVersionInfo() {
     };
 
     fs.writeFileSync(
-        path.join(__dirname, 'dist', 'version.json'),
+        path.join(distPath, 'version.json'),
         JSON.stringify(versionInfo, null, 2)
     );
 
@@ -237,7 +245,7 @@ try {
     updateManifest();
     createVersionInfo();
     addAggressiveCacheUpdate();
-    updateDataCacheBusting();
+    // Note: updateDataCacheBusting() is not called to avoid modifying service worker pattern matching
 
     console.log('🎉 Cache version update complete!');
     console.log(`📅 Build Date: ${buildDate}`);
