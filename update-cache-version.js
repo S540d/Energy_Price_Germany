@@ -245,7 +245,9 @@ try {
     updateManifest();
     createVersionInfo();
     addAggressiveCacheUpdate();
-    // Note: updateDataCacheBusting() is not called to avoid modifying service worker pattern matching
+    // Note: updateDataCacheBusting() is not called because it incorrectly modifies service worker
+    // pattern matching logic (e.g., changing `url.pathname.includes('/data/marketdata.json')` to
+    // include specific version parameters like `?v=123456`, which breaks flexible version matching)
 
     console.log('🎉 Cache version update complete!');
     console.log(`📅 Build Date: ${buildDate}`);
