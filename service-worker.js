@@ -2,7 +2,7 @@
 // Version: 1.1.0 - Auto-update: Removed manual update notifications, updates apply automatically
 
 const CACHE_VERSION = '1.3.0';
-const BUILD_DATE = '2026-01-04';
+const BUILD_DATE = '2026-01-05';
 const CACHE_NAME = `energy-price-germany-v${CACHE_VERSION}-${BUILD_DATE}`;
 const urlsToCache = [
   '/Energy_Price_Germany/',
@@ -67,7 +67,7 @@ self.addEventListener('fetch', (event) => {
 
   // Network First for marketdata.json (always fresh data)
   // Use flexible pattern matching for any cache-busting version
-  if (url.pathname.includes('/data/marketdata.json?v=1767561613379')) {
+  if (url.pathname.includes('/data/marketdata.json?v=1767589109694')) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
