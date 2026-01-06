@@ -665,6 +665,26 @@ function AppContent() {
                 unit: '%',
                 label: t.renewablePercent,
               } : undefined}
+              legend={
+                isValidPostalCode(debouncedPostalCode) && hasRegionalData ? (
+                  <View style={{ gap: 8 }}>
+                    <Text style={[{ color: colors.text, fontSize: 13, fontWeight: '600' }]}>
+                      {t.legend}
+                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <View style={{
+                        width: 16,
+                        height: 3,
+                        backgroundColor: '#FF9800',
+                        borderRadius: 1.5
+                      }} />
+                      <Text style={{ color: colors.text, fontSize: 12 }}>
+                        {t.regionalDataLabel}
+                      </Text>
+                    </View>
+                  </View>
+                ) : undefined
+              }
             >
               <RenewableBarChart
                 title={isValidPostalCode(debouncedPostalCode) && hasRegionalData
@@ -709,6 +729,47 @@ function AppContent() {
                 unit: '¢',
                 label: t.pricePerKwh,
               } : undefined}
+              legend={
+                <View style={{ gap: 8 }}>
+                  <Text style={[{ color: colors.text, fontSize: 13, fontWeight: '600' }]}>
+                    {t.legend}
+                  </Text>
+                  <Text style={[{
+                    color: colors.text,
+                    fontSize: 12,
+                    marginBottom: 8
+                  }]}>
+                    {t.legendExplanationPrefix} {GRID_FEES_AND_TAXES} {t.legendExplanationSuffix}
+                  </Text>
+                  <View style={{ gap: 6 }}>
+                    {/* Market Price */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <View style={{
+                        width: 16,
+                        height: 16,
+                        backgroundColor: '#4CAF50',
+                        borderRadius: 2
+                      }} />
+                      <Text style={{ color: colors.text, fontSize: 12 }}>
+                        {t.marketPriceLabel}
+                      </Text>
+                    </View>
+
+                    {/* Grid Fees */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <View style={{
+                        width: 16,
+                        height: 16,
+                        backgroundColor: '#757575',
+                        borderRadius: 2
+                      }} />
+                      <Text style={{ color: colors.text, fontSize: 12 }}>
+                        {t.gridFeesLabel} ({GRID_FEES_AND_TAXES} ¢/kWh)
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              }
             >
               <PriceBarChart
                 title={t.priceTitle}
@@ -734,6 +795,27 @@ function AppContent() {
               colors={colors}
               chartType="correlation"
               metrics={undefined}
+              legend={
+                <View style={{ gap: 8 }}>
+                  <Text style={[{ color: colors.text, fontSize: 13, fontWeight: '600' }]}>
+                    {t.legend}
+                  </Text>
+                  <View style={{ gap: 6 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#2196F3' }} />
+                      <Text style={{ color: colors.text, fontSize: 12 }}>{t.night}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#FF9800' }} />
+                      <Text style={{ color: colors.text, fontSize: 12 }}>{t.morningEvening}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#FFEB3B' }} />
+                      <Text style={{ color: colors.text, fontSize: 12 }}>{t.day}</Text>
+                    </View>
+                  </View>
+                </View>
+              }
             >
               <CorrelationScatterChart
                 title={t.correlationTitle}

@@ -39,6 +39,7 @@ interface ChartDetailViewProps {
   metrics?: MetricsData;
   chartType: 'renewable' | 'price' | 'correlation';
   onToggleView?: () => void;
+  legend?: React.ReactNode;
 }
 
 export function ChartDetailView({
@@ -48,6 +49,7 @@ export function ChartDetailView({
   metrics,
   chartType,
   onToggleView,
+  legend,
 }: ChartDetailViewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMetrics, setShowMetrics] = useState(false);
@@ -290,9 +292,17 @@ export function ChartDetailView({
       {showMetrics && metrics ? (
         renderMetricsView()
       ) : (
-        <View style={styles.chartContainer}>
-          {children}
-        </View>
+        <>
+          <View style={styles.chartContainer}>
+            {children}
+          </View>
+          {/* Legend - show only when displaying chart (not metrics) */}
+          {legend && (
+            <View style={[styles.legendContainer, { backgroundColor: colors.surfaceSecondary }]}>
+              {legend}
+            </View>
+          )}
+        </>
       )}
     </View>
   );
@@ -492,5 +502,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  legendContainer: {
+    margin: 16,
+    marginTop: 8,
+    padding: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
 });
