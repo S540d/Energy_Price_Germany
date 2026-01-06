@@ -39,6 +39,13 @@ jobs:
           echo "Updated app.json:"
           grep -A2 '"web"' app.json
 
+      - name: Modify post-build.js for testing baseUrl
+        run: |
+          echo "Updating post-build.js baseUrl for testing..."
+          sed -i "s|const baseUrl = '/Energy_Price_Germany'|const baseUrl = '/Energy_Price_Germany/testing'|g" scripts/post-build.js
+          echo "Verification:"
+          grep "const baseUrl" scripts/post-build.js
+
       - name: Modify index.html for testing service worker path
         run: |
           echo "Updating service worker path for testing..."
