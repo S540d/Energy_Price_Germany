@@ -33,6 +33,7 @@ type Language = 'en' | 'de';
 const translations = {
   en: {
     settings: 'Settings',
+    customize: 'Customize',
     appearance: 'APPEARANCE',
     light: 'Light',
     dark: 'Dark',
@@ -46,6 +47,10 @@ const translations = {
     postalCodeHint: 'Enter 5-digit postal code (PLZ)',
     regionalData: 'Regional',
     nationalData: 'National',
+    // Grid Fees Section
+    gridFees: 'GRID FEES & TAXES',
+    gridFeesHint: 'Grid fees and taxes in ¢/kWh',
+    gridFeesValue: 'Grid Fees',
     // About Section
     about: 'ABOUT',
     version: 'Version',
@@ -89,6 +94,7 @@ const translations = {
   },
   de: {
     settings: 'Einstellungen',
+    customize: 'Personalisieren',
     appearance: 'ERSCHEINUNGSBILD',
     light: 'Hell',
     dark: 'Dunkel',
@@ -102,6 +108,10 @@ const translations = {
     postalCodeHint: '5-stellige PLZ eingeben',
     regionalData: 'Regional',
     nationalData: 'National',
+    // Grid Fees Section
+    gridFees: 'NETZENTGELTE & STEUERN',
+    gridFeesHint: 'Netzentgelte und Steuern in ¢/kWh',
+    gridFeesValue: 'Netzentgelte',
     // About Section
     about: 'ÜBER',
     version: 'Version',
@@ -152,7 +162,9 @@ function AppContent() {
   const [language, setLanguage] = useState<Language>('en'); // Will be loaded from storage in useEffect
   const [postalCode, setPostalCode] = useState<string>(''); // Postal code input (immediate)
   const [debouncedPostalCode, setDebouncedPostalCode] = useState<string>(''); // Debounced for API calls
+  const [gridFees, setGridFees] = useState<number>(GRID_FEES_AND_TAXES); // Grid fees and taxes
   const [menuVisible, setMenuVisible] = useState(false);
+  const [customizeVisible, setCustomizeVisible] = useState(false);
   const [aboutVisible, setAboutVisible] = useState(false);
   const systemTheme = useColorScheme();
   const t = translations[language];
@@ -302,6 +314,54 @@ function AppContent() {
     savePostalCode();
   }, [postalCode]);
 
+  // Load grid fees preference on mount
+  useEffect(() => {
+    async function loadGridFees() {
+      try {
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          // Web: Use localStorage
+          const saved = window.localStorage?.getItem('gridFees'); // platform-safe
+          if (saved) {
+            const value = parseFloat(saved);
+            if (!isNaN(value) && value > 0) {
+              setGridFees(value);
+            }
+          }
+        } else {
+          // Mobile: Use AsyncStorage
+          const saved = await AsyncStorage.getItem('gridFees');
+          if (saved) {
+            const value = parseFloat(saved);
+            if (!isNaN(value) && value > 0) {
+              setGridFees(value);
+            }
+          }
+        }
+      } catch (e) {
+        logger.error('[App] Failed to load grid fees:', e);
+      }
+    }
+    loadGridFees();
+  }, []);
+
+  // Save grid fees when it changes
+  useEffect(() => {
+    async function saveGridFees() {
+      try {
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          // Web: Use localStorage
+          window.localStorage?.setItem('gridFees', gridFees.toString()); // platform-safe
+        } else {
+          // Mobile: Use AsyncStorage
+          await AsyncStorage.setItem('gridFees', gridFees.toString());
+        }
+      } catch (e) {
+        logger.error('Failed to save grid fees:', e);
+      }
+    }
+    saveGridFees();
+  }, [gridFees]);
+
   useEffect(() => {
     async function checkAndApplyUpdates() {
       if (!__DEV__) {
@@ -438,6 +498,24 @@ function AppContent() {
               </TouchableOpacity>
             </View>
 
+            {/* Customize Button */}
+            <View style={styles.menuSection}>
+              <TouchableOpacity
+                style={[
+                  styles.customizeButton,
+                  { backgroundColor: colors.primary, borderColor: colors.primary }
+                ]}
+                onPress={() => {
+                  setCustomizeVisible(true);
+                  setMenuVisible(false);
+                }}
+              >
+                <Text style={[styles.customizeButtonText, { color: '#fff' }]}>{t.customize}</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
             {/* APPEARANCE Section */}
             <View style={styles.menuSection}>
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.appearance}</Text>
@@ -558,7 +636,7 @@ function AppContent() {
                     fontWeight: '600',
                     marginBottom: 8
                   }]}>
-                    {t.legendExplanationPrefix} {GRID_FEES_AND_TAXES} {t.legendExplanationSuffix}
+                    {t.legendExplanationPrefix} {gridFees} {t.legendExplanationSuffix}
                   </Text>
                 </View>
 
@@ -586,7 +664,7 @@ function AppContent() {
                       borderRadius: 2
                     }} />
                     <Text style={{ color: colors.text, fontSize: 12 }}>
-                      {t.gridFeesLabel} ({GRID_FEES_AND_TAXES} ¢/kWh)
+                      {t.gridFeesLabel} ({gridFees} ¢/kWh)
                     </Text>
                   </View>
 
@@ -639,6 +717,127 @@ function AppContent() {
               </TouchableOpacity>
             </View>
           </View>
+        </>
+      )}
+
+      {/* Customize Modal */}
+      {customizeVisible && (
+        <>
+          <TouchableOpacity
+            style={styles.settingsOverlay}
+            activeOpacity={1}
+            onPress={() => setCustomizeVisible(false)}
+          />
+          <ScrollView style={[styles.menu, { backgroundColor: colors.surface }]}>
+            {/* Header with Close Button */}
+            <View style={[styles.menuHeader, { borderBottomColor: colors.gridLine }]}>
+              <Text style={[styles.menuTitle, { color: colors.text }]}>{t.customize}</Text>
+              <TouchableOpacity onPress={() => setCustomizeVisible(false)}>
+                <Text style={[styles.closeButton, { color: colors.text }]}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* LANGUAGE Section */}
+            <View style={styles.menuSection}>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.language}</Text>
+              <View style={styles.themeToggle}>
+                <TouchableOpacity
+                  style={[
+                    styles.themeButton,
+                    language === 'en' && styles.themeButtonActive,
+                    { backgroundColor: language === 'en' ? colors.primary : colors.gridLine }
+                  ]}
+                  onPress={() => setLanguage('en')}
+                >
+                  <Text style={{ color: language === 'en' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.english}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.themeButton,
+                    language === 'de' && styles.themeButtonActive,
+                    { backgroundColor: language === 'de' ? colors.primary : colors.gridLine }
+                  ]}
+                  onPress={() => setLanguage('de')}
+                >
+                  <Text style={{ color: language === 'de' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.german}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+            {/* POSTAL CODE Section */}
+            <View style={styles.menuSection}>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.region}</Text>
+              <View>
+                <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 8 }}>
+                  {t.postalCodeHint}
+                </Text>
+                <TextInput
+                  style={{
+                    backgroundColor: colors.surface,
+                    color: colors.text,
+                    borderWidth: 1,
+                    borderColor: colors.gridLine,
+                    borderRadius: 8,
+                    paddingHorizontal: 12,
+                    paddingVertical: 10,
+                    fontSize: 14,
+                  }}
+                  placeholder={t.postalCode}
+                  placeholderTextColor={colors.textSecondary}
+                  value={postalCode}
+                  onChangeText={(text) => {
+                    setPostalCode(sanitizePostalCodeInput(text));
+                  }}
+                  keyboardType="numeric"
+                  maxLength={5}
+                />
+              </View>
+            </View>
+
+            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+            {/* GRID FEES Section */}
+            <View style={styles.menuSection}>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.gridFees}</Text>
+              <View>
+                <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 8 }}>
+                  {t.gridFeesHint}
+                </Text>
+                <TextInput
+                  style={{
+                    backgroundColor: colors.surface,
+                    color: colors.text,
+                    borderWidth: 1,
+                    borderColor: colors.gridLine,
+                    borderRadius: 8,
+                    paddingHorizontal: 12,
+                    paddingVertical: 10,
+                    fontSize: 14,
+                  }}
+                  placeholder={t.gridFeesValue}
+                  placeholderTextColor={colors.textSecondary}
+                  value={gridFees.toString()}
+                  onChangeText={(text) => {
+                    // Allow only numbers and decimal point
+                    const sanitized = text.replace(/[^0-9.]/g, '');
+                    
+                    // If empty, keep current value (don't update state)
+                    if (sanitized === '') {
+                      return;
+                    }
+                    
+                    const value = parseFloat(sanitized);
+                    if (!isNaN(value) && value > 0) {
+                      setGridFees(value);
+                    }
+                  }}
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+          </ScrollView>
         </>
       )}
 
@@ -699,11 +898,11 @@ function AppContent() {
                   current: metrics.today?.marketPrice.current,
                 },
                 endCustomerPrice: {
-                  min: metrics.marketPrice.min + GRID_FEES_AND_TAXES,
-                  max: metrics.marketPrice.max + GRID_FEES_AND_TAXES,
-                  avg: metrics.marketPrice.avg + GRID_FEES_AND_TAXES,
+                  min: metrics.marketPrice.min + gridFees,
+                  max: metrics.marketPrice.max + gridFees,
+                  avg: metrics.marketPrice.avg + gridFees,
                   current: metrics.today?.marketPrice.current
-                    ? metrics.today.marketPrice.current + GRID_FEES_AND_TAXES
+                    ? metrics.today.marketPrice.current + gridFees
                     : undefined,
                 },
                 unit: '¢',
@@ -866,6 +1065,17 @@ const styles = StyleSheet.create({
   },
   themeButtonActive: {
     // Additional styling for active state if needed
+  },
+  customizeButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  customizeButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   legendItem: {
     flexDirection: 'row',
