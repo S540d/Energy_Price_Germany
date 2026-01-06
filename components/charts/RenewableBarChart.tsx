@@ -189,36 +189,34 @@ export function RenewableBarChart({
             </Text>
           )}
         </View>
-        {/* Legend - hidden on phone, visible on tablet/desktop */}
-        {!isPhone && (
-          <View style={{
-            flexDirection: 'row',
-            gap: 12,
-            paddingRight: 10,
-            paddingTop: 0
-          }}>
+        {/* Legend - visible on all devices including mobile */}
+        <View style={{
+          flexDirection: 'row',
+          gap: 12,
+          paddingRight: 10,
+          paddingTop: 0
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={{
+              width: 12,
+              height: 2,
+              backgroundColor: textColor,
+              opacity: 0.5
+            }} />
+            <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.average}</Text>
+          </View>
+          {showRegionalLine && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <View style={{
                 width: 12,
                 height: 2,
-                backgroundColor: textColor,
-                opacity: 0.5
+                backgroundColor: '#FF9800',
+                opacity: 0.8
               }} />
-              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.average}</Text>
+              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.regional}</Text>
             </View>
-            {showRegionalLine && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <View style={{
-                  width: 12,
-                  height: 2,
-                  backgroundColor: '#FF9800',
-                  opacity: 0.8
-                }} />
-                <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.regional}</Text>
-              </View>
-            )}
-          </View>
-        )}
+          )}
+        </View>
       </View>
       <View style={{ height: chartHeight, width: chartWidth, position: 'relative' }}>
         {/* Grid Lines - Modern gestrichelt */}

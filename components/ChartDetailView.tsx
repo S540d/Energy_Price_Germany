@@ -40,6 +40,7 @@ interface ChartDetailViewProps {
   chartType: 'renewable' | 'price' | 'correlation';
   onToggleView?: () => void;
   legend?: React.ReactNode;
+  gridFees?: number;
 }
 
 export function ChartDetailView({
@@ -50,6 +51,7 @@ export function ChartDetailView({
   chartType,
   onToggleView,
   legend,
+  gridFees = GRID_FEES_AND_TAXES,
 }: ChartDetailViewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMetrics, setShowMetrics] = useState(false);
@@ -182,7 +184,7 @@ export function ChartDetailView({
               marginTop: 8,
               fontStyle: 'italic'
             }]}>
-              💡 +{GRID_FEES_AND_TAXES} ¢/kWh Netzentgelte & Steuern
+              💡 +{gridFees} ¢/kWh Netzentgelte & Steuern
             </Text>
           </View>
         </View>
