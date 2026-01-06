@@ -26,7 +26,7 @@ import { getThemeColors, Theme } from './utils/theme';
 import { logger } from './utils/logger';
 import { isValidPostalCode, sanitizePostalCodeInput } from './utils/postalCodeUtils';
 
-const APP_VERSION = '1.2.4';
+const APP_VERSION = '1.3.0';
 
 type Language = 'en' | 'de';
 
@@ -509,7 +509,7 @@ function AppContent() {
             {/* REGION Section */}
             <View style={styles.menuSection}>
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.region}</Text>
-              <View style={{ marginTop: 8 }}>
+              <View>
                 <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 8 }}>
                   {t.postalCodeHint}
                 </Text>
@@ -539,7 +539,7 @@ function AppContent() {
             <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
             {/* LEGEND Section */}
-            <View style={{ paddingHorizontal: 20, paddingVertical: 12 }}>
+            <View style={styles.menuSection}>
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.legend}</Text>
 
               {/* Price Legend - Visual chart elements */}

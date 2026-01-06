@@ -54,7 +54,7 @@ export function getThemeColors(theme: Theme, systemTheme: 'light' | 'dark'): The
         background: colorScales.neutral[950],     // #0A0A0A
         surface: colorScales.neutral[900],         // #1A1A1A
         surfaceSecondary: colorScales.neutral[800], // #333333
-        card: colorScales.neutral[850],            // ~#1F1F1F (interpoliert)
+        card: colorScales.neutral[800],            // #333333
 
         text: colorScales.neutral[50],             // #FAFAFA
         textSecondary: colorScales.neutral[400],   // #D0D0D0

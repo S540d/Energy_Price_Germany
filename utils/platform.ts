@@ -8,6 +8,16 @@
 import { Platform } from 'react-native';
 import { logger } from './logger';
 
+// Import AsyncStorage only on mobile platforms
+let AsyncStorage: any = null;
+if (Platform.OS !== 'web') {
+  try {
+    AsyncStorage = require('@react-native-async-storage/async-storage').default;
+  } catch (e) {
+    logger.warn('AsyncStorage not available, using memory fallback');
+  }
+}
+
 // Platform Detection
 export const isWeb = Platform.OS === 'web';
 export const isIOS = Platform.OS === 'ios';
@@ -69,32 +79,37 @@ export function addSystemThemeChangeListener(
 
 /**
  * Storage Adapter - verwendet localStorage auf Web, AsyncStorage auf Mobile
+ * Fixes: No dynamic imports, static import of AsyncStorage on mobile only
  */
 export const Storage = {
   async getItem(key: string): Promise<string | null> {
     if (isWeb && typeof localStorage !== 'undefined') {
       return localStorage.getItem(key); // platform-safe
+    } else if (AsyncStorage) {
+      return await AsyncStorage.getItem(key);
     } else {
-      const AsyncStorage = await import('@react-native-async-storage/async-storage');
-      return AsyncStorage.default.getItem(key);
+      logger.warn(`[Storage.getItem] AsyncStorage not available for key: ${key}`);
+      return null;
     }
   },
 
   async setItem(key: string, value: string): Promise<void> {
     if (isWeb && typeof localStorage !== 'undefined') {
       localStorage.setItem(key, value); // platform-safe
+    } else if (AsyncStorage) {
+      await AsyncStorage.setItem(key, value);
     } else {
-      const AsyncStorage = await import('@react-native-async-storage/async-storage');
-      await AsyncStorage.default.setItem(key, value);
+      logger.warn(`[Storage.setItem] AsyncStorage not available for key: ${key}`);
     }
   },
 
   async removeItem(key: string): Promise<void> {
     if (isWeb && typeof localStorage !== 'undefined') {
       localStorage.removeItem(key); // platform-safe
+    } else if (AsyncStorage) {
+      await AsyncStorage.removeItem(key);
     } else {
-      const AsyncStorage = await import('@react-native-async-storage/async-storage');
-      await AsyncStorage.default.removeItem(key);
+      logger.warn(`[Storage.removeItem] AsyncStorage not available for key: ${key}`);
     }
   },
 };
