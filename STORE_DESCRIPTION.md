@@ -52,12 +52,15 @@ Energy Prices Germany provides instant access to electricity market prices and r
 **🌐 Data Source:**
 All energy data is sourced from Energy Charts (Fraunhofer ISE), a trusted public research institution, and is licensed under CC BY 4.0.
 
-**🚀 Version 1.2.0 Features:**
-- ✅ Android 15+ edge-to-edge display support
-- ✅ Improved missing data visualization
-- ✅ Enhanced settings menu with three sections
-- ✅ GitHub repository and bug report links
-- ✅ Store compliance improvements
+**🚀 Version 1.3.0 Features:**
+- ✅ Daily regional cache strategy with 95% API reduction
+- ✅ Unified legend system for professional chart display
+- ✅ Regional postal code-based renewable energy data
+- ✅ iOS/PWA postal code persistence fixed
+- ✅ Android regional data display improvements
+- ✅ Enhanced settings menu with legend section
+- ✅ Service worker cache-busting mechanism
+- ✅ Comprehensive Cloudflare Worker documentation
 
 **💚 Support the Project:**
 This is a free, open-source app developed by an independent developer. If you find it useful, please consider supporting the project through the in-app link or leaving a 5-star review!
@@ -143,12 +146,15 @@ Energy Prices Germany bietet sofortigen Zugriff auf Börsenstrompreise und Erneu
 **🌐 Datenquelle:**
 Alle Energiedaten stammen von Energy Charts (Fraunhofer ISE), einer vertrauenswürdigen öffentlichen Forschungseinrichtung, und sind unter CC BY 4.0 lizenziert.
 
-**🚀 Version 1.2.0 Features:**
-- ✅ Android 15+ Edge-to-Edge-Display-Unterstützung
-- ✅ Verbesserte Visualisierung fehlender Daten
-- ✅ Erweitertes Einstellungsmenü mit drei Bereichen
-- ✅ GitHub Repository und Bug-Report-Links
-- ✅ Store-Compliance-Verbesserungen
+**🚀 Version 1.3.0 Features:**
+- ✅ Tägliche regionale Cache-Strategie mit 95% API-Reduktion
+- ✅ Einheitliches Legendensystem für professionelle Chart-Anzeige
+- ✅ Regionale Daten basierend auf Postleitzahl
+- ✅ iOS/PWA Postleitzahl-Persistenz korrigiert
+- ✅ Android regionale Datenbeschaffung verbessert
+- ✅ Erweitertes Einstellungsmenü mit Legendenbereich
+- ✅ Service Worker Cache-Busting-Mechanismus
+- ✅ Umfassende Cloudflare Worker-Dokumentation
 
 **💚 Unterstütze das Projekt:**
 Dies ist eine kostenlose Open-Source-App, entwickelt von einem unabhängigen Entwickler. Wenn du sie nützlich findest, unterstütze das Projekt bitte über den In-App-Link oder hinterlasse eine 5-Sterne-Bewertung!
