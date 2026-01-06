@@ -510,7 +510,7 @@ function AppContent() {
                   setMenuVisible(false);
                 }}
               >
-                <Text style={[styles.customizeButtonText, { color: '#fff' }]}>⚙️ {t.customize}</Text>
+                <Text style={[styles.customizeButtonText, { color: '#fff' }]}>{t.customize}</Text>
               </TouchableOpacity>
             </View>
 
