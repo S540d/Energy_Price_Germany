@@ -584,108 +584,6 @@ function AppContent() {
 
             <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
-            {/* REGION Section */}
-            <View style={styles.menuSection}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.region}</Text>
-              <View>
-                <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 8 }}>
-                  {t.postalCodeHint}
-                </Text>
-                <TextInput
-                  style={{
-                    backgroundColor: colors.surface,
-                    color: colors.text,
-                    borderWidth: 1,
-                    borderColor: colors.gridLine,
-                    borderRadius: 8,
-                    paddingHorizontal: 12,
-                    paddingVertical: 10,
-                    fontSize: 14,
-                  }}
-                  placeholder={t.postalCode}
-                  placeholderTextColor={colors.textSecondary}
-                  value={postalCode}
-                  onChangeText={(text) => {
-                    setPostalCode(sanitizePostalCodeInput(text));
-                  }}
-                  keyboardType="numeric"
-                  maxLength={5}
-                />
-              </View>
-            </View>
-
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-            {/* LEGEND Section */}
-            <View style={styles.menuSection}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.legend}</Text>
-
-              {/* Price Legend - Visual chart elements */}
-              <View style={{
-                marginTop: 8,
-                padding: 12,
-                backgroundColor: colors.surface,
-                borderRadius: 8,
-                gap: 10
-              }}>
-                {/* Price Breakdown Explanation */}
-                <View>
-                  <Text style={[{
-                    color: colors.text,
-                    fontSize: 13,
-                    fontWeight: '600',
-                    marginBottom: 8
-                  }]}>
-                    {t.legendExplanationPrefix} {gridFees} {t.legendExplanationSuffix}
-                  </Text>
-                </View>
-
-                {/* Visual Legend - Chart Elements */}
-                <View style={{ gap: 6 }}>
-                  {/* Market Price */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <View style={{
-                      width: 16,
-                      height: 16,
-                      backgroundColor: '#4CAF50',
-                      borderRadius: 2
-                    }} />
-                    <Text style={{ color: colors.text, fontSize: 12 }}>
-                      {t.marketPriceLabel}
-                    </Text>
-                  </View>
-
-                  {/* Grid Fees */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <View style={{
-                      width: 16,
-                      height: 16,
-                      backgroundColor: '#757575',
-                      borderRadius: 2
-                    }} />
-                    <Text style={{ color: colors.text, fontSize: 12 }}>
-                      {t.gridFeesLabel} ({gridFees} ¢/kWh)
-                    </Text>
-                  </View>
-
-                  {/* Regional Data Line */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <View style={{
-                      width: 16,
-                      height: 3,
-                      backgroundColor: '#FF9800',
-                      borderRadius: 1.5
-                    }} />
-                    <Text style={{ color: colors.text, fontSize: 12 }}>
-                      {t.regionalDataLabel}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
             {/* FEEDBACK, SUPPORT & ABOUT - Three Links in One Row */}
             <View style={[styles.menuSection, styles.menuSectionRow]}>
               <TouchableOpacity
@@ -856,6 +754,7 @@ function AppContent() {
                 : t.renewableTitle}
               colors={colors}
               chartType="renewable"
+              gridFees={gridFees}
               metrics={metrics ? {
                 min: metrics.renewable.min,
                 max: metrics.renewable.max,
@@ -890,6 +789,7 @@ function AppContent() {
               title={t.priceTitle}
               colors={colors}
               chartType="price"
+              gridFees={gridFees}
               metrics={metrics ? {
                 marketPrice: {
                   min: metrics.marketPrice.min,
@@ -925,6 +825,7 @@ function AppContent() {
                   gridFeesAndTaxes: t.gridFeesAndTaxes,
                   interpolated: t.interpolated,
                 }}
+                gridFees={gridFees}
               />
             </ChartDetailView>
 
@@ -932,6 +833,7 @@ function AppContent() {
               title={t.correlationTitle}
               colors={colors}
               chartType="correlation"
+              gridFees={gridFees}
               metrics={undefined}
             >
               <CorrelationScatterChart
