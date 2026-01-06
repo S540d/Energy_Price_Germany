@@ -28,6 +28,7 @@ interface PriceBarChartProps {
     interpolated: string;
   };
   interactionHint?: string;
+  gridFees?: number;
 }
 
 export function PriceBarChart({
@@ -40,6 +41,7 @@ export function PriceBarChart({
   colors,
   labels,
   interactionHint,
+  gridFees = GRID_FEES_AND_TAXES,
 }: PriceBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -80,7 +82,7 @@ export function PriceBarChart({
   // Round min down to nearest 5, max up to nearest 5 for stability
   const min = Math.floor(minPrice / 5) * 5;
   const maxMarketPrice = Math.ceil(maxPrice / 5) * 5;
-  const maxTotal = maxMarketPrice + GRID_FEES_AND_TAXES;
+  const maxTotal = maxMarketPrice + gridFees;
   const range = maxTotal - min;
 
   const avgMarketPrice = pricesInCent.reduce((sum, v) => sum + v, 0) / pricesInCent.length;
@@ -128,7 +130,7 @@ export function PriceBarChart({
         if (!item || item.marketPrice === null) return null;
 
         const marketPriceCent = item.marketPrice * 0.1;
-        const totalPrice = marketPriceCent + GRID_FEES_AND_TAXES;
+        const totalPrice = marketPriceCent + gridFees;
 
         // Berechne Position des Tooltips über dem Balken
         const x = leftPadding + ((item.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
@@ -182,7 +184,7 @@ export function PriceBarChart({
                 + Netzentgelte:
               </Text>
               <Text style={{ color: colors.text, fontSize: 11, fontWeight: '600' }}>
-                {GRID_FEES_AND_TAXES.toFixed(2)} ¢
+                {gridFees.toFixed(2)} ¢
               </Text>
             </View>
 
@@ -220,30 +222,28 @@ export function PriceBarChart({
             </Text>
           )}
         </View>
-        {/* Legend - hidden on phone, visible on tablet/desktop */}
-        {!isPhone && (
-          <View style={{
-            flexDirection: 'row',
-            gap: 12,
-            paddingRight: 10,
-            paddingTop: 0
-          }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50' }} />
-              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.marketPrice}</Text>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={{ width: 12, height: 12, backgroundColor: '#757575' }} />
-              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>
-                {labels.gridFeesAndTaxes} ({GRID_FEES_AND_TAXES} ¢/kWh)
-              </Text>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50', opacity: 0.4 }} />
-              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.interpolated}</Text>
-            </View>
+        {/* Legend - visible on all devices including mobile */}
+        <View style={{
+          flexDirection: 'row',
+          gap: 12,
+          paddingRight: 10,
+          paddingTop: 0
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50' }} />
+            <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.marketPrice}</Text>
           </View>
-        )}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={{ width: 12, height: 12, backgroundColor: '#757575' }} />
+            <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>
+              {labels.gridFeesAndTaxes} ({gridFees} ¢/kWh)
+            </Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50', opacity: 0.4 }} />
+            <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.interpolated}</Text>
+          </View>
+        </View>
       </View>
       <View style={{ height: chartHeight, width: chartWidth, position: 'relative' }}>
         {/* Grid Lines - Modern gestrichelt */}
@@ -292,14 +292,14 @@ export function PriceBarChart({
               );
             }
 
-            const totalPrice = marketPrice + GRID_FEES_AND_TAXES;
+            const totalPrice = marketPrice + gridFees;
             const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
             const barWidth = ((chartWidth - leftPadding - rightPadding) / data.length) * 0.8;
 
             const marketBarHeight = ((marketPrice - min) / range) * (chartHeight - padding - bottomPadding);
             const marketY = chartHeight - bottomPadding - marketBarHeight;
 
-            const gridBarHeight = (GRID_FEES_AND_TAXES / range) * (chartHeight - padding - bottomPadding);
+            const gridBarHeight = (gridFees / range) * (chartHeight - padding - bottomPadding);
             const gridY = marketY - gridBarHeight;
 
             const isSelected = selectedIndex === index;
@@ -372,7 +372,7 @@ export function PriceBarChart({
           const marketBarHeight = ((marketPrice - min) / range) * (chartHeight - padding - bottomPadding);
           const marketY = chartHeight - bottomPadding - marketBarHeight;
 
-          const gridBarHeight = (GRID_FEES_AND_TAXES / range) * (chartHeight - padding - bottomPadding);
+          const gridBarHeight = (gridFees / range) * (chartHeight - padding - bottomPadding);
           const gridY = marketY - gridBarHeight;
 
           return (
