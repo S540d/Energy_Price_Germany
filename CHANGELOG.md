@@ -4,7 +4,63 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.3.0] - 2026-01-04
+
+### Added
+- **Daily Regional Cache Strategy** - 95% reduction in API calls
+  - Persistent cache for regional renewable energy data (localStorage/AsyncStorage)
+  - Automatic invalidation after midnight
+  - Dual-layer caching (persistent + in-memory) for reliability
+  - Only stores current postal code to minimize storage usage
+
+- **Unified Legend System** - Professional chart legends
+  - Orange dashed line in RenewableBarChart for regional data visibility
+  - Responsive legends (desktop only, hidden on mobile)
+  - Consistent styling across all charts
+  - New legend section in Settings menu
+
+- **Cloudflare Worker Documentation** - Architecture transparency
+  - Comprehensive documentation of CORS proxy solution
+  - Architecture diagrams and deployment details
+  - Security and privacy guarantees documented
+
+### Fixed
+- **iOS/PWA Postal Code Persistence** - Users no longer need to re-enter postal code
+  - Fixed AsyncStorage initialization issues with static imports
+  - Postal code now persists across app restarts
+  - Proper error handling with graceful fallbacks
+
+- **Android Regional Data Display** - Regional data now loads on native apps
+  - Fixed AsyncStorage integration for Android platform
+  - Regional renewable data visible alongside national data
+  - Consistent regional cache behavior across platforms
+
+- **Settings Menu Spacing** - Uniform visual hierarchy
+  - Removed inconsistent padding in REGION and LEGEND sections
+  - All menu sections now use consistent spacing (paddingHorizontal: 16, paddingVertical: 12)
+  - Professional, polished appearance across all platforms
+
+- **Service Worker Cache-Busting** - Proper version updates
+  - Removed hardcoded cache versions preventing app updates
+  - Dynamic cache-busting mechanism now works correctly
+  - Users receive latest app version without manual cache clearing
+
+- **Deploy Workflow File Handling** - All build artifacts deployed
+  - Fixed `git add -A .nojekyll` syntax error in deploy workflow
+  - All new files (JS bundles, manifests) now properly staged and deployed
+  - Ensure fetch-depth: 0 prevents cache issues with Git history
+
+### Changed
+- Version bumped from 1.2.4 to 1.3.0
+- Android versionCode increased from 9 to 10
+- Improved regional data initialization timing
+- Storage adapter refactored for better platform compatibility
+
+### Technical
+- Refactored platform-specific storage handling
+- Improved AsyncStorage initialization on mobile
+- Enhanced error logging for storage operations
+- Build and deployment pipeline improvements
 
 ---
 
