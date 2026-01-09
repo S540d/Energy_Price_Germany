@@ -46,10 +46,19 @@ function getCurrentEnvironment(): EnvironmentConfig {
  */
 function validateEnvironment(config: EnvironmentConfig): void {
   // Prevent testing/staging from using production API
-  if ((config.isTesting || config.isStaging) && config.apiBase.includes('production')) {
+  // Production uses 'api.example.com', while staging/testing use 'staging-api.example.com'
+  if ((config.isTesting || config.isStaging) && !config.apiBase.includes('staging')) {
     throw new Error(
       `🚨 Security Error: ${config.env} environment is configured with production API! ` +
       `This is a critical misconfiguration. Please check .env.${config.env}`
+    );
+  }
+
+  // Prevent production from using staging/testing API
+  if (config.isProd && config.apiBase.includes('staging')) {
+    throw new Error(
+      `🚨 Security Error: production environment is configured with staging/test API! ` +
+      `This is a critical misconfiguration. Please check .env.production`
     );
   }
 

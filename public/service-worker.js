@@ -2,7 +2,7 @@
 // Version: 1.1.0 - Auto-update: Removed manual update notifications, updates apply automatically
 
 const CACHE_VERSION = '1.3.0';
-const BUILD_DATE = '2026-01-06';
+const BUILD_DATE = '2026-01-09';
 const CACHE_NAME = `energy-price-germany-v${CACHE_VERSION}-${BUILD_DATE}`;
 const urlsToCache = [
   '/Energy_Price_Germany/',
