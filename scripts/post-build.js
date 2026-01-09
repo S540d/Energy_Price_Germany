@@ -1,5 +1,9 @@
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, `../.env.${process.env.EXPO_ENV || 'production'}`) });
+
+// Get baseUrl from environment variables (this is set by the build script via EXPO_ENV)
+const baseUrl = process.env.EXPO_PUBLIC_BASE_URL || '/Energy_Price_Germany';
 
 // Copy PWA files to dist folder (but NOT index.html - Expo generates that)
 const filesToCopy = [
@@ -37,7 +41,6 @@ if (fs.existsSync(indexPath)) {
   let html = fs.readFileSync(indexPath, 'utf8');
 
   // Add baseUrl prefix to all absolute paths for GitHub Pages subpath
-  const baseUrl = '/Energy_Price_Germany';
   html = html.replace(/href="\/(?!\/)/g, `href="${baseUrl}/`);
   html = html.replace(/src="\/(?!\/)/g, `src="${baseUrl}/`);
 
