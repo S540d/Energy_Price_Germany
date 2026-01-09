@@ -1,10 +1,5 @@
-import * as dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-// Get the current directory
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const dotenv = require('dotenv');
+const path = require('path');
 
 // Determine environment
 const env = process.env.EXPO_ENV || 'production';
@@ -38,7 +33,7 @@ const envConfig = {
 
 const currentConfig = envConfig[env] || envConfig.production;
 
-export default {
+module.exports = {
   expo: {
     name: 'Energy Prices Germany',
     slug: 'Energy_Price_Germany',
