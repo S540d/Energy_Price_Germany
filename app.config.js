@@ -8,30 +8,10 @@ const envFilePath = path.resolve(__dirname, `.env.${env}`);
 // Load environment variables from appropriate .env file
 dotenv.config({ path: envFilePath });
 
-// Ensure required variables are set
+// Get configuration from loaded environment variables
 const baseUrl = process.env.EXPO_PUBLIC_BASE_URL || '/Energy_Price_Germany';
 const apiBase = process.env.EXPO_PUBLIC_API_BASE || 'https://api.example.com';
-
-// Environment-specific configurations
-const envConfig = {
-  production: {
-    baseUrl: '/Energy_Price_Germany',
-    apiBase: 'https://api.example.com',
-    pathPrefix: '/Energy_Price_Germany'
-  },
-  staging: {
-    baseUrl: '/Energy_Price_Germany/staging',
-    apiBase: 'https://staging-api.example.com',
-    pathPrefix: '/Energy_Price_Germany/staging'
-  },
-  testing: {
-    baseUrl: '/Energy_Price_Germany/testing',
-    apiBase: 'https://staging-api.example.com',
-    pathPrefix: '/Energy_Price_Germany/testing'
-  }
-};
-
-const currentConfig = envConfig[env] || envConfig.production;
+const pathPrefix = baseUrl; // pathPrefix is the same as baseUrl for deep linking
 
 module.exports = {
   expo: {
@@ -87,7 +67,7 @@ module.exports = {
             {
               scheme: 'https',
               host: 's540d.github.io',
-              pathPrefix: currentConfig.pathPrefix
+              pathPrefix: pathPrefix
             }
           ],
           category: ['BROWSABLE', 'DEFAULT']
@@ -97,7 +77,7 @@ module.exports = {
     web: {
       favicon: './assets/favicon.png',
       bundler: 'metro',
-      baseUrl: currentConfig.baseUrl
+      baseUrl: baseUrl
     },
     extra: {
       eas: {
@@ -105,8 +85,8 @@ module.exports = {
       },
       // Expose environment config to app
       environment: env,
-      baseUrl: currentConfig.baseUrl,
-      apiBase: currentConfig.apiBase
+      baseUrl: baseUrl,
+      apiBase: apiBase
     },
     owner: 'devsven',
     updates: {
