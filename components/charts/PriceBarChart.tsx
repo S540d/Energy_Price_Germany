@@ -65,12 +65,24 @@ export function PriceBarChart({
   // Use ALL data timestamps for consistent X-axis range across all charts
   const now = Date.now();
   const timestamps = data.map(d => d.timestamp);
+
+  // Guard against empty data (Division-by-Zero protection)
+  if (timestamps.length === 0) {
+    return null;
+  }
+
   const minTime = Math.min(...timestamps);
   const maxTime = Math.max(...timestamps);
   const timeRange = maxTime - minTime;
 
   // Only use entries with valid marketPrice for rendering bars and calculations
   const validData = data.filter(d => d.marketPrice !== null);
+
+  // Guard against empty valid data (Division-by-Zero protection)
+  if (validData.length === 0) {
+    return null;
+  }
+
   const pricesInCent = validData.map(d => d.marketPrice! * 0.1);
 
   // Use stable Y-axis range to prevent jumps at midnight
@@ -84,6 +96,11 @@ export function PriceBarChart({
   const maxMarketPrice = Math.ceil(maxPrice / 5) * 5;
   const maxTotal = maxMarketPrice + gridFees;
   const range = maxTotal - min;
+
+  // Guard against zero range (Division-by-Zero protection)
+  if (range === 0 || timeRange === 0) {
+    return null;
+  }
 
   const avgMarketPrice = pricesInCent.reduce((sum, v) => sum + v, 0) / pricesInCent.length;
 

@@ -342,6 +342,132 @@ grep "cache-testing\|cache-staging\|cache-prod" dist/service-worker.js
 
 ---
 
+## 📱 Mobile App Deployment (EAS Build)
+
+### EAS Channels Setup
+
+Das Projekt nutzt **EAS (Expo Application Services)** für Mobile App Builds mit drei separaten Channels:
+
+| Channel | Branch | Platform | Distribution | EXPO_ENV | Zielgruppe |
+|---------|--------|----------|--------------|----------|-----------|
+| **testing** | testing | Android/iOS | Internal | testing | Developer |
+| **staging** | staging | Android/iOS | Internal | staging | QA/Beta Tester |
+| **production** | main | Android/iOS | Store | production | End User |
+
+### Build Commands
+
+```bash
+# Testing Builds (Internal Distribution)
+npm run eas:build:testing              # Android + iOS
+npm run eas:build:android:testing      # Nur Android
+npm run eas:build:ios:testing          # Nur iOS
+
+# Staging Builds (Internal Distribution)
+npm run eas:build:staging              # Android + iOS
+npm run eas:build:android:staging      # Nur Android
+npm run eas:build:ios:staging          # Nur iOS
+
+# Production Builds (Store Distribution)
+npm run eas:build:production           # Android + iOS
+npm run eas:build:android:production   # Nur Android (AAB für Play Store)
+npm run eas:build:ios:production       # Nur iOS (App Store)
+```
+
+### EAS Build Workflow
+
+```
+1. Code Development auf Feature Branch
+   ↓
+2. Merge zu testing Branch
+   ↓
+3. EAS Build Testing
+   npm run eas:build:testing
+   ↓
+4. Internal Testing auf echten Geräten
+   ↓ (Approved)
+5. Merge zu staging Branch
+   ↓
+6. EAS Build Staging
+   npm run eas:build:staging
+   ↓
+7. QA Testing auf echten Geräten
+   ↓ (Approved)
+8. Merge zu main Branch
+   ↓
+9. EAS Build Production
+   npm run eas:build:production
+   ↓
+10. Submit zu App Stores
+```
+
+### Build Profiles (eas.json)
+
+Alle drei Build-Profile nutzen die gleichen `.env.*` Dateien wie Web-Deployments:
+
+**Testing Profile:**
+- Distribution: Internal
+- Channel: testing
+- EXPO_ENV: testing
+- Android: APK (schnellere Builds)
+- iOS: Real Device Build
+
+**Staging Profile:**
+- Distribution: Internal
+- Channel: staging
+- EXPO_ENV: staging
+- Android: APK
+- iOS: Real Device Build
+
+**Production Profile:**
+- Distribution: Store
+- Channel: production
+- EXPO_ENV: production
+- Android: AAB (Google Play Store)
+- iOS: App Store Build
+
+### Erste Schritte mit EAS
+
+1. **EAS CLI installieren** (falls noch nicht vorhanden):
+```bash
+npm install -g eas-cli
+```
+
+2. **Bei Expo anmelden**:
+```bash
+eas login
+```
+
+3. **Projekt konfigurieren**:
+```bash
+eas build:configure
+```
+
+4. **Ersten Build starten**:
+```bash
+npm run eas:build:testing
+```
+
+5. **Build Status prüfen**:
+```bash
+eas build:list
+```
+
+### Wichtige Hinweise zu EAS
+
+- **Credentials**: Android Keystore wird via `credentials.json` lokal verwaltet
+- **iOS**: Benötigt Apple Developer Account für iOS Builds
+- **Build Time**: Erste Builds dauern 10-15 Minuten, danach schneller durch Caching
+- **Internal Distribution**: Testing & Staging Builds können via Link geteilt werden
+- **Store Submission**: Production Builds werden manuell zu Stores submitted
+
+### Links & Ressourcen
+
+- [EAS Build Documentation](https://docs.expo.dev/build/introduction/)
+- [EAS Channels](https://docs.expo.dev/eas-update/channels/)
+- [Managing Credentials](https://docs.expo.dev/app-signing/managed-credentials/)
+
+---
+
 **Last Updated:** 2026-01-10
-**Version:** 1.0
-**Status:** Complete for Phase 2 & 3
+**Version:** 1.1
+**Status:** Complete for Phase 2 & 3 + EAS Setup
