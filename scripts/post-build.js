@@ -94,20 +94,41 @@ if (fs.existsSync(indexPath)) {
           padding: 16px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
           z-index: 10000; max-width: 300px; cursor: pointer;
         \`;
-        notification.innerHTML = \`
-          <div style="font-weight: 500; margin-bottom: 8px;">🔄 Update verfügbar</div>
-          <div style="font-size: 14px; opacity: 0.9; margin-bottom: 12px;">\${message}</div>
-          <div style="display: flex; gap: 8px;">
-            <button id="update-yes" style="background: white; color: #6200EE; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 500; cursor: pointer;">Aktualisieren</button>
-            <button id="update-no" style="background: transparent; color: white; border: 1px solid rgba(255,255,255,0.3); padding: 6px 12px; border-radius: 4px; cursor: pointer;">Später</button>
-          </div>
-        \`;
+
+        // Create notification structure using DOM API (XSS-safe)
+        const title = document.createElement('div');
+        title.style.cssText = 'font-weight: 500; margin-bottom: 8px;';
+        title.textContent = '🔄 Update verfügbar';
+
+        const messageDiv = document.createElement('div');
+        messageDiv.style.cssText = 'font-size: 14px; opacity: 0.9; margin-bottom: 12px;';
+        messageDiv.textContent = message; // XSS-safe: textContent instead of innerHTML
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = 'display: flex; gap: 8px;';
+
+        const updateBtn = document.createElement('button');
+        updateBtn.id = 'update-yes';
+        updateBtn.style.cssText = 'background: white; color: #6200EE; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 500; cursor: pointer;';
+        updateBtn.textContent = 'Aktualisieren';
+
+        const laterBtn = document.createElement('button');
+        laterBtn.id = 'update-no';
+        laterBtn.style.cssText = 'background: transparent; color: white; border: 1px solid rgba(255,255,255,0.3); padding: 6px 12px; border-radius: 4px; cursor: pointer;';
+        laterBtn.textContent = 'Später';
+
+        buttonContainer.appendChild(updateBtn);
+        buttonContainer.appendChild(laterBtn);
+        notification.appendChild(title);
+        notification.appendChild(messageDiv);
+        notification.appendChild(buttonContainer);
+
         document.body.appendChild(notification);
-        document.getElementById('update-yes').addEventListener('click', () => {
+        updateBtn.addEventListener('click', () => {
           navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
           window.location.reload();
         });
-        document.getElementById('update-no').addEventListener('click', () => notification.remove());
+        laterBtn.addEventListener('click', () => notification.remove());
         setTimeout(() => { if (notification.parentNode) notification.remove(); }, 30000);
       }
     </script>
