@@ -85,6 +85,18 @@ The regional data feature uses a **Cloudflare Worker** to proxy requests to the 
 - Automatically deployed via GitHub Actions
 - No API keys or authentication required (public data only)
 
+## Testing & Environments
+
+The app supports three separate environments for development, testing, and production:
+
+- **Production** (`main` branch): https://s540d.github.io/Energy_Price_Germany/
+- **Staging** (`staging` branch): https://s540d.github.io/Energy_Price_Germany/staging/
+- **Testing** (`testing` branch): https://s540d.github.io/Energy_Price_Germany/testing/
+
+Each environment has its own EXPO_ENV configuration, .env file, and deployment URL.
+
+**For detailed testing workflows, environment setup, and troubleshooting, see [TESTING.md](TESTING.md)**
+
 ## Installation
 
 1. Clone the repository:
