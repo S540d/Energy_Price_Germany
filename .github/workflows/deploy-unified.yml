@@ -20,7 +20,7 @@ permissions:
 
 # Allow only one concurrent deployment
 concurrency:
-  group: "pages"
+  group: "pages-${{ github.ref_name }}"
   cancel-in-progress: false
 
 jobs:
@@ -47,6 +47,10 @@ jobs:
               echo "TARGET_FOLDER=testing" >> $GITHUB_OUTPUT
               echo "URL=https://s540d.github.io/Energy_Price_Germany/testing/" >> $GITHUB_OUTPUT
               ;;
+            *)
+              echo "Error: Unsupported branch for deployment: ${{ github.ref }}"
+              exit 1
+              ;;
           esac
 
       - name: Checkout branch
@@ -67,7 +71,6 @@ jobs:
       - name: Build for web (${{ steps.env.outputs.EXPO_ENV }})
         run: npm run build:${{ steps.env.outputs.EXPO_ENV }}
         env:
-          EXPO_ENV: ${{ steps.env.outputs.EXPO_ENV }}
           NODE_ENV: production
 
       - name: Create .nojekyll file
@@ -76,7 +79,7 @@ jobs:
       - name: Save build artifacts
         run: |
           mkdir -p /tmp/build-artifacts
-          cp -r dist/* /tmp/build-artifacts/
+          cp -r dist/. /tmp/build-artifacts/
           echo "Build artifacts saved to /tmp/build-artifacts"
 
       - name: Checkout gh-pages branch (clean)
@@ -109,8 +112,10 @@ jobs:
             find . -maxdepth 1 ! -name '*.bak' ! -name '.git' ! -name '.' ! -name '..' -exec rm -rf {} + 2>/dev/null || true
 
             # Copy new build
-            cp -r /tmp/build-artifacts/* .
-            cp /tmp/build-artifacts/.nojekyll . 2>/dev/null || touch .nojekyll
+            cp -r /tmp/build-artifacts/. .
+            
+            # Ensure .nojekyll exists
+            if [ ! -f .nojekyll ]; then touch .nojekyll; fi
 
             # Restore other environment folders
             for folder in "${PRESERVED_FOLDERS[@]}"; do
@@ -126,7 +131,7 @@ jobs:
 
             # Create subfolder and copy build
             mkdir -p "${{ steps.env.outputs.TARGET_FOLDER }}"
-            cp -r /tmp/build-artifacts/* "${{ steps.env.outputs.TARGET_FOLDER }}/"
+            cp -r /tmp/build-artifacts/. "${{ steps.env.outputs.TARGET_FOLDER }}/"
           fi
 
           # Add and commit changes
