@@ -67,9 +67,20 @@ export function RenewableBarChart({
   // Use ALL data timestamps for consistent X-axis range across all charts
   const now = Date.now();
   const timestamps = data.map(d => d.timestamp);
+
+  // Guard against empty data (Division-by-Zero protection)
+  if (timestamps.length === 0) {
+    return null;
+  }
+
   const minTime = Math.min(...timestamps);
   const maxTime = Math.max(...timestamps);
   const timeRange = maxTime - minTime;
+
+  // Guard against zero time range (Division-by-Zero protection)
+  if (timeRange === 0) {
+    return null;
+  }
 
   // Only use entries with valid data for the selected key
   const validData = data.filter(d => d[dataKey] !== null && d[dataKey] !== undefined);
