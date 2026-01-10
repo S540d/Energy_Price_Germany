@@ -33,7 +33,7 @@ jobs:
       - name: Check for console.log in production code
         run: |
           echo "Checking for console.log statements..."
-          if grep -r "console\.log\|console\.debug" App.tsx --exclude-dir=node_modules --exclude-dir=.git; then
+          if grep -r "console\.log\|console\.debug" . --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx"; then
             echo "❌ ERROR: Found console.log/debug in production code!"
             exit 1
           else
@@ -44,14 +44,14 @@ jobs:
         run: |
           echo "Checking for unsafe Web API usage..."
           # Check for window.* without Platform.OS check
-          if grep -r "window\." App.tsx --exclude-dir=node_modules | grep -v "Platform.OS === 'web'" | grep -v "// platform-safe"; then
+          if grep -r "window\." . --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --include="*.ts" --include="*.tsx" | grep -v "Platform.OS === 'web'" | grep -v "// platform-safe"; then
             echo "❌ ERROR: Found window.* without Platform.OS check!"
             echo "Add 'Platform.OS === web' check or // platform-safe comment"
             exit 1
           fi
 
           # Check for localStorage without Platform.OS check
-          if grep -r "localStorage\." App.tsx --exclude-dir=node_modules | grep -v "Platform.OS === 'web'" | grep -v "// platform-safe"; then
+          if grep -r "localStorage\." . --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --include="*.ts" --include="*.tsx" | grep -v "Platform.OS === 'web'" | grep -v "// platform-safe"; then
             echo "❌ ERROR: Found localStorage without Platform.OS check!"
             echo "Use AsyncStorage for mobile or add Platform.OS check"
             exit 1
@@ -63,7 +63,7 @@ jobs:
         run: |
           echo "Checking AsyncStorage usage..."
           # Ensure AsyncStorage is used for mobile, not localStorage
-          if grep -r "@react-native-async-storage/async-storage" App.tsx --exclude-dir=node_modules; then
+          if grep -r "@react-native-async-storage/async-storage" . --exclude-dir=node_modules --include="*.ts" --include="*.tsx" --include="*.js"; then
             echo "✅ AsyncStorage is properly used"
           fi
 
@@ -122,13 +122,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Check version consistency
         run: |
           echo "Checking version numbers across files..."
 
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
           APP_JSON_VERSION=$(node -p "require('./app.json').expo.version")
-          APP_VERSION=$(grep "APP_VERSION = " App.tsx | sed -E "s/.*'(.*)'.*/\1/")
+          APP_VERSION=$(grep "const APP_VERSION = " App.tsx | sed -E "s/.*'([^']*)'.*/\1/")
 
           echo "package.json: $PACKAGE_VERSION"
           echo "app.json: $APP_JSON_VERSION"
