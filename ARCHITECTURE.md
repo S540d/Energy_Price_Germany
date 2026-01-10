@@ -138,11 +138,21 @@ See [DATA-MERGE-STRATEGY.md](DATA-MERGE-STRATEGY.md) for detailed algorithm.
 - ✅ Single source of truth for deployment logic (deploy.yml)
 - ✅ Automatic retry handling by GitHub
 
-#### Deploy Workflow (`.github/workflows/deploy.yml`)
-**Trigger:** Push to main + Manual dispatch
+#### Deploy Workflow (`.github/workflows/deploy-unified.yml`)
 
-- Standalone workflow for on-demand deployments
-- Can be called from other workflows
+**Trigger:** Push to main, staging, or testing + Manual dispatch + Scheduled (6h for main)
+
+**Unified Deployment for All Environments:**
+
+- Single workflow für alle 3 Branches (main/staging/testing)
+- Branch Detection Logic:
+  - `main` → EXPO_ENV=production → Deploy zu `/`
+  - `staging` → EXPO_ENV=staging → Deploy zu `/staging/`
+  - `testing` → EXPO_ENV=testing → Deploy zu `/testing/`
+- Smart Folder Management:
+  - Production: Bewahrt staging/ und testing/ Folders
+  - Staging/Testing: Updated nur eigene Folders
+- No more sed injections! Environment aus .env Dateien geladen
 - Performs: Build → Upload → Deploy to GitHub Pages
 
 ---
