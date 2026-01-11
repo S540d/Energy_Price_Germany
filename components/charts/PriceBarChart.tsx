@@ -60,6 +60,7 @@ export function PriceBarChart({
     margin,
     cardPadding,
     isPhone,
+    isLandscape,
   } = useChartDimensions();
 
   // Use ALL data timestamps for consistent X-axis range across all charts
@@ -239,28 +240,30 @@ export function PriceBarChart({
             </Text>
           )}
         </View>
-        {/* Legend - visible on all devices including mobile */}
-        <View style={{
-          flexDirection: 'row',
-          gap: 12,
-          paddingRight: 10,
-          paddingTop: 0
-        }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50' }} />
-            <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.marketPrice}</Text>
+        {/* Legend - hidden on small devices in portrait mode */}
+        {!(isPhone && !isLandscape) && (
+          <View style={{
+            flexDirection: 'row',
+            gap: 12,
+            paddingRight: 10,
+            paddingTop: 0
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50' }} />
+              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.marketPrice}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{ width: 12, height: 12, backgroundColor: '#757575' }} />
+              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>
+                {labels.gridFeesAndTaxes} ({gridFees} ¢/kWh)
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50', opacity: 0.4 }} />
+              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.interpolated}</Text>
+            </View>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={{ width: 12, height: 12, backgroundColor: '#757575' }} />
-            <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>
-              {labels.gridFeesAndTaxes} ({gridFees} ¢/kWh)
-            </Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50', opacity: 0.4 }} />
-            <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.interpolated}</Text>
-          </View>
-        </View>
+        )}
       </View>
       <View style={{ height: chartHeight, width: chartWidth, position: 'relative' }}>
         {/* Grid Lines - Modern gestrichelt */}
