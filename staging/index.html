@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1.00001, viewport-fit=cover"
+    />
+    <title>Energy Prices Germany</title>
+    <meta name="description" content="Visualisierung von Energiepreisen und erneuerbaren Energien in Deutschland" />
+    <link rel="manifest" href="/Energy_Price_Germany/staging/manifest.json" />
+    <meta name="theme-color" content="#6200EE" />
+
+    <!-- iOS PWA Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Energy Prices Germany" />
+    <link rel="apple-touch-icon" href="/Energy_Price_Germany/staging/icon-192.png?v=2" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/Energy_Price_Germany/staging/icon-180.png?v=2" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/Energy_Price_Germany/staging/icon-192.png?v=2" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/Energy_Price_Germany/staging/icon-512.png?v=2" />
+    <!-- Optional: Safari Pinned Tab Icon (requires SVG)
+    <link rel="mask-icon" href="/Energy_Price_Germany/staging/safari-pinned-tab.svg" color="#6200EE" />
+    -->
+    <style>
+      #root,
+      body,
+      html {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+          Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: #0A0A0A;
+        color: #E8E8E8;
+      }
+
+      /* Initial loading screen shown before React hydration */
+      .initial-loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: #0A0A0A;
+        z-index: 9999;
+        opacity: 1;
+        transition: opacity 0.3s ease-out;
+      }
+
+      .initial-loading.fade-out {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid #1A1A1A;
+        border-top-color: #90CAF9;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 16px;
+      }
+
+      .loading-text {
+        font-size: 16px;
+        color: #E8E8E8;
+        font-weight: 500;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Hide initial loading once React renders */
+      #root > * {
+        animation: fadeIn 0.3s ease-in;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+  <link rel="icon" href="/Energy_Price_Germany/staging/favicon.ico" /></head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="initial-loading" class="initial-loading">
+      <div class="spinner"></div>
+      <div class="loading-text">Lade Energiedaten...</div>
+    </div>
+    <div id="root"></div>
+    <script>
+      // Hide initial loading screen once React starts rendering
+      const initialLoading = document.getElementById('initial-loading');
+      const observer = new MutationObserver(() => {
+        if (document.getElementById('root')?.firstChild) {
+          initialLoading.classList.add('fade-out');
+          observer.disconnect();
+        }
+      });
+      observer.observe(document.getElementById('root'), { childList: true });
+
+      // Fallback: hide loading after 5 seconds even if React doesn't render
+      setTimeout(() => {
+        if (initialLoading && !initialLoading.classList.contains('fade-out')) {
+          initialLoading.classList.add('fade-out');
+        }
+      }, 5000);
+    </script>
+    <script>
+      // Only register service worker in production (GitHub Pages)
+      const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+
+      if ('serviceWorker' in navigator && isProduction) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/Energy_Price_Germany/service-worker.js', { scope: '/Energy_Price_Germany/' })
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+
+              // Immediate update check on load
+              registration.update();
+
+              // Check for updates every 10 seconds
+              setInterval(() => {
+                registration.update();
+              }, 10000);
+
+              // Listen for update notifications and auto-apply
+              navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data && event.data.type === 'UPDATE_AVAILABLE') {
+                  applyUpdate();
+                }
+              });
+
+              // Handle update found and auto-apply
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                console.log('New service worker installing...');
+
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('New service worker installed, applying update automatically');
+                    applyUpdate();
+                  }
+                });
+              });
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      } else if ('serviceWorker' in navigator && !isProduction) {
+        // On localhost, unregister any existing service workers to prevent caching issues
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          registrations.forEach((registration) => {
+            console.log('Unregistering service worker on localhost:', registration);
+            registration.unregister();
+          });
+        });
+      }
+
+      // Function to automatically apply updates
+      function applyUpdate() {
+        console.log('Applying update automatically...');
+
+        // Tell service worker to skip waiting and activate new version
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+        }
+
+        // Wait a moment for the service worker to activate, then reload
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+      }
+    </script>
+  <script src="/Energy_Price_Germany/staging/_expo/static/js/web/index-7f8dcc6a839bd17b06b96fec854efd71.js?v=1768145833308" defer></script>
+</body>
+</html>
