@@ -11,16 +11,46 @@
         "buildType": "apk"
       }
     },
-    "preview": {
+    "testing": {
       "distribution": "internal",
+      "channel": "testing",
+      "env": {
+        "EXPO_ENV": "testing"
+      },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      },
+      "ios": {
+        "simulator": false
+      }
+    },
+    "staging": {
+      "distribution": "internal",
+      "channel": "staging",
+      "env": {
+        "EXPO_ENV": "staging"
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      },
+      "ios": {
+        "simulator": false
       }
     },
     "production": {
+      "distribution": "store",
+      "channel": "production",
+      "env": {
+        "EXPO_ENV": "production"
+      },
       "android": {
         "buildType": "app-bundle",
         "credentialsSource": "local"
+      },
+      "ios": {
+        "simulator": false
       }
     }
   },
