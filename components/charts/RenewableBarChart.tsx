@@ -62,6 +62,7 @@ export function RenewableBarChart({
     margin,
     cardPadding,
     isPhone,
+    isLandscape,
   } = useChartDimensions();
 
   // Use ALL data timestamps for consistent X-axis range across all charts
@@ -200,34 +201,36 @@ export function RenewableBarChart({
             </Text>
           )}
         </View>
-        {/* Legend - visible on all devices including mobile */}
-        <View style={{
-          flexDirection: 'row',
-          gap: 12,
-          paddingRight: 10,
-          paddingTop: 0
-        }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={{
-              width: 12,
-              height: 2,
-              backgroundColor: textColor,
-              opacity: 0.5
-            }} />
-            <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.average}</Text>
-          </View>
-          {showRegionalLine && (
+        {/* Legend - hidden on small devices in portrait mode */}
+        {!(isPhone && !isLandscape) && (
+          <View style={{
+            flexDirection: 'row',
+            gap: 12,
+            paddingRight: 10,
+            paddingTop: 0
+          }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <View style={{
                 width: 12,
                 height: 2,
-                backgroundColor: '#FF9800',
-                opacity: 0.8
+                backgroundColor: textColor,
+                opacity: 0.5
               }} />
-              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.regional}</Text>
+              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.average}</Text>
             </View>
-          )}
-        </View>
+            {showRegionalLine && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={{
+                  width: 12,
+                  height: 2,
+                  backgroundColor: '#FF9800',
+                  opacity: 0.8
+                }} />
+                <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.regional}</Text>
+              </View>
+            )}
+          </View>
+        )}
       </View>
       <View style={{ height: chartHeight, width: chartWidth, position: 'relative' }}>
         {/* Grid Lines - Modern gestrichelt */}
