@@ -53,6 +53,7 @@ export function CorrelationScatterChart({
     margin,
     cardPadding,
     isPhone,
+    isLandscape,
   } = useChartDimensions();
 
   // Only use entries with both marketPrice and renewableShare, excluding interpolated values
@@ -222,7 +223,8 @@ export function CorrelationScatterChart({
             </Text>
           )}
         </View>
-        {!isPhone && (
+        {/* Legend - hidden on small devices in portrait mode */}
+        {!(isPhone && !isLandscape) && (
           <View style={{
             flexDirection: 'row',
             gap: 12,
