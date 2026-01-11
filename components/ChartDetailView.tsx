@@ -176,16 +176,6 @@ export function ChartDetailView({
                 </Text>
               </View>
             </View>
-
-            {/* Info note */}
-            <Text style={[{
-              color: colors.textSecondary,
-              fontSize: 12,
-              marginTop: 8,
-              fontStyle: 'italic'
-            }]}>
-              💡 +{gridFees} ¢/kWh Netzentgelte & Steuern
-            </Text>
           </View>
         </View>
       );
@@ -300,7 +290,7 @@ export function ChartDetailView({
           </View>
           {/* Legend - show only when displaying chart (not metrics) */}
           {legend && (
-            <View style={[styles.legendContainer, { backgroundColor: colors.surfaceSecondary }]}>
+            <View style={[styles.legendContainer, { backgroundColor: colors.surface }]}>
               {legend}
             </View>
           )}
@@ -509,11 +499,11 @@ const styles = StyleSheet.create({
     margin: 16,
     marginTop: 8,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 18,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 4,
   },
 });
