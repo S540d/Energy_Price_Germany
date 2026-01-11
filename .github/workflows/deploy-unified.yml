@@ -1,0 +1,162 @@
+name: Deploy (Unified)
+
+on:
+  # Automatic trigger on push to main, staging, testing
+  push:
+    branches: [ main, staging, testing ]
+  # Fallback: Scheduled deployment every 6 hours for main branch
+  schedule:
+    - cron: '0 4,11,16,18,21 * * *'
+  # Allow manual trigger
+  workflow_dispatch:
+  # Allow other workflows to call this workflow
+  workflow_call:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment
+concurrency:
+  group: "pages-${{ github.ref_name }}"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Determine environment and target folder
+        id: env
+        run: |
+          case "${{ github.ref }}" in
+            "refs/heads/main")
+              echo "EXPO_ENV=production" >> $GITHUB_OUTPUT
+              echo "TARGET_FOLDER=." >> $GITHUB_OUTPUT
+              echo "URL=https://s540d.github.io/Energy_Price_Germany/" >> $GITHUB_OUTPUT
+              ;;
+            "refs/heads/staging")
+              echo "EXPO_ENV=staging" >> $GITHUB_OUTPUT
+              echo "TARGET_FOLDER=staging" >> $GITHUB_OUTPUT
+              echo "URL=https://s540d.github.io/Energy_Price_Germany/staging/" >> $GITHUB_OUTPUT
+              ;;
+            "refs/heads/testing")
+              echo "EXPO_ENV=testing" >> $GITHUB_OUTPUT
+              echo "TARGET_FOLDER=testing" >> $GITHUB_OUTPUT
+              echo "URL=https://s540d.github.io/Energy_Price_Germany/testing/" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "Error: Unsupported branch for deployment: ${{ github.ref }}"
+              exit 1
+              ;;
+          esac
+
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for web (${{ steps.env.outputs.EXPO_ENV }})
+        run: npm run build:${{ steps.env.outputs.EXPO_ENV }}
+        env:
+          NODE_ENV: production
+
+      - name: Create .nojekyll file
+        run: touch dist/.nojekyll
+
+      - name: Save build artifacts
+        run: |
+          mkdir -p /tmp/build-artifacts
+          cp -r dist/. /tmp/build-artifacts/
+          echo "Build artifacts saved to /tmp/build-artifacts"
+
+      - name: Checkout gh-pages branch (clean)
+        run: |
+          git fetch origin gh-pages || git checkout --orphan gh-pages
+          git reset --hard
+          git clean -fd
+          git checkout gh-pages
+
+      - name: Deploy to GitHub Pages
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Determine if deploying to root or subfolder
+          if [ "${{ steps.env.outputs.TARGET_FOLDER }}" = "." ]; then
+            echo "📦 Deploying to root (production)..."
+
+            # Save other environment folders
+            PRESERVED_FOLDERS=()
+            for folder in staging testing; do
+              if [ -d "$folder" ]; then
+                PRESERVED_FOLDERS+=("$folder")
+                mv "$folder" "$folder.bak"
+              fi
+            done
+
+            # Remove old production files
+            find . -maxdepth 1 ! -name '*.bak' ! -name '.git' ! -name '.' ! -name '..' -exec rm -rf {} + 2>/dev/null || true
+
+            # Copy new build
+            cp -r /tmp/build-artifacts/. .
+            
+            # Ensure .nojekyll exists
+            if [ ! -f .nojekyll ]; then touch .nojekyll; fi
+
+            # Restore other environment folders
+            for folder in "${PRESERVED_FOLDERS[@]}"; do
+              if [ -d "$folder.bak" ]; then
+                mv "$folder.bak" "$folder"
+              fi
+            done
+          else
+            echo "📦 Deploying to subfolder: ${{ steps.env.outputs.TARGET_FOLDER }}"
+
+            # Remove old subfolder if exists
+            rm -rf "${{ steps.env.outputs.TARGET_FOLDER }}"
+
+            # Create subfolder and copy build
+            mkdir -p "${{ steps.env.outputs.TARGET_FOLDER }}"
+            cp -r /tmp/build-artifacts/. "${{ steps.env.outputs.TARGET_FOLDER }}/"
+          fi
+
+          # Add and commit changes
+          git add -A
+          git commit -m "chore: Deploy ${{ steps.env.outputs.EXPO_ENV }} build from ${{ github.sha }}
+
+          🚀 ${{ steps.env.outputs.EXPO_ENV }} deployment
+          📦 Branch: ${{ github.ref_name }}
+          🔗 URL: ${{ steps.env.outputs.URL }}
+
+          🤖 Automated by GitHub Actions" || echo "No changes to commit"
+
+          # Push to gh-pages
+          git push origin gh-pages
+
+      - name: Summary
+        run: |
+          ENV_UPPER=$(echo "${{ steps.env.outputs.EXPO_ENV }}" | tr '[:lower:]' '[:upper:]')
+          echo "## 🚀 $ENV_UPPER Deployed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Successfully deployed to ${{ steps.env.outputs.EXPO_ENV }} environment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ steps.env.outputs.EXPO_ENV }}" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** ${{ steps.env.outputs.URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ Note: Changes may take 1-2 minutes to appear due to CDN caching" >> $GITHUB_STEP_SUMMARY

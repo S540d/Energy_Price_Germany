@@ -63,6 +63,11 @@ export function CorrelationScatterChart({
     !d.isRenewableShareInterpolated
   );
 
+  // Guard against empty data (Division-by-Zero protection)
+  if (validData.length === 0) {
+    return null;
+  }
+
   const priceInCentValues = validData.map(d => d.marketPrice! * 0.1);
   const renewableValues = validData.map(d => d.renewableShare!);
 
@@ -77,6 +82,11 @@ export function CorrelationScatterChart({
   const maxPrice = maxPriceData + pricePadding;
   const priceRange = maxPrice - minPrice;
 
+  // Guard against zero range (Division-by-Zero protection)
+  if (priceRange === 0 || renewableRange === 0) {
+    return null;
+  }
+
   // Lineare Regression
   const n = validData.length;
   const sumX = renewableValues.reduce((sum, v) => sum + v, 0);
@@ -84,7 +94,14 @@ export function CorrelationScatterChart({
   const sumXY = renewableValues.reduce((sum, v, i) => sum + v * priceInCentValues[i], 0);
   const sumX2 = renewableValues.reduce((sum, v) => sum + v * v, 0);
 
-  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  const denominator = n * sumX2 - sumX * sumX;
+
+  // Guard against division by zero in regression calculation
+  if (denominator === 0) {
+    return null;
+  }
+
+  const slope = (n * sumXY - sumX * sumY) / denominator;
   const intercept = (sumY - slope * sumX) / n;
 
   // Calculate trend line points that stay within chart bounds
