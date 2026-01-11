@@ -833,13 +833,6 @@ function AppContent() {
                   <Text style={[{ color: colors.text, fontSize: 13, fontWeight: '600' }]}>
                     {t.legend}
                   </Text>
-                  <Text style={[{
-                    color: colors.text,
-                    fontSize: 12,
-                    marginBottom: 8
-                  }]}>
-                    {t.legendExplanationPrefix} {GRID_FEES_AND_TAXES} {t.legendExplanationSuffix}
-                  </Text>
                   <View style={{ gap: 6 }}>
                     {/* Market Price */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -901,7 +894,7 @@ function AppContent() {
                   <Text style={[{ color: colors.text, fontSize: 13, fontWeight: '600' }]}>
                     {t.legend}
                   </Text>
-                  <View style={{ gap: 6 }}>
+                  <View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                       <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#2196F3' }} />
                       <Text style={{ color: colors.text, fontSize: 12 }}>{t.night}</Text>
