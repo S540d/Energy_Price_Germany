@@ -5,7 +5,19 @@ module.exports = {
     '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|expo|@expo|victory-native|@shopify/react-native-skia|react-native-svg|@react-native-async-storage)/)',
+    'node_modules/(?!(' +
+      'react-native|' +
+      '@react-native|' +
+      'expo|' +
+      '@expo|' +
+      'victory-native|' +
+      '@shopify/react-native-skia|' +
+      'react-native-svg|' +
+      '@react-native-async-storage|' +
+      'react-native-safe-area-context|' +
+      'expo-status-bar|' +
+      'expo-updates' +
+    ')/)',
   ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   testMatch: ['**/__tests__/**/*.test.(ts|tsx|js)', '**/*.test.(ts|tsx|js)'],
