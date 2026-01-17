@@ -277,7 +277,7 @@ describe('App', () => {
       });
     });
 
-    it('should save language preference to AsyncStorage when changed on mobile', async () => {
+    it('should have AsyncStorage.setItem available for language switching on mobile', async () => {
       Platform.OS = 'ios';
 
       const { getByLabelText } = render(<App />);
@@ -350,19 +350,18 @@ describe('App', () => {
       });
     });
 
-    it('should debounce postal code input before fetching data', async () => {
+    it('should render settings menu successfully', async () => {
       const { getByLabelText } = render(<App />);
 
       await waitFor(() => {
         fireEvent.press(getByLabelText('Settings'));
       });
 
-      // Note: This test verifies debounce behavior exists, but actual
-      // debounce timing is handled by the component internally
+      // Verify settings menu can be rendered without errors
       expect(getByLabelText('Settings')).toBeTruthy();
     });
 
-    it('should invalidate cache when postal code changes', async () => {
+    it('should have cache invalidation functions available', async () => {
       render(<App />);
 
       await waitFor(() => {
@@ -394,7 +393,7 @@ describe('App', () => {
       expect(AsyncStorage.getItem).toHaveBeenCalled();
     });
 
-    it('should save grid fees to storage when changed', async () => {
+    it('should have AsyncStorage.setItem available for grid fees', async () => {
       Platform.OS = 'ios';
 
       render(<App />);
@@ -407,16 +406,6 @@ describe('App', () => {
       expect(AsyncStorage.setItem).toBeDefined();
     });
 
-    it('should validate grid fees input (positive numbers only)', async () => {
-      render(<App />);
-
-      await waitFor(() => {
-        expect(mockFetchEnergyData).toHaveBeenCalled();
-      });
-
-      // This validates the component renders without error
-      expect(true).toBeTruthy();
-    });
   });
 
   describe('Updates Management', () => {
@@ -517,7 +506,7 @@ describe('App', () => {
   });
 
   describe('About View', () => {
-    it('should open about view when about button is pressed', async () => {
+    it('should render about button in settings menu', async () => {
       const { getByLabelText, queryByText } = render(<App />);
 
       await waitFor(() => {
@@ -527,13 +516,9 @@ describe('App', () => {
       await waitFor(() => {
         // Button text could be "About" or "ÜBER" depending on language
         const aboutButton = queryByText('About') || queryByText('ÜBER');
-        if (aboutButton) {
-          fireEvent.press(aboutButton);
-        }
+        // Verify about button exists in settings menu
+        expect(aboutButton).toBeTruthy();
       });
-
-      // AboutView should be rendered (mocked component)
-      expect(true).toBeTruthy();
     });
   });
 
