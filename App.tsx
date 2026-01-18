@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -6,168 +6,45 @@ import {
   ScrollView,
   TouchableOpacity,
   useColorScheme,
-  Platform,
   Linking,
   ActivityIndicator,
   TextInput,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Updates from 'expo-updates';
-import { fetchEnergyData, getCurrentDataSource, energyDataManager } from './services/energyDataManager';
+import { getCurrentDataSource } from './services/energyDataManager';
 import { RenewableBarChart } from './components/charts/RenewableBarChart';
 import { PriceBarChart } from './components/charts/PriceBarChart';
 import { CorrelationScatterChart } from './components/charts/CorrelationScatterChart';
 import { ChartDetailView } from './components/ChartDetailView';
 import { AboutView } from './components/AboutView';
 import { calculateMetrics, EnergyData, GRID_FEES_AND_TAXES } from './utils/metrics';
-import { getThemeColors, Theme } from './utils/theme';
+import { getThemeColors } from './utils/theme';
 import { logger } from './utils/logger';
 import { isValidPostalCode, sanitizePostalCodeInput } from './utils/postalCodeUtils';
+import { translations } from './utils/translations';
+import { useEnergyData } from './hooks/useEnergyData';
+import { useSettings } from './hooks/useSettings';
+import { useLanguageContext } from './context/LanguageContext';
+import { useSettingsContext } from './context/SettingsContext';
 
 const APP_VERSION = '1.3.0';
 
-type Language = 'en' | 'de';
-
-const translations = {
-  en: {
-    settings: 'Settings',
-    customize: 'Customize',
-    appearance: 'APPEARANCE',
-    light: 'Light',
-    dark: 'Dark',
-    system: 'System',
-    language: 'LANGUAGE',
-    english: 'English',
-    german: 'German',
-    // Region Section
-    region: 'REGION',
-    postalCode: 'Postal Code',
-    postalCodeHint: 'Enter 5-digit postal code (PLZ)',
-    regionalData: 'Regional',
-    nationalData: 'National',
-    // Grid Fees Section
-    gridFees: 'GRID FEES & TAXES',
-    gridFeesHint: 'Grid fees and taxes in ¢/kWh',
-    gridFeesValue: 'Grid Fees',
-    // About Section
-    about: 'ABOUT',
-    version: 'Version',
-    dataSource: 'Data Source',
-    dataLicense: 'Data License',
-    appLicense: 'App License',
-    repository: 'GitHub Repository',
-    // Support Section
-    supportSection: 'SUPPORT',
-    feedback: 'Send Feedback',
-    supportProject: 'Support me',
-    rateApp: 'Rate on Play Store',
-    reportBug: 'Report a Bug',
-    // Other
-    loadingData: 'Loading energy data...',
-    renewableTitle: 'Share of Renewable Energy in Load',
-    priceTitle: 'Market and End Customer Electricity Price',
-    correlationTitle: 'Correlation: Price vs. Renewables',
-    timeRange: 'Time Range',
-    noData: 'No data available',
-    noDataMessage: 'The energy data could not be loaded. Please try again later.',
-    noCommercialUse: 'No commercial use without permission',
-    // Chart labels
-    renewablePercent: 'Renewables (%)',
-    pricePerKwh: 'Price (¢/kWh)',
-    now: 'Now',
-    average: 'Avg',
-    night: 'Night',
-    morningEvening: 'M/E',
-    day: 'Day',
-    marketPrice: 'Market Price',
-    gridFeesAndTaxes: 'Grid Fees & Taxes',
-    interpolated: 'Interpolated',
-    // Legend Section
-    legend: 'LEGEND',
-    legendExplanationPrefix: 'End-customer price = Market price +',
-    legendExplanationSuffix: '¢/kWh (Grid fees & taxes)',
-    marketPriceLabel: 'Market Price',
-    gridFeesLabel: 'Grid Fees & Taxes',
-    regionalDataLabel: 'Regional Data',
-  },
-  de: {
-    settings: 'Einstellungen',
-    customize: 'Personalisieren',
-    appearance: 'ERSCHEINUNGSBILD',
-    light: 'Hell',
-    dark: 'Dunkel',
-    system: 'System',
-    language: 'SPRACHE',
-    english: 'English',
-    german: 'Deutsch',
-    // Region Section
-    region: 'REGION',
-    postalCode: 'Postleitzahl',
-    postalCodeHint: '5-stellige PLZ eingeben',
-    regionalData: 'Regional',
-    nationalData: 'National',
-    // Grid Fees Section
-    gridFees: 'NETZENTGELTE & STEUERN',
-    gridFeesHint: 'Netzentgelte und Steuern in ¢/kWh',
-    gridFeesValue: 'Netzentgelte',
-    // About Section
-    about: 'ÜBER',
-    version: 'Version',
-    dataSource: 'Datenquelle',
-    dataLicense: 'Daten-Lizenz',
-    appLicense: 'App-Lizenz',
-    repository: 'GitHub Repository',
-    // Support Section
-    supportSection: 'UNTERSTÜTZUNG',
-    feedback: 'Feedback senden',
-    supportProject: 'Support me',
-    rateApp: 'Im Play Store bewerten',
-    reportBug: 'Fehler melden',
-    // Other
-    loadingData: 'Lade Energiedaten...',
-    renewableTitle: 'Anteil Erneuerbarer Energien an der Last',
-    priceTitle: 'Börsen- und Endkundenstrompreis',
-    correlationTitle: 'Korrelation: Preis vs. Erneuerbare',
-    timeRange: 'Zeitraum',
-    noData: 'Keine Daten verfügbar',
-    noDataMessage: 'Die Energiedaten konnten nicht geladen werden. Bitte versuchen Sie es später erneut.',
-    noCommercialUse: 'Keine kommerzielle Nutzung ohne Genehmigung',
-    // Chart labels
-    renewablePercent: 'Erneuerbare (%)',
-    pricePerKwh: 'Preis (¢/kWh)',
-    now: 'Jetzt',
-    average: 'Ø',
-    night: 'Nacht',
-    morningEvening: 'M/A',
-    day: 'Tag',
-    marketPrice: 'Börsenstrompreis',
-    gridFeesAndTaxes: 'Netzentgelte & Steuern',
-    interpolated: 'Interpoliert',
-    // Legend Section
-    legend: 'LEGENDE',
-    legendExplanationPrefix: 'Endkundenstrompreis = Börsenstrompreis +',
-    legendExplanationSuffix: '¢/kWh (Netzentgelte & Steuern)',
-    marketPriceLabel: 'Börsenstrompreis',
-    gridFeesLabel: 'Netzentgelte & Steuern',
-    regionalDataLabel: 'Regionale Daten',
-  },
-};
-
 function AppContent() {
-  const [energyData, setEnergyData] = useState<EnergyData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [theme, setTheme] = useState<Theme>('system');
-  const [language, setLanguage] = useState<Language>('en'); // Will be loaded from storage in useEffect
-  const [postalCode, setPostalCode] = useState<string>(''); // Postal code input (immediate)
-  const [debouncedPostalCode, setDebouncedPostalCode] = useState<string>(''); // Debounced for API calls
-  const [gridFees, setGridFees] = useState<number>(GRID_FEES_AND_TAXES); // Grid fees and taxes
+  // UI State only (modals)
   const [menuVisible, setMenuVisible] = useState(false);
   const [customizeVisible, setCustomizeVisible] = useState(false);
   const [aboutVisible, setAboutVisible] = useState(false);
+
+  // Settings and Language from Context
+  const { theme, setTheme, postalCode, setPostalCode, debouncedPostalCode, gridFees, setGridFees } = useSettingsContext();
+  const { language, setLanguage, t } = useLanguageContext();
+
+  // Energy data from hook
+  const { energyData, loading } = useEnergyData(debouncedPostalCode);
+
   const systemTheme = useColorScheme();
-  const t = translations[language];
 
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
 
@@ -219,149 +96,9 @@ function AppContent() {
     });
   };
 
-  // Load language preference on mount
-  useEffect(() => {
-    async function loadLanguage() {
-      try {
-        if (Platform.OS === 'web' && typeof window !== 'undefined') {
-          // Web: Use localStorage
-          const saved = window.localStorage?.getItem('language') as Language | null; // platform-safe
-          if (saved) {
-            setLanguage(saved);
-          } else {
-            // Auto-detect browser language
-            const browserLang = window.navigator?.language?.toLowerCase() || 'en'; // platform-safe
-            const detected = browserLang.startsWith('de') ? 'de' : 'en';
-            setLanguage(detected);
-          }
-        } else {
-          // Mobile: Use AsyncStorage
-          const saved = await AsyncStorage.getItem('language') as Language | null;
-          if (saved) {
-            setLanguage(saved);
-          }
-        }
-      } catch (e) {
-        logger.error('Failed to load language preference:', e);
-      }
-    }
-    loadLanguage();
-  }, []);
+  // Language, postal code, and grid fees are now managed by hooks and contexts!
 
-  // Save language preference when it changes
-  useEffect(() => {
-    async function saveLanguage() {
-      try {
-        if (Platform.OS === 'web' && typeof window !== 'undefined') {
-          // Web: Use localStorage
-          window.localStorage?.setItem('language', language); // platform-safe
-        } else {
-          // Mobile: Use AsyncStorage
-          await AsyncStorage.setItem('language', language);
-        }
-      } catch (e) {
-        logger.error('Failed to save language preference:', e);
-      }
-    }
-    saveLanguage();
-  }, [language]);
-
-  // Load postal code preference on mount
-  useEffect(() => {
-    async function loadPostalCode() {
-      try {
-        if (Platform.OS === 'web' && typeof window !== 'undefined') {
-          // Web: Use localStorage
-          const saved = window.localStorage?.getItem('postalCode') || ''; // platform-safe
-          logger.debug('[App] Loaded postalCode from localStorage:', saved);
-          setPostalCode(saved);
-          // If it's already a valid postal code, set it immediately (no debounce on load)
-          if (saved.length === 5) {
-            setDebouncedPostalCode(saved);
-          }
-        } else {
-          // Mobile: Use AsyncStorage
-          const saved = (await AsyncStorage.getItem('postalCode')) || '';
-          logger.debug('[App] Loaded postalCode from AsyncStorage:', saved);
-          setPostalCode(saved);
-          // If it's already a valid postal code, set it immediately (no debounce on load)
-          if (saved.length === 5) {
-            setDebouncedPostalCode(saved);
-          }
-        }
-      } catch (e) {
-        logger.error('[App] Failed to load postal code:', e);
-      }
-    }
-    loadPostalCode();
-  }, []);
-
-  // Save postal code when it changes
-  useEffect(() => {
-    async function savePostalCode() {
-      try {
-        if (Platform.OS === 'web' && typeof window !== 'undefined') {
-          // Web: Use localStorage
-          window.localStorage?.setItem('postalCode', postalCode); // platform-safe
-        } else {
-          // Mobile: Use AsyncStorage
-          await AsyncStorage.setItem('postalCode', postalCode);
-        }
-      } catch (e) {
-        logger.error('Failed to save postal code:', e);
-      }
-    }
-    savePostalCode();
-  }, [postalCode]);
-
-  // Load grid fees preference on mount
-  useEffect(() => {
-    async function loadGridFees() {
-      try {
-        if (Platform.OS === 'web' && typeof window !== 'undefined') {
-          // Web: Use localStorage
-          const saved = window.localStorage?.getItem('gridFees'); // platform-safe
-          if (saved) {
-            const value = parseFloat(saved);
-            if (!isNaN(value) && value > 0) {
-              setGridFees(value);
-            }
-          }
-        } else {
-          // Mobile: Use AsyncStorage
-          const saved = await AsyncStorage.getItem('gridFees');
-          if (saved) {
-            const value = parseFloat(saved);
-            if (!isNaN(value) && value > 0) {
-              setGridFees(value);
-            }
-          }
-        }
-      } catch (e) {
-        logger.error('[App] Failed to load grid fees:', e);
-      }
-    }
-    loadGridFees();
-  }, []);
-
-  // Save grid fees when it changes
-  useEffect(() => {
-    async function saveGridFees() {
-      try {
-        if (Platform.OS === 'web' && typeof window !== 'undefined') {
-          // Web: Use localStorage
-          window.localStorage?.setItem('gridFees', gridFees.toString()); // platform-safe
-        } else {
-          // Mobile: Use AsyncStorage
-          await AsyncStorage.setItem('gridFees', gridFees.toString());
-        }
-      } catch (e) {
-        logger.error('Failed to save grid fees:', e);
-      }
-    }
-    saveGridFees();
-  }, [gridFees]);
-
+  // Check for app updates
   useEffect(() => {
     async function checkAndApplyUpdates() {
       if (!__DEV__) {
@@ -380,51 +117,8 @@ function AppContent() {
     checkAndApplyUpdates();
   }, []);
 
-  // Debounce postal code input: only trigger API call after 1s of no typing AND 5 digits
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      // Only update debounced value if it's exactly 5 digits or empty
-      if (postalCode.length === 5 || postalCode.length === 0) {
-        logger.debug('[App] Debouncing postal code:', postalCode);
-        setDebouncedPostalCode(postalCode);
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [postalCode]);
-
-  // Track initial mount to avoid invalidating cache on first load
-  const isInitialMount = useRef(true);
-
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        logger.debug('[App] Loading energy data with debouncedPostalCode:', debouncedPostalCode);
-
-        // Invalidate cache when postal code changes (but not on initial mount)
-        // This forces reload with/without regional data
-        if (!isInitialMount.current) {
-          logger.debug('[App] Postal code changed, invalidating cache');
-          energyDataManager.invalidateCache(); // National data cache
-          await energyDataManager.invalidateRegionalCache(); // Regional data cache
-        } else {
-          isInitialMount.current = false;
-        }
-
-        const data = await fetchEnergyData(debouncedPostalCode || undefined);
-        logger.debug('[App] Received data length:', data.length);
-        logger.debug('[App] First 3 items:', data.slice(0, 3));
-        setEnergyData(data);
-      } catch (error) {
-        logger.error('[App] Failed to load energy data:', error);
-        setEnergyData([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, [debouncedPostalCode]);
+  // Data loading is now managed by useEnergyData hook!
+  // Postal code debouncing is now managed by useSettings hook!
 
   const getDataSourceInfo = () => {
     const source = getCurrentDataSource();
@@ -1166,11 +860,18 @@ const styles = StyleSheet.create({
   },
 });
 
-// Wrap the app with SafeAreaProvider for proper edge-to-edge support on Android 15+
+// Wrap the app with SafeAreaProvider and Context Providers
+import { SettingsProvider } from './context/SettingsContext';
+import { LanguageProvider } from './context/LanguageContext';
+
 export default function App() {
   return (
     <SafeAreaProvider style={{ flex: 1 }}>
-      <AppContent />
+      <LanguageProvider>
+        <SettingsProvider>
+          <AppContent />
+        </SettingsProvider>
+      </LanguageProvider>
     </SafeAreaProvider>
   );
 }
