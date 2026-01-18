@@ -6,6 +6,8 @@ import { Platform, Linking } from 'react-native';
 import App from './App';
 import { fetchEnergyData, energyDataManager } from './services/energyDataManager';
 import { EnergyData } from './utils/metrics';
+import { LanguageProvider } from './context/LanguageContext';
+import { SettingsProvider } from './context/SettingsContext';
 
 // Mock modules
 jest.mock('./services/energyDataManager');
@@ -36,6 +38,19 @@ jest.mock('./components/AboutView', () => {
 });
 
 const mockFetchEnergyData = fetchEnergyData as jest.MockedFunction<typeof fetchEnergyData>;
+
+/**
+ * Render helper that wraps component with required Context Providers
+ */
+const renderWithProviders = (component: React.ReactElement) => {
+  return render(
+    <LanguageProvider>
+      <SettingsProvider>
+        {component}
+      </SettingsProvider>
+    </LanguageProvider>
+  );
+};
 
 describe('App', () => {
   const mockEnergyData: EnergyData[] = [
@@ -102,12 +117,12 @@ describe('App', () => {
 
   describe('Rendering', () => {
     it('should render loading screen initially', () => {
-      const { getByText } = render(<App />);
+      const { getByText } = renderWithProviders(<App />);
       expect(getByText(/Loading energy data/i)).toBeTruthy();
     });
 
     it('should render app content after data loads', async () => {
-      const { getByText } = render(<App />);
+      const { getByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(getByText('Energy Price Germany')).toBeTruthy();
@@ -117,7 +132,7 @@ describe('App', () => {
     it('should display no data message when energy data is empty', async () => {
       mockFetchEnergyData.mockResolvedValue([]);
 
-      const { getByText } = render(<App />);
+      const { getByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(getByText(/No data available/i)).toBeTruthy();
@@ -125,7 +140,7 @@ describe('App', () => {
     });
 
     it('should render header with settings button', async () => {
-      const { getByText, getByLabelText } = render(<App />);
+      const { getByText, getByLabelText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(getByText('Energy Price Germany')).toBeTruthy();
@@ -136,7 +151,7 @@ describe('App', () => {
 
   describe('Data Loading', () => {
     it('should fetch energy data on mount', async () => {
-      render(<App />);
+      renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(mockFetchEnergyData).toHaveBeenCalledWith(undefined);
@@ -165,7 +180,7 @@ describe('App', () => {
 
       mockFetchEnergyData.mockResolvedValue(dataWithOldEntries);
 
-      const { queryByText } = render(<App />);
+      const { queryByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(mockFetchEnergyData).toHaveBeenCalled();
@@ -175,7 +190,7 @@ describe('App', () => {
     it('should handle data loading error gracefully', async () => {
       mockFetchEnergyData.mockRejectedValue(new Error('Network error'));
 
-      const { getByText } = render(<App />);
+      const { getByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(getByText(/No data available/i)).toBeTruthy();
@@ -185,7 +200,7 @@ describe('App', () => {
 
   describe('Settings Menu', () => {
     it('should open settings menu when settings button is pressed', async () => {
-      const { getByLabelText, getByText } = render(<App />);
+      const { getByLabelText, getByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(getByLabelText('Settings')).toBeTruthy();
@@ -199,7 +214,7 @@ describe('App', () => {
     });
 
     it('should close settings menu when close button is pressed', async () => {
-      const { getByLabelText, getByText, queryByText } = render(<App />);
+      const { getByLabelText, getByText, queryByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         fireEvent.press(getByLabelText('Settings'));
@@ -219,7 +234,7 @@ describe('App', () => {
     });
 
     it('should display appearance section in settings', async () => {
-      const { getByLabelText, getByText } = render(<App />);
+      const { getByLabelText, getByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         fireEvent.press(getByLabelText('Settings'));
@@ -234,7 +249,7 @@ describe('App', () => {
     });
 
     it('should display language section in settings', async () => {
-      const { getByLabelText, getByText } = render(<App />);
+      const { getByLabelText, getByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         fireEvent.press(getByLabelText('Settings'));
@@ -249,7 +264,7 @@ describe('App', () => {
 
   describe('Theme Management', () => {
     it('should change theme when theme button is pressed', async () => {
-      const { getByLabelText, getByText } = render(<App />);
+      const { getByLabelText, getByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         fireEvent.press(getByLabelText('Settings'));
@@ -270,7 +285,7 @@ describe('App', () => {
       Platform.OS = 'ios';
       (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce('de');
 
-      render(<App />);
+      renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(AsyncStorage.getItem).toHaveBeenCalledWith('language');
@@ -280,7 +295,7 @@ describe('App', () => {
     it('should have AsyncStorage.setItem available for language switching on mobile', async () => {
       Platform.OS = 'ios';
 
-      const { getByLabelText } = render(<App />);
+      const { getByLabelText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         fireEvent.press(getByLabelText('Settings'));
@@ -294,7 +309,7 @@ describe('App', () => {
       Platform.OS = 'web';
       global.window.navigator = { language: 'de-DE' } as any; // platform-safe
 
-      render(<App />);
+      renderWithProviders(<App />);
 
       await waitFor(() => {
         // Should detect German language
@@ -303,14 +318,15 @@ describe('App', () => {
     });
 
     it('should switch to German language and update UI', async () => {
-      const { getByLabelText, getByText } = render(<App />);
+      const { getByLabelText, getByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         fireEvent.press(getByLabelText('Settings'));
       });
 
       await waitFor(() => {
-        const germanButton = getByText('Deutsch');
+        // Button shows translation in current language (EN active = "German", DE active = "Deutsch")
+        const germanButton = getByText('German');
         fireEvent.press(germanButton);
       });
 
@@ -329,7 +345,7 @@ describe('App', () => {
 
       Platform.OS = 'ios';
 
-      render(<App />);
+      renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(AsyncStorage.getItem).toHaveBeenCalledWith('postalCode');
@@ -337,7 +353,7 @@ describe('App', () => {
     });
 
     it('should save postal code to storage when changed', async () => {
-      const { getByLabelText, getByPlaceholderText } = render(<App />);
+      const { getByLabelText, getByPlaceholderText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         fireEvent.press(getByLabelText('Settings'));
@@ -351,7 +367,7 @@ describe('App', () => {
     });
 
     it('should render settings menu successfully', async () => {
-      const { getByLabelText } = render(<App />);
+      const { getByLabelText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         fireEvent.press(getByLabelText('Settings'));
@@ -362,7 +378,7 @@ describe('App', () => {
     });
 
     it('should have cache invalidation functions available', async () => {
-      render(<App />);
+      renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(mockFetchEnergyData).toHaveBeenCalled();
@@ -383,7 +399,7 @@ describe('App', () => {
 
       Platform.OS = 'ios';
 
-      render(<App />);
+      renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(mockFetchEnergyData).toHaveBeenCalled();
@@ -396,7 +412,7 @@ describe('App', () => {
     it('should have AsyncStorage.setItem available for grid fees', async () => {
       Platform.OS = 'ios';
 
-      render(<App />);
+      renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(mockFetchEnergyData).toHaveBeenCalled();
@@ -413,7 +429,7 @@ describe('App', () => {
       global.__DEV__ = false;
       (Updates.checkForUpdateAsync as jest.Mock).mockResolvedValue({ isAvailable: false });
 
-      render(<App />);
+      renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(Updates.checkForUpdateAsync).toHaveBeenCalled();
@@ -425,7 +441,7 @@ describe('App', () => {
     it('should not check for updates in dev mode', async () => {
       global.__DEV__ = true;
 
-      render(<App />);
+      renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(mockFetchEnergyData).toHaveBeenCalled();
@@ -440,7 +456,7 @@ describe('App', () => {
       (Updates.fetchUpdateAsync as jest.Mock).mockResolvedValue({});
       (Updates.reloadAsync as jest.Mock).mockResolvedValue({});
 
-      render(<App />);
+      renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(Updates.fetchUpdateAsync).toHaveBeenCalled();
@@ -454,7 +470,7 @@ describe('App', () => {
       global.__DEV__ = false;
       (Updates.checkForUpdateAsync as jest.Mock).mockRejectedValue(new Error('Update check failed'));
 
-      render(<App />);
+      renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(Updates.checkForUpdateAsync).toHaveBeenCalled();
@@ -471,7 +487,7 @@ describe('App', () => {
 
   describe('External Links', () => {
     it('should open feedback email when feedback link is pressed', async () => {
-      const { getByLabelText, queryByText } = render(<App />);
+      const { getByLabelText, queryByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         fireEvent.press(getByLabelText('Settings'));
@@ -490,7 +506,7 @@ describe('App', () => {
     });
 
     it('should open support link when support button is pressed', async () => {
-      const { getByLabelText, getByText } = render(<App />);
+      const { getByLabelText, getByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         fireEvent.press(getByLabelText('Settings'));
@@ -507,15 +523,15 @@ describe('App', () => {
 
   describe('About View', () => {
     it('should render about button in settings menu', async () => {
-      const { getByLabelText, queryByText } = render(<App />);
+      const { getByLabelText, queryByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         fireEvent.press(getByLabelText('Settings'));
       });
 
       await waitFor(() => {
-        // Button text could be "About" or "ÜBER" depending on language
-        const aboutButton = queryByText('About') || queryByText('ÜBER');
+        // Button text is "ABOUT" (uppercase) in translations
+        const aboutButton = queryByText('ABOUT') || queryByText('ÜBER');
         // Verify about button exists in settings menu
         expect(aboutButton).toBeTruthy();
       });
@@ -536,7 +552,7 @@ describe('App', () => {
         return Promise.resolve(null);
       });
 
-      render(<App />);
+      renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(mockFetchEnergyData).toHaveBeenCalled();
@@ -549,7 +565,7 @@ describe('App', () => {
         return Promise.resolve(null);
       });
 
-      render(<App />);
+      renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(mockFetchEnergyData).toHaveBeenCalledWith(undefined);
@@ -561,7 +577,7 @@ describe('App', () => {
     it('should set body background color on web', async () => {
       Platform.OS = 'web';
 
-      render(<App />);
+      renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(document.body.style.backgroundColor).toBeDefined();
@@ -571,7 +587,7 @@ describe('App', () => {
     it('should use localStorage on web instead of AsyncStorage', async () => {
       Platform.OS = 'web';
 
-      render(<App />);
+      renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(mockFetchEnergyData).toHaveBeenCalled();
@@ -585,7 +601,7 @@ describe('App', () => {
 
   describe('Metrics Calculation', () => {
     it('should calculate metrics from filtered data', async () => {
-      render(<App />);
+      renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(mockFetchEnergyData).toHaveBeenCalled();
@@ -598,7 +614,7 @@ describe('App', () => {
 
   describe('Date Formatting', () => {
     it('should format dates according to selected language', async () => {
-      const { getByLabelText, getByText } = render(<App />);
+      const { getByLabelText, getByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(mockFetchEnergyData).toHaveBeenCalled();
@@ -610,7 +626,8 @@ describe('App', () => {
       });
 
       await waitFor(() => {
-        const germanButton = getByText('Deutsch');
+        // Button shows translation in current language (EN active = "German")
+        const germanButton = getByText('German');
         fireEvent.press(germanButton);
       });
 
