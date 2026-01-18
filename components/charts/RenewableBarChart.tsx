@@ -34,6 +34,7 @@ interface RenewableBarChartProps {
   interactionHint?: string;
   dataKey?: RenewableDataKey;
   showRegionalLine?: boolean; // Zeigt gestrichelte Linie für regionale Daten
+  showLegend?: boolean;
 }
 
 export function RenewableBarChart({
@@ -48,6 +49,7 @@ export function RenewableBarChart({
   interactionHint,
   dataKey = 'renewableShare',
   showRegionalLine = false,
+  showLegend = true,
 }: RenewableBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -201,8 +203,8 @@ export function RenewableBarChart({
             </Text>
           )}
         </View>
-        {/* Legend - hidden on small devices in portrait mode */}
-        {!(isPhone && !isLandscape) && (
+        {/* Legend - hidden when showLegend is false or on small devices in portrait mode */}
+        {showLegend && !(isPhone && !isLandscape) && (
           <View style={{
             flexDirection: 'row',
             gap: 12,
