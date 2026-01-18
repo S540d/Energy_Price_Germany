@@ -6,7 +6,6 @@
  */
 
 import { Platform } from 'react-native';
-import { logger } from './logger';
 
 // Import AsyncStorage only on mobile platforms
 let AsyncStorage: any = null;
@@ -14,8 +13,7 @@ if (Platform.OS !== 'web') {
   try {
     AsyncStorage = require('@react-native-async-storage/async-storage').default;
   } catch (e) {
-    logger.warn('AsyncStorage not available, using memory fallback');
-  }
+}
 }
 
 // Platform Detection
@@ -46,8 +44,7 @@ export function getSystemDarkModePreference(): boolean {
   try {
     return window.matchMedia('(prefers-color-scheme: dark)').matches; // platform-safe
   } catch (error) {
-    logger.warn('Failed to get system dark mode preference:', error);
-    return false;
+return false;
   }
 }
 
@@ -72,8 +69,7 @@ export function addSystemThemeChangeListener(
 
     return () => mediaQuery.removeEventListener('change', handler);
   } catch (error) {
-    logger.warn('Failed to add system theme change listener:', error);
-    return () => {};
+return () => {};
   }
 }
 
@@ -88,8 +84,7 @@ export const Storage = {
     } else if (AsyncStorage) {
       return await AsyncStorage.getItem(key);
     } else {
-      logger.warn(`[Storage.getItem] AsyncStorage not available for key: ${key}`);
-      return null;
+return null;
     }
   },
 
@@ -99,8 +94,7 @@ export const Storage = {
     } else if (AsyncStorage) {
       await AsyncStorage.setItem(key, value);
     } else {
-      logger.warn(`[Storage.setItem] AsyncStorage not available for key: ${key}`);
-    }
+}
   },
 
   async removeItem(key: string): Promise<void> {
@@ -109,8 +103,7 @@ export const Storage = {
     } else if (AsyncStorage) {
       await AsyncStorage.removeItem(key);
     } else {
-      logger.warn(`[Storage.removeItem] AsyncStorage not available for key: ${key}`);
-    }
+}
   },
 };
 
@@ -137,8 +130,7 @@ export function safeWebAPI<T>(
 ): T {
   if (!isWeb) {
     if (apiName && __DEV__) {
-      logger.warn(`Web API "${apiName}" not available on ${Platform.OS}, using fallback`);
-    }
+}
     return fallback;
   }
 
@@ -146,8 +138,7 @@ export function safeWebAPI<T>(
     return callback();
   } catch (error) {
     if (__DEV__) {
-      logger.error(`Web API call failed:`, error);
-    }
+}
     return fallback;
   }
 }
