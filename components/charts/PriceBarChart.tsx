@@ -29,6 +29,7 @@ interface PriceBarChartProps {
   };
   interactionHint?: string;
   gridFees?: number;
+  showLegend?: boolean;
 }
 
 export function PriceBarChart({
@@ -42,6 +43,7 @@ export function PriceBarChart({
   labels,
   interactionHint,
   gridFees = GRID_FEES_AND_TAXES,
+  showLegend = true,
 }: PriceBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -240,8 +242,8 @@ export function PriceBarChart({
             </Text>
           )}
         </View>
-        {/* Legend - hidden on small devices in portrait mode */}
-        {!(isPhone && !isLandscape) && (
+        {/* Legend - hidden when showLegend is false or on small devices in portrait mode */}
+        {showLegend && !(isPhone && !isLandscape) && (
           <View style={{
             flexDirection: 'row',
             gap: 12,
