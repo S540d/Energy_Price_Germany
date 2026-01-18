@@ -242,6 +242,7 @@ function AppContent() {
                 }}
                 dataKey="renewableShare"
                 showRegionalLine={isValidPostalCode(debouncedPostalCode) && hasRegionalData}
+                showLegend={false}
               />
             </ChartDetailView>
 
@@ -320,6 +321,7 @@ function AppContent() {
                   interpolated: t.interpolated,
                 }}
                 gridFees={gridFees}
+                showLegend={false}
               />
             </ChartDetailView>
 
