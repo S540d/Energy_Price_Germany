@@ -1,0 +1,30 @@
+import EasCommand from '../../commandUtils/EasCommand';
+import { RequestedPlatform } from '../../platform';
+export default class UpdatePublish extends EasCommand {
+    static description: string;
+    static flags: {
+        json: import("@oclif/core/lib/interfaces").BooleanFlag<boolean>;
+        'non-interactive': import("@oclif/core/lib/interfaces").BooleanFlag<boolean>;
+        environment: import("@oclif/core/lib/interfaces").OptionFlag<string | undefined>;
+        branch: import("@oclif/core/lib/interfaces").OptionFlag<string | undefined>;
+        channel: import("@oclif/core/lib/interfaces").OptionFlag<string | undefined>;
+        message: import("@oclif/core/lib/interfaces").OptionFlag<string | undefined>;
+        'input-dir': import("@oclif/core/lib/interfaces").OptionFlag<string>;
+        'skip-bundler': import("@oclif/core/lib/interfaces").BooleanFlag<boolean>;
+        'clear-cache': import("@oclif/core/lib/interfaces").BooleanFlag<boolean>;
+        'emit-metadata': import("@oclif/core/lib/interfaces").BooleanFlag<boolean>;
+        'rollout-percentage': import("@oclif/core/lib/interfaces").OptionFlag<number | undefined>;
+        platform: import("@oclif/core/lib/interfaces").OptionFlag<RequestedPlatform>;
+        auto: import("@oclif/core/lib/interfaces").BooleanFlag<boolean>;
+        'private-key-path': import("@oclif/core/lib/interfaces").OptionFlag<string | undefined>;
+    };
+    static contextDefinition: {
+        getServerSideEnvironmentVariablesAsync: import("../../commandUtils/context/ServerSideEnvironmentVariablesContextField").ServerSideEnvironmentVariablesContextField;
+        vcsClient: import("../../commandUtils/context/VcsClientContextField").default;
+        loggedIn: import("../../commandUtils/context/LoggedInContextField").default;
+        getDynamicPublicProjectConfigAsync: import("../../commandUtils/context/DynamicProjectConfigContextField").DynamicPublicProjectConfigContextField;
+        getDynamicPrivateProjectConfigAsync: import("../../commandUtils/context/DynamicProjectConfigContextField").DynamicPrivateProjectConfigContextField;
+    };
+    runAsync(): Promise<void>;
+    private sanitizeFlags;
+}
