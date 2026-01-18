@@ -21,7 +21,6 @@ import { SettingsMenu } from './components/settings/SettingsMenu';
 import { CustomizeModal } from './components/customize/CustomizeModal';
 import { calculateMetrics, EnergyData, GRID_FEES_AND_TAXES } from './utils/metrics';
 import { getThemeColors } from './utils/theme';
-import { logger } from './utils/logger';
 import { isValidPostalCode } from './utils/postalCodeUtils';
 import { useEnergyData } from './hooks/useEnergyData';
 import { useLanguageContext } from './context/LanguageContext';
@@ -60,14 +59,7 @@ function AppContent() {
     const now = Date.now();
     const past24h = now - (24 * 60 * 60 * 1000); // 24 hours ago
 
-    logger.debug('[App] Filtering data. Now:', new Date(now).toISOString());
-    logger.debug('[App] Past 24h cutoff:', new Date(past24h).toISOString());
-    logger.debug('[App] First data timestamp:', energyData[0] ? new Date(energyData[0].timestamp).toISOString() : 'none');
-    logger.debug('[App] Last data timestamp:', energyData[energyData.length - 1] ? new Date(energyData[energyData.length - 1].timestamp).toISOString() : 'none');
-
     const filtered = energyData.filter(item => item.timestamp >= past24h);
-    logger.debug('[App] After filter - filtered data length:', filtered.length);
-
     return filtered;
   }, [energyData]);
 
@@ -107,7 +99,7 @@ function AppContent() {
             await Updates.reloadAsync();
           }
         } catch (error) {
-          logger.error('Error checking for updates:', error);
+          // Silently fail - app will continue to work with current version
         }
       }
     }
