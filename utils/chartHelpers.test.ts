@@ -189,7 +189,7 @@ describe('chartHelpers.ts', () => {
       });
     });
 
-    describe('TypeScript const assertions', () => {
+    describe('Constant property values', () => {
       it('should have position as const type', () => {
         const result = getYAxisLabelStyle(200);
         expect(result.position).toBe('absolute');
