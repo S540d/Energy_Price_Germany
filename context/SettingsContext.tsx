@@ -1,0 +1,42 @@
+import React, { createContext, useContext, ReactNode } from 'react';
+import { useSettings } from '../hooks/useSettings';
+import { Theme } from '../utils/theme';
+
+interface SettingsContextValue {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+  postalCode: string;
+  setPostalCode: (code: string) => void;
+  debouncedPostalCode: string;
+  gridFees: number;
+  setGridFees: (fees: number) => void;
+}
+
+const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);
+
+/**
+ * Provider for settings context
+ * Wraps the app to make settings available everywhere via useSettingsContext hook
+ * Manages theme, postal code, and grid fees
+ */
+export function SettingsProvider({ children }: { children: ReactNode }) {
+  const settings = useSettings();
+
+  return (
+    <SettingsContext.Provider value={settings}>
+      {children}
+    </SettingsContext.Provider>
+  );
+}
+
+/**
+ * Hook to access settings context
+ * Must be used within SettingsProvider
+ */
+export function useSettingsContext(): SettingsContextValue {
+  const context = useContext(SettingsContext);
+  if (!context) {
+    throw new Error('useSettingsContext must be used within SettingsProvider');
+  }
+  return context;
+}
