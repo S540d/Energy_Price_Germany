@@ -17,7 +17,7 @@ describe('chartUtils', () => {
       // This is type-level, but verifies the export exists
       expect(typeof useChartDimensions).toBe('function');
     });
-  });;
+  });
 
   describe('getTimeRange', () => {
     it('should calculate time range from data timestamps', () => {

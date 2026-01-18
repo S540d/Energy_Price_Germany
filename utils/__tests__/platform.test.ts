@@ -57,21 +57,10 @@ describe('platform', () => {
   });
 
   describe('supportsMatchMedia', () => {
-    beforeEach(() => {
-      jest.clearAllMocks();
-    });
-
     it('should return boolean value', () => {
       const result = supportsMatchMedia();
       expect(typeof result).toBe('boolean');
-    });
-
-    it('should return consistent value', () => {
-      const result = supportsMatchMedia();
-      // The function should always return a boolean
-      expect(typeof result).toBe('boolean');
-      // Result depends on runtime platform and window availability
-      // Just verify it returns boolean consistently
+      // Result is boolean based on platform and window availability
       expect([true, false]).toContain(result);
     });
   });
@@ -82,18 +71,9 @@ describe('platform', () => {
       (logger.warn as jest.Mock).mockClear();
     });
 
-    it('should return boolean value', () => {
-      const result = getSystemDarkModePreference();
-      expect(typeof result).toBe('boolean');
-    });
-
-    it('should not throw errors', () => {
+    it('should return boolean without throwing', () => {
       expect(() => getSystemDarkModePreference()).not.toThrow();
-    });
-
-    it('should handle when matchMedia is available', () => {
       const result = getSystemDarkModePreference();
-      // Result should be a boolean
       expect(typeof result).toBe('boolean');
     });
   });
@@ -128,7 +108,8 @@ describe('platform', () => {
   describe('Storage', () => {
     beforeEach(() => {
       jest.clearAllMocks();
-      // platform-safe: Only clear on web
+      // platform-safe
+      // Only clear on web
       if (typeof localStorage !== 'undefined') {
         localStorage.clear(); // platform-safe
       }
