@@ -4,10 +4,6 @@
  */
 
 import { useChartDimensions, getTimeRange, generateTimeLabels, generateYAxisLabels } from '../chartUtils';
-import { Dimensions } from 'react-native';
-
-// Simple function tests don't need renderHook, only hook tests do
-// We'll test hooks with mocked Dimensions at runtime
 
 describe('chartUtils', () => {
   describe('Pure Functions', () => {
