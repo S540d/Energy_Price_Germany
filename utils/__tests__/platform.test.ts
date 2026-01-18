@@ -16,7 +16,6 @@ import {
   safeWebAPI,
 } from '../platform';
 import { Platform } from 'react-native';
-import { logger } from '../logger';
 
 jest.mock('react-native', () => ({
   Platform: {
@@ -24,7 +23,7 @@ jest.mock('react-native', () => ({
   },
 }));
 
-jest.mock('../logger', () => ({
+ => ({
   logger: {
     warn: jest.fn(),
     error: jest.fn(),

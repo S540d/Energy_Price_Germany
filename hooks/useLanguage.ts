@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { usePersistence } from './usePersistence';
 import { Language } from '../utils/translations';
-import { logger } from '../utils/logger';
 
 /**
  * Hook for managing language state with persistence
@@ -33,8 +32,7 @@ export function useLanguage(): [Language, (lang: Language) => void] {
           }
         }
       } catch (error) {
-        logger.error('[useLanguage] Failed to load language:', error);
-      } finally {
+} finally {
         setIsInitialized(true);
       }
     }
@@ -50,8 +48,7 @@ export function useLanguage(): [Language, (lang: Language) => void] {
       try {
         await setItem('language', language);
       } catch (error) {
-        logger.error('[useLanguage] Failed to save language:', error);
-      }
+}
     }
 
     saveLanguage();
