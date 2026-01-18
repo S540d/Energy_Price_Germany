@@ -1,6 +1,5 @@
 import { EnergyData } from '../utils/metrics';
 import { Platform } from 'react-native';
-import { logger } from '../utils/logger';
 import { isValidPostalCode } from '../utils/postalCodeUtils';
 import { Storage } from '../utils/platform';
 
@@ -136,7 +135,6 @@ export class EnergyDataManager {
       const cached = await Storage.getItem(this.REGIONAL_CACHE_STORAGE_KEY);
 
       if (!cached) {
-        logger.debug('[loadRegionalCacheFromStorage] No cached data found in storage');
         return null;
       }
 
@@ -145,21 +143,20 @@ export class EnergyDataManager {
 
       // Validate: correct postal code
       if (parsedCache.postalCode !== postalCode) {
-        logger.debug(`[loadRegionalCacheFromStorage] Postal code mismatch: cached=${parsedCache.postalCode}, requested=${postalCode}`);
+
         return null;
       }
 
       // Validate: same day
       if (parsedCache.cachedDate !== currentDate) {
-        logger.debug(`[loadRegionalCacheFromStorage] Cache expired (day changed): cached=${parsedCache.cachedDate}, current=${currentDate}`);
+
         return null;
       }
 
-      logger.debug(`[loadRegionalCacheFromStorage] Valid cache found for PLZ ${postalCode} from ${parsedCache.cachedDate}`);
       return parsedCache.data;
 
     } catch (error) {
-      logger.error('[loadRegionalCacheFromStorage] Error loading from storage:', error);
+
       return null;
     }
   }
@@ -185,11 +182,9 @@ export class EnergyDataManager {
         JSON.stringify(cacheEntry)
       );
 
-      logger.debug(`[saveRegionalCacheToStorage] Saved cache for PLZ ${postalCode} (${this.getCurrentDateString()})`);
-
     } catch (error) {
       // Non-blocking: just log the error
-      logger.error('[saveRegionalCacheToStorage] Error saving to storage:', error);
+
     }
   }
 
@@ -204,7 +199,7 @@ export class EnergyDataManager {
       // STEP 1: Check persistent storage cache first (daily validation)
       const persistentCache = await this.loadRegionalCacheFromStorage(postalCode);
       if (persistentCache) {
-        logger.debug(`[fetchRegionalData] Using persistent storage cache for PLZ ${postalCode}`);
+
         // Also populate memory cache for faster subsequent access
         this.regionalCache.set(postalCode, { data: persistentCache, timestamp: Date.now() });
         return persistentCache;
@@ -213,17 +208,14 @@ export class EnergyDataManager {
       // STEP 2: Check in-memory cache (15-minute fallback)
       const memoryCache = this.regionalCache.get(postalCode);
       if (memoryCache && Date.now() - memoryCache.timestamp < this.regionalCacheDuration) {
-        logger.debug(`[fetchRegionalData] Using memory cache for PLZ ${postalCode}`);
+
         return memoryCache.data;
       }
 
       // STEP 3: Fetch from API
-      logger.debug(`[fetchRegionalData] No valid cache found, fetching regional data for postal code: ${postalCode}`);
 
       const SERVERLESS_PROXY_URL = 'https://energypricegermany.sven4321.workers.dev/';
       const url = `${SERVERLESS_PROXY_URL}?plz=${postalCode}`;
-
-      logger.debug(`[fetchRegionalData] Fetching from proxy: ${url}`);
 
       const response = await fetch(url);
 
@@ -233,13 +225,10 @@ export class EnergyDataManager {
 
       const data: RegionalDataResponse = await response.json();
 
-      logger.debug(`[fetchRegionalData] Regional data fetched successfully for PLZ ${postalCode}`);
-      logger.debug(`[fetchRegionalData] Response data points: ${data.unix_seconds?.length || 0}`);
-
       if (data.unix_seconds && data.unix_seconds.length > 0) {
         const first = new Date(data.unix_seconds[0] * 1000).toISOString();
         const last = new Date(data.unix_seconds[data.unix_seconds.length - 1] * 1000).toISOString();
-        logger.debug(`[fetchRegionalData] Time range: ${first} to ${last}`);
+
       }
 
       // STEP 4: Save to both caches
@@ -250,8 +239,7 @@ export class EnergyDataManager {
 
       return data;
     } catch (error) {
-      logger.error(`[fetchRegionalData] Failed to fetch regional data for PLZ ${postalCode}:`, error);
-      logger.warn(`[fetchRegionalData] Regional renewable data could not be loaded. Check if the serverless proxy is deployed and accessible.`);
+
       return null;
     }
   }
@@ -267,15 +255,13 @@ export class EnergyDataManager {
    */
   private mergeRegionalData(nationalData: EnergyData[], regionalData: RegionalDataResponse | null): EnergyData[] {
     if (!regionalData || !regionalData.unix_seconds || !regionalData.share) {
-      logger.debug('[mergeRegionalData] No regional data provided, returning national data unchanged');
+
       return nationalData;
     }
 
     // Validate that both arrays have the same length to prevent index mismatches
     if (regionalData.unix_seconds.length !== regionalData.share.length) {
-      logger.warn(
-        `Regional data array length mismatch: unix_seconds=${regionalData.unix_seconds.length}, share=${regionalData.share.length}. Skipping regional data merge.`
-      );
+
       return nationalData;
     }
 
@@ -296,12 +282,11 @@ export class EnergyDataManager {
         }
       }
 
-      logger.debug(`[mergeRegionalData] Received ${regionalList.length} regional data points`);
       if (regionalList.length > 0) {
-        logger.debug(`[mergeRegionalData] Regional timestamps: first=${regionalList[0].timestamp}, last=${regionalList[regionalList.length - 1].timestamp}`);
+
       }
       if (nationalData.length > 0) {
-        logger.debug(`[mergeRegionalData] National timestamps: first=${nationalData[0].timestamp}, last=${nationalData[nationalData.length - 1].timestamp}`);
+
       }
 
       // Merge regional data into national data using fuzzy matching (within 60 seconds)
@@ -325,18 +310,14 @@ export class EnergyDataManager {
       });
 
       const matchedCount = merged.filter(item => item.renewableShareRegional !== null).length;
-      logger.debug(`[mergeRegionalData] Successfully matched ${matchedCount} out of ${nationalData.length} national data points with regional data`);
 
       if (matchedCount === 0 && regionalList.length > 0) {
-        logger.warn(`[mergeRegionalData] ⚠️ No timestamp matches found! Regional data may be from different time range.`);
-        logger.warn(`[mergeRegionalData] Sample national timestamp: ${nationalData[0]?.timestamp}`);
-        logger.warn(`[mergeRegionalData] Sample regional timestamp: ${regionalList[0]?.timestamp}`);
-        logger.warn(`[mergeRegionalData] Difference: ${Math.abs((nationalData[0]?.timestamp || 0) - (regionalList[0]?.timestamp || 0))} ms`);
+
       }
 
       return merged;
     } catch (error) {
-      logger.error('[mergeRegionalData] Error merging regional data:', error);
+
       return nationalData;
     }
   }
@@ -346,8 +327,6 @@ export class EnergyDataManager {
    */
   private async fetchRawData(): Promise<MarketDataResponse> {
     try {
-      logger.debug('Loading energy data from marketdata.json...');
-      logger.debug('Platform.OS:', Platform.OS);
 
       // Cache-busting Parameter hinzufügen
       const cacheBust = Date.now();
@@ -358,18 +337,16 @@ export class EnergyDataManager {
         ? `./data/marketdata.json?v=${cacheBust}`
         : `https://s540d.github.io/Energy_Price_Germany/data/marketdata.json?v=${cacheBust}`;
 
-      logger.debug(`Fetching from: ${dataUrl}`);
       const response = await fetch(dataUrl);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
-      logger.debug(`Successfully loaded raw data with ${data.data?.length || 0} entries`);
-      logger.debug('Data source:', data.source);
+
       return data;
     } catch (error) {
-      logger.error('Failed to load marketdata.json:', error);
+
       throw error;
     }
   }
@@ -379,7 +356,7 @@ export class EnergyDataManager {
    */
   private processRawData(rawData: MarketDataResponse): EnergyData[] {
     if (!rawData.data || !Array.isArray(rawData.data)) {
-      logger.warn('Invalid data format received');
+
       return [];
     }
 
@@ -401,7 +378,6 @@ export class EnergyDataManager {
       };
     });
 
-    logger.debug(`Processed ${processedData.length} data points (source: ${this.currentDataSource})`);
     return processedData;
   }
 
@@ -409,7 +385,7 @@ export class EnergyDataManager {
    * Generiert Mock-Daten für Fallback
    */
   private generateMockData(): EnergyData[] {
-    logger.debug('Generating mock data as fallback');
+
     const mockData: EnergyData[] = [];
     const now = Date.now();
 
@@ -442,8 +418,7 @@ export class EnergyDataManager {
     // Prüfe Cache
     if (this.isCacheValid()) {
       const age = Date.now() - this.cacheTimestamp;
-      logger.debug(`Using cached energy data (age: ${Math.round(age / 1000 / 60)} minutes, source: ${this.currentDataSource})`);
-      
+
       // If postal code is provided, merge regional data
       if (isValidPostalCode(postalCode)) {
         const regionalData = await this.fetchRegionalData(postalCode!);
@@ -473,15 +448,12 @@ export class EnergyDataManager {
    */
   private async performDataLoad(postalCode?: string): Promise<EnergyData[]> {
     try {
-      logger.debug('[DataManager] performDataLoad called with postalCode:', postalCode);
 
       // Lade Rohdaten
       const rawData = await this.fetchRawData();
-      logger.debug('[DataManager] Raw data loaded, items:', rawData.data?.length || 0);
 
       // Verarbeite Daten
       let processedData = this.processRawData(rawData);
-      logger.debug('[DataManager] Processed data length:', processedData.length);
 
       // Cache die verarbeiteten Daten
       this.cachedData = processedData;
@@ -489,21 +461,19 @@ export class EnergyDataManager {
 
       // If postal code is provided, fetch and merge regional data
       if (isValidPostalCode(postalCode)) {
-        logger.debug('[DataManager] Valid postal code, fetching regional data:', postalCode);
+
         const regionalData = await this.fetchRegionalData(postalCode!);
         if (regionalData) {
-          logger.debug('[DataManager] Merging regional data');
+
           processedData = this.mergeRegionalData(processedData, regionalData);
         }
       } else {
-        logger.debug('[DataManager] No valid postal code, skipping regional data');
+
       }
 
-      logger.debug('[DataManager] Returning processed data length:', processedData.length);
       return processedData;
 
     } catch (error) {
-      logger.error('[DataManager] Data loading failed, using mock data:', error);
 
       // Fallback auf Mock-Daten
       const mockData = this.generateMockData();
@@ -521,7 +491,7 @@ export class EnergyDataManager {
     this.cachedData = null;
     this.cacheTimestamp = 0;
     this.currentDataSource = 'none';
-    logger.debug('Cache invalidated');
+
   }
 
   /**
@@ -532,13 +502,12 @@ export class EnergyDataManager {
     try {
       // Clear in-memory regional cache
       this.regionalCache.clear();
-      logger.debug('[invalidateRegionalCache] Memory cache cleared');
 
       // Clear persistent storage cache
       await Storage.removeItem(this.REGIONAL_CACHE_STORAGE_KEY);
-      logger.debug('[invalidateRegionalCache] Persistent storage cache cleared');
+
     } catch (error) {
-      logger.error('[invalidateRegionalCache] Error clearing regional cache:', error);
+
     }
   }
 

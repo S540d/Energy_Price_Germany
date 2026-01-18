@@ -1,10 +1,8 @@
 import { EnergyDataManager } from './energyDataManager';
 import { Storage } from '../utils/platform';
-import { logger } from '../utils/logger';
 
 // Mock dependencies
 jest.mock('../utils/platform');
-jest.mock('../utils/logger');
 jest.mock('../utils/postalCodeUtils', () => ({
   isValidPostalCode: jest.fn((plz: string) => /^\d{5}$/.test(plz)),
 }));
