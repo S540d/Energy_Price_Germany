@@ -13,17 +13,17 @@ describe('metrics.ts', () => {
       const sampleData: EnergyData[] = [
         {
           timestamp: Date.now() - 3600000, // 1 hour ago
-          marketPrice: 100, // 10 cent/kWh after conversion
+          marketPrice: 100, // 100 EUR/MWh -> 10 cent/kWh after conversion (EUR/MWh * 0.1)
           renewableShare: 50,
         },
         {
           timestamp: Date.now() - 1800000, // 30 min ago
-          marketPrice: 200, // 20 cent/kWh after conversion
+          marketPrice: 200, // 200 EUR/MWh -> 20 cent/kWh after conversion (EUR/MWh * 0.1)
           renewableShare: 60,
         },
         {
           timestamp: Date.now() - 900000, // 15 min ago
-          marketPrice: 150, // 15 cent/kWh after conversion
+          marketPrice: 150, // 150 EUR/MWh -> 15 cent/kWh after conversion (EUR/MWh * 0.1)
           renewableShare: 55,
         },
       ];
@@ -182,7 +182,7 @@ describe('metrics.ts', () => {
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
         const oldData: EnergyData[] = [
-          { timestamp: todayStart + 1000, marketPrice: 100, renewableShare: 50 }, // Today but 2+ hours ago from now
+          { timestamp: todayStart + 1000, marketPrice: 100, renewableShare: 50 }, // Today but outside the 30-minute tolerance window for current hour detection
         ];
 
         const result = calculateMetrics(oldData);
