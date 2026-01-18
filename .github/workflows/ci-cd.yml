@@ -33,11 +33,23 @@ jobs:
       - name: Check for console.log in production code
         run: |
           echo "Checking for console.log statements..."
-          if grep -r "console\.log\|console\.debug" . --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx"; then
+          # Allow console.log only in scripts/, not in src/ or root TypeScript files
+          if grep -r "console\.log\|console\.debug" . \
+            --exclude-dir=node_modules \
+            --exclude-dir=.git \
+            --exclude-dir=dist \
+            --exclude-dir=scripts \
+            --exclude-dir=.github \
+            --exclude=".eslintrc.js" \
+            --exclude="update-*.js" \
+            --include="*.ts" \
+            --include="*.tsx" \
+            --include="*.js" \
+            --include="*.jsx"; then
             echo "❌ ERROR: Found console.log/debug in production code!"
             exit 1
           else
-            echo "✅ No console.log found"
+            echo "✅ No console.log found in production code"
           fi
 
       - name: Check for Web APIs without Platform check
