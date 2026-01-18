@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchEnergyData, energyDataManager } from '../services/energyDataManager';
 import { EnergyData } from '../utils/metrics';
-import { logger } from '../utils/logger';
 
 /**
  * Hook for fetching and managing energy data
@@ -19,12 +18,9 @@ export function useEnergyData(debouncedPostalCode: string) {
       try {
         setLoading(true);
         setError(null);
-        logger.debug('[useEnergyData] Loading with postalCode:', debouncedPostalCode);
-
-        // Invalidate cache on postal code change (but not on first mount)
+// Invalidate cache on postal code change (but not on first mount)
         if (!isInitialMountRef.current) {
-          logger.debug('[useEnergyData] Invalidating caches due to postal code change');
-          energyDataManager.invalidateCache();
+energyDataManager.invalidateCache();
           await energyDataManager.invalidateRegionalCache();
         } else {
           isInitialMountRef.current = false;
@@ -33,8 +29,7 @@ export function useEnergyData(debouncedPostalCode: string) {
         const data = await fetchEnergyData(debouncedPostalCode || undefined);
         setEnergyData(data);
       } catch (err) {
-        logger.error('[useEnergyData] Failed to load energy data:', err);
-        setError(err instanceof Error ? err : new Error('Unknown error loading energy data'));
+setError(err instanceof Error ? err : new Error('Unknown error loading energy data'));
         setEnergyData([]);
       } finally {
         setLoading(false);

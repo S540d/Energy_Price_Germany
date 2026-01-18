@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { usePersistence } from './usePersistence';
 import { Theme } from '../utils/theme';
 import { GRID_FEES_AND_TAXES } from '../utils/metrics';
-import { logger } from '../utils/logger';
 
 /**
  * Hook for managing app settings (theme, postal code, grid fees)
@@ -48,8 +47,7 @@ export function useSettings() {
           setTheme(savedTheme);
         }
       } catch (error) {
-        logger.error('[useSettings] Failed to load settings:', error);
-      } finally {
+} finally {
         setIsInitialized(true);
       }
     }
@@ -65,8 +63,7 @@ export function useSettings() {
       try {
         await setItem('postalCode', postalCode);
       } catch (error) {
-        logger.error('[useSettings] Failed to save postal code:', error);
-      }
+}
     }
 
     savePostalCode();
@@ -80,8 +77,7 @@ export function useSettings() {
       try {
         await setItem('gridFees', gridFees.toString());
       } catch (error) {
-        logger.error('[useSettings] Failed to save grid fees:', error);
-      }
+}
     }
 
     saveGridFees();
@@ -95,8 +91,7 @@ export function useSettings() {
       try {
         await setItem('theme', theme);
       } catch (error) {
-        logger.error('[useSettings] Failed to save theme:', error);
-      }
+}
     }
 
     saveTheme();
