@@ -6,9 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   useColorScheme,
-  Linking,
   ActivityIndicator,
-  TextInput,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -19,13 +17,13 @@ import { PriceBarChart } from './components/charts/PriceBarChart';
 import { CorrelationScatterChart } from './components/charts/CorrelationScatterChart';
 import { ChartDetailView } from './components/ChartDetailView';
 import { AboutView } from './components/AboutView';
+import { SettingsMenu } from './components/settings/SettingsMenu';
+import { CustomizeModal } from './components/customize/CustomizeModal';
 import { calculateMetrics, EnergyData, GRID_FEES_AND_TAXES } from './utils/metrics';
 import { getThemeColors } from './utils/theme';
 import { logger } from './utils/logger';
-import { isValidPostalCode, sanitizePostalCodeInput } from './utils/postalCodeUtils';
-import { translations } from './utils/translations';
+import { isValidPostalCode } from './utils/postalCodeUtils';
 import { useEnergyData } from './hooks/useEnergyData';
-import { useSettings } from './hooks/useSettings';
 import { useLanguageContext } from './context/LanguageContext';
 import { useSettingsContext } from './context/SettingsContext';
 
@@ -38,8 +36,8 @@ function AppContent() {
   const [aboutVisible, setAboutVisible] = useState(false);
 
   // Settings and Language from Context
-  const { theme, setTheme, postalCode, setPostalCode, debouncedPostalCode, gridFees, setGridFees } = useSettingsContext();
-  const { language, setLanguage, t } = useLanguageContext();
+  const { theme, debouncedPostalCode, gridFees } = useSettingsContext();
+  const { language, t } = useLanguageContext();
 
   // Energy data from hook
   const { energyData, loading } = useEnergyData(debouncedPostalCode);
@@ -176,262 +174,18 @@ function AppContent() {
       </View>
 
       {/* Settings Modal */}
-      {menuVisible && (
-        <>
-          <TouchableOpacity
-            style={styles.settingsOverlay}
-            activeOpacity={1}
-            onPress={() => setMenuVisible(false)}
-          />
-          <View style={[styles.menu, { backgroundColor: colors.surface }]}>
-            {/* Header with Close Button */}
-            <View style={[styles.menuHeader, { borderBottomColor: colors.gridLine }]}>
-              <Text style={[styles.menuTitle, { color: colors.text }]}>{t.settings}</Text>
-              <TouchableOpacity onPress={() => setMenuVisible(false)}>
-                <Text style={[styles.closeButton, { color: colors.text }]}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Customize Button */}
-            <View style={styles.menuSection}>
-              <TouchableOpacity
-                style={[
-                  styles.customizeButton,
-                  { backgroundColor: colors.primary, borderColor: colors.primary }
-                ]}
-                onPress={() => {
-                  setCustomizeVisible(true);
-                  setMenuVisible(false);
-                }}
-              >
-                <Text style={[styles.customizeButtonText, { color: '#fff' }]}>{t.customize}</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-            {/* APPEARANCE Section */}
-            <View style={styles.menuSection}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.appearance}</Text>
-              <View style={styles.themeToggle}>
-                <TouchableOpacity
-                  style={[
-                    styles.themeButton,
-                    theme === 'light' && styles.themeButtonActive,
-                    { backgroundColor: theme === 'light' ? colors.primary : colors.gridLine }
-                  ]}
-                  onPress={() => setTheme('light')}
-                >
-                  <Text style={{ color: theme === 'light' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.light}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.themeButton,
-                    theme === 'dark' && styles.themeButtonActive,
-                    { backgroundColor: theme === 'dark' ? colors.primary : colors.gridLine }
-                  ]}
-                  onPress={() => setTheme('dark')}
-                >
-                  <Text style={{ color: theme === 'dark' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.dark}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.themeButton,
-                    theme === 'system' && styles.themeButtonActive,
-                    { backgroundColor: theme === 'system' ? colors.primary : colors.gridLine }
-                  ]}
-                  onPress={() => setTheme('system')}
-                >
-                  <Text style={{ color: theme === 'system' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.system}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-            {/* LANGUAGE Section */}
-            <View style={styles.menuSection}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.language}</Text>
-              <View style={styles.themeToggle}>
-                <TouchableOpacity
-                  style={[
-                    styles.themeButton,
-                    language === 'en' && styles.themeButtonActive,
-                    { backgroundColor: language === 'en' ? colors.primary : colors.gridLine }
-                  ]}
-                  onPress={() => setLanguage('en')}
-                >
-                  <Text style={{ color: language === 'en' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.english}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.themeButton,
-                    language === 'de' && styles.themeButtonActive,
-                    { backgroundColor: language === 'de' ? colors.primary : colors.gridLine }
-                  ]}
-                  onPress={() => setLanguage('de')}
-                >
-                  <Text style={{ color: language === 'de' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.german}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-            {/* FEEDBACK, SUPPORT & ABOUT - Three Links in One Row */}
-            <View style={[styles.menuSection, styles.menuSectionRow]}>
-              <TouchableOpacity
-                style={styles.menuLinkFlex}
-                onPress={() => {
-                  Linking.openURL('mailto:devsven@posteo.de?subject=Energy Price Germany Feedback');
-                  setMenuVisible(false);
-                }}
-              >
-                <Text style={[styles.menuLinkText, { color: colors.primary }]}>{t.feedback}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.menuLinkFlex}
-                onPress={() => {
-                  Linking.openURL('https://ko-fi.com/devsven');
-                  setMenuVisible(false);
-                }}
-              >
-                <Text style={[styles.menuLinkText, { color: colors.primary }]}>{t.supportProject}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.menuLinkFlex}
-                onPress={() => {
-                  setAboutVisible(true);
-                  setMenuVisible(false);
-                }}
-              >
-                <Text style={[styles.menuLinkText, { color: colors.primary }]}>{t.about}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </>
-      )}
+      <SettingsMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        onOpenCustomize={() => setCustomizeVisible(true)}
+        onOpenAbout={() => setAboutVisible(true)}
+      />
 
       {/* Customize Modal */}
-      {customizeVisible && (
-        <>
-          <TouchableOpacity
-            style={styles.settingsOverlay}
-            activeOpacity={1}
-            onPress={() => setCustomizeVisible(false)}
-          />
-          <ScrollView style={[styles.menu, { backgroundColor: colors.surface }]}>
-            {/* Header with Close Button */}
-            <View style={[styles.menuHeader, { borderBottomColor: colors.gridLine }]}>
-              <Text style={[styles.menuTitle, { color: colors.text }]}>{t.customize}</Text>
-              <TouchableOpacity onPress={() => setCustomizeVisible(false)}>
-                <Text style={[styles.closeButton, { color: colors.text }]}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* LANGUAGE Section */}
-            <View style={styles.menuSection}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.language}</Text>
-              <View style={styles.themeToggle}>
-                <TouchableOpacity
-                  style={[
-                    styles.themeButton,
-                    language === 'en' && styles.themeButtonActive,
-                    { backgroundColor: language === 'en' ? colors.primary : colors.gridLine }
-                  ]}
-                  onPress={() => setLanguage('en')}
-                >
-                  <Text style={{ color: language === 'en' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.english}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.themeButton,
-                    language === 'de' && styles.themeButtonActive,
-                    { backgroundColor: language === 'de' ? colors.primary : colors.gridLine }
-                  ]}
-                  onPress={() => setLanguage('de')}
-                >
-                  <Text style={{ color: language === 'de' ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>{t.german}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-            {/* POSTAL CODE Section */}
-            <View style={styles.menuSection}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.region}</Text>
-              <View>
-                <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 8 }}>
-                  {t.postalCodeHint}
-                </Text>
-                <TextInput
-                  style={{
-                    backgroundColor: colors.surface,
-                    color: colors.text,
-                    borderWidth: 1,
-                    borderColor: colors.gridLine,
-                    borderRadius: 8,
-                    paddingHorizontal: 12,
-                    paddingVertical: 10,
-                    fontSize: 14,
-                  }}
-                  placeholder={t.postalCode}
-                  placeholderTextColor={colors.textSecondary}
-                  value={postalCode}
-                  onChangeText={(text) => {
-                    setPostalCode(sanitizePostalCodeInput(text));
-                  }}
-                  keyboardType="numeric"
-                  maxLength={5}
-                />
-              </View>
-            </View>
-
-            <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-            {/* GRID FEES Section */}
-            <View style={styles.menuSection}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.gridFees}</Text>
-              <View>
-                <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 8 }}>
-                  {t.gridFeesHint}
-                </Text>
-                <TextInput
-                  style={{
-                    backgroundColor: colors.surface,
-                    color: colors.text,
-                    borderWidth: 1,
-                    borderColor: colors.gridLine,
-                    borderRadius: 8,
-                    paddingHorizontal: 12,
-                    paddingVertical: 10,
-                    fontSize: 14,
-                  }}
-                  placeholder={t.gridFeesValue}
-                  placeholderTextColor={colors.textSecondary}
-                  value={gridFees.toString()}
-                  onChangeText={(text) => {
-                    // Allow only numbers and decimal point
-                    const sanitized = text.replace(/[^0-9.]/g, '');
-                    
-                    // If empty, keep current value (don't update state)
-                    if (sanitized === '') {
-                      return;
-                    }
-                    
-                    const value = parseFloat(sanitized);
-                    if (!isNaN(value) && value > 0) {
-                      setGridFees(value);
-                    }
-                  }}
-                  keyboardType="numeric"
-                />
-              </View>
-            </View>
-          </ScrollView>
-        </>
-      )}
+      <CustomizeModal
+        visible={customizeVisible}
+        onClose={() => setCustomizeVisible(false)}
+      />
 
       {/* Main Content */}
       <ScrollView
@@ -695,59 +449,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
   },
-  menuTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  closeButton: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    padding: 4,
-  },
-  menuItem: {
-    padding: 16,
-  },
-  menuItemFlex: {
-    flex: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  menuSectionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 0,
-  },
-  menuSectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 10,
-  },
-  themeToggle: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  themeButton: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  themeButtonActive: {
-    // Additional styling for active state if needed
-  },
-  customizeButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  customizeButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -759,10 +460,6 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 12,
-  },
-  separator: {
-    height: 1,
-    marginVertical: 4,
   },
   scrollView: {
     flex: 1,
@@ -809,37 +506,6 @@ const styles = StyleSheet.create({
   settingsHeaderButtonText: {
     fontSize: 24,
     fontWeight: '500',
-  },
-  menuSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  settingLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    marginBottom: 8,
-  },
-  menuLink: {
-    paddingVertical: 8,
-  },
-  menuLinkFlex: {
-    flex: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)',
-  },
-  menuLinkText: {
-    fontSize: 14,
-    fontWeight: '600',
   },
   aboutButton: {
     paddingVertical: 14,
