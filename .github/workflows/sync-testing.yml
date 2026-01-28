@@ -34,7 +34,14 @@ jobs:
         run: |
           echo "Current branch: $(git branch --show-current)"
           echo "Switching to testing branch..."
-          git checkout testing
+
+          # Create local tracking branch for testing if it doesn't exist
+          if ! git show-ref --verify --quiet refs/heads/testing; then
+            echo "Creating local testing branch from origin/testing..."
+            git checkout -b testing origin/testing
+          else
+            git checkout testing
+          fi
 
           echo "Attempting to merge main into testing..."
           if git merge origin/main --no-edit -m "chore: Auto-sync main → testing
