@@ -34,6 +34,13 @@ export const translations = {
     supportProject: 'Support me',
     rateApp: 'Rate on Play Store',
     reportBug: 'Report a Bug',
+    // Beta Mode Section
+    betaMode: 'BETA MODE',
+    betaModeEnabled: 'Beta Updates',
+    betaModeDescription: 'Receive early access to new features before public release',
+    betaModeWarning: '⚠️ Beta features may be unstable',
+    betaModeActive: 'You are using beta updates',
+    betaModeInactive: 'You are using stable updates',
     // Other
     loadingData: 'Loading energy data...',
     renewableTitle: 'Share of Renewable Energy in Load',
@@ -95,6 +102,13 @@ export const translations = {
     supportProject: 'Support me',
     rateApp: 'Im Play Store bewerten',
     reportBug: 'Fehler melden',
+    // Beta Mode Section
+    betaMode: 'BETA-MODUS',
+    betaModeEnabled: 'Beta-Updates',
+    betaModeDescription: 'Erhalte frühzeitigen Zugriff auf neue Funktionen vor Veröffentlichung',
+    betaModeWarning: '⚠️ Beta-Funktionen können instabil sein',
+    betaModeActive: 'Du nutzt Beta-Updates',
+    betaModeInactive: 'Du nutzt stabile Updates',
     // Other
     loadingData: 'Lade Energiedaten...',
     renewableTitle: 'Anteil Erneuerbarer Energien an der Last',
