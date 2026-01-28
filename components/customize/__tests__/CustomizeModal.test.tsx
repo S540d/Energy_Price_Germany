@@ -26,6 +26,11 @@ jest.mock('../../../utils/postalCodeUtils', () => ({
   sanitizePostalCodeInput: jest.fn((text: string) => text.replace(/[^0-9]/g, '')),
 }));
 
+// Mock BetaModeSection (new section in CustomizeModal)
+jest.mock('../../settings/BetaModeSection', () => ({
+  BetaModeSection: () => null,
+}));
+
 // Wrapper component with required contexts
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
   <SettingsProvider>
@@ -62,7 +67,7 @@ describe('CustomizeModal', () => {
     expect(queryByText(/CUSTOMIZE/i)).toBeNull();
   });
 
-  it('should render all three configuration sections', async () => {
+  it('should render all configuration sections', async () => {
     const { getAllByText } = render(
       <TestWrapper>
         <CustomizeModal visible={true} onClose={mockOnClose} />
@@ -73,6 +78,7 @@ describe('CustomizeModal', () => {
       expect(getAllByText(/LANGUAGE/i).length).toBeGreaterThan(0);
       expect(getAllByText(/REGION/i).length).toBeGreaterThan(0);
       expect(getAllByText(/GRID FEES/i).length).toBeGreaterThan(0);
+      // BetaModeSection is mocked, so we don't check for it here
     });
   });
 });
