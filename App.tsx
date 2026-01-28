@@ -19,6 +19,7 @@ import { ChartDetailView } from './components/ChartDetailView';
 import { AboutView } from './components/AboutView';
 import { SettingsMenu } from './components/settings/SettingsMenu';
 import { CustomizeModal } from './components/customize/CustomizeModal';
+import { CostCalculatorView } from './components/CostCalculatorView';
 import { calculateMetrics, EnergyData, GRID_FEES_AND_TAXES } from './utils/metrics';
 import { getThemeColors } from './utils/theme';
 import { isValidPostalCode } from './utils/postalCodeUtils';
@@ -33,6 +34,7 @@ function AppContent() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [customizeVisible, setCustomizeVisible] = useState(false);
   const [aboutVisible, setAboutVisible] = useState(false);
+  const [calculatorVisible, setCalculatorVisible] = useState(false);
 
   // Settings and Language from Context
   const { theme, debouncedPostalCode, gridFees } = useSettingsContext();
@@ -89,6 +91,8 @@ function AppContent() {
   // Language, postal code, and grid fees are now managed by hooks and contexts!
 
   // Check for app updates
+  // Note: Channel selection (staging/production) is handled by BetaModeSection
+  // When user toggles beta mode, they are prompted to restart the app
   useEffect(() => {
     async function checkAndApplyUpdates() {
       if (!__DEV__) {
@@ -153,16 +157,25 @@ function AppContent() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
 
-      {/* Header with Settings Button */}
+      {/* Header with Calculator and Settings Buttons */}
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.gridLine }]}>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Energy Price Germany</Text>
-        <TouchableOpacity
-          onPress={() => setMenuVisible(true)}
-          style={styles.settingsHeaderButton}
-          aria-label="Settings"
-        >
-          <Text style={[styles.settingsHeaderButtonText, { color: colors.text }]}>⋮</Text>
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            onPress={() => setCalculatorVisible(true)}
+            style={styles.headerButton}
+            aria-label="Cost Calculator"
+          >
+            <Text style={[styles.headerButtonText, { color: colors.text }]}>💶</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setMenuVisible(true)}
+            style={styles.headerButton}
+            aria-label="Settings"
+          >
+            <Text style={[styles.settingsHeaderButtonText, { color: colors.text }]}>⋮</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Settings Modal */}
@@ -394,6 +407,21 @@ function AppContent() {
         dataSourceInfo={getDataSourceInfo()}
       />
 
+      {/* Cost Calculator View */}
+      <CostCalculatorView
+        visible={calculatorVisible}
+        onClose={() => setCalculatorVisible(false)}
+        currentPrice={metrics?.today?.marketPrice.current ? metrics.today.marketPrice.current + gridFees : gridFees}
+        priceData={filteredEnergyData
+          .filter(item => item.marketPrice !== null)
+          .map(item => ({
+            start_timestamp: item.timestamp,
+            marketprice: item.marketPrice!,
+            renewable_share: item.renewableShare ?? undefined,
+          }))}
+        gridFees={gridFees}
+      />
+
     </SafeAreaView>
   );
 }
@@ -489,13 +517,21 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    flex: 1,
   },
-  settingsHeaderButton: {
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  headerButton: {
     padding: 8,
     minWidth: 44,
     minHeight: 44,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  headerButtonText: {
+    fontSize: 20,
   },
   settingsHeaderButtonText: {
     fontSize: 24,
