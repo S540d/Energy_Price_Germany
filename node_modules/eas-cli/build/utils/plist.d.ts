@@ -1,5 +1,0 @@
-/// <reference types="node" />
-import { IOSConfig } from '@expo/config-plugins';
-export declare function readPlistAsync(plistPath: string): Promise<object | null>;
-export declare function writePlistAsync(plistPath: string, plistObject: IOSConfig.ExpoPlist | IOSConfig.InfoPlist): Promise<void>;
-export declare function parseBinaryPlistBuffer(contents: Buffer): any;
