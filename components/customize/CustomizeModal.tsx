@@ -35,7 +35,7 @@ export function CustomizeModal({ visible, onClose }: CustomizeModalProps) {
       />
 
       {/* Modal Panel */}
-      <ScrollView style={[styles.menu, { backgroundColor: colors.surface }]}>
+      <View style={[styles.menu, { backgroundColor: colors.surface }]}>
         {/* Header with Close Button */}
         <View style={[styles.menuHeader, { borderBottomColor: colors.gridLine }]}>
           <Text style={[styles.menuTitle, { color: colors.text }]}>
@@ -46,24 +46,27 @@ export function CustomizeModal({ visible, onClose }: CustomizeModalProps) {
           </TouchableOpacity>
         </View>
 
-        {/* Language Section */}
-        <LanguageSection />
+        {/* Scrollable Content */}
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
+          {/* Language Section */}
+          <LanguageSection />
 
-        <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+          <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
-        {/* Beta Mode Section */}
-        <BetaModeSection />
+          {/* Beta Mode Section */}
+          <BetaModeSection />
 
-        <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+          <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
-        {/* Postal Code Section */}
-        <PostalCodeSection />
+          {/* Postal Code Section */}
+          <PostalCodeSection />
 
-        <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+          <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
-        {/* Grid Fees Section */}
-        <GridFeesSection />
-      </ScrollView>
+          {/* Grid Fees Section */}
+          <GridFeesSection />
+        </ScrollView>
+      </View>
     </>
   );
 }
@@ -91,6 +94,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
     zIndex: 1000,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
     padding: 16,
     gap: 16,
   },
