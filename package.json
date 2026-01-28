@@ -43,7 +43,9 @@
     "eas:build:android:production": "eas build --profile production --platform android",
     "eas:build:ios:testing": "eas build --profile testing --platform ios",
     "eas:build:ios:staging": "eas build --profile staging --platform ios",
-    "eas:build:ios:production": "eas build --profile production --platform ios"
+    "eas:build:ios:production": "eas build --profile production --platform ios",
+    "eas:update:staging": "eas update --channel staging --message \"Beta update\"",
+    "eas:update:production": "eas update --channel production --message \"Production update\""
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
