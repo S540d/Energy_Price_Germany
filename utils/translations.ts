@@ -47,6 +47,15 @@ export const translations = {
     betaModeRestartNow: 'Restart Now',
     betaModeSaveError: 'Failed to save beta mode preference. Please try again.',
     error: 'Error',
+    // Cost Calculator
+    costCalculatorTitle: 'What does it cost?',
+    costCalculatorSubtitle: 'Calculate real electricity costs for your appliances',
+    costNow: 'Cost Now',
+    costFor: 'for',
+    costRuntime: 'runtime',
+    costCheapestTime: 'Cheapest time',
+    costSave: 'save',
+    costCheaper: 'cheaper',
     // Other
     loadingData: 'Loading energy data...',
     renewableTitle: 'Share of Renewable Energy in Load',
@@ -121,6 +130,15 @@ export const translations = {
     betaModeRestartNow: 'Jetzt neu starten',
     betaModeSaveError: 'Fehler beim Speichern der Beta-Einstellung. Bitte versuche es erneut.',
     error: 'Fehler',
+    // Cost Calculator
+    costCalculatorTitle: 'Was kostet das?',
+    costCalculatorSubtitle: 'Berechne echte Stromkosten für deine Haushaltsgeräte',
+    costNow: 'Kosten Jetzt',
+    costFor: 'für',
+    costRuntime: 'Laufzeit',
+    costCheapestTime: 'Günstigste Zeit',
+    costSave: 'sparen',
+    costCheaper: 'günstiger',
     // Other
     loadingData: 'Lade Energiedaten...',
     renewableTitle: 'Anteil Erneuerbarer Energien an der Last',
