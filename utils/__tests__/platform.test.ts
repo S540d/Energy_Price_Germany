@@ -23,13 +23,6 @@ jest.mock('react-native', () => ({
   },
 }));
 
- => ({
-  logger: {
-    warn: jest.fn(),
-    error: jest.fn(),
-  },
-}));
-
 describe('platform', () => {
   describe('Platform Detection Constants', () => {
     it('should have platform detection exports', () => {
@@ -67,7 +60,6 @@ describe('platform', () => {
   describe('getSystemDarkModePreference', () => {
     beforeEach(() => {
       jest.clearAllMocks();
-      (logger.warn as jest.Mock).mockClear();
     });
 
     it('should return boolean without throwing', () => {
@@ -80,7 +72,6 @@ describe('platform', () => {
   describe('addSystemThemeChangeListener', () => {
     beforeEach(() => {
       jest.clearAllMocks();
-      (logger.warn as jest.Mock).mockClear();
     });
 
     it('should return a function', () => {
