@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, useColorScheme, Switch, Platform } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, Switch, Platform, Alert } from 'react-native';
 import { useLanguageContext } from '../../context/LanguageContext';
 import { getThemeColors } from '../../utils/theme';
 import { useSettingsContext } from '../../context/SettingsContext';
@@ -39,23 +39,41 @@ export function BetaModeSection() {
 
   const toggleBetaMode = async () => {
     const newValue = !betaModeEnabled;
-    setBetaModeEnabled(newValue);
 
     try {
       // Save to storage
       await AsyncStorage.setItem(BETA_MODE_KEY, String(newValue));
+      setBetaModeEnabled(newValue);
 
-      // Switch update channel if EAS Updates is available
-      if (Updates.channel) {
-        const targetChannel = newValue ? 'staging' : 'production';
-
-        // Note: expo-updates doesn't have a direct setChannel method
-        // The channel switch will take effect on next app restart
-        // We store the preference and the app will use it on next launch
+      // Show restart alert (channel switch requires app restart)
+      if (Platform.OS !== 'web') {
+        const channelName = newValue ? 'Beta (Staging)' : 'Stable (Production)';
+        Alert.alert(
+          t.betaModeRestartTitle || 'Restart Required',
+          t.betaModeRestartMessage?.replace('{channel}', channelName) ||
+            `To switch to ${channelName} updates, please restart the app.`,
+          [
+            {
+              text: t.betaModeRestartLater || 'Later',
+              style: 'cancel',
+            },
+            {
+              text: t.betaModeRestartNow || 'Restart Now',
+              onPress: async () => {
+                await Updates.reloadAsync();
+              },
+            },
+          ]
+        );
       }
     } catch (error) {
-      // Revert on error
+      // Revert on error and show user feedback
       setBetaModeEnabled(!newValue);
+      Alert.alert(
+        t.error || 'Error',
+        t.betaModeSaveError || 'Failed to save beta mode preference. Please try again.',
+        [{ text: 'OK' }]
+      );
     }
   };
 
