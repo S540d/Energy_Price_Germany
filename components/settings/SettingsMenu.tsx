@@ -5,6 +5,7 @@ import { getThemeColors } from '../../utils/theme';
 import { useSettingsContext } from '../../context/SettingsContext';
 import { AppearanceSection } from './AppearanceSection';
 import { LanguageSection } from './LanguageSection';
+import { BetaModeSection } from './BetaModeSection';
 
 interface SettingsMenuProps {
   visible: boolean;
@@ -73,6 +74,11 @@ export function SettingsMenu({ visible, onClose, onOpenCustomize, onOpenAbout }:
 
         {/* Language Section */}
         <LanguageSection />
+
+        <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+        {/* Beta Mode Section */}
+        <BetaModeSection />
 
         <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 

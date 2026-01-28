@@ -89,6 +89,8 @@ function AppContent() {
   // Language, postal code, and grid fees are now managed by hooks and contexts!
 
   // Check for app updates
+  // Note: Channel selection (staging/production) is handled by BetaModeSection
+  // When user toggles beta mode, they are prompted to restart the app
   useEffect(() => {
     async function checkAndApplyUpdates() {
       if (!__DEV__) {

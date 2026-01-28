@@ -37,6 +37,12 @@ export interface ThemeColors {
   error: string;
   info: string;
   pending: string;
+
+  // Notification backgrounds
+  warningBackground: string;
+  warningText: string;
+  infoBackground: string;
+  infoText: string;
 }
 
 /**
@@ -82,6 +88,12 @@ export function getThemeColors(theme: Theme, systemTheme: 'light' | 'dark'): The
         error: colorScales.red[400],               // #F87171
         info: colorScales.blue[400],               // #60A5FA
         pending: colorScales.orange[300],          // #FDBA74
+
+        // Notification backgrounds
+        warningBackground: 'rgba(251, 146, 60, 0.15)',
+        warningText: colorScales.orange[300],      // #FDBA74
+        infoBackground: 'rgba(96, 165, 250, 0.15)',
+        infoText: colorScales.blue[300],           // #93C5FD
       }
     : {
         // Light Mode - frische, moderne Farben
@@ -116,5 +128,11 @@ export function getThemeColors(theme: Theme, systemTheme: 'light' | 'dark'): The
         error: colorScales.red[600],              // #DC2626
         info: colorScales.blue[600],              // #2563EB
         pending: colorScales.orange[400],         // #FB923C
+
+        // Notification backgrounds
+        warningBackground: '#FFF3CD',
+        warningText: '#856404',
+        infoBackground: '#D1ECF1',
+        infoText: '#0C5460',
       };
 }
