@@ -19,6 +19,7 @@ import { ChartDetailView } from './components/ChartDetailView';
 import { AboutView } from './components/AboutView';
 import { SettingsMenu } from './components/settings/SettingsMenu';
 import { CustomizeModal } from './components/customize/CustomizeModal';
+import { CostCalculator } from './components/CostCalculator';
 import { calculateMetrics, EnergyData, GRID_FEES_AND_TAXES } from './utils/metrics';
 import { getThemeColors } from './utils/theme';
 import { isValidPostalCode } from './utils/postalCodeUtils';
@@ -372,6 +373,19 @@ function AppContent() {
                 }}
               />
             </ChartDetailView>
+
+            {/* Cost Calculator - Show real-world electricity costs */}
+            <CostCalculator
+              currentPrice={metrics?.today?.marketPrice.current ? metrics.today.marketPrice.current + gridFees : gridFees}
+              priceData={filteredEnergyData
+                .filter(item => item.marketPrice !== null)
+                .map(item => ({
+                  start_timestamp: item.timestamp,
+                  marketprice: item.marketPrice!,
+                  renewable_share: item.renewableShare ?? undefined,
+                }))}
+              gridFees={gridFees}
+            />
           </>
         ) : null}
         {filteredEnergyData.length === 0 && (
