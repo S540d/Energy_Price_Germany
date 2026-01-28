@@ -4,6 +4,7 @@ import { useLanguageContext } from '../../context/LanguageContext';
 import { getThemeColors } from '../../utils/theme';
 import { useSettingsContext } from '../../context/SettingsContext';
 import { LanguageSection } from '../settings/LanguageSection';
+import { BetaModeSection } from '../settings/BetaModeSection';
 import { PostalCodeSection } from './PostalCodeSection';
 import { GridFeesSection } from './GridFeesSection';
 
@@ -47,6 +48,11 @@ export function CustomizeModal({ visible, onClose }: CustomizeModalProps) {
 
         {/* Language Section */}
         <LanguageSection />
+
+        <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+        {/* Beta Mode Section */}
+        <BetaModeSection />
 
         <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
