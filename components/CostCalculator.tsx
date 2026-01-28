@@ -49,10 +49,10 @@ export const APPLIANCES: Appliance[] = [
   },
   {
     id: 'ev_full',
-    nameDE: 'E-Auto (50kWh)',
-    nameEN: 'EV (50kWh)',
-    kwh: 50.0,
-    durationHours: 8,
+    nameDE: 'E-Auto laden (44kWh)',
+    nameEN: 'EV charging (44kWh)',
+    kwh: 44.0,
+    durationHours: 4,
     icon: '🔋'
   },
   {
@@ -90,17 +90,63 @@ export function CostCalculator({ currentPrice, priceData = [], gridFees = 0 }: C
     return costInEuro.toFixed(2);
   };
 
-  // Find the cheapest time slot for the appliance
+  // Calculate average price over duration for the appliance
+  const calculateAveragePriceOverDuration = (startIndex: number, durationHours: number): number => {
+    if (!priceData || priceData.length === 0) return 0;
+
+    // Assuming 15-minute intervals in priceData
+    const intervalsPerHour = 4; // 4 × 15min = 1 hour
+    const requiredIntervals = durationHours * intervalsPerHour;
+
+    // Don't go beyond available data
+    const endIndex = Math.min(startIndex + requiredIntervals, priceData.length);
+    const actualIntervals = endIndex - startIndex;
+
+    if (actualIntervals === 0) return 0;
+
+    let sum = 0;
+    for (let i = startIndex; i < endIndex; i++) {
+      sum += priceData[i].marketprice + gridFees;
+    }
+
+    return sum / actualIntervals;
+  };
+
+  // Find current average price for the appliance duration
+  const currentAveragePrice = useMemo(() => {
+    if (!priceData || priceData.length === 0) return currentPrice;
+
+    // Find current time slot (closest to now)
+    const now = Date.now();
+    let currentIndex = 0;
+    let minDiff = Infinity;
+
+    priceData.forEach((item, index) => {
+      const diff = Math.abs(item.start_timestamp - now);
+      if (diff < minDiff) {
+        minDiff = diff;
+        currentIndex = index;
+      }
+    });
+
+    return calculateAveragePriceOverDuration(currentIndex, selectedAppliance.durationHours);
+  }, [priceData, currentPrice, selectedAppliance.durationHours, gridFees]);
+
+  // Find the cheapest time slot for the appliance considering its duration
   const findCheapestTimeSlot = useMemo(() => {
     if (!priceData || priceData.length === 0) return null;
 
-    let cheapestPrice = Infinity;
+    let cheapestAvgPrice = Infinity;
     let cheapestTime = '';
+    let cheapestStartIndex = 0;
 
-    priceData.forEach((item) => {
-      const totalPrice = item.marketprice + gridFees;
-      if (totalPrice < cheapestPrice) {
-        cheapestPrice = totalPrice;
+    // Calculate average price for each possible start time
+    priceData.forEach((item, index) => {
+      const avgPrice = calculateAveragePriceOverDuration(index, selectedAppliance.durationHours);
+
+      if (avgPrice < cheapestAvgPrice && avgPrice > 0) {
+        cheapestAvgPrice = avgPrice;
+        cheapestStartIndex = index;
         const date = new Date(item.start_timestamp);
         cheapestTime = date.toLocaleTimeString(language === 'de' ? 'de-DE' : 'en-US', {
           hour: '2-digit',
@@ -109,10 +155,10 @@ export function CostCalculator({ currentPrice, priceData = [], gridFees = 0 }: C
       }
     });
 
-    return { price: cheapestPrice, time: cheapestTime };
-  }, [priceData, gridFees, language]);
+    return { price: cheapestAvgPrice, time: cheapestTime, startIndex: cheapestStartIndex };
+  }, [priceData, gridFees, language, selectedAppliance.durationHours]);
 
-  const currentCost = parseFloat(calculateCost(selectedAppliance.kwh, currentPrice));
+  const currentCost = parseFloat(calculateCost(selectedAppliance.kwh, currentAveragePrice));
   const cheapestCost = findCheapestTimeSlot
     ? parseFloat(calculateCost(selectedAppliance.kwh, findCheapestTimeSlot.price))
     : null;
@@ -174,7 +220,7 @@ export function CostCalculator({ currentPrice, priceData = [], gridFees = 0 }: C
           {t.costFor} {selectedAppliance.durationHours}h {t.costRuntime}
         </Text>
         <Text style={[styles.subText, { color: colors.textTertiary }]}>
-          ({currentPrice.toFixed(1)} ct/kWh × {selectedAppliance.kwh} kWh)
+          (Ø {currentAveragePrice.toFixed(1)} ct/kWh × {selectedAppliance.kwh} kWh)
         </Text>
       </View>
 
