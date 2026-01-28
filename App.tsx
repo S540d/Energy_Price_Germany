@@ -533,13 +533,6 @@ const styles = StyleSheet.create({
   headerButtonText: {
     fontSize: 20,
   },
-  settingsHeaderButton: {
-    padding: 8,
-    minWidth: 44,
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   settingsHeaderButtonText: {
     fontSize: 24,
     fontWeight: '500',

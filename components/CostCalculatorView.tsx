@@ -34,7 +34,7 @@ export function CostCalculatorView({
   if (!visible) return null;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom', 'left', 'right']}>
       <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
 
       {/* Header */}

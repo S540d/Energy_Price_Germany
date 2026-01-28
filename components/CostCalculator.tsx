@@ -106,7 +106,9 @@ export function CostCalculator({ currentPrice, priceData = [], gridFees = 0 }: C
 
     let sum = 0;
     for (let i = startIndex; i < endIndex; i++) {
-      sum += priceData[i].marketprice + gridFees;
+      // Convert marketprice from EUR/MWh to ct/kWh (1 EUR/MWh = 0.1 ct/kWh)
+      const marketPriceCtPerKwh = priceData[i].marketprice * 0.1;
+      sum += marketPriceCtPerKwh + gridFees;
     }
 
     return sum / actualIntervals;
@@ -220,7 +222,7 @@ export function CostCalculator({ currentPrice, priceData = [], gridFees = 0 }: C
           {t.costFor} {selectedAppliance.durationHours}h {t.costRuntime}
         </Text>
         <Text style={[styles.subText, { color: colors.textTertiary }]}>
-          (Ø {currentAveragePrice.toFixed(1)} ct/kWh × {selectedAppliance.kwh} kWh)
+          ({t.average} {currentAveragePrice.toFixed(1)} ct/kWh × {selectedAppliance.kwh} kWh)
         </Text>
       </View>
 
