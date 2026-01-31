@@ -29,7 +29,7 @@ interface CorrelationScatterChartProps {
   interactionHint?: string;
 }
 
-export function CorrelationScatterChart({
+function CorrelationScatterChartComponent({
   title,
   subtitle,
   data,
@@ -421,3 +421,7 @@ export function CorrelationScatterChart({
     </View>
   );
 }
+
+// Performance: Wrap with React.memo to prevent unnecessary re-renders
+// Only re-renders if props actually change
+export const CorrelationScatterChart = React.memo(CorrelationScatterChartComponent);
