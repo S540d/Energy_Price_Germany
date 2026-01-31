@@ -23,7 +23,7 @@ export function useEnergyData(debouncedPostalCode: string) {
         if (!isInitialMountRef.current) {
           // Performance: Only invalidate regional cache on postal code change
           // National cache is still valid unless the API data updates
-          energyDataManager.invalidateRegionalCache();
+          await energyDataManager.invalidateRegionalCache();
         } else {
           isInitialMountRef.current = false;
         }
