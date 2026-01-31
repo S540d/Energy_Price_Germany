@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Modal, ScrollView, StyleSheet } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemeColors } from '../utils/theme';
 import { Metrics, GRID_FEES_AND_TAXES } from '../utils/metrics';
+import { Button } from './ui/Button';
 
 type MetricsData =
   | {
@@ -304,14 +305,14 @@ export function ChartDetailView({
       {/* Normal view with expand button */}
       <View>
         <View style={styles.headerContainer}>
-          <TouchableOpacity
-            style={[styles.expandButton, { backgroundColor: colors.surface, borderColor: colors.gridLine }]}
+          <Button
+            variant="outlined"
+            size="small"
+            colors={colors}
             onPress={() => setIsExpanded(true)}
           >
-            <Text style={[styles.expandButtonText, { color: colors.primary }]}>
-              Details
-            </Text>
-          </TouchableOpacity>
+            Details
+          </Button>
         </View>
         <View style={styles.chartContainer}>
           {children}
@@ -339,14 +340,15 @@ export function ChartDetailView({
 
           {/* Close button at bottom */}
           <View style={[styles.closeButtonContainer, { backgroundColor: colors.surface, borderTopColor: colors.gridLine }]}>
-            <TouchableOpacity
+            <Button
+              variant="filled"
+              size="large"
+              colors={colors}
               onPress={() => setIsExpanded(false)}
-              style={[styles.closeButton, { backgroundColor: colors.primary }]}
+              fullWidth
             >
-              <Text style={styles.closeButtonText}>
-                Schließen
-              </Text>
-            </TouchableOpacity>
+              Schließen
+            </Button>
           </View>
         </SafeAreaView>
       </Modal>
@@ -366,21 +368,6 @@ const styles = StyleSheet.create({
     right: 12,
     zIndex: 100,
   },
-  expandButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  expandButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
   modalContainer: {
     flex: 1,
   },
@@ -397,25 +384,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
-  },
-  closeButton: {
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  closeButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
   },
   toggleContainer: {
     flexDirection: 'row',
@@ -442,10 +413,10 @@ const styles = StyleSheet.create({
   metricsContainer: {
     margin: 16,
     padding: 16,
-    borderRadius: 18,
+    borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 3,
   },
