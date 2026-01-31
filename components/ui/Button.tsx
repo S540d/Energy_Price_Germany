@@ -1,19 +1,19 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, StyleProp, ViewStyle, TextStyle } from 'react-native';
 import { ThemeColors } from '../../utils/theme';
 
 export type ButtonVariant = 'filled' | 'outlined' | 'ghost';
 export type ButtonSize = 'small' | 'medium' | 'large';
 
 interface ButtonProps {
-  children: string;
+  children: React.ReactNode;
   onPress: () => void;
   variant?: ButtonVariant;
   size?: ButtonSize;
   colors: ThemeColors;
   disabled?: boolean;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
   fullWidth?: boolean;
 }
 
@@ -42,23 +42,24 @@ export function Button({
   textStyle,
   fullWidth = false,
 }: ButtonProps) {
-  const buttonStyle: ViewStyle = {
-    ...styles.base,
-    ...styles[`size_${size}`],
-    ...styles[`variant_${variant}`],
-    ...(fullWidth && { width: '100%' }),
-    ...(variant === 'filled' && {
+  // Build styles as array to avoid spreading StyleSheet IDs (which are numbers on native)
+  const buttonStyle: StyleProp<ViewStyle> = [
+    styles.base,
+    styles[`size_${size}` as keyof typeof styles],
+    styles[`variant_${variant}` as keyof typeof styles],
+    fullWidth && { width: '100%' },
+    variant === 'filled' && {
       backgroundColor: disabled ? colors.disabled : colors.primary,
-    }),
-    ...(variant === 'outlined' && {
+    },
+    variant === 'outlined' && {
       borderColor: disabled ? colors.disabled : colors.primary,
       backgroundColor: 'transparent',
-    }),
-    ...(variant === 'ghost' && {
+    },
+    variant === 'ghost' && {
       backgroundColor: 'transparent',
-    }),
-    ...style,
-  };
+    },
+    style,
+  ];
 
   const textColor =
     variant === 'filled'
@@ -77,7 +78,7 @@ export function Button({
       <Text
         style={[
           styles.text,
-          styles[`text_${size}`],
+          styles[`text_${size}` as keyof typeof styles],
           { color: textColor },
           textStyle,
         ]}
