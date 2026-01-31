@@ -37,7 +37,7 @@ interface RenewableBarChartProps {
   showLegend?: boolean;
 }
 
-export function RenewableBarChart({
+function RenewableBarChartComponent({
   title,
   subtitle,
   data,
@@ -580,3 +580,7 @@ export function RenewableBarChart({
     </View>
   );
 }
+
+// Performance: Wrap with React.memo to prevent unnecessary re-renders
+// Only re-renders if props actually change
+export const RenewableBarChart = React.memo(RenewableBarChartComponent);

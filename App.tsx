@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -76,8 +76,9 @@ function AppContent() {
   // Memoized metrics calculations for better performance
   const metrics = useMemo(() => calculateMetrics(filteredEnergyData), [filteredEnergyData]);
 
-  // Helper function to format date according to selected language
-  const formatDate = (timestamp: number) => {
+  // Performance: Memoized date formatter to prevent unnecessary recalculations
+  // Only recreates when language changes
+  const formatDate = useCallback((timestamp: number) => {
     const locale = language === 'de' ? 'de-DE' : 'en-US';
     return new Date(timestamp).toLocaleString(locale, {
       day: '2-digit',
@@ -86,7 +87,7 @@ function AppContent() {
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
+  }, [language]);
 
   // Language, postal code, and grid fees are now managed by hooks and contexts!
 
@@ -114,7 +115,8 @@ function AppContent() {
   // Data loading is now managed by useEnergyData hook!
   // Postal code debouncing is now managed by useSettings hook!
 
-  const getDataSourceInfo = () => {
+  // Performance: Memoized data source info to prevent unnecessary recalculations
+  const getDataSourceInfo = useCallback(() => {
     const source = getCurrentDataSource();
     switch (source) {
       case 'energy-charts':
@@ -137,7 +139,7 @@ function AppContent() {
           url: 'demo'
         };
     }
-  };
+  }, []);
 
   if (loading) {
     return (
