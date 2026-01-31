@@ -2,6 +2,11 @@ import { EnergyData } from '../utils/metrics';
 import { Platform } from 'react-native';
 import { isValidPostalCode } from '../utils/postalCodeUtils';
 import { Storage } from '../utils/platform';
+import {
+  validateMarketDataResponse,
+  validateRegionalDataResponse,
+  fetchWithTimeout,
+} from '../utils/apiValidation';
 
 /**
  * Datenquelle-Typen
@@ -192,6 +197,7 @@ export class EnergyDataManager {
    * Fetches regional renewable data via a serverless proxy function
    * Uses dual-layer caching: persistent storage (daily) + memory (15 min)
    * This avoids CORS issues and API rate limits by caching requests on the server side
+   * Includes timeout protection and response validation
    * @returns Regional data or null if fetch fails
    */
   private async fetchRegionalData(postalCode: string): Promise<RegionalDataResponse | null> {
@@ -199,7 +205,6 @@ export class EnergyDataManager {
       // STEP 1: Check persistent storage cache first (daily validation)
       const persistentCache = await this.loadRegionalCacheFromStorage(postalCode);
       if (persistentCache) {
-
         // Also populate memory cache for faster subsequent access
         this.regionalCache.set(postalCode, { data: persistentCache, timestamp: Date.now() });
         return persistentCache;
@@ -208,38 +213,32 @@ export class EnergyDataManager {
       // STEP 2: Check in-memory cache (15-minute fallback)
       const memoryCache = this.regionalCache.get(postalCode);
       if (memoryCache && Date.now() - memoryCache.timestamp < this.regionalCacheDuration) {
-
         return memoryCache.data;
       }
 
-      // STEP 3: Fetch from API
-
+      // STEP 3: Fetch from API with timeout protection (8 seconds)
       const SERVERLESS_PROXY_URL = 'https://energypricegermany.sven4321.workers.dev/';
       const url = `${SERVERLESS_PROXY_URL}?plz=${postalCode}`;
 
-      const response = await fetch(url);
+      const response = await fetchWithTimeout(url, {}, 8000);
 
       if (!response.ok) {
         throw new Error(`Regional API HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data: RegionalDataResponse = await response.json();
+      const data = await response.json();
 
-      if (data.unix_seconds && data.unix_seconds.length > 0) {
-        const first = new Date(data.unix_seconds[0] * 1000).toISOString();
-        const last = new Date(data.unix_seconds[data.unix_seconds.length - 1] * 1000).toISOString();
-
-      }
+      // Validate response structure against schema
+      const validatedData = validateRegionalDataResponse(data);
 
       // STEP 4: Save to both caches
       // Persistent cache (daily): survives app restart
-      await this.saveRegionalCacheToStorage(postalCode, data);
+      await this.saveRegionalCacheToStorage(postalCode, validatedData);
       // Memory cache (15-min): faster for repeated access
-      this.regionalCache.set(postalCode, { data, timestamp: Date.now() });
+      this.regionalCache.set(postalCode, { data: validatedData, timestamp: Date.now() });
 
-      return data;
+      return validatedData;
     } catch (error) {
-
       return null;
     }
   }
@@ -324,11 +323,11 @@ export class EnergyDataManager {
 
   /**
    * Lädt Rohdaten von der API
+   * Includes timeout protection and response validation
    */
   private async fetchRawData(): Promise<MarketDataResponse> {
     try {
-
-      // Cache-busting Parameter hinzufügen
+      // Cache-busting Parameter hinzufügen (dynamic timestamp)
       const cacheBust = Date.now();
 
       // For native apps (iOS/Android), use full URL to GitHub Pages
@@ -337,16 +336,20 @@ export class EnergyDataManager {
         ? `./data/marketdata.json?v=${cacheBust}`
         : `https://s540d.github.io/Energy_Price_Germany/data/marketdata.json?v=${cacheBust}`;
 
-      const response = await fetch(dataUrl);
+      // Use timeout-protected fetch (10 seconds)
+      const response = await fetchWithTimeout(dataUrl, {}, 10000);
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
 
-      return data;
-    } catch (error) {
+      // Validate response structure against schema
+      const validatedData = validateMarketDataResponse(data);
 
+      return validatedData;
+    } catch (error) {
       throw error;
     }
   }

@@ -1,9 +1,11 @@
 // Service Worker for Energy Price Germany PWA
-// Version: 1.1.0 - Auto-update: Removed manual update notifications, updates apply automatically
+// Version: 1.2.0 - Dynamic cache busting and improved update handling
 
+// SECURITY FIX: Use dynamic timestamp instead of hardcoded value
+// This ensures cache busting works correctly even after SW updates
 const CACHE_VERSION = '1.3.0';
-const BUILD_DATE = '2026-01-18';
-const CACHE_NAME = `energy-price-germany-v${CACHE_VERSION}-${BUILD_DATE}`;
+const CACHE_TIMESTAMP = Date.now(); // Dynamic timestamp
+const CACHE_NAME = `energy-price-germany-v${CACHE_VERSION}-${CACHE_TIMESTAMP}`;
 const urlsToCache = [
   '/Energy_Price_Germany/',
   '/Energy_Price_Germany/index.html',
@@ -66,11 +68,16 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Network First for marketdata.json (always fresh data)
-  // Use flexible pattern matching for any cache-busting version
-  if (url.pathname.includes('/data/marketdata.json?v=1767715319417')) {
+  // Use flexible pattern matching for any cache-busting version parameter
+  if (url.pathname.includes('/data/marketdata.json') && url.search.includes('v=')) {
     event.respondWith(
-      fetch(event.request)
+      fetch(event.request, { cache: 'no-cache' })
         .then((response) => {
+          // Validate response before caching
+          if (!response || response.status !== 200 || response.type === 'error') {
+            throw new Error('Invalid response from network');
+          }
+
           // Clone response because it can only be consumed once
           const responseClone = response.clone();
 
