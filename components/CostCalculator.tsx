@@ -177,37 +177,40 @@ export function CostCalculator({ currentPrice, priceData = [], gridFees = 0 }: C
 
       {/* Appliance Selection Chips */}
       <View style={styles.chipContainer}>
-        {APPLIANCES.map((appliance) => (
-          <TouchableOpacity
-            key={appliance.id}
-            style={[
-              styles.chip,
-              {
-                backgroundColor: selectedAppliance.id === appliance.id
-                  ? colors.primary
-                  : colors.surfaceSecondary,
-                borderColor: selectedAppliance.id === appliance.id
-                  ? colors.primary
-                  : colors.border,
-              }
-            ]}
-            onPress={() => setSelectedAppliance(appliance)}
-          >
-            <Text style={styles.chipIcon}>{appliance.icon}</Text>
-            <Text
+        {APPLIANCES.map((appliance) => {
+          const isSelected = selectedAppliance.id === appliance.id;
+          return (
+            <TouchableOpacity
+              key={appliance.id}
               style={[
-                styles.chipText,
+                styles.chip,
                 {
-                  color: selectedAppliance.id === appliance.id
-                    ? '#fff'
-                    : colors.text
+                  backgroundColor: isSelected
+                    ? `${colors.primary}15` // 15% opacity - subtil
+                    : 'transparent',
+                  borderWidth: isSelected ? 2 : 1,
+                  borderColor: isSelected
+                    ? colors.primary
+                    : colors.border,
                 }
               ]}
+              onPress={() => setSelectedAppliance(appliance)}
+              activeOpacity={0.7}
             >
-              {language === 'de' ? appliance.nameDE : appliance.nameEN}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text style={styles.chipIcon}>{appliance.icon}</Text>
+              <Text
+                style={[
+                  styles.chipText,
+                  {
+                    color: isSelected ? colors.primary : colors.text
+                  }
+                ]}
+              >
+                {language === 'de' ? appliance.nameDE : appliance.nameEN}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {/* Current Cost Display */}
@@ -254,7 +257,7 @@ export function CostCalculator({ currentPrice, priceData = [], gridFees = 0 }: C
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     marginVertical: 10,
     gap: 16,
   },
@@ -269,15 +272,14 @@ const styles = StyleSheet.create({
   chipContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 12,
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderRadius: 20,
-    borderWidth: 1,
     gap: 6,
   },
   chipIcon: {
@@ -289,8 +291,8 @@ const styles = StyleSheet.create({
   },
   resultContainer: {
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
+    padding: 20,
+    borderRadius: 16,
     gap: 4,
   },
   resultLabel: {
@@ -308,8 +310,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   savingsContainer: {
-    padding: 14,
-    borderRadius: 10,
+    padding: 16,
+    borderRadius: 12,
     gap: 6,
   },
   savingsLabel: {
