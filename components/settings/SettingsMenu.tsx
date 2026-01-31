@@ -4,7 +4,6 @@ import { useLanguageContext } from '../../context/LanguageContext';
 import { getThemeColors } from '../../utils/theme';
 import { useSettingsContext } from '../../context/SettingsContext';
 import { AppearanceSection } from './AppearanceSection';
-import { LanguageSection } from './LanguageSection';
 
 interface SettingsMenuProps {
   visible: boolean;
@@ -68,11 +67,6 @@ export function SettingsMenu({ visible, onClose, onOpenCustomize, onOpenAbout }:
 
         {/* Appearance Section */}
         <AppearanceSection />
-
-        <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-        {/* Language Section */}
-        <LanguageSection />
 
         <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
