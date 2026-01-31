@@ -18,10 +18,12 @@ export function useEnergyData(debouncedPostalCode: string) {
       try {
         setLoading(true);
         setError(null);
-// Invalidate cache on postal code change (but not on first mount)
+
+        // Invalidate cache on postal code change (but not on first mount)
         if (!isInitialMountRef.current) {
-energyDataManager.invalidateCache();
-          await energyDataManager.invalidateRegionalCache();
+          // Performance: Only invalidate regional cache on postal code change
+          // National cache is still valid unless the API data updates
+          energyDataManager.invalidateRegionalCache();
         } else {
           isInitialMountRef.current = false;
         }
@@ -29,7 +31,7 @@ energyDataManager.invalidateCache();
         const data = await fetchEnergyData(debouncedPostalCode || undefined);
         setEnergyData(data);
       } catch (err) {
-setError(err instanceof Error ? err : new Error('Unknown error loading energy data'));
+        setError(err instanceof Error ? err : new Error('Unknown error loading energy data'));
         setEnergyData([]);
       } finally {
         setLoading(false);

@@ -32,7 +32,7 @@ interface PriceBarChartProps {
   showLegend?: boolean;
 }
 
-export function PriceBarChart({
+function PriceBarChartComponent({
   title,
   subtitle,
   data,
@@ -528,3 +528,7 @@ export function PriceBarChart({
     </View>
   );
 }
+
+// Performance: Wrap with React.memo to prevent unnecessary re-renders
+// Only re-renders if props actually change
+export const PriceBarChart = React.memo(PriceBarChartComponent);
