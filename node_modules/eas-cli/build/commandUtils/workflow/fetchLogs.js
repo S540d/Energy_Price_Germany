@@ -1,0 +1,36 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.fetchRawLogsForBuildJobAsync = exports.fetchRawLogsForCustomJobAsync = void 0;
+const BuildQuery_1 = require("../../graphql/queries/BuildQuery");
+// This function is in a separate module for testing purposes
+async function fetchRawLogsForCustomJobAsync(job) {
+    const firstLogFileUrl = job.turtleJobRun?.logFileUrls?.[0];
+    if (!firstLogFileUrl) {
+        return null;
+    }
+    const response = await fetch(firstLogFileUrl, {
+        method: 'GET',
+    });
+    const rawLogs = await response.text();
+    return rawLogs;
+}
+exports.fetchRawLogsForCustomJobAsync = fetchRawLogsForCustomJobAsync;
+async function fetchRawLogsForBuildJobAsync(state, job) {
+    const buildId = job.outputs?.build_id;
+    if (!buildId) {
+        return null;
+    }
+    const buildFragment = await BuildQuery_1.BuildQuery.byIdAsync(state.graphqlClient, buildId, {
+        useCache: false,
+    });
+    const firstLogFileUrl = buildFragment.logFiles?.[0];
+    if (!firstLogFileUrl) {
+        return null;
+    }
+    const response = await fetch(firstLogFileUrl, {
+        method: 'GET',
+    });
+    const rawLogs = await response.text();
+    return rawLogs;
+}
+exports.fetchRawLogsForBuildJobAsync = fetchRawLogsForBuildJobAsync;
