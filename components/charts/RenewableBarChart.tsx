@@ -5,13 +5,41 @@ import { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 import { useChartDimensions } from '../../utils/chartUtils';
 
+// Performance: Move color helpers outside component for stable references
+const interpolateColor = (color1: number[], color2: number[], factor: number) => {
+  const r = Math.round(color1[0] + (color2[0] - color1[0]) * factor);
+  const g = Math.round(color1[1] + (color2[1] - color1[1]) * factor);
+  const b = Math.round(color1[2] + (color2[2] - color1[2]) * factor);
+  return `rgb(${r}, ${g}, ${b})`;
+};
+
+const getRenewableColor = (renewablePercent: number) => {
+  const red = [244, 67, 54];
+  const yellow = [255, 193, 7];
+  const green = [76, 175, 80];
+  const blue = [33, 150, 243];
+
+  if (renewablePercent > 100) {
+    const factor = Math.min((renewablePercent - 100) / 20, 1);
+    return interpolateColor(green, blue, factor);
+  } else if (renewablePercent > 80) {
+    return '#4CAF50';
+  } else if (renewablePercent > 50) {
+    const factor = (renewablePercent - 50) / 30;
+    return interpolateColor(yellow, green, factor);
+  } else {
+    const factor = renewablePercent / 50;
+    return interpolateColor(red, yellow, factor);
+  }
+};
+
 /**
  * Type alias for renewable share data keys in EnergyData
  * This ensures type safety when extending with new renewable data fields
  */
 type RenewableDataKey = 'renewableShare' | 'renewableShareRegional';
 
-interface RenewableBarChartProps {
+interface RenewableBarChartProps{
   title: string;
   subtitle?: string;
   data: Array<{
@@ -105,35 +133,6 @@ function RenewableBarChartComponent({
     setSelectedIndex(index === selectedIndex ? null : index);
   };
 
-  // Performance: Color interpolation helper
-  const interpolateColor = (color1: number[], color2: number[], factor: number) => {
-    const r = Math.round(color1[0] + (color2[0] - color1[0]) * factor);
-    const g = Math.round(color1[1] + (color2[1] - color1[1]) * factor);
-    const b = Math.round(color1[2] + (color2[2] - color1[2]) * factor);
-    return `rgb(${r}, ${g}, ${b})`;
-  };
-
-  // Farbcodierung mit fließenden Übergängen
-  const getColor = (renewablePercent: number) => {
-    const red = [244, 67, 54];
-    const yellow = [255, 193, 7];
-    const green = [76, 175, 80];
-    const blue = [33, 150, 243];
-
-    if (renewablePercent > 100) {
-      const factor = Math.min((renewablePercent - 100) / 20, 1);
-      return interpolateColor(green, blue, factor);
-    } else if (renewablePercent > 80) {
-      return '#4CAF50';
-    } else if (renewablePercent > 50) {
-      const factor = (renewablePercent - 50) / 30;
-      return interpolateColor(yellow, green, factor);
-    } else {
-      const factor = renewablePercent / 50;
-      return interpolateColor(red, yellow, factor);
-    }
-  };
-
   // Performance: Pre-calculate all bar positions, colors, and dimensions
   // This avoids redundant calculations during rendering (15-20% improvement)
   const barData = useMemo(() => {
@@ -141,6 +140,7 @@ function RenewableBarChartComponent({
       const value = d[dataKey];
       const x = leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
       const barWidth = ((chartWidth - leftPadding - rightPadding) / data.length) * 0.8;
+      const timestamp = d.timestamp;
 
       if (value === null || value === undefined) {
         return {
@@ -149,13 +149,24 @@ function RenewableBarChartComponent({
           barWidth,
           value: null,
           isInterpolated: false,
+          timestamp,
         };
       }
 
-      const color = getColor(value);
+      const color = getRenewableColor(value);
       const barHeight = ((value - min) / range) * (chartHeight - padding - bottomPadding);
       const y = chartHeight - bottomPadding - barHeight;
       const isInterpolated = d.isRenewableShareInterpolated || false;
+
+      // Pre-calculate >100% split bar dimensions
+      let baseHeight, overHeight, baseY, overY, baseColor;
+      if (value > 100) {
+        baseHeight = ((100 - min) / range) * (chartHeight - padding - bottomPadding);
+        overHeight = ((value - 100) / range) * (chartHeight - padding - bottomPadding);
+        baseY = chartHeight - bottomPadding - baseHeight;
+        overY = baseY - overHeight;
+        baseColor = getRenewableColor(100);
+      }
 
       return {
         index,
@@ -166,9 +177,16 @@ function RenewableBarChartComponent({
         barHeight,
         y,
         isInterpolated,
+        timestamp,
+        // >100% specific properties
+        baseHeight,
+        overHeight,
+        baseY,
+        overY,
+        baseColor,
       };
     });
-  }, [data, dataKey, minTime, maxTime, timeRange, chartWidth, chartHeight, leftPadding, rightPadding, padding, bottomPadding, min, range]);
+  }, [data, dataKey, minTime, timeRange, chartWidth, chartHeight, leftPadding, rightPadding, padding, bottomPadding, min, range]);
 
   return (
     <View style={{
