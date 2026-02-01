@@ -1,5 +1,0 @@
-export declare function getDefaultShell(platform?: NodeJS.Platform): string;
-export declare function getShellCommandAndArgs(shell: string, script?: string): {
-    command: string;
-    args?: string[];
-};
