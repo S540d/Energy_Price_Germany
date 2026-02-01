@@ -20,8 +20,8 @@ This document tracks enhanced chart visualizations for Energy Price Germany. The
 - Applied to both PriceBarChart and RenewableBarChart
 
 **Files:**
-- `components/charts/PriceBarChart.tsx` (Lines 110-133)
-- `components/charts/RenewableBarChart.tsx` (Lines 109-135)
+- `components/charts/PriceBarChart.tsx` – see the `getColor` helper for gradient logic
+- `components/charts/RenewableBarChart.tsx` – see the `getColor` helper for gradient logic
 
 **Color Zones:**
 
@@ -130,9 +130,8 @@ const describeArc = (x: number, y: number, radius: number, startAngle: number, e
 - Bar height animations
 
 **Technical Approach:**
-- Use `react-native-reanimated` (already a peer dependency)
-- Animated values for bar heights
-- Spring animations for smooth feel
+- Add `react-native-reanimated` as a project dependency and configure the required Reanimated Babel plugin
+- Animated values for bar heights and spring-based animations for a smooth feel
 
 ---
 
@@ -150,8 +149,8 @@ const describeArc = (x: number, y: number, radius: number, startAngle: number, e
 - Support for system theme (light/dark mode)
 
 ### Performance
-- Gradients calculated once with useMemo (see PERFORMANCE.md)
-- No runtime color calculations during render
+- Colors and gradients are currently computed during render via `getColor(...)` in the SVG loop
+- `useMemo`-based gradient precomputation is in progress (see PR #175 and PERFORMANCE.md)
 - SVG for crisp rendering at any scale
 
 ---
