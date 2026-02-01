@@ -6,6 +6,32 @@ import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 import { GRID_FEES_AND_TAXES } from '../../utils/metrics';
 import { useChartDimensions } from '../../utils/chartUtils';
 
+// Performance: Move color helpers outside component for stable references
+const interpolateColor = (color1: number[], color2: number[], factor: number) => {
+  const r = Math.round(color1[0] + (color2[0] - color1[0]) * factor);
+  const g = Math.round(color1[1] + (color2[1] - color1[1]) * factor);
+  const b = Math.round(color1[2] + (color2[2] - color1[2]) * factor);
+  return `rgb(${r}, ${g}, ${b})`;
+};
+
+const getPriceColor = (totalPrice: number) => {
+  const green = [76, 175, 80];
+  const yellow = [255, 193, 7];
+  const red = [244, 67, 54];
+
+  if (totalPrice < 25) {
+    return '#4CAF50';
+  } else if (totalPrice < 35) {
+    const factor = (totalPrice - 25) / 10;
+    return interpolateColor(green, yellow, factor);
+  } else if (totalPrice < 50) {
+    const factor = (totalPrice - 35) / 15;
+    return interpolateColor(yellow, red, factor);
+  } else {
+    return '#F44336';
+  }
+};
+
 interface PriceBarChartProps {
   title: string;
   subtitle?: string;
@@ -107,32 +133,6 @@ function PriceBarChartComponent({
 
   const avgMarketPrice = pricesInCent.reduce((sum, v) => sum + v, 0) / pricesInCent.length;
 
-  // Performance: Color interpolation helper
-  const interpolateColor = (color1: number[], color2: number[], factor: number) => {
-    const r = Math.round(color1[0] + (color2[0] - color1[0]) * factor);
-    const g = Math.round(color1[1] + (color2[1] - color1[1]) * factor);
-    const b = Math.round(color1[2] + (color2[2] - color1[2]) * factor);
-    return `rgb(${r}, ${g}, ${b})`;
-  };
-
-  const getColor = (totalPrice: number) => {
-    const green = [76, 175, 80];
-    const yellow = [255, 193, 7];
-    const red = [244, 67, 54];
-
-    if (totalPrice < 25) {
-      return '#4CAF50';
-    } else if (totalPrice < 35) {
-      const factor = (totalPrice - 25) / 10;
-      return interpolateColor(green, yellow, factor);
-    } else if (totalPrice < 50) {
-      const factor = (totalPrice - 35) / 15;
-      return interpolateColor(yellow, red, factor);
-    } else {
-      return '#F44336';
-    }
-  };
-
   // Performance: Pre-calculate all bar positions, colors, and dimensions
   // This avoids redundant calculations during rendering (15-20% improvement)
   const barData = useMemo(() => {
@@ -152,7 +152,7 @@ function PriceBarChartComponent({
       }
 
       const totalPrice = marketPrice + gridFees;
-      const color = getColor(totalPrice);
+      const color = getPriceColor(totalPrice);
       const marketBarHeight = ((marketPrice - min) / range) * (chartHeight - padding - bottomPadding);
       const marketY = chartHeight - bottomPadding - marketBarHeight;
       const gridBarHeight = (gridFees / range) * (chartHeight - padding - bottomPadding);
@@ -173,7 +173,7 @@ function PriceBarChartComponent({
         isInterpolated,
       };
     });
-  }, [data, minTime, maxTime, timeRange, chartWidth, chartHeight, leftPadding, rightPadding, padding, bottomPadding, min, range, gridFees]);
+  }, [data, minTime, timeRange, chartWidth, chartHeight, leftPadding, rightPadding, padding, bottomPadding, min, range, gridFees]);
 
   return (
     <View style={{
