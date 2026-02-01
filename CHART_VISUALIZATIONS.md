@@ -149,8 +149,10 @@ const describeArc = (x: number, y: number, radius: number, startAngle: number, e
 - Support for system theme (light/dark mode)
 
 ### Performance
-- Colors and gradients are currently computed during render via `getColor(...)` in the SVG loop
-- `useMemo`-based gradient precomputation is in progress (see PR #175 and PERFORMANCE.md)
+- Colors and gradients are pre-calculated with `useMemo` (implemented in v1.3.0)
+- Bar positions, colors, and dimensions computed once per data change
+- Eliminates duplicate calculations between SVG rendering and touch areas
+- 15-25% faster chart rendering (see PERFORMANCE.md)
 - SVG for crisp rendering at any scale
 
 ---
