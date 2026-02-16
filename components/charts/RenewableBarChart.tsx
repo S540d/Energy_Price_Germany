@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, Platform } from 'react-native';
 import Svg, { Rect, Line, Polyline } from 'react-native-svg';
 import { ThemeColors } from '../../utils/theme';
@@ -81,6 +81,10 @@ function RenewableBarChartComponent({
 }: RenewableBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
+  const handleBarInteraction = useCallback((index: number) => {
+    setSelectedIndex(prev => index === prev ? null : index);
+  }, []);
+
   // Use centralized chart dimensions hook
   const {
     chartWidth,
@@ -95,43 +99,38 @@ function RenewableBarChartComponent({
     isLandscape,
   } = useChartDimensions();
 
-  // Use ALL data timestamps for consistent X-axis range across all charts
-  const now = Date.now();
-  const timestamps = data.map(d => d.timestamp);
+  // Performance: Memoize expensive data calculations
+  const chartCalcs = useMemo(() => {
+    const now = Date.now();
+    const timestamps = data.map(d => d.timestamp);
 
-  // Guard against empty data (Division-by-Zero protection)
-  if (timestamps.length === 0) {
-    return null;
-  }
+    if (timestamps.length === 0) return null;
 
-  const minTime = Math.min(...timestamps);
-  const maxTime = Math.max(...timestamps);
-  const timeRange = maxTime - minTime;
+    const minTime = Math.min(...timestamps);
+    const maxTime = Math.max(...timestamps);
+    const timeRange = maxTime - minTime;
 
-  // Guard against zero time range (Division-by-Zero protection)
-  if (timeRange === 0) {
-    return null;
-  }
+    if (timeRange === 0) return null;
 
-  // Only use entries with valid data for the selected key
-  const validData = data.filter(d => d[dataKey] !== null && d[dataKey] !== undefined);
-  const values = validData.map(d => d[dataKey]!);
-  const min = 0; // Immer bei 0 starten
-  // Y-Achse: Fest auf 0-100% fixiert, um Sprünge bei Mitternacht zu vermeiden
-  const max = 100;
-  const range = max - min;
+    const validData = data.filter(d => d[dataKey] !== null && d[dataKey] !== undefined);
+    const values = validData.map(d => d[dataKey]!);
+    const min = 0;
+    const max = 100;
+    const range = max - min;
 
-  // Durchschnittswert berechnen - handle empty values array to avoid NaN
-  const avgValue = values.length > 0
-    ? values.reduce((sum, v) => sum + v, 0) / values.length
-    : 50; // Default to 50% if no valid data
+    const avgValue = values.length > 0
+      ? values.reduce((sum, v) => sum + v, 0) / values.length
+      : 50;
 
-  // Letzter gültiger Wert für fade-out Balken
-  const lastValidValue = validData.length > 0 ? validData[validData.length - 1][dataKey]! : avgValue;
+    const lastValidValue = validData.length > 0 ? validData[validData.length - 1][dataKey]! : avgValue;
 
-  const handleBarInteraction = (index: number) => {
-    setSelectedIndex(index === selectedIndex ? null : index);
-  };
+    return { now, minTime, maxTime, timeRange, min, max, range, avgValue, lastValidValue };
+  }, [data, dataKey]);
+
+  // Guard against invalid data
+  if (!chartCalcs) return null;
+
+  const { now, minTime, maxTime, timeRange, min, max, range, avgValue, lastValidValue } = chartCalcs;
 
   // Performance: Pre-calculate all bar positions, colors, and dimensions
   // This avoids redundant calculations during rendering (15-20% improvement)
@@ -357,30 +356,25 @@ function RenewableBarChartComponent({
             const baseOpacity = bar.isInterpolated ? 0.4 : 0.9;
             const selectedOpacity = bar.isInterpolated ? 0.6 : 1.0;
 
-            // Wenn Wert über 100%, Balken zweiteilen
+            // Wenn Wert über 100%, Balken zweiteilen (use pre-calculated values)
             if (bar.value > 100) {
-              const baseHeight = ((100 - min) / range) * (chartHeight - padding - bottomPadding);
-              const overHeight = ((bar.value - 100) / range) * (chartHeight - padding - bottomPadding);
-              const baseY = chartHeight - bottomPadding - baseHeight;
-              const overY = baseY - overHeight;
-
               return (
                 <React.Fragment key={bar.index}>
                   <Rect
                     x={bar.x - bar.barWidth / 2}
-                    y={baseY}
+                    y={bar.baseY}
                     width={bar.barWidth}
-                    height={baseHeight}
-                    fill={getColor(100)}
+                    height={bar.baseHeight}
+                    fill={bar.baseColor}
                     opacity={isSelected ? selectedOpacity : baseOpacity}
                     stroke={isSelected ? '#999999' : 'none'}
                     strokeWidth={isSelected ? 2 : 0}
                   />
                   <Rect
                     x={bar.x - bar.barWidth / 2}
-                    y={overY}
+                    y={bar.overY}
                     width={bar.barWidth}
-                    height={overHeight}
+                    height={bar.overHeight}
                     fill="#90A4AE"
                     opacity={isSelected ? selectedOpacity : baseOpacity}
                     stroke={isSelected ? '#999999' : 'none'}

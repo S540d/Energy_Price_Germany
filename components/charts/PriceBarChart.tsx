@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, Platform } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
 import { ThemeColors } from '../../utils/theme';
@@ -73,9 +73,9 @@ function PriceBarChartComponent({
 }: PriceBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  const handleBarInteraction = (index: number) => {
-    setSelectedIndex(index === selectedIndex ? null : index);
-  };
+  const handleBarInteraction = useCallback((index: number) => {
+    setSelectedIndex(prev => index === prev ? null : index);
+  }, []);
 
   // Use centralized chart dimensions hook
   const {
@@ -91,47 +91,39 @@ function PriceBarChartComponent({
     isLandscape,
   } = useChartDimensions();
 
-  // Use ALL data timestamps for consistent X-axis range across all charts
-  const now = Date.now();
-  const timestamps = data.map(d => d.timestamp);
+  // Performance: Memoize expensive data calculations
+  const chartCalcs = useMemo(() => {
+    const now = Date.now();
+    const timestamps = data.map(d => d.timestamp);
 
-  // Guard against empty data (Division-by-Zero protection)
-  if (timestamps.length === 0) {
-    return null;
-  }
+    if (timestamps.length === 0) return null;
 
-  const minTime = Math.min(...timestamps);
-  const maxTime = Math.max(...timestamps);
-  const timeRange = maxTime - minTime;
+    const minTime = Math.min(...timestamps);
+    const maxTime = Math.max(...timestamps);
+    const timeRange = maxTime - minTime;
 
-  // Only use entries with valid marketPrice for rendering bars and calculations
-  const validData = data.filter(d => d.marketPrice !== null);
+    const validData = data.filter(d => d.marketPrice !== null);
+    if (validData.length === 0) return null;
 
-  // Guard against empty valid data (Division-by-Zero protection)
-  if (validData.length === 0) {
-    return null;
-  }
+    const pricesInCent = validData.map(d => d.marketPrice! * 0.1);
+    const minPrice = Math.min(...pricesInCent, 0);
+    const maxPrice = Math.max(...pricesInCent);
+    const min = Math.floor(minPrice / 5) * 5;
+    const maxMarketPrice = Math.ceil(maxPrice / 5) * 5;
+    const maxTotal = maxMarketPrice + gridFees;
+    const range = maxTotal - min;
 
-  const pricesInCent = validData.map(d => d.marketPrice! * 0.1);
+    if (range === 0 || timeRange === 0) return null;
 
-  // Use stable Y-axis range to prevent jumps at midnight
-  // Instead of dynamic min/max, use a reasonable fixed range that covers typical prices
-  const minPrice = Math.min(...pricesInCent, 0);
-  const maxPrice = Math.max(...pricesInCent);
+    const avgMarketPrice = pricesInCent.reduce((sum, v) => sum + v, 0) / pricesInCent.length;
 
-  // Calculate Y-axis with some padding to prevent visual jumps
-  // Round min down to nearest 5, max up to nearest 5 for stability
-  const min = Math.floor(minPrice / 5) * 5;
-  const maxMarketPrice = Math.ceil(maxPrice / 5) * 5;
-  const maxTotal = maxMarketPrice + gridFees;
-  const range = maxTotal - min;
+    return { now, minTime, maxTime, timeRange, min, maxTotal, range, avgMarketPrice };
+  }, [data, gridFees]);
 
-  // Guard against zero range (Division-by-Zero protection)
-  if (range === 0 || timeRange === 0) {
-    return null;
-  }
+  // Guard against invalid data
+  if (!chartCalcs) return null;
 
-  const avgMarketPrice = pricesInCent.reduce((sum, v) => sum + v, 0) / pricesInCent.length;
+  const { now, minTime, maxTime, timeRange, min, maxTotal, range, avgMarketPrice } = chartCalcs;
 
   // Performance: Pre-calculate all bar positions, colors, and dimensions
   // This avoids redundant calculations during rendering (15-20% improvement)
@@ -207,7 +199,6 @@ function PriceBarChartComponent({
         // Use theme colors for proper contrast (theme-aware, not hardcoded)
         // Tooltip background should be inverted to main background
         const tooltipBgColor = backgroundColor === colors.surface ? colors.background : colors.surface;
-        const tooltipTextColor = tooltipBgColor === colors.surface ? colors.text : colors.background === colors.background ? colors.text : colors.text;
 
         return (
           <View style={{
