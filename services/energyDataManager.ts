@@ -266,5 +266,6 @@ export function getCurrentDataSource(): DataSource {
 }
 
 export function generateMockData(): EnergyData[] {
-  return energyDataManager.generateMockData();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (energyDataManager as any)['generateMockData']();
 }

@@ -167,8 +167,7 @@ export function generateYAxisLabels(
   chartHeight: number,
   bottomPadding: number,
   isPhone: boolean,
-  textColor: string,
-  _formatter: (value: number) => string = v => v.toFixed(1)
+  textColor: string
 ) {
   return [0, 1, 2, 3, 4].map(i => {
     const value = max - (i / 4) * range;

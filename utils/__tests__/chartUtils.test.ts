@@ -180,13 +180,6 @@ describe('chartUtils', () => {
       });
     });
 
-    it('should format values using custom formatter', () => {
-      const formatter = (v: number) => v.toFixed(2);
-      const labels = generateYAxisLabels(100, 0, 100, 40, 300, 40, false, '#000000', formatter);
-
-      expect(labels[0].value).toBeDefined();
-    });
-
     it('should apply phone font size', () => {
       const labels = generateYAxisLabels(100, 0, 100, 40, 300, 40, true, '#000000');
 
