@@ -279,6 +279,38 @@ function PriceBarChartComponent({
 
         {/* Bars (SVG) - Using pre-calculated bar data for performance */}
         <Svg width={chartWidth} height={chartHeight}>
+          {/* Price Zone Bands - subtle background color zones */}
+          {(() => {
+            const chartAreaHeight = chartHeight - padding - bottomPadding;
+            const chartAreaWidth = chartWidth - leftPadding - rightPadding;
+            // Price thresholds in ct/kWh (total price including grid fees)
+            const zones = [
+              { max: 25, color: '#4CAF50' },  // green: cheap
+              { max: 35, color: '#FFC107' },  // yellow: moderate
+              { max: 50, color: '#FF9800' },  // orange: expensive
+            ];
+            return zones.map((zone, i) => {
+              const zoneMin = i === 0 ? min : zones[i - 1].max;
+              const zoneMax = zone.max;
+              if (zoneMin >= maxTotal || zoneMax <= min) return null;
+              const clampedMin = Math.max(zoneMin, min);
+              const clampedMax = Math.min(zoneMax, maxTotal);
+              const yBottom = chartHeight - bottomPadding - ((clampedMin - min) / range) * chartAreaHeight;
+              const yTop = chartHeight - bottomPadding - ((clampedMax - min) / range) * chartAreaHeight;
+              return (
+                <Rect
+                  key={`zone-${i}`}
+                  x={leftPadding}
+                  y={yTop}
+                  width={chartAreaWidth}
+                  height={yBottom - yTop}
+                  fill={zone.color}
+                  opacity={0.06}
+                />
+              );
+            });
+          })()}
+
           {barData.map((bar) => {
             // Render dashed placeholder for missing data
             if (bar.marketPrice === null) {
@@ -327,6 +359,28 @@ function PriceBarChartComponent({
               </React.Fragment>
             );
           })}
+
+          {/* Runner Band - highlights current price level */}
+          {now >= minTime && now <= maxTime && (() => {
+            const currentBar = barData.find(b =>
+              b.marketPrice !== null &&
+              Math.abs(data[b.index].timestamp - now) <= 15 * 60 * 1000
+            );
+            if (!currentBar || currentBar.marketPrice === null) return null;
+            const bandHeight = 4;
+            const priceY = chartHeight - bottomPadding - ((currentBar.marketPrice - min) / range) * (chartHeight - padding - bottomPadding);
+            return (
+              <Rect
+                x={leftPadding}
+                y={priceY - bandHeight / 2}
+                width={chartWidth - leftPadding - rightPadding}
+                height={bandHeight}
+                fill={currentBar.color}
+                opacity={0.25}
+                rx={2}
+              />
+            );
+          })()}
 
           {/* Durchschnittslinie */}
           <Line
