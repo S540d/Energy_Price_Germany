@@ -9,7 +9,7 @@
 export enum Environment {
   PRODUCTION = 'production',
   STAGING = 'staging',
-  TESTING = 'testing'
+  TESTING = 'testing',
 }
 
 export interface EnvironmentConfig {
@@ -36,7 +36,7 @@ function getCurrentEnvironment(): EnvironmentConfig {
     isStaging: env === Environment.STAGING,
     isTesting: env === Environment.TESTING,
     baseUrl,
-    apiBase
+    apiBase,
   };
 }
 
@@ -50,7 +50,7 @@ function validateEnvironment(config: EnvironmentConfig): void {
   if ((config.isTesting || config.isStaging) && !config.apiBase.includes('staging')) {
     throw new Error(
       `🚨 Security Error: ${config.env} environment is configured with production API! ` +
-      `This is a critical misconfiguration. Please check .env.${config.env}`
+        `This is a critical misconfiguration. Please check .env.${config.env}`
     );
   }
 
@@ -58,7 +58,7 @@ function validateEnvironment(config: EnvironmentConfig): void {
   if (config.isProd && config.apiBase.includes('staging')) {
     throw new Error(
       `🚨 Security Error: production environment is configured with staging/test API! ` +
-      `This is a critical misconfiguration. Please check .env.production`
+        `This is a critical misconfiguration. Please check .env.production`
     );
   }
 
@@ -66,7 +66,7 @@ function validateEnvironment(config: EnvironmentConfig): void {
   if (config.isProd && (config.baseUrl.includes('testing') || config.baseUrl.includes('staging'))) {
     throw new Error(
       `🚨 Security Error: production environment is configured with test baseUrl! ` +
-      `This is a critical misconfiguration. Please check .env.production`
+        `This is a critical misconfiguration. Please check .env.production`
     );
   }
 

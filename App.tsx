@@ -20,7 +20,7 @@ import { AboutView } from './components/AboutView';
 import { SettingsMenu } from './components/settings/SettingsMenu';
 import { CustomizeModal } from './components/customize/CustomizeModal';
 import { CostCalculatorView } from './components/CostCalculatorView';
-import { calculateMetrics, EnergyData, GRID_FEES_AND_TAXES } from './utils/metrics';
+import { calculateMetrics, GRID_FEES_AND_TAXES } from './utils/metrics';
 import { getThemeColors } from './utils/theme';
 import { isValidPostalCode } from './utils/postalCodeUtils';
 import { useEnergyData } from './hooks/useEnergyData';
@@ -59,7 +59,7 @@ function AppContent() {
     if (!energyData.length) return energyData;
 
     const now = Date.now();
-    const past24h = now - (24 * 60 * 60 * 1000); // 24 hours ago
+    const past24h = now - 24 * 60 * 60 * 1000; // 24 hours ago
 
     const filtered = energyData.filter(item => item.timestamp >= past24h);
     return filtered;
@@ -67,9 +67,8 @@ function AppContent() {
 
   // Check if regional data is available
   const hasRegionalData = useMemo(() => {
-    return filteredEnergyData.some(item =>
-      item.renewableShareRegional !== null &&
-      item.renewableShareRegional !== undefined
+    return filteredEnergyData.some(
+      item => item.renewableShareRegional !== null && item.renewableShareRegional !== undefined
     );
   }, [filteredEnergyData]);
 
@@ -78,16 +77,19 @@ function AppContent() {
 
   // Performance: Memoized date formatter to prevent unnecessary recalculations
   // Only recreates when language changes
-  const formatDate = useCallback((timestamp: number) => {
-    const locale = language === 'de' ? 'de-DE' : 'en-US';
-    return new Date(timestamp).toLocaleString(locale, {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }, [language]);
+  const formatDate = useCallback(
+    (timestamp: number) => {
+      const locale = language === 'de' ? 'de-DE' : 'en-US';
+      return new Date(timestamp).toLocaleString(locale, {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    },
+    [language]
+  );
 
   // Language, postal code, and grid fees are now managed by hooks and contexts!
 
@@ -123,44 +125,53 @@ function AppContent() {
         return {
           name: 'Energy Charts (Fraunhofer ISE)',
           license: 'CC BY 4.0',
-          url: 'api.energy-charts.info'
+          url: 'api.energy-charts.info',
         };
       case 'awattar':
         return {
           name: 'aWATTar (EPEX Spot Market Data)',
           license: 'Proprietary',
-          url: 'awattar.at'
+          url: 'awattar.at',
         };
       case 'none':
       default:
         return {
           name: 'Mock Data (Demo)',
           license: 'Generated',
-          url: 'demo'
+          url: 'demo',
         };
     }
   }, []);
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        edges={['top', 'left', 'right']}
+      >
         <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
         <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.text }]}>
-            {t.loadingData}
-          </Text>
+          <Text style={[styles.loadingText, { color: colors.text }]}>{t.loadingData}</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      edges={['top', 'left', 'right']}
+    >
       <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
 
       {/* Header with Calculator and Settings Buttons */}
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.gridLine }]}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: colors.surface, borderBottomColor: colors.gridLine },
+        ]}
+      >
         <Text style={[styles.headerTitle, { color: colors.text }]}>Energy Price Germany</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity
@@ -189,35 +200,42 @@ function AppContent() {
       />
 
       {/* Customize Modal */}
-      <CustomizeModal
-        visible={customizeVisible}
-        onClose={() => setCustomizeVisible(false)}
-      />
+      <CustomizeModal visible={customizeVisible} onClose={() => setCustomizeVisible(false)} />
 
       {/* Main Content */}
       <ScrollView
         style={[styles.scrollView, { backgroundColor: colors.background }]}
-        contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.background, paddingBottom: 20 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          backgroundColor: colors.background,
+          paddingBottom: 20,
+        }}
         bounces={false}
       >
         {filteredEnergyData.length > 0 ? (
           <>
             {/* Renewable Energy Chart - shows national data as bars, regional as dashed line */}
             <ChartDetailView
-              title={isValidPostalCode(debouncedPostalCode) && hasRegionalData
-                ? `${t.renewableTitle} (${t.nationalData} & ${t.regionalData})`
-                : t.renewableTitle}
+              title={
+                isValidPostalCode(debouncedPostalCode) && hasRegionalData
+                  ? `${t.renewableTitle} (${t.nationalData} & ${t.regionalData})`
+                  : t.renewableTitle
+              }
               colors={colors}
               chartType="renewable"
               gridFees={gridFees}
-              metrics={metrics ? {
-                min: metrics.renewable.min,
-                max: metrics.renewable.max,
-                avg: metrics.renewable.avg,
-                current: metrics.today?.renewable.current,
-                unit: '%',
-                label: t.renewablePercent,
-              } : undefined}
+              metrics={
+                metrics
+                  ? {
+                      min: metrics.renewable.min,
+                      max: metrics.renewable.max,
+                      avg: metrics.renewable.avg,
+                      current: metrics.today?.renewable.current,
+                      unit: '%',
+                      label: t.renewablePercent,
+                    }
+                  : undefined
+              }
               legend={
                 isValidPostalCode(debouncedPostalCode) && hasRegionalData ? (
                   <View style={{ gap: 8 }}>
@@ -225,12 +243,14 @@ function AppContent() {
                       {t.legend}
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View style={{
-                        width: 16,
-                        height: 3,
-                        backgroundColor: '#FF9800',
-                        borderRadius: 1.5
-                      }} />
+                      <View
+                        style={{
+                          width: 16,
+                          height: 3,
+                          backgroundColor: '#FF9800',
+                          borderRadius: 1.5,
+                        }}
+                      />
                       <Text style={{ color: colors.text, fontSize: 12 }}>
                         {t.regionalDataLabel}
                       </Text>
@@ -240,9 +260,11 @@ function AppContent() {
               }
             >
               <RenewableBarChart
-                title={isValidPostalCode(debouncedPostalCode) && hasRegionalData
-                  ? `${t.renewableTitle} (${t.nationalData} & ${t.regionalData})`
-                  : t.renewableTitle}
+                title={
+                  isValidPostalCode(debouncedPostalCode) && hasRegionalData
+                    ? `${t.renewableTitle} (${t.nationalData} & ${t.regionalData})`
+                    : t.renewableTitle
+                }
                 subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
                 data={filteredEnergyData}
                 backgroundColor={colors.surface}
@@ -266,24 +288,28 @@ function AppContent() {
               colors={colors}
               chartType="price"
               gridFees={gridFees}
-              metrics={metrics ? {
-                marketPrice: {
-                  min: metrics.marketPrice.min,
-                  max: metrics.marketPrice.max,
-                  avg: metrics.marketPrice.avg,
-                  current: metrics.today?.marketPrice.current,
-                },
-                endCustomerPrice: {
-                  min: metrics.marketPrice.min + gridFees,
-                  max: metrics.marketPrice.max + gridFees,
-                  avg: metrics.marketPrice.avg + gridFees,
-                  current: metrics.today?.marketPrice.current
-                    ? metrics.today.marketPrice.current + gridFees
-                    : undefined,
-                },
-                unit: '¢',
-                label: t.pricePerKwh,
-              } : undefined}
+              metrics={
+                metrics
+                  ? {
+                      marketPrice: {
+                        min: metrics.marketPrice.min,
+                        max: metrics.marketPrice.max,
+                        avg: metrics.marketPrice.avg,
+                        current: metrics.today?.marketPrice.current,
+                      },
+                      endCustomerPrice: {
+                        min: metrics.marketPrice.min + gridFees,
+                        max: metrics.marketPrice.max + gridFees,
+                        avg: metrics.marketPrice.avg + gridFees,
+                        current: metrics.today?.marketPrice.current
+                          ? metrics.today.marketPrice.current + gridFees
+                          : undefined,
+                      },
+                      unit: '¢',
+                      label: t.pricePerKwh,
+                    }
+                  : undefined
+              }
               legend={
                 <View style={{ gap: 8 }}>
                   <Text style={[{ color: colors.text, fontSize: 13, fontWeight: '600' }]}>
@@ -292,25 +318,27 @@ function AppContent() {
                   <View style={{ gap: 6 }}>
                     {/* Market Price */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View style={{
-                        width: 16,
-                        height: 16,
-                        backgroundColor: '#4CAF50',
-                        borderRadius: 2
-                      }} />
-                      <Text style={{ color: colors.text, fontSize: 12 }}>
-                        {t.marketPriceLabel}
-                      </Text>
+                      <View
+                        style={{
+                          width: 16,
+                          height: 16,
+                          backgroundColor: '#4CAF50',
+                          borderRadius: 2,
+                        }}
+                      />
+                      <Text style={{ color: colors.text, fontSize: 12 }}>{t.marketPriceLabel}</Text>
                     </View>
 
                     {/* Grid Fees */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View style={{
-                        width: 16,
-                        height: 16,
-                        backgroundColor: '#757575',
-                        borderRadius: 2
-                      }} />
+                      <View
+                        style={{
+                          width: 16,
+                          height: 16,
+                          backgroundColor: '#757575',
+                          borderRadius: 2,
+                        }}
+                      />
                       <Text style={{ color: colors.text, fontSize: 12 }}>
                         {t.gridFeesLabel} ({GRID_FEES_AND_TAXES} ¢/kWh)
                       </Text>
@@ -353,15 +381,36 @@ function AppContent() {
                   </Text>
                   <View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#2196F3' }} />
+                      <View
+                        style={{
+                          width: 12,
+                          height: 12,
+                          borderRadius: 6,
+                          backgroundColor: '#2196F3',
+                        }}
+                      />
                       <Text style={{ color: colors.text, fontSize: 12 }}>{t.night}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#FF9800' }} />
+                      <View
+                        style={{
+                          width: 12,
+                          height: 12,
+                          borderRadius: 6,
+                          backgroundColor: '#FF9800',
+                        }}
+                      />
                       <Text style={{ color: colors.text, fontSize: 12 }}>{t.morningEvening}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#FFEB3B' }} />
+                      <View
+                        style={{
+                          width: 12,
+                          height: 12,
+                          borderRadius: 6,
+                          backgroundColor: '#FFEB3B',
+                        }}
+                      />
                       <Text style={{ color: colors.text, fontSize: 12 }}>{t.day}</Text>
                     </View>
                   </View>
@@ -389,9 +438,7 @@ function AppContent() {
         ) : null}
         {filteredEnergyData.length === 0 && (
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>
-              {t.noData}
-            </Text>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>{t.noData}</Text>
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
               {t.noDataMessage}
             </Text>
@@ -413,17 +460,20 @@ function AppContent() {
       <CostCalculatorView
         visible={calculatorVisible}
         onClose={() => setCalculatorVisible(false)}
-        currentPrice={metrics?.today?.marketPrice.current ? metrics.today.marketPrice.current + gridFees : gridFees}
+        currentPrice={
+          metrics?.today?.marketPrice.current
+            ? metrics.today.marketPrice.current + gridFees
+            : gridFees
+        }
         priceData={filteredEnergyData
           .filter(item => item.marketPrice !== null)
           .map(item => ({
             start_timestamp: item.timestamp,
-            marketprice: item.marketPrice!,
+            marketprice: item.marketPrice ?? 0,
             renewable_share: item.renewableShare ?? undefined,
           }))}
         gridFees={gridFees}
       />
-
     </SafeAreaView>
   );
 }

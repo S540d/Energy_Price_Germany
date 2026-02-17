@@ -1,10 +1,7 @@
-import { EnergyData } from '../utils/metrics';
+import type { EnergyData } from '../utils/metrics';
 import { Platform } from 'react-native';
 import { isValidPostalCode } from '../utils/postalCodeUtils';
-import {
-  validateMarketDataResponse,
-  fetchWithTimeout,
-} from '../utils/apiValidation';
+import { validateMarketDataResponse, fetchWithTimeout } from '../utils/apiValidation';
 import { RegionalDataCache } from './regionalDataCache';
 import { mergeRegionalData } from './dataMerger';
 
@@ -95,9 +92,10 @@ export class EnergyDataManager {
     const cacheBust = Date.now();
 
     // For native apps, use full URL; for web, use relative path
-    const dataUrl = Platform.OS === 'web'
-      ? `./data/marketdata.json?v=${cacheBust}`
-      : `https://s540d.github.io/Energy_Price_Germany/data/marketdata.json?v=${cacheBust}`;
+    const dataUrl =
+      Platform.OS === 'web'
+        ? `./data/marketdata.json?v=${cacheBust}`
+        : `https://s540d.github.io/Energy_Price_Germany/data/marketdata.json?v=${cacheBust}`;
 
     const response = await fetchWithTimeout(dataUrl, {}, 10000);
 
@@ -121,7 +119,7 @@ export class EnergyDataManager {
     const source = rawData.source || 'awattar';
     this.currentDataSource = source === 'energy-charts' ? 'energy-charts' : 'awattar';
 
-    return rawData.data.map((item) => {
+    return rawData.data.map(item => {
       const isInterpolated = item.interpolated || false;
       return {
         timestamp: item.start_timestamp,
@@ -144,8 +142,8 @@ export class EnergyDataManager {
       const hour = i / 4;
       mockData.push({
         timestamp: now - (96 - i) * 15 * 60 * 1000,
-        marketPrice: 30 + Math.sin(hour / 24 * Math.PI * 2) * 20 + Math.random() * 10,
-        renewableShare: 60 + Math.sin((hour - 6) / 24 * Math.PI * 2) * 30 + Math.random() * 10,
+        marketPrice: 30 + Math.sin((hour / 24) * Math.PI * 2) * 20 + Math.random() * 10,
+        renewableShare: 60 + Math.sin(((hour - 6) / 24) * Math.PI * 2) * 30 + Math.random() * 10,
         isMarketPriceInterpolated: false,
         isRenewableShareInterpolated: false,
       });
@@ -169,14 +167,14 @@ export class EnergyDataManager {
     // Prüfe Cache
     if (this.isCacheValid()) {
       // If postal code is provided, merge regional data
-      if (isValidPostalCode(postalCode)) {
-        const regionalData = await this.regionalCache.fetchRegionalData(postalCode!);
-        if (regionalData) {
-          return mergeRegionalData(this.cachedData!, regionalData);
+      if (isValidPostalCode(postalCode) && postalCode) {
+        const regionalData = await this.regionalCache.fetchRegionalData(postalCode);
+        if (regionalData && this.cachedData) {
+          return mergeRegionalData(this.cachedData, regionalData);
         }
       }
 
-      return this.cachedData!;
+      return this.cachedData ?? [];
     }
 
     // Starte Ladevorgang
@@ -205,15 +203,14 @@ export class EnergyDataManager {
       this.cacheTimestamp = Date.now();
 
       // If postal code is provided, fetch and merge regional data
-      if (isValidPostalCode(postalCode)) {
-        const regionalData = await this.regionalCache.fetchRegionalData(postalCode!);
+      if (isValidPostalCode(postalCode) && postalCode) {
+        const regionalData = await this.regionalCache.fetchRegionalData(postalCode);
         if (regionalData) {
           processedData = mergeRegionalData(processedData, regionalData);
         }
       }
 
       return processedData;
-
     } catch {
       // Fallback auf Mock-Daten
       const mockData = this.generateMockData();
@@ -269,5 +266,6 @@ export function getCurrentDataSource(): DataSource {
 }
 
 export function generateMockData(): EnergyData[] {
-  return energyDataManager['generateMockData']();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (energyDataManager as any)['generateMockData']();
 }

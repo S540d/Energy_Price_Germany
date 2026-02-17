@@ -1,11 +1,13 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import React, { createContext, useContext } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
-import { Language, translations } from '../utils/translations';
+import type { Language } from '../utils/translations';
+import { translations } from '../utils/translations';
 
 interface LanguageContextValue {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: typeof translations['en'];
+  t: (typeof translations)['en'];
 }
 
 const LanguageContext = createContext<LanguageContextValue | undefined>(undefined);
