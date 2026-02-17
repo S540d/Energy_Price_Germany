@@ -36,6 +36,11 @@ jest.mock('./components/AboutView', () => {
   mockComponent.displayName = 'AboutView';
   return { AboutView: mockComponent };
 });
+jest.mock('./components/settings/BetaModeSection', () => {
+  const mockComponent = () => null;
+  mockComponent.displayName = 'BetaModeSection';
+  return { BetaModeSection: mockComponent };
+});
 
 const mockFetchEnergyData = fetchEnergyData as jest.MockedFunction<typeof fetchEnergyData>;
 
@@ -248,11 +253,15 @@ describe('App', () => {
       });
     });
 
-    it('should display language section in settings', async () => {
+    it('should display language section in customize modal', async () => {
       const { getByLabelText, getByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         fireEvent.press(getByLabelText('Settings'));
+      });
+
+      await waitFor(() => {
+        fireEvent.press(getByText('Customize'));
       });
 
       await waitFor(() => {
@@ -325,13 +334,17 @@ describe('App', () => {
       });
 
       await waitFor(() => {
-        // Button shows translation in current language (EN active = "German", DE active = "Deutsch")
+        fireEvent.press(getByText('Customize'));
+      });
+
+      await waitFor(() => {
         const germanButton = getByText('German');
         fireEvent.press(germanButton);
       });
 
       await waitFor(() => {
-        expect(getByText('Einstellungen')).toBeTruthy();
+        // CustomizeModal title switches to German translation
+        expect(getByText('Personalisieren')).toBeTruthy();
       });
     });
   });
@@ -621,13 +634,15 @@ describe('App', () => {
         expect(mockFetchEnergyData).toHaveBeenCalled();
       });
 
-      // English format by default
       await waitFor(() => {
         fireEvent.press(getByLabelText('Settings'));
       });
 
       await waitFor(() => {
-        // Button shows translation in current language (EN active = "German")
+        fireEvent.press(getByText('Customize'));
+      });
+
+      await waitFor(() => {
         const germanButton = getByText('German');
         fireEvent.press(germanButton);
       });
