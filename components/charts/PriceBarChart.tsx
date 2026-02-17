@@ -92,9 +92,11 @@ function PriceBarChartComponent({
     isLandscape,
   } = useChartDimensions();
 
+  // now must be outside useMemo so the "Jetzt" marker updates on every render
+  const now = Date.now();
+
   // Performance: Memoize expensive data calculations
   const chartCalcs = useMemo(() => {
-    const now = Date.now();
     const timestamps = data.map(d => d.timestamp);
 
     if (timestamps.length === 0) return null;
@@ -118,13 +120,13 @@ function PriceBarChartComponent({
 
     const avgMarketPrice = pricesInCent.reduce((sum, v) => sum + v, 0) / pricesInCent.length;
 
-    return { now, minTime, maxTime, timeRange, min, maxTotal, range, avgMarketPrice };
+    return { minTime, maxTime, timeRange, min, maxTotal, range, avgMarketPrice };
   }, [data, gridFees]);
 
   // Guard against invalid data
   if (!chartCalcs) return null;
 
-  const { now, minTime, maxTime, timeRange, min, maxTotal, range, avgMarketPrice } = chartCalcs;
+  const { minTime, maxTime, timeRange, min, maxTotal, range, avgMarketPrice } = chartCalcs;
 
   // Performance: Pre-calculate all bar positions, colors, and dimensions
   // This avoids redundant calculations during rendering (15-20% improvement)

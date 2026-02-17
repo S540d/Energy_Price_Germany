@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, Platform } from 'react-native';
 import Svg, { Circle, Line } from 'react-native-svg';
 import { ThemeColors } from '../../utils/theme';
