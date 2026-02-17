@@ -4,6 +4,7 @@ import Svg, { Circle, Line } from 'react-native-svg';
 import { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 import { useChartDimensions } from '../../utils/chartUtils';
+import { ChartGrid, ChartCard, ChartTooltip, getTooltipLeft } from './shared';
 
 interface CorrelationScatterChartProps {
   title: string;
@@ -143,56 +144,20 @@ function CorrelationScatterChartComponent({
   }, [validData, leftPadding, rightPadding, chartWidth, chartHeight, padding, bottomPadding, minRenewable, renewableRange, minPrice, priceRange]);
 
   return (
-    <View style={{
-      backgroundColor,
-      margin,
-      padding: cardPadding,
-      borderRadius: 16,
-      alignSelf: 'stretch',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 12,
-      elevation: 3,
-    }}>
+    <ChartCard backgroundColor={backgroundColor} margin={margin} cardPadding={cardPadding}>
       {selectedIndex !== null && validData[selectedIndex] && (() => {
         const item = validData[selectedIndex];
-        const priceInCent = item.marketPrice! * 0.1;
-        const renewablePercent = item.renewableShare!;
 
-        // Berechne Position im Chart
-        const x = leftPadding + ((renewablePercent - minRenewable) / renewableRange) * (chartWidth - leftPadding - rightPadding);
-        const tooltipWidth = 120;
-        let tooltipLeft = x - tooltipWidth / 2;
-
-        // Rand-Check
-        if (tooltipLeft < 0) tooltipLeft = 8;
-        if (tooltipLeft + tooltipWidth > chartWidth) tooltipLeft = chartWidth - tooltipWidth - 8;
-
-        // Use theme colors for proper contrast
-        const tooltipBgColor = backgroundColor === colors.surface ? colors.background : colors.surface;
+        const x = leftPadding + ((item.renewableShare! - minRenewable) / renewableRange) * (chartWidth - leftPadding - rightPadding);
+        const tooltipLeft = getTooltipLeft(x, 120, chartWidth);
 
         return (
-          <View style={{
-            paddingVertical: 6,
-            paddingHorizontal: 12,
-            backgroundColor: tooltipBgColor,
-            borderWidth: 1,
-            borderColor: colors.gridLine,
-            borderRadius: 12,
-            position: 'absolute',
-            top: cardPadding + 30,
-            left: tooltipLeft,
-            zIndex: 10,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.15,
-            shadowRadius: 12,
-            elevation: 6,
-            ...(Platform.OS === 'web' && {
-              backdropFilter: 'blur(10px)',
-            }),
-          }}>
+          <ChartTooltip
+            tooltipLeft={tooltipLeft}
+            cardPadding={cardPadding}
+            backgroundColor={backgroundColor}
+            colors={colors}
+          >
             <Text style={{ color: colors.text, fontSize: 14, fontWeight: 'bold' }}>
               {new Date(item.timestamp).toLocaleString('de-DE', {
                 day: '2-digit',
@@ -201,7 +166,7 @@ function CorrelationScatterChartComponent({
                 minute: '2-digit'
               })}
             </Text>
-          </View>
+          </ChartTooltip>
         );
       })()}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0 }}>
@@ -242,41 +207,13 @@ function CorrelationScatterChartComponent({
         )}
       </View>
       <View style={{ height: chartHeight, width: chartWidth }}>
-        {/* Grid Lines - Modern gestrichelt */}
-        <Svg width={chartWidth} height={chartHeight} style={{ position: 'absolute' }}>
-          {[0, 1, 2, 3, 4].map(i => {
-            const y = padding + (i / 4) * (chartHeight - padding - bottomPadding);
-            return (
-              <Line
-                key={`hgrid-${i}`}
-                x1={leftPadding}
-                y1={y}
-                x2={chartWidth - rightPadding}
-                y2={y}
-                stroke={gridColor}
-                strokeWidth="1"
-                strokeDasharray="4,8"
-                opacity={0.15}
-              />
-            );
-          })}
-          {[0, 1, 2, 3, 4].map(i => {
-            const x = leftPadding + (i / 4) * (chartWidth - leftPadding - rightPadding);
-            return (
-              <Line
-                key={`vgrid-${i}`}
-                x1={x}
-                y1={padding}
-                x2={x}
-                y2={chartHeight - bottomPadding}
-                stroke={gridColor}
-                strokeWidth="1"
-                strokeDasharray="4,8"
-                opacity={0.15}
-              />
-            );
-          })}
-        </Svg>
+        <ChartGrid
+          chartWidth={chartWidth} chartHeight={chartHeight}
+          leftPadding={leftPadding} rightPadding={rightPadding}
+          padding={padding} bottomPadding={bottomPadding}
+          gridColor={gridColor}
+          verticalLines={5}
+        />
 
         {/* Scatter Points */}
         <Svg width={chartWidth} height={chartHeight}>
@@ -398,16 +335,16 @@ function CorrelationScatterChartComponent({
         </Text>
       </View>
       {interactionHint && (
-        <Text 
-          accessible={true} 
-          accessibilityRole="text" 
+        <Text
+          accessible={true}
+          accessibilityRole="text"
           accessibilityLabel={interactionHint}
           style={{ fontSize: 12, color: textColor, opacity: 0.5, fontStyle: 'italic', marginTop: 8 }}
         >
           💡 {interactionHint}
         </Text>
       )}
-    </View>
+    </ChartCard>
   );
 }
 

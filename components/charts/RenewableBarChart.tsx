@@ -4,6 +4,7 @@ import Svg, { Rect, Line, Polyline } from 'react-native-svg';
 import { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 import { useChartDimensions } from '../../utils/chartUtils';
+import { ChartGrid, ChartCard, ChartTooltip, getTooltipLeft, NowMarkerLine, NowMarkerLabel } from './shared';
 
 // Performance: Move color helpers outside component for stable references
 const interpolateColor = (color1: number[], color2: number[], factor: number) => {
@@ -133,7 +134,6 @@ function RenewableBarChartComponent({
   const { now, minTime, maxTime, timeRange, min, max, range, avgValue, lastValidValue } = chartCalcs;
 
   // Performance: Pre-calculate all bar positions, colors, and dimensions
-  // This avoids redundant calculations during rendering (15-20% improvement)
   const barData = useMemo(() => {
     return data.map((d, index) => {
       const value = d[dataKey];
@@ -177,7 +177,6 @@ function RenewableBarChartComponent({
         y,
         isInterpolated,
         timestamp,
-        // >100% specific properties
         baseHeight,
         overHeight,
         baseY,
@@ -188,59 +187,25 @@ function RenewableBarChartComponent({
   }, [data, dataKey, minTime, timeRange, chartWidth, chartHeight, leftPadding, rightPadding, padding, bottomPadding, min, range]);
 
   return (
-    <View style={{
-      backgroundColor,
-      margin,
-      padding: cardPadding,
-      borderRadius: 16,
-      alignSelf: 'stretch',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 12,
-      elevation: 3,
-    }}>
+    <ChartCard backgroundColor={backgroundColor} margin={margin} cardPadding={cardPadding}>
       {selectedIndex !== null && data[selectedIndex]?.[dataKey] !== null && data[selectedIndex]?.[dataKey] !== undefined && (() => {
         const item = data[selectedIndex];
         const renewablePercent = item[dataKey]!;
 
-        // Berechne Position des Tooltips über dem Balken
         const x = leftPadding + ((item.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
-        const tooltipWidth = 80; // Geschätzte Breite
-        let tooltipLeft = x - tooltipWidth / 2;
-
-        // Rand-Check: Tooltip darf nicht über den Rand hinaus
-        if (tooltipLeft < 0) tooltipLeft = 8;
-        if (tooltipLeft + tooltipWidth > chartWidth) tooltipLeft = chartWidth - tooltipWidth - 8;
-
-        // Use theme colors for proper contrast
-        const tooltipBgColor = backgroundColor === colors.surface ? colors.background : colors.surface;
+        const tooltipLeft = getTooltipLeft(x, 80, chartWidth);
 
         return (
-          <View style={{
-            paddingVertical: 6,
-            paddingHorizontal: 12,
-            backgroundColor: tooltipBgColor,
-            borderWidth: 1,
-            borderColor: colors.gridLine,
-            borderRadius: 12,
-            position: 'absolute',
-            top: cardPadding + 30,
-            left: tooltipLeft,
-            zIndex: 10,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.15,
-            shadowRadius: 12,
-            elevation: 6,
-            ...(Platform.OS === 'web' && {
-              backdropFilter: 'blur(10px)',
-            }),
-          }}>
+          <ChartTooltip
+            tooltipLeft={tooltipLeft}
+            cardPadding={cardPadding}
+            backgroundColor={backgroundColor}
+            colors={colors}
+          >
             <Text style={{ color: colors.text, fontSize: 14, fontWeight: 'bold' }}>
               {renewablePercent.toFixed(1)}%
             </Text>
-          </View>
+          </ChartTooltip>
         );
       })()}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 0 }}>
@@ -289,25 +254,12 @@ function RenewableBarChartComponent({
         )}
       </View>
       <View style={{ height: chartHeight, width: chartWidth, position: 'relative' }}>
-        {/* Grid Lines - Modern gestrichelt */}
-        <Svg width={chartWidth} height={chartHeight} style={{ position: 'absolute' }}>
-          {[0, 1, 2, 3, 4].map(i => {
-            const y = padding + (i / 4) * (chartHeight - padding - bottomPadding);
-            return (
-              <Line
-                key={`grid-${i}`}
-                x1={leftPadding}
-                y1={y}
-                x2={chartWidth - rightPadding}
-                y2={y}
-                stroke={gridColor}
-                strokeWidth="1"
-                strokeDasharray="4,8"
-                opacity={0.15}
-              />
-            );
-          })}
-        </Svg>
+        <ChartGrid
+          chartWidth={chartWidth} chartHeight={chartHeight}
+          leftPadding={leftPadding} rightPadding={rightPadding}
+          padding={padding} bottomPadding={bottomPadding}
+          gridColor={gridColor}
+        />
 
         {/* Bars (SVG) - Using pre-calculated bar data for performance */}
         <Svg width={chartWidth} height={chartHeight}>
@@ -413,7 +365,6 @@ function RenewableBarChartComponent({
 
           {/* Regionale Datenlinie - gestrichelt */}
           {showRegionalLine && (() => {
-            // Filtere Datenpunkte mit gültigen regionalen Werten
             const regionalPoints = data
               .map((d, index) => ({
                 x: leftPadding + ((d.timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding),
@@ -426,23 +377,19 @@ function RenewableBarChartComponent({
 
             if (regionalPoints.length === 0) return null;
 
-            // Berechne Polyline-Punkte String
             const pointsString = regionalPoints.map(p => `${p.x},${p.y}`).join(' ');
-
-            // Berechne regionalen Durchschnitt für Label
             const regionalAvg = regionalPoints.reduce((sum, p) => sum + (p.value || 0), 0) / regionalPoints.length;
 
             return (
               <>
                 <Polyline
                   points={pointsString}
-                  stroke="#FF9800" // Orange für regionale Linie
+                  stroke="#FF9800"
                   strokeWidth="3"
                   strokeDasharray="6,6"
                   fill="none"
                   opacity={0.8}
                 />
-                {/* Regionale Durchschnittslinie Label */}
                 {labels.regional && (
                   <Text
                     style={{
@@ -464,14 +411,11 @@ function RenewableBarChartComponent({
 
           {/* "Jetzt" Markierung */}
           {now >= minTime && now <= maxTime && (
-            <Line
-              x1={leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding)}
-              y1={padding}
-              x2={leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding)}
-              y2={chartHeight - bottomPadding}
-              stroke="red"
-              strokeWidth="2"
-              strokeDasharray="5,5"
+            <NowMarkerLine
+              now={now} minTime={minTime} timeRange={timeRange}
+              chartWidth={chartWidth} chartHeight={chartHeight}
+              leftPadding={leftPadding} rightPadding={rightPadding}
+              padding={padding} bottomPadding={bottomPadding}
             />
           )}
         </Svg>
@@ -579,18 +523,12 @@ function RenewableBarChartComponent({
 
         {/* "Jetzt" Label */}
         {now >= minTime && now <= maxTime && (
-          <Text
-            style={{
-              position: 'absolute',
-              left: leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding) - 15,
-              top: chartHeight - bottomPadding + 20,
-              fontSize: 12,
-              color: 'red',
-              fontWeight: 'bold',
-            }}
-          >
-            {labels.now}
-          </Text>
+          <NowMarkerLabel
+            now={now} minTime={minTime} timeRange={timeRange}
+            chartWidth={chartWidth} chartHeight={chartHeight}
+            leftPadding={leftPadding} rightPadding={rightPadding}
+            bottomPadding={bottomPadding} label={labels.now}
+          />
         )}
 
         {/* Y-Achsen-Label */}
@@ -599,16 +537,16 @@ function RenewableBarChartComponent({
         </Text>
       </View>
       {interactionHint && (
-        <Text 
-          accessible={true} 
-          accessibilityRole="text" 
+        <Text
+          accessible={true}
+          accessibilityRole="text"
           accessibilityLabel={interactionHint}
           style={{ fontSize: 12, color: textColor, opacity: 0.5, fontStyle: 'italic', marginTop: 8 }}
         >
           💡 {interactionHint}
         </Text>
       )}
-    </View>
+    </ChartCard>
   );
 }
 

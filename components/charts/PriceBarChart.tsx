@@ -5,6 +5,7 @@ import { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 import { GRID_FEES_AND_TAXES } from '../../utils/metrics';
 import { useChartDimensions } from '../../utils/chartUtils';
+import { ChartGrid, ChartCard, ChartTooltip, getTooltipLeft, NowMarkerLine, NowMarkerLabel } from './shared';
 
 // Performance: Move color helpers outside component for stable references
 const interpolateColor = (color1: number[], color2: number[], factor: number) => {
@@ -168,18 +169,7 @@ function PriceBarChartComponent({
   }, [data, minTime, timeRange, chartWidth, chartHeight, leftPadding, rightPadding, padding, bottomPadding, min, range, gridFees]);
 
   return (
-    <View style={{
-      backgroundColor,
-      margin,
-      padding: cardPadding,
-      borderRadius: 16,
-      alignSelf: 'stretch',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 12,
-      elevation: 3,
-    }}>
+    <ChartCard backgroundColor={backgroundColor} margin={margin} cardPadding={cardPadding}>
       {selectedIndex !== null && (() => {
         const item = data[selectedIndex];
         if (!item || item.marketPrice === null) return null;
@@ -187,41 +177,17 @@ function PriceBarChartComponent({
         const marketPriceCent = item.marketPrice * 0.1;
         const totalPrice = marketPriceCent + gridFees;
 
-        // Berechne Position des Tooltips über dem Balken
         const x = leftPadding + ((item.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
-        const tooltipWidth = 100; // Geschätzte Breite
-        let tooltipLeft = x - tooltipWidth / 2;
-
-        // Rand-Check: Tooltip darf nicht über den Rand hinaus
-        if (tooltipLeft < 0) tooltipLeft = 8;
-        if (tooltipLeft + tooltipWidth > chartWidth) tooltipLeft = chartWidth - tooltipWidth - 8;
-
-        // Use theme colors for proper contrast (theme-aware, not hardcoded)
-        // Tooltip background should be inverted to main background
-        const tooltipBgColor = backgroundColor === colors.surface ? colors.background : colors.surface;
+        const tooltipLeft = getTooltipLeft(x, 100, chartWidth);
 
         return (
-          <View style={{
-            paddingVertical: 10,
-            paddingHorizontal: 12,
-            backgroundColor: tooltipBgColor,
-            borderWidth: 1,
-            borderColor: colors.gridLine,
-            borderRadius: 12,
-            position: 'absolute',
-            top: cardPadding + 30,
-            left: tooltipLeft,
-            zIndex: 10,
-            minWidth: 180,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.15,
-            shadowRadius: 12,
-            elevation: 6,
-            ...(Platform.OS === 'web' && {
-              backdropFilter: 'blur(10px)',
-            }),
-          }}>
+          <ChartTooltip
+            tooltipLeft={tooltipLeft}
+            cardPadding={cardPadding}
+            backgroundColor={backgroundColor}
+            colors={colors}
+            minWidth={180}
+          >
             {/* Market Price */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
               <Text style={{ color: '#4CAF50', fontSize: 11 }}>
@@ -259,7 +225,7 @@ function PriceBarChartComponent({
                 {totalPrice.toFixed(2)} ¢
               </Text>
             </View>
-          </View>
+          </ChartTooltip>
         );
       })()}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0 }}>
@@ -302,25 +268,12 @@ function PriceBarChartComponent({
         )}
       </View>
       <View style={{ height: chartHeight, width: chartWidth, position: 'relative' }}>
-        {/* Grid Lines - Modern gestrichelt */}
-        <Svg width={chartWidth} height={chartHeight} style={{ position: 'absolute' }}>
-          {[0, 1, 2, 3, 4].map(i => {
-            const y = padding + (i / 4) * (chartHeight - padding - bottomPadding);
-            return (
-              <Line
-                key={`grid-${i}`}
-                x1={leftPadding}
-                y1={y}
-                x2={chartWidth - rightPadding}
-                y2={y}
-                stroke={gridColor}
-                strokeWidth="1"
-                strokeDasharray="4,8"
-                opacity={0.15}
-              />
-            );
-          })}
-        </Svg>
+        <ChartGrid
+          chartWidth={chartWidth} chartHeight={chartHeight}
+          leftPadding={leftPadding} rightPadding={rightPadding}
+          padding={padding} bottomPadding={bottomPadding}
+          gridColor={gridColor}
+        />
 
         {/* Bars (SVG) - Using pre-calculated bar data for performance */}
         <Svg width={chartWidth} height={chartHeight}>
@@ -387,14 +340,11 @@ function PriceBarChartComponent({
 
           {/* "Jetzt" Markierung */}
           {now >= minTime && now <= maxTime && (
-            <Line
-              x1={leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding)}
-              y1={padding}
-              x2={leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding)}
-              y2={chartHeight - bottomPadding}
-              stroke="red"
-              strokeWidth="2"
-              strokeDasharray="5,5"
+            <NowMarkerLine
+              now={now} minTime={minTime} timeRange={timeRange}
+              chartWidth={chartWidth} chartHeight={chartHeight}
+              leftPadding={leftPadding} rightPadding={rightPadding}
+              padding={padding} bottomPadding={bottomPadding}
             />
           )}
         </Svg>
@@ -502,18 +452,12 @@ function PriceBarChartComponent({
 
         {/* "Jetzt" Label */}
         {now >= minTime && now <= maxTime && (
-          <Text
-            style={{
-              position: 'absolute',
-              left: leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding) - 15,
-              top: chartHeight - bottomPadding + 20,
-              fontSize: 12,
-              color: 'red',
-              fontWeight: 'bold',
-            }}
-          >
-            {labels.now}
-          </Text>
+          <NowMarkerLabel
+            now={now} minTime={minTime} timeRange={timeRange}
+            chartWidth={chartWidth} chartHeight={chartHeight}
+            leftPadding={leftPadding} rightPadding={rightPadding}
+            bottomPadding={bottomPadding} label={labels.now}
+          />
         )}
 
         {/* Y-Achsen-Label */}
@@ -522,16 +466,16 @@ function PriceBarChartComponent({
         </Text>
       </View>
       {interactionHint && (
-        <Text 
-          accessible={true} 
-          accessibilityRole="text" 
+        <Text
+          accessible={true}
+          accessibilityRole="text"
           accessibilityLabel={interactionHint}
           style={{ fontSize: 12, color: textColor, opacity: 0.5, fontStyle: 'italic', marginTop: 8 }}
         >
           💡 {interactionHint}
         </Text>
       )}
-    </View>
+    </ChartCard>
   );
 }
 
