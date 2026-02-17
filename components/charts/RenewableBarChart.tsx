@@ -265,6 +265,32 @@ function RenewableBarChartComponent({
 
         {/* Bars (SVG) - Using pre-calculated bar data for performance */}
         <Svg width={chartWidth} height={chartHeight}>
+          {/* Renewable Zone Bands - subtle background zones */}
+          {(() => {
+            const chartAreaHeight = chartHeight - padding - bottomPadding;
+            const chartAreaWidth = chartWidth - leftPadding - rightPadding;
+            const zones = [
+              { min: 0, max: 50, color: '#F44336' },   // red: low renewable
+              { min: 50, max: 80, color: '#FFC107' },   // yellow: moderate
+              { min: 80, max: 100, color: '#4CAF50' },  // green: high renewable
+            ];
+            return zones.map((zone, i) => {
+              const yBottom = chartHeight - bottomPadding - ((zone.min - min) / range) * chartAreaHeight;
+              const yTop = chartHeight - bottomPadding - ((zone.max - min) / range) * chartAreaHeight;
+              return (
+                <Rect
+                  key={`zone-${i}`}
+                  x={leftPadding}
+                  y={yTop}
+                  width={chartAreaWidth}
+                  height={yBottom - yTop}
+                  fill={zone.color}
+                  opacity={0.06}
+                />
+              );
+            });
+          })()}
+
           {barData.map((bar) => {
             // Render gray fading bar for missing data
             if (bar.value === null) {
@@ -352,6 +378,28 @@ function RenewableBarChartComponent({
               />
             );
           })}
+
+          {/* Runner Band - highlights current renewable share level */}
+          {now >= minTime && now <= maxTime && (() => {
+            const currentBar = barData.find(b =>
+              b.value !== null &&
+              Math.abs(data[b.index].timestamp - now) <= 15 * 60 * 1000
+            );
+            if (!currentBar || currentBar.value === null) return null;
+            const bandHeight = 4;
+            const valueY = chartHeight - bottomPadding - ((currentBar.value - min) / range) * (chartHeight - padding - bottomPadding);
+            return (
+              <Rect
+                x={leftPadding}
+                y={valueY - bandHeight / 2}
+                width={chartWidth - leftPadding - rightPadding}
+                height={bandHeight}
+                fill={currentBar.color}
+                opacity={0.25}
+                rx={2}
+              />
+            );
+          })()}
 
           {/* Durchschnittslinie */}
           <Line
