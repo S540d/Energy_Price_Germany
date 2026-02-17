@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemeColors } from '../utils/theme';
-import { Metrics, GRID_FEES_AND_TAXES } from '../utils/metrics';
+import type { ThemeColors } from '../utils/theme';
+import { GRID_FEES_AND_TAXES } from '../utils/metrics';
 import { Button } from './ui/Button';
 
 type MetricsData =
@@ -50,9 +50,9 @@ export function ChartDetailView({
   colors,
   metrics,
   chartType,
-  onToggleView,
+  onToggleView: _onToggleView,
   legend,
-  gridFees = GRID_FEES_AND_TAXES,
+  gridFees: _gridFees = GRID_FEES_AND_TAXES,
 }: ChartDetailViewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMetrics, setShowMetrics] = useState(false);
@@ -67,9 +67,7 @@ export function ChartDetailView({
       // Render BOTH prices for price chart
       return (
         <View style={[styles.metricsContainer, { backgroundColor: colors.surfaceSecondary }]}>
-          <Text style={[styles.metricsTitle, { color: colors.text }]}>
-            {metrics.label}
-          </Text>
+          <Text style={[styles.metricsTitle, { color: colors.text }]}>{metrics.label}</Text>
 
           {/* END-CUSTOMER PRICE (Top, Primary) */}
           <View style={{ marginTop: 12 }}>
@@ -79,45 +77,42 @@ export function ChartDetailView({
 
             {/* Current End-Customer Price */}
             {metrics.endCustomerPrice.current !== null &&
-             metrics.endCustomerPrice.current !== undefined && (
-              <View style={[styles.currentValueContainer, {
-                backgroundColor: colors.surface,
-                borderLeftWidth: 3,
-                borderLeftColor: colors.primary
-              }]}>
-                <Text style={[styles.currentLabel, { color: colors.text }]}>
-                  Aktuell
-                </Text>
-                <Text style={[styles.currentValue, { color: colors.primary }]}>
-                  {metrics.endCustomerPrice.current.toFixed(2)} {metrics.unit}
-                </Text>
-              </View>
-            )}
+              metrics.endCustomerPrice.current !== undefined && (
+                <View
+                  style={[
+                    styles.currentValueContainer,
+                    {
+                      backgroundColor: colors.surface,
+                      borderLeftWidth: 3,
+                      borderLeftColor: colors.primary,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.currentLabel, { color: colors.text }]}>Aktuell</Text>
+                  <Text style={[styles.currentValue, { color: colors.primary }]}>
+                    {metrics.endCustomerPrice.current.toFixed(2)} {metrics.unit}
+                  </Text>
+                </View>
+              )}
 
             {/* Min/Max/Avg End-Customer Price */}
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.text }]}>
-                  Minimum
-                </Text>
+                <Text style={[styles.statLabel, { color: colors.text }]}>Minimum</Text>
                 <Text style={[styles.statValue, { color: colors.primary }]}>
                   {metrics.endCustomerPrice.min.toFixed(2)} {metrics.unit}
                 </Text>
               </View>
 
               <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.text }]}>
-                  Durchschnitt
-                </Text>
+                <Text style={[styles.statLabel, { color: colors.text }]}>Durchschnitt</Text>
                 <Text style={[styles.statValue, { color: colors.primary }]}>
                   {metrics.endCustomerPrice.avg.toFixed(2)} {metrics.unit}
                 </Text>
               </View>
 
               <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.text }]}>
-                  Maximum
-                </Text>
+                <Text style={[styles.statLabel, { color: colors.text }]}>Maximum</Text>
                 <Text style={[styles.statValue, { color: colors.primary }]}>
                   {metrics.endCustomerPrice.max.toFixed(2)} {metrics.unit}
                 </Text>
@@ -126,22 +121,31 @@ export function ChartDetailView({
           </View>
 
           {/* MARKET PRICE (Bottom, Secondary) */}
-          <View style={{ marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.gridLine }}>
+          <View
+            style={{
+              marginTop: 16,
+              paddingTop: 12,
+              borderTopWidth: 1,
+              borderTopColor: colors.gridLine,
+            }}
+          >
             <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
               Börsenstrompreis
             </Text>
 
             {/* Current Market Price */}
-            {metrics.marketPrice.current !== null &&
-             metrics.marketPrice.current !== undefined && (
-              <View style={[styles.currentValueContainer, {
-                backgroundColor: colors.surface,
-                borderLeftWidth: 3,
-                borderLeftColor: '#4CAF50'
-              }]}>
-                <Text style={[styles.currentLabel, { color: colors.text }]}>
-                  Aktuell
-                </Text>
+            {metrics.marketPrice.current !== null && metrics.marketPrice.current !== undefined && (
+              <View
+                style={[
+                  styles.currentValueContainer,
+                  {
+                    backgroundColor: colors.surface,
+                    borderLeftWidth: 3,
+                    borderLeftColor: '#4CAF50',
+                  },
+                ]}
+              >
+                <Text style={[styles.currentLabel, { color: colors.text }]}>Aktuell</Text>
                 <Text style={[styles.currentValue, { color: '#4CAF50' }]}>
                   {metrics.marketPrice.current.toFixed(2)} {metrics.unit}
                 </Text>
@@ -151,27 +155,21 @@ export function ChartDetailView({
             {/* Min/Max/Avg Market Price */}
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.text }]}>
-                  Minimum
-                </Text>
+                <Text style={[styles.statLabel, { color: colors.text }]}>Minimum</Text>
                 <Text style={[styles.statValue, { color: '#4CAF50' }]}>
                   {metrics.marketPrice.min.toFixed(2)} {metrics.unit}
                 </Text>
               </View>
 
               <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.text }]}>
-                  Durchschnitt
-                </Text>
+                <Text style={[styles.statLabel, { color: colors.text }]}>Durchschnitt</Text>
                 <Text style={[styles.statValue, { color: '#4CAF50' }]}>
                   {metrics.marketPrice.avg.toFixed(2)} {metrics.unit}
                 </Text>
               </View>
 
               <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.text }]}>
-                  Maximum
-                </Text>
+                <Text style={[styles.statLabel, { color: colors.text }]}>Maximum</Text>
                 <Text style={[styles.statValue, { color: '#4CAF50' }]}>
                   {metrics.marketPrice.max.toFixed(2)} {metrics.unit}
                 </Text>
@@ -185,16 +183,12 @@ export function ChartDetailView({
     // Existing single-value rendering for renewable chart
     return (
       <View style={[styles.metricsContainer, { backgroundColor: colors.surfaceSecondary }]}>
-        <Text style={[styles.metricsTitle, { color: colors.text }]}>
-          {metrics.label}
-        </Text>
+        <Text style={[styles.metricsTitle, { color: colors.text }]}>{metrics.label}</Text>
 
         {/* Current Value if available */}
         {metrics.current !== null && metrics.current !== undefined && (
           <View style={[styles.currentValueContainer, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.currentLabel, { color: colors.text }]}>
-              Aktuell
-            </Text>
+            <Text style={[styles.currentLabel, { color: colors.text }]}>Aktuell</Text>
             <Text style={[styles.currentValue, { color: colors.primary }]}>
               {metrics.current.toFixed(chartType === 'renewable' ? 1 : 2)} {metrics.unit}
             </Text>
@@ -204,27 +198,21 @@ export function ChartDetailView({
         {/* Min/Max/Avg Values */}
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Text style={[styles.statLabel, { color: colors.text }]}>
-              Minimum
-            </Text>
+            <Text style={[styles.statLabel, { color: colors.text }]}>Minimum</Text>
             <Text style={[styles.statValue, { color: colors.primary }]}>
               {metrics.min.toFixed(chartType === 'renewable' ? 1 : 2)} {metrics.unit}
             </Text>
           </View>
 
           <View style={styles.statItem}>
-            <Text style={[styles.statLabel, { color: colors.text }]}>
-              Durchschnitt
-            </Text>
+            <Text style={[styles.statLabel, { color: colors.text }]}>Durchschnitt</Text>
             <Text style={[styles.statValue, { color: colors.primary }]}>
               {metrics.avg.toFixed(chartType === 'renewable' ? 1 : 2)} {metrics.unit}
             </Text>
           </View>
 
           <View style={styles.statItem}>
-            <Text style={[styles.statLabel, { color: colors.text }]}>
-              Maximum
-            </Text>
+            <Text style={[styles.statLabel, { color: colors.text }]}>Maximum</Text>
             <Text style={[styles.statValue, { color: colors.primary }]}>
               {metrics.max.toFixed(chartType === 'renewable' ? 1 : 2)} {metrics.unit}
             </Text>
@@ -246,15 +234,17 @@ export function ChartDetailView({
               {
                 backgroundColor: !showMetrics ? colors.primary : colors.gridLine,
                 borderColor: colors.gridLine,
-              }
+              },
             ]}
             onPress={() => setShowMetrics(false)}
           >
-            <Text style={{
-              color: !showMetrics ? '#fff' : colors.text,
-              fontSize: 12,
-              fontWeight: '600'
-            }}>
+            <Text
+              style={{
+                color: !showMetrics ? '#fff' : colors.text,
+                fontSize: 12,
+                fontWeight: '600',
+              }}
+            >
               Grafik
             </Text>
           </TouchableOpacity>
@@ -266,15 +256,17 @@ export function ChartDetailView({
               {
                 backgroundColor: showMetrics ? colors.primary : colors.gridLine,
                 borderColor: colors.gridLine,
-              }
+              },
             ]}
             onPress={() => setShowMetrics(true)}
           >
-            <Text style={{
-              color: showMetrics ? '#fff' : colors.text,
-              fontSize: 12,
-              fontWeight: '600'
-            }}>
+            <Text
+              style={{
+                color: showMetrics ? '#fff' : colors.text,
+                fontSize: 12,
+                fontWeight: '600',
+              }}
+            >
               Metrik
             </Text>
           </TouchableOpacity>
@@ -286,9 +278,7 @@ export function ChartDetailView({
         renderMetricsView()
       ) : (
         <>
-          <View style={styles.chartContainer}>
-            {children}
-          </View>
+          <View style={styles.chartContainer}>{children}</View>
           {/* Legend - show only when displaying chart (not metrics) */}
           {legend && (
             <View style={[styles.legendContainer, { backgroundColor: colors.surface }]}>
@@ -314,32 +304,35 @@ export function ChartDetailView({
             Details
           </Button>
         </View>
-        <View style={styles.chartContainer}>
-          {children}
-        </View>
+        <View style={styles.chartContainer}>{children}</View>
       </View>
 
       {/* Expanded detail modal */}
-      <Modal
-        visible={isExpanded}
-        animationType="slide"
-        onRequestClose={() => setIsExpanded(false)}
-      >
-        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
+      <Modal visible={isExpanded} animationType="slide" onRequestClose={() => setIsExpanded(false)}>
+        <SafeAreaView
+          style={[styles.modalContainer, { backgroundColor: colors.background }]}
+          edges={['top', 'bottom']}
+        >
           {/* Header */}
-          <View style={[styles.modalHeader, { backgroundColor: colors.surface, borderBottomColor: colors.gridLine }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>
-              {title}
-            </Text>
+          <View
+            style={[
+              styles.modalHeader,
+              { backgroundColor: colors.surface, borderBottomColor: colors.gridLine },
+            ]}
+          >
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{title}</Text>
           </View>
 
           {/* Content */}
-          <ScrollView style={{ flex: 1 }}>
-            {renderContent()}
-          </ScrollView>
+          <ScrollView style={{ flex: 1 }}>{renderContent()}</ScrollView>
 
           {/* Close button at bottom */}
-          <View style={[styles.closeButtonContainer, { backgroundColor: colors.surface, borderTopColor: colors.gridLine }]}>
+          <View
+            style={[
+              styles.closeButtonContainer,
+              { backgroundColor: colors.surface, borderTopColor: colors.gridLine },
+            ]}
+          >
             <Button
               variant="filled"
               size="large"

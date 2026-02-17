@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { usePersistence } from './usePersistence';
-import { Language } from '../utils/translations';
+import type { Language } from '../utils/translations';
 
 /**
  * Hook for managing language state with persistence
@@ -32,7 +32,7 @@ export function useLanguage(): [Language, (lang: Language) => void] {
           }
         }
       } catch (error) {
-} finally {
+      } finally {
         setIsInitialized(true);
       }
     }
@@ -47,8 +47,7 @@ export function useLanguage(): [Language, (lang: Language) => void] {
     async function saveLanguage() {
       try {
         await setItem('language', language);
-      } catch (error) {
-}
+      } catch (error) {}
     }
 
     saveLanguage();

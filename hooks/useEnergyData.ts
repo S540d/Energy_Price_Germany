@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchEnergyData, energyDataManager } from '../services/energyDataManager';
-import { EnergyData } from '../utils/metrics';
+import type { EnergyData } from '../utils/metrics';
 
 /**
  * Hook for fetching and managing energy data

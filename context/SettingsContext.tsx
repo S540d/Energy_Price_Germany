@@ -1,6 +1,7 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import React, { createContext, useContext } from 'react';
 import { useSettings } from '../hooks/useSettings';
-import { Theme } from '../utils/theme';
+import type { Theme } from '../utils/theme';
 
 interface SettingsContextValue {
   theme: Theme;
@@ -22,11 +23,7 @@ const SettingsContext = createContext<SettingsContextValue | undefined>(undefine
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const settings = useSettings();
 
-  return (
-    <SettingsContext.Provider value={settings}>
-      {children}
-    </SettingsContext.Provider>
-  );
+  return <SettingsContext.Provider value={settings}>{children}</SettingsContext.Provider>;
 }
 
 /**

@@ -1,4 +1,5 @@
-import { calculateMetrics, EnergyData, GRID_FEES_AND_TAXES } from './metrics';
+import type { EnergyData } from './metrics';
+import { calculateMetrics, GRID_FEES_AND_TAXES } from './metrics';
 
 describe('metrics.ts', () => {
   describe('calculateMetrics', () => {
@@ -128,11 +129,13 @@ describe('metrics.ts', () => {
         const result = calculateMetrics(todayData);
         expect(result).not.toBeNull();
         expect(result!.today).toBeDefined();
-        expect(result!.today?.date).toBe(now.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }));
+        expect(result!.today?.date).toBe(
+          now.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        );
       });
 
       it('should not include today metrics when no data for today', () => {
-        const yesterday = Date.now() - (24 * 60 * 60 * 1000);
+        const yesterday = Date.now() - 24 * 60 * 60 * 1000;
         const yesterdayData: EnergyData[] = [
           { timestamp: yesterday, marketPrice: 100, renewableShare: 50 },
         ];
@@ -229,7 +232,7 @@ describe('metrics.ts', () => {
       it('should handle negative market prices (possible in energy markets)', () => {
         const negativeData: EnergyData[] = [
           { timestamp: Date.now(), marketPrice: -100, renewableShare: 50 }, // -10 cent/kWh
-          { timestamp: Date.now(), marketPrice: 100, renewableShare: 50 },  // +10 cent/kWh
+          { timestamp: Date.now(), marketPrice: 100, renewableShare: 50 }, // +10 cent/kWh
         ];
 
         const result = calculateMetrics(negativeData);
@@ -245,7 +248,7 @@ describe('metrics.ts', () => {
             timestamp: Date.now(),
             marketPrice: 100,
             renewableShare: 50,
-            renewableShareRegional: 70
+            renewableShareRegional: 70,
           },
         ];
 
@@ -262,7 +265,7 @@ describe('metrics.ts', () => {
             marketPrice: 100,
             renewableShare: 50,
             isMarketPriceInterpolated: true,
-            isRenewableShareInterpolated: false
+            isRenewableShareInterpolated: false,
           },
         ];
 

@@ -3,11 +3,8 @@
  * Tests for data interpolation and missing value handling
  */
 
-import {
-  interpolateMarketPrices,
-  getInterpolationStats,
-  InterpolatedDataPoint,
-} from '../dataInterpolation';
+import type { InterpolatedDataPoint } from '../dataInterpolation';
+import { interpolateMarketPrices, getInterpolationStats } from '../dataInterpolation';
 
 describe('dataInterpolation', () => {
   describe('interpolateMarketPrices', () => {
@@ -95,9 +92,7 @@ describe('dataInterpolation', () => {
     });
 
     it('should leave null values when no surrounding values exist', () => {
-      const data = [
-        { timestamp: 1000, marketPrice: null, renewableShare: null },
-      ];
+      const data = [{ timestamp: 1000, marketPrice: null, renewableShare: null }];
 
       const result = interpolateMarketPrices(data);
 

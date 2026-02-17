@@ -44,22 +44,24 @@ function ChartGridComponent({
           />
         );
       })}
-      {verticalLines > 0 && Array.from({ length: verticalLines }, (_, i) => {
-        const x = leftPadding + (i / (verticalLines - 1)) * (chartWidth - leftPadding - rightPadding);
-        return (
-          <Line
-            key={`vgrid-${i}`}
-            x1={x}
-            y1={padding}
-            x2={x}
-            y2={chartHeight - bottomPadding}
-            stroke={gridColor}
-            strokeWidth="1"
-            strokeDasharray="4,8"
-            opacity={0.15}
-          />
-        );
-      })}
+      {verticalLines > 0 &&
+        Array.from({ length: verticalLines }, (_, i) => {
+          const x =
+            leftPadding + (i / (verticalLines - 1)) * (chartWidth - leftPadding - rightPadding);
+          return (
+            <Line
+              key={`vgrid-${i}`}
+              x1={x}
+              y1={padding}
+              x2={x}
+              y2={chartHeight - bottomPadding}
+              stroke={gridColor}
+              strokeWidth="1"
+              strokeDasharray="4,8"
+              opacity={0.15}
+            />
+          );
+        })}
     </Svg>
   );
 }

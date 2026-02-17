@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
 import { useLanguageContext } from '../../context/LanguageContext';
-import { getThemeColors, Theme } from '../../utils/theme';
+import type { Theme } from '../../utils/theme';
+import { getThemeColors } from '../../utils/theme';
 import { useSettingsContext } from '../../context/SettingsContext';
 
 /**
@@ -18,25 +19,25 @@ export function AppearanceSection() {
 
   return (
     <View style={styles.menuSection}>
-      <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-        {t.appearance}
-      </Text>
+      <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.appearance}</Text>
       <View style={styles.themeToggle}>
-        {themes.map((themeOption) => (
+        {themes.map(themeOption => (
           <TouchableOpacity
             key={themeOption}
             style={[
               styles.themeButton,
               theme === themeOption && styles.themeButtonActive,
-              { backgroundColor: theme === themeOption ? colors.primary : colors.gridLine }
+              { backgroundColor: theme === themeOption ? colors.primary : colors.gridLine },
             ]}
             onPress={() => setTheme(themeOption)}
           >
-            <Text style={{
-              color: theme === themeOption ? '#fff' : colors.text,
-              fontSize: 12,
-              fontWeight: '600'
-            }}>
+            <Text
+              style={{
+                color: theme === themeOption ? '#fff' : colors.text,
+                fontSize: 12,
+                fontWeight: '600',
+              }}
+            >
               {t[themeOption]}
             </Text>
           </TouchableOpacity>

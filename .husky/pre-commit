@@ -1,5 +1,8 @@
 #!/usr/bin/env sh
-echo "🔍 Running pre-commit checks..."
+echo "Running pre-commit checks..."
+
+# Run lint-staged (ESLint + Prettier on staged TS/TSX files)
+npx lint-staged
 
 # Check for console.log in staged files (except logger.ts, scripts directory, and build scripts)
 echo "Checking for console.log statements..."

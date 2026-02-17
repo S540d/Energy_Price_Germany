@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, ViewStyle } from 'react-native';
+import type { ViewStyle } from 'react-native';
+import { View } from 'react-native';
 
 interface ChartCardProps {
   backgroundColor: string;
@@ -17,19 +18,21 @@ function ChartCardComponent({
   style,
 }: ChartCardProps) {
   return (
-    <View style={{
-      backgroundColor,
-      margin,
-      padding: cardPadding,
-      borderRadius: 16,
-      alignSelf: 'stretch',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 12,
-      elevation: 3,
-      ...style,
-    }}>
+    <View
+      style={{
+        backgroundColor,
+        margin,
+        padding: cardPadding,
+        borderRadius: 16,
+        alignSelf: 'stretch',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 3,
+        ...style,
+      }}
+    >
       {children}
     </View>
   );
