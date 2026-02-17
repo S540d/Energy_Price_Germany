@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, Platform } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
 import { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 import { GRID_FEES_AND_TAXES } from '../../utils/metrics';
 import { useChartDimensions } from '../../utils/chartUtils';
+import { ChartGrid, ChartCard, ChartTooltip, getTooltipLeft, NowMarkerLine, NowMarkerLabel } from './shared';
 
 // Performance: Move color helpers outside component for stable references
 const interpolateColor = (color1: number[], color2: number[], factor: number) => {
@@ -73,9 +74,9 @@ function PriceBarChartComponent({
 }: PriceBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  const handleBarInteraction = (index: number) => {
-    setSelectedIndex(index === selectedIndex ? null : index);
-  };
+  const handleBarInteraction = useCallback((index: number) => {
+    setSelectedIndex(prev => index === prev ? null : index);
+  }, []);
 
   // Use centralized chart dimensions hook
   const {
@@ -91,47 +92,41 @@ function PriceBarChartComponent({
     isLandscape,
   } = useChartDimensions();
 
-  // Use ALL data timestamps for consistent X-axis range across all charts
+  // now must be outside useMemo so the "Jetzt" marker updates on every render
   const now = Date.now();
-  const timestamps = data.map(d => d.timestamp);
 
-  // Guard against empty data (Division-by-Zero protection)
-  if (timestamps.length === 0) {
-    return null;
-  }
+  // Performance: Memoize expensive data calculations
+  const chartCalcs = useMemo(() => {
+    const timestamps = data.map(d => d.timestamp);
 
-  const minTime = Math.min(...timestamps);
-  const maxTime = Math.max(...timestamps);
-  const timeRange = maxTime - minTime;
+    if (timestamps.length === 0) return null;
 
-  // Only use entries with valid marketPrice for rendering bars and calculations
-  const validData = data.filter(d => d.marketPrice !== null);
+    const minTime = Math.min(...timestamps);
+    const maxTime = Math.max(...timestamps);
+    const timeRange = maxTime - minTime;
 
-  // Guard against empty valid data (Division-by-Zero protection)
-  if (validData.length === 0) {
-    return null;
-  }
+    const validData = data.filter(d => d.marketPrice !== null);
+    if (validData.length === 0) return null;
 
-  const pricesInCent = validData.map(d => d.marketPrice! * 0.1);
+    const pricesInCent = validData.map(d => d.marketPrice! * 0.1);
+    const minPrice = Math.min(...pricesInCent, 0);
+    const maxPrice = Math.max(...pricesInCent);
+    const min = Math.floor(minPrice / 5) * 5;
+    const maxMarketPrice = Math.ceil(maxPrice / 5) * 5;
+    const maxTotal = maxMarketPrice + gridFees;
+    const range = maxTotal - min;
 
-  // Use stable Y-axis range to prevent jumps at midnight
-  // Instead of dynamic min/max, use a reasonable fixed range that covers typical prices
-  const minPrice = Math.min(...pricesInCent, 0);
-  const maxPrice = Math.max(...pricesInCent);
+    if (range === 0 || timeRange === 0) return null;
 
-  // Calculate Y-axis with some padding to prevent visual jumps
-  // Round min down to nearest 5, max up to nearest 5 for stability
-  const min = Math.floor(minPrice / 5) * 5;
-  const maxMarketPrice = Math.ceil(maxPrice / 5) * 5;
-  const maxTotal = maxMarketPrice + gridFees;
-  const range = maxTotal - min;
+    const avgMarketPrice = pricesInCent.reduce((sum, v) => sum + v, 0) / pricesInCent.length;
 
-  // Guard against zero range (Division-by-Zero protection)
-  if (range === 0 || timeRange === 0) {
-    return null;
-  }
+    return { minTime, maxTime, timeRange, min, maxTotal, range, avgMarketPrice };
+  }, [data, gridFees]);
 
-  const avgMarketPrice = pricesInCent.reduce((sum, v) => sum + v, 0) / pricesInCent.length;
+  // Guard against invalid data
+  if (!chartCalcs) return null;
+
+  const { minTime, maxTime, timeRange, min, maxTotal, range, avgMarketPrice } = chartCalcs;
 
   // Performance: Pre-calculate all bar positions, colors, and dimensions
   // This avoids redundant calculations during rendering (15-20% improvement)
@@ -176,18 +171,7 @@ function PriceBarChartComponent({
   }, [data, minTime, timeRange, chartWidth, chartHeight, leftPadding, rightPadding, padding, bottomPadding, min, range, gridFees]);
 
   return (
-    <View style={{
-      backgroundColor,
-      margin,
-      padding: cardPadding,
-      borderRadius: 16,
-      alignSelf: 'stretch',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 12,
-      elevation: 3,
-    }}>
+    <ChartCard backgroundColor={backgroundColor} margin={margin} cardPadding={cardPadding}>
       {selectedIndex !== null && (() => {
         const item = data[selectedIndex];
         if (!item || item.marketPrice === null) return null;
@@ -195,42 +179,17 @@ function PriceBarChartComponent({
         const marketPriceCent = item.marketPrice * 0.1;
         const totalPrice = marketPriceCent + gridFees;
 
-        // Berechne Position des Tooltips über dem Balken
         const x = leftPadding + ((item.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
-        const tooltipWidth = 100; // Geschätzte Breite
-        let tooltipLeft = x - tooltipWidth / 2;
-
-        // Rand-Check: Tooltip darf nicht über den Rand hinaus
-        if (tooltipLeft < 0) tooltipLeft = 8;
-        if (tooltipLeft + tooltipWidth > chartWidth) tooltipLeft = chartWidth - tooltipWidth - 8;
-
-        // Use theme colors for proper contrast (theme-aware, not hardcoded)
-        // Tooltip background should be inverted to main background
-        const tooltipBgColor = backgroundColor === colors.surface ? colors.background : colors.surface;
-        const tooltipTextColor = tooltipBgColor === colors.surface ? colors.text : colors.background === colors.background ? colors.text : colors.text;
+        const tooltipLeft = getTooltipLeft(x, 100, chartWidth);
 
         return (
-          <View style={{
-            paddingVertical: 10,
-            paddingHorizontal: 12,
-            backgroundColor: tooltipBgColor,
-            borderWidth: 1,
-            borderColor: colors.gridLine,
-            borderRadius: 12,
-            position: 'absolute',
-            top: cardPadding + 30,
-            left: tooltipLeft,
-            zIndex: 10,
-            minWidth: 180,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.15,
-            shadowRadius: 12,
-            elevation: 6,
-            ...(Platform.OS === 'web' && {
-              backdropFilter: 'blur(10px)',
-            }),
-          }}>
+          <ChartTooltip
+            tooltipLeft={tooltipLeft}
+            cardPadding={cardPadding}
+            backgroundColor={backgroundColor}
+            colors={colors}
+            minWidth={180}
+          >
             {/* Market Price */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
               <Text style={{ color: '#4CAF50', fontSize: 11 }}>
@@ -268,7 +227,7 @@ function PriceBarChartComponent({
                 {totalPrice.toFixed(2)} ¢
               </Text>
             </View>
-          </View>
+          </ChartTooltip>
         );
       })()}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0 }}>
@@ -311,25 +270,12 @@ function PriceBarChartComponent({
         )}
       </View>
       <View style={{ height: chartHeight, width: chartWidth, position: 'relative' }}>
-        {/* Grid Lines - Modern gestrichelt */}
-        <Svg width={chartWidth} height={chartHeight} style={{ position: 'absolute' }}>
-          {[0, 1, 2, 3, 4].map(i => {
-            const y = padding + (i / 4) * (chartHeight - padding - bottomPadding);
-            return (
-              <Line
-                key={`grid-${i}`}
-                x1={leftPadding}
-                y1={y}
-                x2={chartWidth - rightPadding}
-                y2={y}
-                stroke={gridColor}
-                strokeWidth="1"
-                strokeDasharray="4,8"
-                opacity={0.15}
-              />
-            );
-          })}
-        </Svg>
+        <ChartGrid
+          chartWidth={chartWidth} chartHeight={chartHeight}
+          leftPadding={leftPadding} rightPadding={rightPadding}
+          padding={padding} bottomPadding={bottomPadding}
+          gridColor={gridColor}
+        />
 
         {/* Bars (SVG) - Using pre-calculated bar data for performance */}
         <Svg width={chartWidth} height={chartHeight}>
@@ -396,14 +342,11 @@ function PriceBarChartComponent({
 
           {/* "Jetzt" Markierung */}
           {now >= minTime && now <= maxTime && (
-            <Line
-              x1={leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding)}
-              y1={padding}
-              x2={leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding)}
-              y2={chartHeight - bottomPadding}
-              stroke="red"
-              strokeWidth="2"
-              strokeDasharray="5,5"
+            <NowMarkerLine
+              now={now} minTime={minTime} timeRange={timeRange}
+              chartWidth={chartWidth} chartHeight={chartHeight}
+              leftPadding={leftPadding} rightPadding={rightPadding}
+              padding={padding} bottomPadding={bottomPadding}
             />
           )}
         </Svg>
@@ -511,18 +454,12 @@ function PriceBarChartComponent({
 
         {/* "Jetzt" Label */}
         {now >= minTime && now <= maxTime && (
-          <Text
-            style={{
-              position: 'absolute',
-              left: leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding) - 15,
-              top: chartHeight - bottomPadding + 20,
-              fontSize: 12,
-              color: 'red',
-              fontWeight: 'bold',
-            }}
-          >
-            {labels.now}
-          </Text>
+          <NowMarkerLabel
+            now={now} minTime={minTime} timeRange={timeRange}
+            chartWidth={chartWidth} chartHeight={chartHeight}
+            leftPadding={leftPadding} rightPadding={rightPadding}
+            bottomPadding={bottomPadding} label={labels.now}
+          />
         )}
 
         {/* Y-Achsen-Label */}
@@ -531,16 +468,16 @@ function PriceBarChartComponent({
         </Text>
       </View>
       {interactionHint && (
-        <Text 
-          accessible={true} 
-          accessibilityRole="text" 
+        <Text
+          accessible={true}
+          accessibilityRole="text"
           accessibilityLabel={interactionHint}
           style={{ fontSize: 12, color: textColor, opacity: 0.5, fontStyle: 'italic', marginTop: 8 }}
         >
           💡 {interactionHint}
         </Text>
       )}
-    </View>
+    </ChartCard>
   );
 }
 
