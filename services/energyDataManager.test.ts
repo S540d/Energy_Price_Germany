@@ -373,8 +373,8 @@ describe('EnergyDataManager', () => {
       // Invalidate regional cache
       await manager.invalidateRegionalCache();
 
-      // Should call setItem (either clearing or updating storage)
-      expect(Storage.setItem).toHaveBeenCalled();
+      // Should call removeItem to clear persistent regional cache
+      expect(Storage.removeItem).toHaveBeenCalled();
     });
   });
 
