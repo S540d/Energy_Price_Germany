@@ -37,7 +37,7 @@ The app uses a **hybrid data strategy** for maximum forecast coverage:
 
 **Result**: Up to 43+ hours of forecast data with high-quality renewable share information for the first 24 hours.
 
-📖 See [DATA-MERGE-STRATEGY.md](DATA-MERGE-STRATEGY.md) for detailed information about the data merging logic.
+📖 See [DATA-MERGE-STRATEGY.md](docs/DATA-MERGE-STRATEGY.md) for detailed information about the data merging logic.
 
 ## Regional Data Feature
 
@@ -95,7 +95,7 @@ The app supports three separate environments for development, testing, and produ
 
 Each environment has its own EXPO_ENV configuration, .env file, and deployment URL.
 
-**For detailed testing workflows, environment setup, and troubleshooting, see [TESTING.md](TESTING.md)**
+**For detailed testing workflows, environment setup, and troubleshooting, see [TESTING.md](docs/TESTING.md)**
 
 ## Installation
 
