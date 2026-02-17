@@ -1,8 +1,5 @@
 import { Storage } from '../utils/platform';
-import {
-  validateRegionalDataResponse,
-  fetchWithTimeout,
-} from '../utils/apiValidation';
+import { validateRegionalDataResponse, fetchWithTimeout } from '../utils/apiValidation';
 import type { RegionalDataResponse } from '../utils/apiValidation';
 export type { RegionalDataResponse } from '../utils/apiValidation';
 
@@ -19,10 +16,10 @@ interface RegionalCacheEntry {
  * Stored as JSON with date-based validation
  */
 interface PersistentRegionalCacheEntry {
-  postalCode: string;        // PLZ für diese Cache-Einträge
+  postalCode: string; // PLZ für diese Cache-Einträge
   data: RegionalDataResponse; // Tatsächliche regionale Daten
-  cachedDate: string;        // YYYY-MM-DD Format (Datum der Cache-Erstellung)
-  timestamp: number;         // Exakter Zeitstempel für Debugging
+  cachedDate: string; // YYYY-MM-DD Format (Datum der Cache-Erstellung)
+  timestamp: number; // Exakter Zeitstempel für Debugging
 }
 
 const REGIONAL_CACHE_STORAGE_KEY = 'energy_regional_cache_v1';

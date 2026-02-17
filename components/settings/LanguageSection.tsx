@@ -16,23 +16,23 @@ export function LanguageSection() {
 
   return (
     <View style={styles.menuSection}>
-      <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-        {t.language}
-      </Text>
+      <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.language}</Text>
       <View style={styles.languageToggle}>
         <TouchableOpacity
           style={[
             styles.languageButton,
             language === 'en' && styles.languageButtonActive,
-            { backgroundColor: language === 'en' ? colors.primary : colors.gridLine }
+            { backgroundColor: language === 'en' ? colors.primary : colors.gridLine },
           ]}
           onPress={() => setLanguage('en')}
         >
-          <Text style={{
-            color: language === 'en' ? '#fff' : colors.text,
-            fontSize: 12,
-            fontWeight: '600'
-          }}>
+          <Text
+            style={{
+              color: language === 'en' ? '#fff' : colors.text,
+              fontSize: 12,
+              fontWeight: '600',
+            }}
+          >
             {t.english}
           </Text>
         </TouchableOpacity>
@@ -40,15 +40,17 @@ export function LanguageSection() {
           style={[
             styles.languageButton,
             language === 'de' && styles.languageButtonActive,
-            { backgroundColor: language === 'de' ? colors.primary : colors.gridLine }
+            { backgroundColor: language === 'de' ? colors.primary : colors.gridLine },
           ]}
           onPress={() => setLanguage('de')}
         >
-          <Text style={{
-            color: language === 'de' ? '#fff' : colors.text,
-            fontSize: 12,
-            fontWeight: '600'
-          }}>
+          <Text
+            style={{
+              color: language === 'de' ? '#fff' : colors.text,
+              fontSize: 12,
+              fontWeight: '600',
+            }}
+          >
             {t.german}
           </Text>
         </TouchableOpacity>

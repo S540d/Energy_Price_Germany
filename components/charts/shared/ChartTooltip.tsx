@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Platform } from 'react-native';
-import { ThemeColors } from '../../../utils/theme';
+import type { ThemeColors } from '../../../utils/theme';
 
 interface ChartTooltipProps {
   tooltipLeft: number;
@@ -22,27 +22,29 @@ function ChartTooltipComponent({
   const tooltipBgColor = backgroundColor === colors.surface ? colors.background : colors.surface;
 
   return (
-    <View style={{
-      paddingVertical: 6,
-      paddingHorizontal: 12,
-      backgroundColor: tooltipBgColor,
-      borderWidth: 1,
-      borderColor: colors.gridLine,
-      borderRadius: 12,
-      position: 'absolute',
-      top: cardPadding + 30,
-      left: tooltipLeft,
-      zIndex: 10,
-      ...(minWidth ? { minWidth } : {}),
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
-      shadowRadius: 12,
-      elevation: 6,
-      ...(Platform.OS === 'web' && {
-        backdropFilter: 'blur(10px)',
-      }),
-    }}>
+    <View
+      style={{
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        backgroundColor: tooltipBgColor,
+        borderWidth: 1,
+        borderColor: colors.gridLine,
+        borderRadius: 12,
+        position: 'absolute',
+        top: cardPadding + 30,
+        left: tooltipLeft,
+        zIndex: 10,
+        ...(minWidth ? { minWidth } : {}),
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 6,
+        ...(Platform.OS === 'web' && {
+          backdropFilter: 'blur(10px)',
+        }),
+      }}
+    >
       {children}
     </View>
   );

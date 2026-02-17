@@ -146,7 +146,8 @@ export const translations = {
     correlationTitle: 'Korrelation: Preis vs. Erneuerbare',
     timeRange: 'Zeitraum',
     noData: 'Keine Daten verfügbar',
-    noDataMessage: 'Die Energiedaten konnten nicht geladen werden. Bitte versuchen Sie es später erneut.',
+    noDataMessage:
+      'Die Energiedaten konnten nicht geladen werden. Bitte versuchen Sie es später erneut.',
     noCommercialUse: 'Keine kommerzielle Nutzung ohne Genehmigung',
     // Chart labels
     renewablePercent: 'Erneuerbare (%)',

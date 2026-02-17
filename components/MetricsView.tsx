@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Metrics, GRID_FEES_AND_TAXES } from '../utils/metrics';
-import { ThemeColors } from '../utils/theme';
+import type { Metrics } from '../utils/metrics';
+import { GRID_FEES_AND_TAXES } from '../utils/metrics';
+import type { ThemeColors } from '../utils/theme';
 
 interface MetricsViewProps {
   metrics: Metrics;
@@ -29,7 +30,19 @@ export function MetricsView({ metrics, colors }: MetricsViewProps) {
   };
 
   return (
-    <View style={{ backgroundColor: colors.surface, margin: 12, padding: 16, borderRadius: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 }}>
+    <View
+      style={{
+        backgroundColor: colors.surface,
+        margin: 12,
+        padding: 16,
+        borderRadius: 12,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      }}
+    >
       <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 8, color: colors.text }}>
         Metriken
       </Text>
@@ -39,7 +52,14 @@ export function MetricsView({ metrics, colors }: MetricsViewProps) {
 
       {/* Aktueller Wert (wenn verfügbar) */}
       {displayMetrics.marketPrice.current !== null && (
-        <View style={{ marginBottom: 20, padding: 12, backgroundColor: colors.background, borderRadius: 8 }}>
+        <View
+          style={{
+            marginBottom: 20,
+            padding: 12,
+            backgroundColor: colors.background,
+            borderRadius: 8,
+          }}
+        >
           <Text style={{ color: colors.text, fontSize: 14, fontWeight: '600', marginBottom: 8 }}>
             Aktuell
           </Text>
@@ -47,19 +67,28 @@ export function MetricsView({ metrics, colors }: MetricsViewProps) {
             <View style={{ alignItems: 'center' }}>
               <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Erneuerbare</Text>
               <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                {displayMetrics.renewable.current !== null ? displayMetrics.renewable.current.toFixed(1) : '—'}%
+                {displayMetrics.renewable.current !== null
+                  ? displayMetrics.renewable.current.toFixed(1)
+                  : '—'}
+                %
               </Text>
             </View>
             <View style={{ alignItems: 'center' }}>
               <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Börsenpreis</Text>
               <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                {displayMetrics.marketPrice.current !== null ? displayMetrics.marketPrice.current.toFixed(2) : '—'} ¢
+                {displayMetrics.marketPrice.current !== null
+                  ? displayMetrics.marketPrice.current.toFixed(2)
+                  : '—'}{' '}
+                ¢
               </Text>
             </View>
             <View style={{ alignItems: 'center' }}>
               <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Endkunde</Text>
               <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>
-                {displayMetrics.endCustomerPrice.current !== null ? displayMetrics.endCustomerPrice.current.toFixed(2) : '—'} ¢
+                {displayMetrics.endCustomerPrice.current !== null
+                  ? displayMetrics.endCustomerPrice.current.toFixed(2)
+                  : '—'}{' '}
+                ¢
               </Text>
             </View>
           </View>
@@ -97,7 +126,14 @@ export function MetricsView({ metrics, colors }: MetricsViewProps) {
           <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 12 }}>
             Energiemix (Durchschnitt)
           </Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 20 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: 20,
+            }}
+          >
             {(() => {
               const BUBBLE_MIN_SIZE = 40;
               const BUBBLE_SCALE_FACTOR = 1.2;
@@ -111,9 +147,18 @@ export function MetricsView({ metrics, colors }: MetricsViewProps) {
                   <View style={{ alignItems: 'center' }}>
                     <View
                       style={{
-                        width: Math.max(BUBBLE_MIN_SIZE, displayMetrics.renewable.avg * BUBBLE_SCALE_FACTOR),
-                        height: Math.max(BUBBLE_MIN_SIZE, displayMetrics.renewable.avg * BUBBLE_SCALE_FACTOR),
-                        borderRadius: Math.max(BUBBLE_MIN_RADIUS, displayMetrics.renewable.avg * BUBBLE_RADIUS_FACTOR),
+                        width: Math.max(
+                          BUBBLE_MIN_SIZE,
+                          displayMetrics.renewable.avg * BUBBLE_SCALE_FACTOR
+                        ),
+                        height: Math.max(
+                          BUBBLE_MIN_SIZE,
+                          displayMetrics.renewable.avg * BUBBLE_SCALE_FACTOR
+                        ),
+                        borderRadius: Math.max(
+                          BUBBLE_MIN_RADIUS,
+                          displayMetrics.renewable.avg * BUBBLE_RADIUS_FACTOR
+                        ),
                         backgroundColor: '#4CAF50',
                         opacity: 0.8,
                         justifyContent: 'center',
@@ -133,9 +178,18 @@ export function MetricsView({ metrics, colors }: MetricsViewProps) {
                   <View style={{ alignItems: 'center' }}>
                     <View
                       style={{
-                        width: Math.max(BUBBLE_MIN_SIZE, nonRenewablePercentage * BUBBLE_SCALE_FACTOR),
-                        height: Math.max(BUBBLE_MIN_SIZE, nonRenewablePercentage * BUBBLE_SCALE_FACTOR),
-                        borderRadius: Math.max(BUBBLE_MIN_RADIUS, nonRenewablePercentage * BUBBLE_RADIUS_FACTOR),
+                        width: Math.max(
+                          BUBBLE_MIN_SIZE,
+                          nonRenewablePercentage * BUBBLE_SCALE_FACTOR
+                        ),
+                        height: Math.max(
+                          BUBBLE_MIN_SIZE,
+                          nonRenewablePercentage * BUBBLE_SCALE_FACTOR
+                        ),
+                        borderRadius: Math.max(
+                          BUBBLE_MIN_RADIUS,
+                          nonRenewablePercentage * BUBBLE_RADIUS_FACTOR
+                        ),
                         backgroundColor: '#9E9E9E',
                         opacity: 0.8,
                         justifyContent: 'center',

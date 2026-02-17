@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { usePersistence } from './usePersistence';
-import { Theme } from '../utils/theme';
+import type { Theme } from '../utils/theme';
 import { GRID_FEES_AND_TAXES } from '../utils/metrics';
 
 /**
@@ -47,7 +47,7 @@ export function useSettings() {
           setTheme(savedTheme);
         }
       } catch (error) {
-} finally {
+      } finally {
         setIsInitialized(true);
       }
     }
@@ -62,8 +62,7 @@ export function useSettings() {
     async function savePostalCode() {
       try {
         await setItem('postalCode', postalCode);
-      } catch (error) {
-}
+      } catch (error) {}
     }
 
     savePostalCode();
@@ -76,8 +75,7 @@ export function useSettings() {
     async function saveGridFees() {
       try {
         await setItem('gridFees', gridFees.toString());
-      } catch (error) {
-}
+      } catch (error) {}
     }
 
     saveGridFees();
@@ -90,8 +88,7 @@ export function useSettings() {
     async function saveTheme() {
       try {
         await setItem('theme', theme);
-      } catch (error) {
-}
+      } catch (error) {}
     }
 
     saveTheme();
