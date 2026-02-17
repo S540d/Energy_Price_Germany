@@ -6,7 +6,10 @@
  * @param horizontalOffset - Horizontale Verschiebung (höhere Werte = weiter rechts)
  * @returns Die top-Position für die horizontale Zentrierung
  */
-export function getYAxisLabelCenterPosition(chartHeight: number, horizontalOffset: number = 0): number {
+export function getYAxisLabelCenterPosition(
+  chartHeight: number,
+  horizontalOffset: number = 0
+): number {
   // Bei -90deg Rotation bestimmt 'top' die horizontale Position
   // Um den Text horizontal zu zentrieren, muss top = chartHeight/2 + offset sein
   return chartHeight / 2 + horizontalOffset;
@@ -32,7 +35,7 @@ export function getYAxisLabelStyle(
 
   return {
     position: 'absolute' as const,
-    left: leftOffset,  // Responsiver Abstand vom oberen Rand
+    left: leftOffset, // Responsiver Abstand vom oberen Rand
     top: getYAxisLabelCenterPosition(chartHeight, horizontalOffset),
     fontSize: 12,
     color: textColor,

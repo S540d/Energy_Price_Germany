@@ -60,8 +60,8 @@ export function interpolateMarketPrices(
         const next = data[nextIndex];
 
         interpolatedPrice = interpolate(
-          prev.marketPrice!,
-          next.marketPrice!,
+          prev.marketPrice ?? 0,
+          next.marketPrice ?? 0,
           prev.timestamp,
           next.timestamp,
           current.timestamp
@@ -101,8 +101,8 @@ export function interpolateMarketPrices(
         const next = data[nextIndex];
 
         interpolatedRenewableShare = interpolate(
-          prev.renewableShare!,
-          next.renewableShare!,
+          prev.renewableShare ?? 0,
+          next.renewableShare ?? 0,
           prev.timestamp,
           next.timestamp,
           current.timestamp

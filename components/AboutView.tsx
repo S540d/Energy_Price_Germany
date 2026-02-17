@@ -1,6 +1,15 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Modal, ScrollView, StyleSheet, Platform, Linking } from 'react-native';
-import { ThemeColors } from '../utils/theme';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Platform,
+  Linking,
+} from 'react-native';
+import type { ThemeColors } from '../utils/theme';
 
 interface AboutViewProps {
   visible: boolean;
@@ -36,25 +45,18 @@ export function AboutView({
   dataSourceInfo,
 }: AboutViewProps) {
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      onRequestClose={onClose}
-      transparent={false}
-    >
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent={false}>
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header */}
-        <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.gridLine }]}>
-          <Text style={[styles.title, { color: colors.text }]}>
-            {t.about}
-          </Text>
-          <TouchableOpacity
-            onPress={onClose}
-            style={styles.closeButton}
-          >
-            <Text style={[styles.closeButtonText, { color: colors.primary }]}>
-              × Schließen
-            </Text>
+        <View
+          style={[
+            styles.header,
+            { backgroundColor: colors.surface, borderBottomColor: colors.gridLine },
+          ]}
+        >
+          <Text style={[styles.title, { color: colors.text }]}>{t.about}</Text>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <Text style={[styles.closeButtonText, { color: colors.primary }]}>× Schließen</Text>
           </TouchableOpacity>
         </View>
 
@@ -62,9 +64,7 @@ export function AboutView({
         <ScrollView style={styles.content}>
           {/* App Info */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Energy Price Germany
-            </Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Energy Price Germany</Text>
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
               {t.version} {appVersion}
             </Text>
@@ -72,9 +72,7 @@ export function AboutView({
 
           {/* Data Source */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {t.dataSource}
-            </Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t.dataSource}</Text>
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
               {dataSourceInfo.name}
             </Text>
@@ -92,24 +90,22 @@ export function AboutView({
               }}
               style={styles.link}
             >
-              <Text style={[styles.linkText, { color: colors.primary }]}>
-                {dataSourceInfo.url}
-              </Text>
+              <Text style={[styles.linkText, { color: colors.primary }]}>{dataSourceInfo.url}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Regional Data Source */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Regional Data
-            </Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Regional Data</Text>
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
               Energy Charts Signal API (Fraunhofer ISE)
             </Text>
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
               License: CC BY 4.0
             </Text>
-            <Text style={[styles.infoText, { color: colors.textSecondary, fontSize: 12, marginTop: 4 }]}>
+            <Text
+              style={[styles.infoText, { color: colors.textSecondary, fontSize: 12, marginTop: 4 }]}
+            >
               Regional renewable energy share based on postal code (PLZ).
             </Text>
             <TouchableOpacity
@@ -131,13 +127,16 @@ export function AboutView({
 
           {/* App License */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {t.appLicense}
-            </Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t.appLicense}</Text>
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
               Open Source • MIT License
             </Text>
-            <Text style={[styles.infoText, { color: colors.textSecondary, fontSize: 12, fontStyle: 'italic', marginTop: 4 }]}>
+            <Text
+              style={[
+                styles.infoText,
+                { color: colors.textSecondary, fontSize: 12, fontStyle: 'italic', marginTop: 4 },
+              ]}
+            >
               {t.noCommercialUse}
             </Text>
             <TouchableOpacity
@@ -151,17 +150,13 @@ export function AboutView({
               }}
               style={styles.link}
             >
-              <Text style={[styles.linkText, { color: colors.primary }]}>
-                {t.repository}
-              </Text>
+              <Text style={[styles.linkText, { color: colors.primary }]}>{t.repository}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Support Section */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {t.supportSection}
-            </Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t.supportSection}</Text>
 
             <TouchableOpacity
               onPress={() => {
@@ -182,20 +177,20 @@ export function AboutView({
             {Platform.OS === 'android' && (
               <TouchableOpacity
                 onPress={() => {
-                  const url = 'https://play.google.com/store/apps/details?id=de.svenstroh.energypricegermany';
+                  const url =
+                    'https://play.google.com/store/apps/details?id=de.svenstroh.energypricegermany';
                   Linking.openURL(url);
                 }}
                 style={styles.supportButton}
               >
-                <Text style={[styles.linkText, { color: colors.primary }]}>
-                  ⭐ {t.rateApp}
-                </Text>
+                <Text style={[styles.linkText, { color: colors.primary }]}>⭐ {t.rateApp}</Text>
               </TouchableOpacity>
             )}
 
             <TouchableOpacity
               onPress={() => {
-                const url = 'mailto:devsven@posteo.de?subject=Energy%20Price%20Germany%20-%20Bug%20Report';
+                const url =
+                  'mailto:devsven@posteo.de?subject=Energy%20Price%20Germany%20-%20Bug%20Report';
                 if (Platform.OS === 'web') {
                   window.open(url, '_blank'); // platform-safe
                 } else {
@@ -204,14 +199,12 @@ export function AboutView({
               }}
               style={styles.supportButton}
             >
-              <Text style={[styles.linkText, { color: colors.primary }]}>
-                🐛 {t.reportBug}
-              </Text>
+              <Text style={[styles.linkText, { color: colors.primary }]}>🐛 {t.reportBug}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Credits */}
-          <View style={[styles.section, { paddingBottom: 40 }]}></View>
+          <View style={[styles.section, { paddingBottom: 40 }]} />
         </ScrollView>
       </View>
     </Modal>

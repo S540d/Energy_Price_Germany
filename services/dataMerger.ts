@@ -1,5 +1,5 @@
-import { EnergyData } from '../utils/metrics';
-import { RegionalDataResponse } from './regionalDataCache';
+import type { EnergyData } from '../utils/metrics';
+import type { RegionalDataResponse } from './regionalDataCache';
 
 /**
  * Timestamp tolerance for fuzzy matching regional data (60 seconds)
@@ -50,8 +50,8 @@ export function mergeRegionalData(
 
       // If no exact match, try fuzzy match (within tolerance)
       if (!regional) {
-        regional = regionalList.find(r =>
-          Math.abs(r.timestamp - item.timestamp) <= TIMESTAMP_TOLERANCE_MS
+        regional = regionalList.find(
+          r => Math.abs(r.timestamp - item.timestamp) <= TIMESTAMP_TOLERANCE_MS
         );
       }
 

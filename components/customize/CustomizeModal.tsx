@@ -28,19 +28,13 @@ export function CustomizeModal({ visible, onClose }: CustomizeModalProps) {
   return (
     <>
       {/* Overlay */}
-      <TouchableOpacity
-        style={styles.overlay}
-        activeOpacity={1}
-        onPress={onClose}
-      />
+      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose} />
 
       {/* Modal Panel */}
       <View style={[styles.menu, { backgroundColor: colors.surface }]}>
         {/* Header with Close Button */}
         <View style={[styles.menuHeader, { borderBottomColor: colors.gridLine }]}>
-          <Text style={[styles.menuTitle, { color: colors.text }]}>
-            {t.customize}
-          </Text>
+          <Text style={[styles.menuTitle, { color: colors.text }]}>{t.customize}</Text>
           <TouchableOpacity onPress={onClose}>
             <Text style={[styles.closeButton, { color: colors.text }]}>✕</Text>
           </TouchableOpacity>

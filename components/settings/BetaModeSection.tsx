@@ -83,16 +83,12 @@ export function BetaModeSection() {
 
   return (
     <View style={styles.menuSection}>
-      <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-        {t.betaMode}
-      </Text>
+      <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.betaMode}</Text>
 
       {/* Toggle Switch */}
       <View style={[styles.betaRow, { backgroundColor: colors.surface }]}>
         <View style={styles.betaTextContainer}>
-          <Text style={[styles.betaLabel, { color: colors.text }]}>
-            {t.betaModeEnabled}
-          </Text>
+          <Text style={[styles.betaLabel, { color: colors.text }]}>{t.betaModeEnabled}</Text>
           <Text style={[styles.betaDescription, { color: colors.textSecondary }]}>
             {t.betaModeDescription}
           </Text>
@@ -112,15 +108,11 @@ export function BetaModeSection() {
           <Text style={[styles.warningText, { color: colors.warningText }]}>
             {t.betaModeWarning}
           </Text>
-          <Text style={[styles.statusText, { color: colors.warningText }]}>
-            {t.betaModeActive}
-          </Text>
+          <Text style={[styles.statusText, { color: colors.warningText }]}>{t.betaModeActive}</Text>
         </View>
       ) : (
         <View style={[styles.infoBox, { backgroundColor: colors.infoBackground }]}>
-          <Text style={[styles.infoText, { color: colors.infoText }]}>
-            {t.betaModeInactive}
-          </Text>
+          <Text style={[styles.infoText, { color: colors.infoText }]}>{t.betaModeInactive}</Text>
         </View>
       )}
     </View>
