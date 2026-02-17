@@ -3,15 +3,8 @@ import {
   validateRegionalDataResponse,
   fetchWithTimeout,
 } from '../utils/apiValidation';
-
-/**
- * Regional Data API Response Type
- * Response from Energy Charts Signal API
- */
-export interface RegionalDataResponse {
-  unix_seconds: number[];  // Timestamps in seconds since epoch
-  share: number[];         // Renewable energy share percentages
-}
+import type { RegionalDataResponse } from '../utils/apiValidation';
+export type { RegionalDataResponse } from '../utils/apiValidation';
 
 /**
  * Regional Data Cache Entry (In-Memory)
@@ -99,21 +92,21 @@ export class RegionalDataCache {
    */
   async fetchRegionalData(postalCode: string): Promise<RegionalDataResponse | null> {
     try {
-      // STEP 1: Check persistent storage cache (daily validation)
+      // STEP 1: Check in-memory cache first (fastest, 15-minute TTL)
+      const memoryCacheEntry = this.memoryCache.get(postalCode);
+      if (memoryCacheEntry && Date.now() - memoryCacheEntry.timestamp < REGIONAL_CACHE_DURATION) {
+        return memoryCacheEntry.data;
+      }
+
+      // STEP 2: Check persistent storage cache (daily validation)
       const persistentCache = await this.loadFromStorage(postalCode);
       if (persistentCache) {
         this.memoryCache.set(postalCode, { data: persistentCache, timestamp: Date.now() });
         return persistentCache;
       }
 
-      // STEP 2: Check in-memory cache (15-minute fallback)
-      const memoryCacheEntry = this.memoryCache.get(postalCode);
-      if (memoryCacheEntry && Date.now() - memoryCacheEntry.timestamp < REGIONAL_CACHE_DURATION) {
-        return memoryCacheEntry.data;
-      }
-
       // STEP 3: Fetch from API with timeout (8 seconds)
-      const url = `${SERVERLESS_PROXY_URL}?plz=${postalCode}`;
+      const url = `${SERVERLESS_PROXY_URL}?plz=${encodeURIComponent(postalCode)}`;
       const response = await fetchWithTimeout(url, {}, 8000);
 
       if (!response.ok) {
