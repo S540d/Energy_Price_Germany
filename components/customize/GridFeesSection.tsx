@@ -31,13 +31,9 @@ export function GridFeesSection() {
 
   return (
     <View style={styles.menuSection}>
-      <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-        {t.gridFees}
-      </Text>
+      <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.gridFees}</Text>
       <View>
-        <Text style={[styles.hintText, { color: colors.textSecondary }]}>
-          {t.gridFeesHint}
-        </Text>
+        <Text style={[styles.hintText, { color: colors.textSecondary }]}>{t.gridFeesHint}</Text>
         <TextInput
           style={[
             styles.input,
@@ -45,7 +41,7 @@ export function GridFeesSection() {
               backgroundColor: colors.surface,
               color: colors.text,
               borderColor: colors.gridLine,
-            }
+            },
           ]}
           placeholder={t.gridFeesValue}
           placeholderTextColor={colors.textSecondary}

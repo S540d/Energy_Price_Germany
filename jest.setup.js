@@ -104,15 +104,6 @@ jest.mock('react-native-safe-area-context', () => ({
   SafeAreaProvider: ({ children }) => children,
 }));
 
-// Mock victory-native components
-jest.mock('victory-native', () => ({
-  VictoryChart: 'VictoryChart',
-  VictoryBar: 'VictoryBar',
-  VictoryAxis: 'VictoryAxis',
-  VictoryScatter: 'VictoryScatter',
-  VictoryLine: 'VictoryLine',
-}));
-
 // Mock React Native Linking
 jest.mock('react-native/Libraries/Linking/Linking', () => ({
   openURL: jest.fn(),

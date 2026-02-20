@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
 import { useLanguageContext } from '../context/LanguageContext';
 import { getThemeColors } from '../utils/theme';
@@ -21,7 +21,7 @@ export const APPLIANCES: Appliance[] = [
     nameEN: 'Washing Machine',
     kwh: 1.5,
     durationHours: 2,
-    icon: '🧺'
+    icon: '🧺',
   },
   {
     id: 'dishwasher',
@@ -29,7 +29,7 @@ export const APPLIANCES: Appliance[] = [
     nameEN: 'Dishwasher',
     kwh: 1.2,
     durationHours: 3,
-    icon: '🍽️'
+    icon: '🍽️',
   },
   {
     id: 'dryer',
@@ -37,7 +37,7 @@ export const APPLIANCES: Appliance[] = [
     nameEN: 'Tumble Dryer',
     kwh: 3.5,
     durationHours: 2,
-    icon: '👕'
+    icon: '👕',
   },
   {
     id: 'ev_small',
@@ -45,7 +45,7 @@ export const APPLIANCES: Appliance[] = [
     nameEN: 'EV (10kWh)',
     kwh: 10.0,
     durationHours: 2,
-    icon: '🚗'
+    icon: '🚗',
   },
   {
     id: 'ev_full',
@@ -53,7 +53,7 @@ export const APPLIANCES: Appliance[] = [
     nameEN: 'EV charging (44kWh)',
     kwh: 44.0,
     durationHours: 4,
-    icon: '🔋'
+    icon: '🔋',
   },
   {
     id: 'heat_pump',
@@ -61,7 +61,7 @@ export const APPLIANCES: Appliance[] = [
     nameEN: 'Heat Pump (1h)',
     kwh: 3.0,
     durationHours: 1,
-    icon: '🌡️'
+    icon: '🌡️',
   },
 ];
 
@@ -76,7 +76,11 @@ interface CostCalculatorProps {
  * Helps users understand electricity costs in real terms by showing
  * how much it costs to run common household appliances
  */
-export function CostCalculator({ currentPrice, priceData = [], gridFees = 0 }: CostCalculatorProps) {
+export function CostCalculator({
+  currentPrice,
+  priceData = [],
+  gridFees = 0,
+}: CostCalculatorProps) {
   const { t, language } = useLanguageContext();
   const { theme } = useSettingsContext();
   const systemTheme = useColorScheme();
@@ -91,28 +95,31 @@ export function CostCalculator({ currentPrice, priceData = [], gridFees = 0 }: C
   };
 
   // Calculate average price over duration for the appliance
-  const calculateAveragePriceOverDuration = (startIndex: number, durationHours: number): number => {
-    if (!priceData || priceData.length === 0) return 0;
+  const calculateAveragePriceOverDuration = useCallback(
+    (startIndex: number, durationHours: number): number => {
+      if (!priceData || priceData.length === 0) return 0;
 
-    // Assuming 15-minute intervals in priceData
-    const intervalsPerHour = 4; // 4 × 15min = 1 hour
-    const requiredIntervals = durationHours * intervalsPerHour;
+      // Assuming 15-minute intervals in priceData
+      const intervalsPerHour = 4; // 4 × 15min = 1 hour
+      const requiredIntervals = durationHours * intervalsPerHour;
 
-    // Don't go beyond available data
-    const endIndex = Math.min(startIndex + requiredIntervals, priceData.length);
-    const actualIntervals = endIndex - startIndex;
+      // Don't go beyond available data
+      const endIndex = Math.min(startIndex + requiredIntervals, priceData.length);
+      const actualIntervals = endIndex - startIndex;
 
-    if (actualIntervals === 0) return 0;
+      if (actualIntervals === 0) return 0;
 
-    let sum = 0;
-    for (let i = startIndex; i < endIndex; i++) {
-      // Convert marketprice from EUR/MWh to ct/kWh (1 EUR/MWh = 0.1 ct/kWh)
-      const marketPriceCtPerKwh = priceData[i].marketprice * 0.1;
-      sum += marketPriceCtPerKwh + gridFees;
-    }
+      let sum = 0;
+      for (let i = startIndex; i < endIndex; i++) {
+        // Convert marketprice from EUR/MWh to ct/kWh (1 EUR/MWh = 0.1 ct/kWh)
+        const marketPriceCtPerKwh = priceData[i].marketprice * 0.1;
+        sum += marketPriceCtPerKwh + gridFees;
+      }
 
-    return sum / actualIntervals;
-  };
+      return sum / actualIntervals;
+    },
+    [priceData, gridFees]
+  );
 
   // Find current average price for the appliance duration
   const currentAveragePrice = useMemo(() => {
@@ -132,7 +139,7 @@ export function CostCalculator({ currentPrice, priceData = [], gridFees = 0 }: C
     });
 
     return calculateAveragePriceOverDuration(currentIndex, selectedAppliance.durationHours);
-  }, [priceData, currentPrice, selectedAppliance.durationHours, gridFees]);
+  }, [priceData, currentPrice, selectedAppliance.durationHours, calculateAveragePriceOverDuration]);
 
   // Find the cheapest time slot for the appliance considering its duration
   const findCheapestTimeSlot = useMemo(() => {
@@ -158,7 +165,7 @@ export function CostCalculator({ currentPrice, priceData = [], gridFees = 0 }: C
     });
 
     return { price: cheapestAvgPrice, time: cheapestTime, startIndex: cheapestStartIndex };
-  }, [priceData, gridFees, language, selectedAppliance.durationHours]);
+  }, [priceData, language, selectedAppliance.durationHours, calculateAveragePriceOverDuration]);
 
   const currentCost = parseFloat(calculateCost(selectedAppliance.kwh, currentAveragePrice));
   const cheapestCost = findCheapestTimeSlot
@@ -168,16 +175,14 @@ export function CostCalculator({ currentPrice, priceData = [], gridFees = 0 }: C
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
-      <Text style={[styles.title, { color: colors.text }]}>
-        {t.costCalculatorTitle}
-      </Text>
+      <Text style={[styles.title, { color: colors.text }]}>{t.costCalculatorTitle}</Text>
       <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
         {t.costCalculatorSubtitle}
       </Text>
 
       {/* Appliance Selection Chips */}
       <View style={styles.chipContainer}>
-        {APPLIANCES.map((appliance) => {
+        {APPLIANCES.map(appliance => {
           const isSelected = selectedAppliance.id === appliance.id;
           return (
             <TouchableOpacity
@@ -189,10 +194,8 @@ export function CostCalculator({ currentPrice, priceData = [], gridFees = 0 }: C
                     ? `${colors.primary}15` // 15% opacity - subtil
                     : 'transparent',
                   borderWidth: isSelected ? 2 : 1,
-                  borderColor: isSelected
-                    ? colors.primary
-                    : colors.border,
-                }
+                  borderColor: isSelected ? colors.primary : colors.border,
+                },
               ]}
               onPress={() => setSelectedAppliance(appliance)}
               activeOpacity={0.7}
@@ -202,8 +205,8 @@ export function CostCalculator({ currentPrice, priceData = [], gridFees = 0 }: C
                 style={[
                   styles.chipText,
                   {
-                    color: isSelected ? colors.primary : colors.text
-                  }
+                    color: isSelected ? colors.primary : colors.text,
+                  },
                 ]}
               >
                 {language === 'de' ? appliance.nameDE : appliance.nameEN}
@@ -215,12 +218,8 @@ export function CostCalculator({ currentPrice, priceData = [], gridFees = 0 }: C
 
       {/* Current Cost Display */}
       <View style={[styles.resultContainer, { backgroundColor: colors.card }]}>
-        <Text style={[styles.resultLabel, { color: colors.textSecondary }]}>
-          {t.costNow}
-        </Text>
-        <Text style={[styles.resultPrice, { color: colors.text }]}>
-          {currentCost.toFixed(2)} €
-        </Text>
+        <Text style={[styles.resultLabel, { color: colors.textSecondary }]}>{t.costNow}</Text>
+        <Text style={[styles.resultPrice, { color: colors.text }]}>{currentCost.toFixed(2)} €</Text>
         <Text style={[styles.subText, { color: colors.textTertiary }]}>
           {t.costFor} {selectedAppliance.durationHours}h {t.costRuntime}
         </Text>
@@ -239,7 +238,8 @@ export function CostCalculator({ currentPrice, priceData = [], gridFees = 0 }: C
             {cheapestCost.toFixed(2)} €
             {savings > 0.01 && (
               <Text style={styles.savingsDiff}>
-                {' '}({t.costSave} {savings.toFixed(2)} €)
+                {' '}
+                ({t.costSave} {savings.toFixed(2)} €)
               </Text>
             )}
           </Text>

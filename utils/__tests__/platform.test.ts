@@ -15,7 +15,7 @@ import {
   assertWebAPI,
   safeWebAPI,
 } from '../platform';
-import { Platform } from 'react-native';
+import { Platform as _Platform } from 'react-native';
 
 jest.mock('react-native', () => ({
   Platform: {
@@ -170,9 +170,9 @@ describe('platform', () => {
           assertWebAPI('localStorage');
           // If we reach here, we're on web and it didn't throw (expected)
           expect(true).toBe(true);
-        } catch (error: any) {
+        } catch (error: unknown) {
           // If it did throw, verify message includes API name
-          expect(error.message).toContain('localStorage');
+          expect((error as Error).message).toContain('localStorage');
         }
       }
     });
@@ -202,10 +202,7 @@ describe('platform', () => {
 
     it('should work with generic types', () => {
       const callback = jest.fn(() => ({ data: 'value' }));
-      const result = safeWebAPI<{ data: string }>(
-        callback,
-        { data: 'default' }
-      );
+      const result = safeWebAPI<{ data: string }>(callback, { data: 'default' });
       expect(result.data).toBe('value');
     });
   });

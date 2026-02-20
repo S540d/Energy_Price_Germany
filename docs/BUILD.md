@@ -73,8 +73,8 @@ Die Keystore-Informationen sind in `credentials.json` gespeichert:
 
 ## 📱 Aktuelle Version
 
-**Version:** 1.1.0
-**Version Code:** 4
+**Version:** 1.3.0
+**Version Code:** 10
 **Package:** com.sven4321.energypricegermany
 
 ---
@@ -85,14 +85,6 @@ Die Keystore-Informationen sind in `credentials.json` gespeichert:
 - **Datum:** 8. November 2025
 - **Build-ID:** f0e2b03d-bf45-4763-ad88-97eb7b0c44db
 - **Build-Logs:** https://expo.dev/accounts/devsven/projects/Energy_Price_Germany/builds/f0e2b03d-bf45-4763-ad88-97eb7b0c44db
-- **AAB:** https://expo.dev/artifacts/eas/vKf6pfqxxKRWhpezM7GE9T.aab
-- **Größe:** 83 MB
-- **Features:**
-  - Edge-to-Edge Display (Android 15+)
-  - Jetpack Compose UI
-  - Material Design 3
-  - Room Database
-  - Ktor HTTP Client
 
 ---
 
@@ -224,6 +216,6 @@ npx eas-cli build:version:set --platform android
 
 ---
 
-**Letzte Aktualisierung:** 8. November 2025
+**Letzte Aktualisierung:** Februar 2026
 **Build-System:** EAS Build (Expo)
 **Status:** ✅ Bereit für Play Store

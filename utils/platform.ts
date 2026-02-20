@@ -8,12 +8,15 @@
 import { Platform } from 'react-native';
 
 // Import AsyncStorage only on mobile platforms
-let AsyncStorage: any = null;
+let AsyncStorage: {
+  getItem: (key: string) => Promise<string | null>;
+  setItem: (key: string, value: string) => Promise<void>;
+  removeItem: (key: string) => Promise<void>;
+} | null = null;
 if (Platform.OS !== 'web') {
   try {
     AsyncStorage = require('@react-native-async-storage/async-storage').default;
-  } catch (e) {
-}
+  } catch (e) {}
 }
 
 // Platform Detection
@@ -44,7 +47,7 @@ export function getSystemDarkModePreference(): boolean {
   try {
     return window.matchMedia('(prefers-color-scheme: dark)').matches; // platform-safe
   } catch (error) {
-return false;
+    return false;
   }
 }
 
@@ -53,9 +56,7 @@ return false;
  * @param callback - Wird aufgerufen wenn sich das Theme ändert
  * @returns Cleanup-Funktion
  */
-export function addSystemThemeChangeListener(
-  callback: (isDark: boolean) => void
-): () => void {
+export function addSystemThemeChangeListener(callback: (isDark: boolean) => void): () => void {
   if (!supportsMatchMedia()) {
     // Noop für Mobile - könnte Appearance.addChangeListener verwenden
     return () => {};
@@ -69,7 +70,7 @@ export function addSystemThemeChangeListener(
 
     return () => mediaQuery.removeEventListener('change', handler);
   } catch (error) {
-return () => {};
+    return () => {};
   }
 }
 
@@ -84,7 +85,7 @@ export const Storage = {
     } else if (AsyncStorage) {
       return await AsyncStorage.getItem(key);
     } else {
-return null;
+      return null;
     }
   },
 
@@ -94,7 +95,7 @@ return null;
     } else if (AsyncStorage) {
       await AsyncStorage.setItem(key, value);
     } else {
-}
+    }
   },
 
   async removeItem(key: string): Promise<void> {
@@ -103,7 +104,7 @@ return null;
     } else if (AsyncStorage) {
       await AsyncStorage.removeItem(key);
     } else {
-}
+    }
   },
 };
 
@@ -115,7 +116,7 @@ export function assertWebAPI(apiName: string): void {
   if (!isWeb) {
     throw new Error(
       `Web API "${apiName}" is not available on ${Platform.OS}. ` +
-      `Use Platform-specific code or polyfills.`
+        `Use Platform-specific code or polyfills.`
     );
   }
 }
@@ -123,14 +124,10 @@ export function assertWebAPI(apiName: string): void {
 /**
  * Sichere Web API Calls mit Fallback
  */
-export function safeWebAPI<T>(
-  callback: () => T,
-  fallback: T,
-  apiName?: string
-): T {
+export function safeWebAPI<T>(callback: () => T, fallback: T, apiName?: string): T {
   if (!isWeb) {
     if (apiName && __DEV__) {
-}
+    }
     return fallback;
   }
 
@@ -138,7 +135,7 @@ export function safeWebAPI<T>(
     return callback();
   } catch (error) {
     if (__DEV__) {
-}
+    }
     return fallback;
   }
 }
