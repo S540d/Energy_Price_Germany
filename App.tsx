@@ -14,6 +14,7 @@ import * as Updates from 'expo-updates';
 import { getCurrentDataSource } from './services/energyDataManager';
 import { RenewableBarChart } from './components/charts/RenewableBarChart';
 import { PriceBarChart } from './components/charts/PriceBarChart';
+import { ClockChart } from './components/charts/ClockChart';
 import { CorrelationScatterChart } from './components/charts/CorrelationScatterChart';
 import { ChartDetailView } from './components/ChartDetailView';
 import { AboutView } from './components/AboutView';
@@ -35,6 +36,7 @@ function AppContent() {
   const [customizeVisible, setCustomizeVisible] = useState(false);
   const [aboutVisible, setAboutVisible] = useState(false);
   const [calculatorVisible, setCalculatorVisible] = useState(false);
+  const [priceClockView, setPriceClockView] = useState(false);
 
   // Settings and Language from Context
   const { theme, debouncedPostalCode, gridFees } = useSettingsContext();
@@ -344,28 +346,90 @@ function AppContent() {
                       </Text>
                     </View>
                   </View>
+
+                  {/* View Toggle */}
+                  <View style={{ flexDirection: 'row', gap: 6, marginTop: 4 }}>
+                    <TouchableOpacity
+                      onPress={() => setPriceClockView(false)}
+                      style={{
+                        paddingHorizontal: 10,
+                        paddingVertical: 4,
+                        borderRadius: 8,
+                        backgroundColor: !priceClockView ? colors.primary : colors.gridLine,
+                      }}
+                      accessibilityLabel={t.viewBar}
+                      accessibilityRole="button"
+                    >
+                      <Text
+                        style={{
+                          color: !priceClockView ? '#fff' : colors.text,
+                          fontSize: 12,
+                          fontWeight: '600',
+                        }}
+                      >
+                        📊 {t.viewBar}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setPriceClockView(true)}
+                      style={{
+                        paddingHorizontal: 10,
+                        paddingVertical: 4,
+                        borderRadius: 8,
+                        backgroundColor: priceClockView ? colors.primary : colors.gridLine,
+                      }}
+                      accessibilityLabel={t.viewClock}
+                      accessibilityRole="button"
+                    >
+                      <Text
+                        style={{
+                          color: priceClockView ? '#fff' : colors.text,
+                          fontSize: 12,
+                          fontWeight: '600',
+                        }}
+                      >
+                        🕐 {t.viewClock}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               }
             >
-              <PriceBarChart
-                title={t.priceTitle}
-                subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
-                data={filteredEnergyData}
-                backgroundColor={colors.surface}
-                textColor={colors.text}
-                gridColor={colors.gridLine}
-                colors={colors}
-                labels={{
-                  yAxis: t.pricePerKwh,
-                  now: t.now,
-                  average: t.average,
-                  marketPrice: t.marketPrice,
-                  gridFeesAndTaxes: t.gridFeesAndTaxes,
-                  interpolated: t.interpolated,
-                }}
-                gridFees={gridFees}
-                showLegend={false}
-              />
+              {priceClockView ? (
+                <ClockChart
+                  data={filteredEnergyData}
+                  backgroundColor={colors.surface}
+                  textColor={colors.text}
+                  colors={colors}
+                  gridFees={gridFees}
+                  labels={{
+                    now: t.now,
+                    average: t.average,
+                    pricePerKwh: t.pricePerKwh,
+                    noData: t.noData,
+                  }}
+                />
+              ) : (
+                <PriceBarChart
+                  title={t.priceTitle}
+                  subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+                  data={filteredEnergyData}
+                  backgroundColor={colors.surface}
+                  textColor={colors.text}
+                  gridColor={colors.gridLine}
+                  colors={colors}
+                  labels={{
+                    yAxis: t.pricePerKwh,
+                    now: t.now,
+                    average: t.average,
+                    marketPrice: t.marketPrice,
+                    gridFeesAndTaxes: t.gridFeesAndTaxes,
+                    interpolated: t.interpolated,
+                  }}
+                  gridFees={gridFees}
+                  showLegend={false}
+                />
+              )}
             </ChartDetailView>
 
             <ChartDetailView

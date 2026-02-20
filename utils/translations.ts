@@ -83,6 +83,9 @@ export const translations = {
     marketPriceLabel: 'Market Price',
     gridFeesLabel: 'Grid Fees & Taxes',
     regionalDataLabel: 'Regional Data',
+    // Clock View
+    viewBar: 'Bar Chart',
+    viewClock: 'Clock View',
   },
   de: {
     settings: 'Einstellungen',
@@ -166,6 +169,9 @@ export const translations = {
     legendExplanationSuffix: '¢/kWh (Netzentgelte & Steuern)',
     marketPriceLabel: 'Börsenstrompreis',
     gridFeesLabel: 'Netzentgelte & Steuern',
+    // Clock View
+    viewBar: 'Balkendiagramm',
+    viewClock: 'Uhransicht',
     regionalDataLabel: 'Regionale Daten',
   },
 } as const;
