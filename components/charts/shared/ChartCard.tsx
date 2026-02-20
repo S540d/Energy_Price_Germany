@@ -23,13 +23,22 @@ function ChartCardComponent({
 
   useEffect(() => {
     if (!animateIn) return;
-    Animated.timing(opacity, {
+
+    const animation = Animated.timing(opacity, {
       toValue: 1,
       duration: 400,
       easing: Easing.out(Easing.ease),
       useNativeDriver: true,
-    }).start();
-  }, [animateIn, opacity]);
+    });
+
+    animation.start();
+
+    return () => {
+      animation.stop();
+    };
+    // opacity is a stable Animated.Value ref – intentionally excluded
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [animateIn]);
 
   return (
     <Animated.View
