@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, Platform } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
 import type { ThemeColors } from '../../utils/theme';
-import { getYAxisLabelStyle } from '../../utils/chartHelpers';
+import { getYAxisLabelStyle, getPriceColor } from '../../utils/chartHelpers';
 import { GRID_FEES_AND_TAXES } from '../../utils/metrics';
 import { useChartDimensions } from '../../utils/chartUtils';
 import {
@@ -13,32 +13,6 @@ import {
   NowMarkerLine,
   NowMarkerLabel,
 } from './shared';
-
-// Performance: Move color helpers outside component for stable references
-const interpolateColor = (color1: number[], color2: number[], factor: number) => {
-  const r = Math.round(color1[0] + (color2[0] - color1[0]) * factor);
-  const g = Math.round(color1[1] + (color2[1] - color1[1]) * factor);
-  const b = Math.round(color1[2] + (color2[2] - color1[2]) * factor);
-  return `rgb(${r}, ${g}, ${b})`;
-};
-
-const getPriceColor = (totalPrice: number) => {
-  const green = [76, 175, 80];
-  const yellow = [255, 193, 7];
-  const red = [244, 67, 54];
-
-  if (totalPrice < 25) {
-    return '#4CAF50';
-  } else if (totalPrice < 35) {
-    const factor = (totalPrice - 25) / 10;
-    return interpolateColor(green, yellow, factor);
-  } else if (totalPrice < 50) {
-    const factor = (totalPrice - 35) / 15;
-    return interpolateColor(yellow, red, factor);
-  } else {
-    return '#F44336';
-  }
-};
 
 interface PriceBarChartProps {
   title: string;
