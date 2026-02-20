@@ -1,0 +1,317 @@
+import React, { useMemo, useState, useCallback } from 'react';
+import { View, Text, Platform } from 'react-native';
+import Svg, { Path, Circle, Line, G } from 'react-native-svg';
+import type { ThemeColors } from '../../utils/theme';
+import { useChartDimensions } from '../../utils/chartUtils';
+import { ChartCard } from './shared';
+
+// Shared color logic (same thresholds as PriceBarChart)
+const interpolateColor = (color1: number[], color2: number[], factor: number) => {
+  const r = Math.round(color1[0] + (color2[0] - color1[0]) * factor);
+  const g = Math.round(color1[1] + (color2[1] - color1[1]) * factor);
+  const b = Math.round(color1[2] + (color2[2] - color1[2]) * factor);
+  return `rgb(${r}, ${g}, ${b})`;
+};
+
+export const getPriceColor = (totalPrice: number): string => {
+  const green = [76, 175, 80];
+  const yellow = [255, 193, 7];
+  const red = [244, 67, 54];
+
+  if (totalPrice < 25) return '#4CAF50';
+  if (totalPrice < 35) return interpolateColor(green, yellow, (totalPrice - 25) / 10);
+  if (totalPrice < 50) return interpolateColor(yellow, red, (totalPrice - 35) / 15);
+  return '#F44336';
+};
+
+interface ClockChartProps {
+  data: Array<{
+    timestamp: number;
+    marketPrice: number | null;
+    renewableShare: number | null;
+    isMarketPriceInterpolated?: boolean;
+  }>;
+  backgroundColor: string;
+  textColor: string;
+  colors: ThemeColors;
+  gridFees: number;
+  labels: {
+    now: string;
+    average: string;
+    pricePerKwh: string;
+    noData: string;
+  };
+}
+
+interface HourSegment {
+  hour: number;
+  avgPrice: number | null;
+  totalPrice: number | null;
+  color: string;
+  isInterpolated: boolean;
+}
+
+/** Polar → Cartesian helper */
+function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
+  const rad = ((angleDeg - 90) * Math.PI) / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+/** SVG arc path for a clock segment */
+function segmentPath(
+  cx: number,
+  cy: number,
+  innerR: number,
+  outerR: number,
+  startAngle: number,
+  endAngle: number
+): string {
+  const gap = 1.5; // degrees gap between segments
+  const s = startAngle + gap / 2;
+  const e = endAngle - gap / 2;
+
+  const p1 = polarToCartesian(cx, cy, outerR, s);
+  const p2 = polarToCartesian(cx, cy, outerR, e);
+  const p3 = polarToCartesian(cx, cy, innerR, e);
+  const p4 = polarToCartesian(cx, cy, innerR, s);
+
+  const largeArc = e - s > 180 ? 1 : 0;
+  return [
+    `M ${p1.x} ${p1.y}`,
+    `A ${outerR} ${outerR} 0 ${largeArc} 1 ${p2.x} ${p2.y}`,
+    `L ${p3.x} ${p3.y}`,
+    `A ${innerR} ${innerR} 0 ${largeArc} 0 ${p4.x} ${p4.y}`,
+    'Z',
+  ].join(' ');
+}
+
+function ClockChartComponent({
+  data,
+  backgroundColor,
+  textColor,
+  colors,
+  gridFees,
+  labels,
+}: ClockChartProps) {
+  const { margin, cardPadding, isPhone } = useChartDimensions();
+  const [selectedHour, setSelectedHour] = useState<number | null>(null);
+
+  // Aggregate data into 24 hourly buckets
+  const hourSegments = useMemo<HourSegment[]>(() => {
+    const buckets: { prices: number[]; interpolated: boolean[] }[] = Array.from(
+      { length: 24 },
+      () => ({ prices: [], interpolated: [] })
+    );
+
+    for (const d of data) {
+      if (d.marketPrice === null) continue;
+      const date = new Date(d.timestamp);
+      const hour = date.getHours();
+      buckets[hour].prices.push(d.marketPrice);
+      buckets[hour].interpolated.push(d.isMarketPriceInterpolated ?? false);
+    }
+
+    return buckets.map((bucket, hour) => {
+      if (bucket.prices.length === 0) {
+        return {
+          hour,
+          avgPrice: null,
+          totalPrice: null,
+          color: colors.gridLine,
+          isInterpolated: false,
+        };
+      }
+      const avgPrice = bucket.prices.reduce((a, b) => a + b, 0) / bucket.prices.length;
+      const totalPrice = avgPrice + gridFees;
+      const isInterpolated = bucket.interpolated.every(Boolean);
+      return {
+        hour,
+        avgPrice,
+        totalPrice,
+        color: getPriceColor(totalPrice),
+        isInterpolated,
+      };
+    });
+  }, [data, gridFees, colors.gridLine]);
+
+  // Current hour
+  const currentHour = new Date().getHours();
+  const nowAngle = (currentHour / 24) * 360 + (new Date().getMinutes() / 60) * 15;
+
+  // Chart size – square, based on available width
+  const { chartWidth } = useChartDimensions();
+  const size = Math.min(chartWidth - cardPadding * 2, isPhone ? 280 : 340);
+  const cx = size / 2;
+  const cy = size / 2;
+  const outerR = size / 2 - 8;
+  const innerR = outerR * 0.55;
+  const labelR = outerR * 1.12;
+
+  const selectedSegment = selectedHour !== null ? hourSegments[selectedHour] : null;
+  const currentSegment = hourSegments[currentHour];
+
+  const handleSegmentPress = useCallback((hour: number) => {
+    setSelectedHour(prev => (prev === hour ? null : hour));
+  }, []);
+
+  // Hour labels (0, 3, 6, 9, 12, 15, 18, 21)
+  const clockLabels = [0, 3, 6, 9, 12, 15, 18, 21];
+
+  return (
+    <ChartCard backgroundColor={backgroundColor} margin={margin} cardPadding={cardPadding}>
+      {/* Center info */}
+      <View style={{ alignItems: 'center', marginBottom: 8 }}>
+        {selectedSegment && selectedSegment.totalPrice !== null ? (
+          <>
+            <Text style={{ color: textColor, fontSize: isPhone ? 13 : 15, fontWeight: '700' }}>
+              {selectedHour}:00 – {((selectedHour ?? 0) + 1) % 24}:00
+            </Text>
+            <Text
+              style={{
+                color: selectedSegment.color,
+                fontSize: isPhone ? 20 : 24,
+                fontWeight: '800',
+              }}
+            >
+              {selectedSegment.totalPrice.toFixed(2)} ¢
+            </Text>
+            <Text style={{ color: textColor, fontSize: 11, opacity: 0.6 }}>
+              {labels.pricePerKwh}
+            </Text>
+          </>
+        ) : currentSegment.totalPrice !== null ? (
+          <>
+            <Text style={{ color: textColor, fontSize: isPhone ? 11 : 13, opacity: 0.7 }}>
+              {labels.now}
+            </Text>
+            <Text
+              style={{
+                color: currentSegment.color,
+                fontSize: isPhone ? 20 : 24,
+                fontWeight: '800',
+              }}
+            >
+              {currentSegment.totalPrice.toFixed(2)} ¢
+            </Text>
+            <Text style={{ color: textColor, fontSize: 11, opacity: 0.6 }}>
+              {labels.pricePerKwh}
+            </Text>
+          </>
+        ) : (
+          <Text style={{ color: textColor, fontSize: 13, opacity: 0.5 }}>{labels.noData}</Text>
+        )}
+      </View>
+
+      {/* Clock SVG */}
+      <View style={{ alignItems: 'center' }}>
+        <Svg width={size} height={size}>
+          {/* Background circle */}
+          <Circle cx={cx} cy={cy} r={outerR + 4} fill={colors.gridLine} opacity={0.1} />
+
+          {/* Hour segments */}
+          {hourSegments.map(seg => {
+            const startAngle = (seg.hour / 24) * 360;
+            const endAngle = ((seg.hour + 1) / 24) * 360;
+            const isSelected = selectedHour === seg.hour;
+            const isCurrent = seg.hour === currentHour && selectedHour === null;
+            const outerRadius = isSelected || isCurrent ? outerR + 4 : outerR;
+
+            return (
+              <G key={`seg-${seg.hour}`}>
+                <Path
+                  d={segmentPath(cx, cy, innerR, outerRadius, startAngle, endAngle)}
+                  fill={seg.color}
+                  opacity={seg.avgPrice === null ? 0.15 : isSelected ? 1 : 0.75}
+                  {...(Platform.OS === 'web'
+                    ? {
+                        onMouseEnter: () => setSelectedHour(seg.hour),
+                        onMouseLeave: () => setSelectedHour(null),
+                        style: { cursor: 'pointer' },
+                      }
+                    : {
+                        onPress: () => handleSegmentPress(seg.hour),
+                      })}
+                  accessibilityLabel={
+                    seg.totalPrice !== null
+                      ? `${seg.hour}:00 Uhr, ${seg.totalPrice.toFixed(2)} Cent pro kWh`
+                      : `${seg.hour}:00 Uhr, keine Daten`
+                  }
+                />
+              </G>
+            );
+          })}
+
+          {/* Inner circle (center cutout) */}
+          <Circle cx={cx} cy={cy} r={innerR - 2} fill={backgroundColor} />
+
+          {/* Now marker (clock hand) */}
+          {(() => {
+            const tip = polarToCartesian(cx, cy, outerR + 8, nowAngle);
+            const base = polarToCartesian(cx, cy, innerR - 8, nowAngle);
+            return (
+              <Line
+                x1={base.x}
+                y1={base.y}
+                x2={tip.x}
+                y2={tip.y}
+                stroke={textColor}
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                opacity={0.9}
+              />
+            );
+          })()}
+          <Circle cx={cx} cy={cy} r={4} fill={textColor} opacity={0.9} />
+
+          {/* Hour labels (0, 3, 6 … 21) */}
+          {clockLabels.map(h => {
+            const angle = (h / 24) * 360;
+            const pos = polarToCartesian(cx, cy, labelR, angle);
+            return (
+              <Text
+                key={`label-${h}`}
+                style={{
+                  position: 'absolute',
+                  left: pos.x - 10,
+                  top: pos.y - 8,
+                  fontSize: isPhone ? 9 : 10,
+                  color: textColor,
+                  opacity: 0.55,
+                  textAlign: 'center',
+                  width: 20,
+                }}
+              >
+                {h}
+              </Text>
+            );
+          })}
+        </Svg>
+
+        {/* Overlay hour labels (SVG Text nicht ideal auf RN) */}
+        {clockLabels.map(h => {
+          const angle = (h / 24) * 360;
+          const pos = polarToCartesian(cx, cy, labelR, angle);
+          return (
+            <Text
+              key={`ol-${h}`}
+              style={{
+                position: 'absolute',
+                left: pos.x - 10,
+                top: pos.y - 7,
+                fontSize: isPhone ? 9 : 10,
+                color: textColor,
+                opacity: 0.55,
+                textAlign: 'center',
+                width: 20,
+              }}
+            >
+              {h}h
+            </Text>
+          );
+        })}
+      </View>
+    </ChartCard>
+  );
+}
+
+export const ClockChart = React.memo(ClockChartComponent);

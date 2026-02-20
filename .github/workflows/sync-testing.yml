@@ -1,9 +1,9 @@
 name: Sync Testing Branch
 
 on:
-  # Automatic trigger when main branch is updated
-  push:
-    branches: [ main ]
+  # Automatic trigger disabled – sync is done manually
+  # push:
+  #   branches: [ main ]
   # Allow manual trigger
   workflow_dispatch:
 
