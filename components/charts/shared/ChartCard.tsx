@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import type { ViewStyle } from 'react-native';
-import { View } from 'react-native';
+import { Animated, Easing } from 'react-native';
 
 interface ChartCardProps {
   backgroundColor: string;
@@ -8,6 +8,7 @@ interface ChartCardProps {
   cardPadding: number;
   children: React.ReactNode;
   style?: ViewStyle;
+  animateIn?: boolean;
 }
 
 function ChartCardComponent({
@@ -16,10 +17,24 @@ function ChartCardComponent({
   cardPadding,
   children,
   style,
+  animateIn = true,
 }: ChartCardProps) {
+  const opacity = useRef(new Animated.Value(animateIn ? 0 : 1)).current;
+
+  useEffect(() => {
+    if (!animateIn) return;
+    Animated.timing(opacity, {
+      toValue: 1,
+      duration: 400,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+  }, [animateIn, opacity]);
+
   return (
-    <View
+    <Animated.View
       style={{
+        opacity,
         backgroundColor,
         margin,
         padding: cardPadding,
@@ -34,7 +49,7 @@ function ChartCardComponent({
       }}
     >
       {children}
-    </View>
+    </Animated.View>
   );
 }
 
