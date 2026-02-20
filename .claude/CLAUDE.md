@@ -12,12 +12,12 @@ Energy Price Germany - A visualization app for German electricity market prices 
 - GitHub Pages (web deployment)
 
 ## Key Project Documents
-- [Architecture](../ARCHITECTURE.md) - System architecture and data flow
-- [Data Merge Strategy](../DATA-MERGE-STRATEGY.md) - How data from multiple sources is combined
+- [Architecture](../docs/ARCHITECTURE.md) - System architecture and data flow
+- [Data Merge Strategy](../docs/DATA-MERGE-STRATEGY.md) - How data from multiple sources is combined
 - [Changelog](../CHANGELOG.md) - Version history
-- [Build Guide](../BUILD.md) - Build and deployment instructions
+- [Build Guide](../docs/BUILD.md) - Build and deployment instructions
 - [Privacy Policy](../PRIVACY_POLICY.md) - Data privacy information
-- [Store Description](../STORE_DESCRIPTION.md) - Play Store listing text
+- [Store Description](../docs/STORE_DESCRIPTION.md) - Play Store listing text
 
 ## Workflow & Git Management
 
