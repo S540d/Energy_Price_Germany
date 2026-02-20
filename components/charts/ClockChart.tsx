@@ -216,7 +216,7 @@ function ClockChartComponent({
                       })}
                   accessibilityLabel={
                     seg.totalPrice !== null
-                      ? `${seg.hour}:00, ${seg.totalPrice.toFixed(2)} ${labels.pricePerKwh}`
+                      ? `${seg.hour}:00, ${labels.pricePerKwh}: ${seg.totalPrice.toFixed(2)}`
                       : `${seg.hour}:00, ${labels.noData}`
                   }
                 />

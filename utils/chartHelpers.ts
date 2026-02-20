@@ -10,7 +10,7 @@ function interpolateColor(color1: number[], color2: number[], factor: number): s
 
 /**
  * Maps a total end-customer price (¢/kWh) to a color.
- * Green = cheap (<25¢), Yellow = medium, Red = expensive (>50¢).
+ * Green = cheap (<25¢), Yellow = medium (25–<50¢), Red = expensive (>=50¢).
  * Shared between PriceBarChart and ClockChart to keep colors in sync.
  */
 export function getPriceColor(totalPrice: number): string {
