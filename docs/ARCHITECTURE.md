@@ -536,8 +536,7 @@ Success? ──Yes──→ ✅ Complete
 ## References
 
 - [DATA-MERGE-STRATEGY.md](DATA-MERGE-STRATEGY.md) - Detailed merge algorithm
-- [REFACTORING-STATUS.md](REFACTORING-STATUS.md) - Development phases
-- [README.md](README.md) - Project overview
+- [README.md](../README.md) - Project overview
 - [GitHub Repository](https://github.com/S540d/Energy_Price_Germany)
 
 ---

@@ -231,10 +231,9 @@ if (typeof window !== 'undefined') {
 
 ## 📚 Weitere Ressourcen
 
-- **Postmortem:** [POSTMORTEM_ANDROID_CRASH.md](POSTMORTEM_ANDROID_CRASH.md)
 - **Release Checklist:** [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)
-- **PR Template:** [.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md)
-- **Platform Utils:** [utils/platform.ts](utils/platform.ts)
+- **PR Template:** [../.github/PULL_REQUEST_TEMPLATE.md](../.github/PULL_REQUEST_TEMPLATE.md)
+- **Platform Utils:** [../utils/platform.ts](../utils/platform.ts)
 - **Project Templates:** `/project-templates/AUTOMATED_QUALITY_CHECKLIST.md`
 
 ---
