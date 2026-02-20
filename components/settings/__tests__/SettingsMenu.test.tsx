@@ -87,8 +87,12 @@ describe('SettingsMenu', () => {
     );
 
     await waitFor(() => {
+      // Appearance section still in SettingsMenu
       expect(getByText(/APPEARANCE/i)).toBeTruthy();
-      expect(getByText(/LANGUAGE/i)).toBeTruthy();
+      // Language moved to Customize modal – only the Customize button remains here
+      expect(getByText(/Customize/i)).toBeTruthy();
+      // Action links
+      expect(getByText(/Send Feedback/i)).toBeTruthy();
     });
   });
 });

@@ -182,9 +182,7 @@ describe('EnergyDataManager', () => {
         timestamp: Date.now(),
       };
 
-      (Storage.getItem as jest.Mock).mockResolvedValueOnce(
-        JSON.stringify(cachedRegionalData)
-      );
+      (Storage.getItem as jest.Mock).mockResolvedValueOnce(JSON.stringify(cachedRegionalData));
 
       // Mock national data fetch
       mockFetch.mockResolvedValueOnce({
@@ -211,9 +209,7 @@ describe('EnergyDataManager', () => {
         timestamp: Date.now(),
       };
 
-      (Storage.getItem as jest.Mock).mockResolvedValueOnce(
-        JSON.stringify(cachedRegionalData)
-      );
+      (Storage.getItem as jest.Mock).mockResolvedValueOnce(JSON.stringify(cachedRegionalData));
 
       // Mock national data fetch
       mockFetch.mockResolvedValueOnce({
@@ -292,9 +288,7 @@ describe('EnergyDataManager', () => {
     });
 
     it('should handle Storage.getItem errors gracefully', async () => {
-      (Storage.getItem as jest.Mock).mockRejectedValueOnce(
-        new Error('Storage error')
-      );
+      (Storage.getItem as jest.Mock).mockRejectedValueOnce(new Error('Storage error'));
 
       // Mock national data fetch
       mockFetch.mockResolvedValueOnce({
@@ -315,9 +309,7 @@ describe('EnergyDataManager', () => {
     });
 
     it('should handle Storage.setItem errors gracefully', async () => {
-      (Storage.setItem as jest.Mock).mockRejectedValueOnce(
-        new Error('Storage write error')
-      );
+      (Storage.setItem as jest.Mock).mockRejectedValueOnce(new Error('Storage write error'));
 
       // Mock national data fetch
       mockFetch.mockResolvedValueOnce({
@@ -373,8 +365,8 @@ describe('EnergyDataManager', () => {
       // Invalidate regional cache
       await manager.invalidateRegionalCache();
 
-      // Should call setItem (either clearing or updating storage)
-      expect(Storage.setItem).toHaveBeenCalled();
+      // Should call removeItem to clear persistent regional cache
+      expect(Storage.removeItem).toHaveBeenCalled();
     });
   });
 
@@ -421,17 +413,18 @@ describe('EnergyDataManager', () => {
 
   describe('Concurrent Request Handling', () => {
     it('should deduplicate concurrent requests', async () => {
-      mockFetch.mockImplementation(() =>
-        new Promise((resolve) =>
-          setTimeout(
-            () =>
-              resolve({
-                ok: true,
-                json: async () => mockMarketDataResponse,
-              } as Response),
-            100
+      mockFetch.mockImplementation(
+        () =>
+          new Promise(resolve =>
+            setTimeout(
+              () =>
+                resolve({
+                  ok: true,
+                  json: async () => mockMarketDataResponse,
+                } as Response),
+              100
+            )
           )
-        )
       );
 
       // Make multiple concurrent requests

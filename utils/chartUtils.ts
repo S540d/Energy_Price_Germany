@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Dimensions } from 'react-native';
 
 export interface ChartDimensions {
@@ -53,7 +53,7 @@ export function useChartDimensions(): ChartDimensions {
   const cardPadding = isPhone ? 12 : 16;
 
   // Breite: Nutze verfügbare Bildschirmbreite optimal (minus Margins)
-  const chartWidth = screenWidth - (margin * 2);
+  const chartWidth = screenWidth - margin * 2;
 
   // Höhe: Viewport-bewusst, sodass alle 3 Charts gut sichtbar sind
   const baseAspectRatio = 2.5;
@@ -64,18 +64,22 @@ export function useChartDimensions(): ChartDimensions {
 
   // Bessere Aufteilung je nach Orientierung
   const maxChartHeight = isLandscape
-    ? availableHeight * 0.9  // Landscape: Charts füllen mehr Höhe
-    : availableHeight / 3.3;  // Portrait: 3 Charts nebeneinander
+    ? availableHeight * 0.9 // Landscape: Charts füllen mehr Höhe
+    : availableHeight / 3.3; // Portrait: 3 Charts nebeneinander
 
   const absoluteMaxHeight = isLandscape
-    ? isPhone ? 300 : 400  // Landscape: größere Max-Höhe
-    : isPhone ? 200 : isSmallScreen ? 280 : 320; // Portrait: original Werte
+    ? isPhone
+      ? 300
+      : 400 // Landscape: größere Max-Höhe
+    : isPhone
+      ? 200
+      : isSmallScreen
+        ? 280
+        : 320; // Portrait: original Werte
 
-  const chartHeight = Math.round(Math.min(
-    chartWidth / baseAspectRatio,
-    maxChartHeight,
-    absoluteMaxHeight
-  ));
+  const chartHeight = Math.round(
+    Math.min(chartWidth / baseAspectRatio, maxChartHeight, absoluteMaxHeight)
+  );
 
   return {
     chartHeight,
@@ -163,8 +167,7 @@ export function generateYAxisLabels(
   chartHeight: number,
   bottomPadding: number,
   isPhone: boolean,
-  textColor: string,
-  formatter: (value: number) => string = (v) => v.toFixed(1)
+  textColor: string
 ) {
   return [0, 1, 2, 3, 4].map(i => {
     const value = max - (i / 4) * range;

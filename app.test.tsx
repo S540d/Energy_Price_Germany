@@ -5,7 +5,7 @@ import * as Updates from 'expo-updates';
 import { Platform, Linking } from 'react-native';
 import App from './App';
 import { fetchEnergyData, energyDataManager } from './services/energyDataManager';
-import { EnergyData } from './utils/metrics';
+import type { EnergyData } from './utils/metrics';
 import { LanguageProvider } from './context/LanguageContext';
 import { SettingsProvider } from './context/SettingsContext';
 
@@ -36,6 +36,11 @@ jest.mock('./components/AboutView', () => {
   mockComponent.displayName = 'AboutView';
   return { AboutView: mockComponent };
 });
+jest.mock('./components/settings/BetaModeSection', () => {
+  const mockComponent = () => null;
+  mockComponent.displayName = 'BetaModeSection';
+  return { BetaModeSection: mockComponent };
+});
 
 const mockFetchEnergyData = fetchEnergyData as jest.MockedFunction<typeof fetchEnergyData>;
 
@@ -45,9 +50,7 @@ const mockFetchEnergyData = fetchEnergyData as jest.MockedFunction<typeof fetchE
 const renderWithProviders = (component: React.ReactElement) => {
   return render(
     <LanguageProvider>
-      <SettingsProvider>
-        {component}
-      </SettingsProvider>
+      <SettingsProvider>{component}</SettingsProvider>
     </LanguageProvider>
   );
 };
@@ -92,7 +95,9 @@ describe('App', () => {
     jest.clearAllMocks();
     mockFetchEnergyData.mockResolvedValue(mockEnergyData);
     (energyDataManager.invalidateCache as jest.Mock) = jest.fn();
-    (energyDataManager.invalidateRegionalCache as jest.Mock) = jest.fn().mockResolvedValue(undefined);
+    (energyDataManager.invalidateRegionalCache as jest.Mock) = jest
+      .fn()
+      .mockResolvedValue(undefined);
 
     // Reset AsyncStorage mocks
     (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
@@ -180,7 +185,7 @@ describe('App', () => {
 
       mockFetchEnergyData.mockResolvedValue(dataWithOldEntries);
 
-      const { queryByText } = renderWithProviders(<App />);
+      const { queryByText: _queryByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         expect(mockFetchEnergyData).toHaveBeenCalled();
@@ -248,11 +253,15 @@ describe('App', () => {
       });
     });
 
-    it('should display language section in settings', async () => {
+    it('should display language section in customize modal', async () => {
       const { getByLabelText, getByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         fireEvent.press(getByLabelText('Settings'));
+      });
+
+      await waitFor(() => {
+        fireEvent.press(getByText('Customize'));
       });
 
       await waitFor(() => {
@@ -325,20 +334,24 @@ describe('App', () => {
       });
 
       await waitFor(() => {
-        // Button shows translation in current language (EN active = "German", DE active = "Deutsch")
+        fireEvent.press(getByText('Customize'));
+      });
+
+      await waitFor(() => {
         const germanButton = getByText('German');
         fireEvent.press(germanButton);
       });
 
       await waitFor(() => {
-        expect(getByText('Einstellungen')).toBeTruthy();
+        // CustomizeModal title switches to German translation
+        expect(getByText('Personalisieren')).toBeTruthy();
       });
     });
   });
 
   describe('Postal Code Management', () => {
     it('should load postal code from storage on mount', async () => {
-      (AsyncStorage.getItem as jest.Mock).mockImplementation((key) => {
+      (AsyncStorage.getItem as jest.Mock).mockImplementation(key => {
         if (key === 'postalCode') return Promise.resolve('12345');
         return Promise.resolve(null);
       });
@@ -353,7 +366,7 @@ describe('App', () => {
     });
 
     it('should save postal code to storage when changed', async () => {
-      const { getByLabelText, getByPlaceholderText } = renderWithProviders(<App />);
+      const { getByLabelText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         fireEvent.press(getByLabelText('Settings'));
@@ -361,7 +374,7 @@ describe('App', () => {
 
       // Wait for customize button
       await waitFor(() => {
-        const customizeButton = getByLabelText('Settings').parent?.parent;
+        const _customizeButton = getByLabelText('Settings').parent?.parent;
         // Would need to find and press customize button, then interact with postal code input
       });
     });
@@ -392,7 +405,7 @@ describe('App', () => {
 
   describe('Grid Fees Management', () => {
     it('should load grid fees from storage on mount', async () => {
-      (AsyncStorage.getItem as jest.Mock).mockImplementation((key) => {
+      (AsyncStorage.getItem as jest.Mock).mockImplementation(key => {
         if (key === 'gridFees') return Promise.resolve('25.5');
         return Promise.resolve(null);
       });
@@ -421,7 +434,6 @@ describe('App', () => {
       // Verify AsyncStorage setItem exists
       expect(AsyncStorage.setItem).toBeDefined();
     });
-
   });
 
   describe('Updates Management', () => {
@@ -468,7 +480,9 @@ describe('App', () => {
 
     it('should handle update check errors gracefully', async () => {
       global.__DEV__ = false;
-      (Updates.checkForUpdateAsync as jest.Mock).mockRejectedValue(new Error('Update check failed'));
+      (Updates.checkForUpdateAsync as jest.Mock).mockRejectedValue(
+        new Error('Update check failed')
+      );
 
       renderWithProviders(<App />);
 
@@ -547,7 +561,7 @@ describe('App', () => {
 
       mockFetchEnergyData.mockResolvedValue(dataWithRegional);
 
-      (AsyncStorage.getItem as jest.Mock).mockImplementation((key) => {
+      (AsyncStorage.getItem as jest.Mock).mockImplementation(key => {
         if (key === 'postalCode') return Promise.resolve('12345');
         return Promise.resolve(null);
       });
@@ -560,7 +574,7 @@ describe('App', () => {
     });
 
     it('should not display regional data when postal code is invalid', async () => {
-      (AsyncStorage.getItem as jest.Mock).mockImplementation((key) => {
+      (AsyncStorage.getItem as jest.Mock).mockImplementation(key => {
         if (key === 'postalCode') return Promise.resolve('123'); // Invalid postal code
         return Promise.resolve(null);
       });
@@ -620,13 +634,15 @@ describe('App', () => {
         expect(mockFetchEnergyData).toHaveBeenCalled();
       });
 
-      // English format by default
       await waitFor(() => {
         fireEvent.press(getByLabelText('Settings'));
       });
 
       await waitFor(() => {
-        // Button shows translation in current language (EN active = "German")
+        fireEvent.press(getByText('Customize'));
+      });
+
+      await waitFor(() => {
         const germanButton = getByText('German');
         fireEvent.press(germanButton);
       });

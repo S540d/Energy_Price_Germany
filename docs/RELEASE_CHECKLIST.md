@@ -15,8 +15,8 @@ Diese Checklist muss vor jedem Release durchlaufen werden.
 - [ ] Settings werden korrekt gespeichert
 
 ### Android Platform
-- [ ] Build erfolgreich: `./gradlew bundleRelease`
-- [ ] APK installiert auf physischem Gerät
+- [ ] Build erfolgreich: `npx eas-cli build --platform android --profile production`
+- [ ] AAB/APK installiert auf physischem Gerät
 - [ ] App startet ohne Crash
 - [ ] Alle Features funktionieren
 - [ ] Dark Mode funktioniert
@@ -53,9 +53,7 @@ Diese Checklist muss vor jedem Release durchlaufen werden.
 - [ ] `package.json` version aktualisiert
 - [ ] `app.json` version aktualisiert
 - [ ] `app.json` android.versionCode erhöht
-- [ ] `Android/app/build.gradle.kts` versionCode erhöht
-- [ ] `Android/app/build.gradle.kts` versionName aktualisiert
-- [ ] `App.tsx` APP_VERSION Konstante aktualisiert
+- [ ] Version in `package.json` und `app.json` konsistent
 
 ### Git
 - [ ] Alle Änderungen committed
@@ -75,9 +73,8 @@ Diese Checklist muss vor jedem Release durchlaufen werden.
 
 ### Android
 - [ ] Signiertes AAB generiert
-- [ ] AAB nach `Android/release/` kopiert
-- [ ] Dateiname: `1x1-trainer-v{VERSION}-signed.aab`
-- [ ] Dateigröße überprüft (sollte ~5MB sein)
+- [ ] AAB von EAS heruntergeladen: `npx eas-cli build:download`
+- [ ] Dateigröße überprüft
 
 ### Web
 - [ ] Build in `dist/` Verzeichnis
@@ -101,7 +98,7 @@ Diese Checklist muss vor jedem Release durchlaufen werden.
 
 ### Web (GitHub Pages)
 - [ ] `npm run deploy` ausgeführt
-- [ ] Website erreichbar unter `https://s540d.github.io/1x1_Trainer/`
+- [ ] Website erreichbar unter `https://s540d.github.io/Energy_Price_Germany/`
 - [ ] Alle Features funktionieren online
 
 ## Post-Release

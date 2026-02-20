@@ -16,7 +16,12 @@ interface SettingsMenuProps {
  * Settings menu modal with theme, language, and action links
  * Main entry point for app configuration
  */
-export function SettingsMenu({ visible, onClose, onOpenCustomize, onOpenAbout }: SettingsMenuProps) {
+export function SettingsMenu({
+  visible,
+  onClose,
+  onOpenCustomize,
+  onOpenAbout,
+}: SettingsMenuProps) {
   const { t } = useLanguageContext();
   const { theme } = useSettingsContext();
   const systemTheme = useColorScheme();
@@ -27,19 +32,13 @@ export function SettingsMenu({ visible, onClose, onOpenCustomize, onOpenAbout }:
   return (
     <>
       {/* Overlay */}
-      <TouchableOpacity
-        style={styles.overlay}
-        activeOpacity={1}
-        onPress={onClose}
-      />
+      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose} />
 
       {/* Menu Panel */}
       <View style={[styles.menu, { backgroundColor: colors.surface }]}>
         {/* Header with Close Button */}
         <View style={[styles.menuHeader, { borderBottomColor: colors.gridLine }]}>
-          <Text style={[styles.menuTitle, { color: colors.text }]}>
-            {t.settings}
-          </Text>
+          <Text style={[styles.menuTitle, { color: colors.text }]}>{t.settings}</Text>
           <TouchableOpacity onPress={onClose}>
             <Text style={[styles.closeButton, { color: colors.text }]}>✕</Text>
           </TouchableOpacity>
@@ -50,16 +49,14 @@ export function SettingsMenu({ visible, onClose, onOpenCustomize, onOpenAbout }:
           <TouchableOpacity
             style={[
               styles.customizeButton,
-              { backgroundColor: colors.primary, borderColor: colors.primary }
+              { backgroundColor: colors.primary, borderColor: colors.primary },
             ]}
             onPress={() => {
               onOpenCustomize();
               onClose();
             }}
           >
-            <Text style={[styles.customizeButtonText, { color: '#fff' }]}>
-              {t.customize}
-            </Text>
+            <Text style={[styles.customizeButtonText, { color: '#fff' }]}>{t.customize}</Text>
           </TouchableOpacity>
         </View>
 
@@ -79,9 +76,7 @@ export function SettingsMenu({ visible, onClose, onOpenCustomize, onOpenAbout }:
               onClose();
             }}
           >
-            <Text style={[styles.menuLinkText, { color: colors.primary }]}>
-              {t.feedback}
-            </Text>
+            <Text style={[styles.menuLinkText, { color: colors.primary }]}>{t.feedback}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.menuLinkFlex}
@@ -90,9 +85,7 @@ export function SettingsMenu({ visible, onClose, onOpenCustomize, onOpenAbout }:
               onClose();
             }}
           >
-            <Text style={[styles.menuLinkText, { color: colors.primary }]}>
-              {t.supportProject}
-            </Text>
+            <Text style={[styles.menuLinkText, { color: colors.primary }]}>{t.supportProject}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.menuLinkFlex}
@@ -101,9 +94,7 @@ export function SettingsMenu({ visible, onClose, onOpenCustomize, onOpenAbout }:
               onClose();
             }}
           >
-            <Text style={[styles.menuLinkText, { color: colors.primary }]}>
-              {t.about}
-            </Text>
+            <Text style={[styles.menuLinkText, { color: colors.primary }]}>{t.about}</Text>
           </TouchableOpacity>
         </View>
       </View>

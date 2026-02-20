@@ -1,6 +1,7 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, StyleProp, ViewStyle, TextStyle } from 'react-native';
-import { ThemeColors } from '../../utils/theme';
+import type { StyleProp, ViewStyle, TextStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import type { ThemeColors } from '../../utils/theme';
 
 export type ButtonVariant = 'filled' | 'outlined' | 'ghost';
 export type ButtonSize = 'small' | 'medium' | 'large';
@@ -61,20 +62,10 @@ export function Button({
     style,
   ];
 
-  const textColor =
-    variant === 'filled'
-      ? '#FFFFFF'
-      : disabled
-      ? colors.disabled
-      : colors.primary;
+  const textColor = variant === 'filled' ? '#FFFFFF' : disabled ? colors.disabled : colors.primary;
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      disabled={disabled}
-      style={buttonStyle}
-      activeOpacity={0.7}
-    >
+    <TouchableOpacity onPress={onPress} disabled={disabled} style={buttonStyle} activeOpacity={0.7}>
       <Text
         style={[
           styles.text,

@@ -24,7 +24,7 @@ export function CostCalculatorView({
   onClose,
   currentPrice,
   priceData,
-  gridFees
+  gridFees,
 }: CostCalculatorViewProps) {
   const { t } = useLanguageContext();
   const { theme } = useSettingsContext();
@@ -34,30 +34,29 @@ export function CostCalculatorView({
   if (!visible) return null;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      edges={['top', 'bottom', 'left', 'right']}
+    >
       <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
 
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.gridLine }]}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: colors.surface, borderBottomColor: colors.gridLine },
+        ]}
+      >
         <TouchableOpacity onPress={onClose} style={styles.backButton}>
           <Text style={[styles.backButtonText, { color: colors.text }]}>←</Text>
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          {t.costCalculatorTitle}
-        </Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>{t.costCalculatorTitle}</Text>
         <View style={styles.backButton} />
       </View>
 
       {/* Content */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollViewContent}
-      >
-        <CostCalculator
-          currentPrice={currentPrice}
-          priceData={priceData}
-          gridFees={gridFees}
-        />
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
+        <CostCalculator currentPrice={currentPrice} priceData={priceData} gridFees={gridFees} />
       </ScrollView>
     </SafeAreaView>
   );
