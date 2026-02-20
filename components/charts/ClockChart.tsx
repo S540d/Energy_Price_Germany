@@ -2,27 +2,9 @@ import React, { useMemo, useState, useCallback } from 'react';
 import { View, Text, Platform } from 'react-native';
 import Svg, { Path, Circle, Line, G } from 'react-native-svg';
 import type { ThemeColors } from '../../utils/theme';
+import { getPriceColor } from '../../utils/chartHelpers';
 import { useChartDimensions } from '../../utils/chartUtils';
 import { ChartCard } from './shared';
-
-// Shared color logic (same thresholds as PriceBarChart)
-const interpolateColor = (color1: number[], color2: number[], factor: number) => {
-  const r = Math.round(color1[0] + (color2[0] - color1[0]) * factor);
-  const g = Math.round(color1[1] + (color2[1] - color1[1]) * factor);
-  const b = Math.round(color1[2] + (color2[2] - color1[2]) * factor);
-  return `rgb(${r}, ${g}, ${b})`;
-};
-
-export const getPriceColor = (totalPrice: number): string => {
-  const green = [76, 175, 80];
-  const yellow = [255, 193, 7];
-  const red = [244, 67, 54];
-
-  if (totalPrice < 25) return '#4CAF50';
-  if (totalPrice < 35) return interpolateColor(green, yellow, (totalPrice - 25) / 10);
-  if (totalPrice < 50) return interpolateColor(yellow, red, (totalPrice - 35) / 15);
-  return '#F44336';
-};
 
 interface ClockChartProps {
   data: Array<{
@@ -66,7 +48,7 @@ function segmentPath(
   startAngle: number,
   endAngle: number
 ): string {
-  const gap = 1.5; // degrees gap between segments
+  const gap = 1.5;
   const s = startAngle + gap / 2;
   const e = endAngle - gap / 2;
 
@@ -93,7 +75,8 @@ function ClockChartComponent({
   gridFees,
   labels,
 }: ClockChartProps) {
-  const { margin, cardPadding, isPhone } = useChartDimensions();
+  // Single call – destructure everything needed
+  const { margin, cardPadding, isPhone, chartWidth } = useChartDimensions();
   const [selectedHour, setSelectedHour] = useState<number | null>(null);
 
   // Aggregate data into 24 hourly buckets
@@ -107,7 +90,9 @@ function ClockChartComponent({
       if (d.marketPrice === null) continue;
       const date = new Date(d.timestamp);
       const hour = date.getHours();
-      buckets[hour].prices.push(d.marketPrice);
+      // Convert to ¢/kWh – same as PriceBarChart (marketPrice * 0.1)
+      const priceCentsPerKwh = d.marketPrice * 0.1;
+      buckets[hour].prices.push(priceCentsPerKwh);
       buckets[hour].interpolated.push(d.isMarketPriceInterpolated ?? false);
     }
 
@@ -134,12 +119,11 @@ function ClockChartComponent({
     });
   }, [data, gridFees, colors.gridLine]);
 
-  // Current hour
+  // Current hour + now-marker angle
   const currentHour = new Date().getHours();
   const nowAngle = (currentHour / 24) * 360 + (new Date().getMinutes() / 60) * 15;
 
-  // Chart size – square, based on available width
-  const { chartWidth } = useChartDimensions();
+  // Chart geometry
   const size = Math.min(chartWidth - cardPadding * 2, isPhone ? 280 : 340);
   const cx = size / 2;
   const cy = size / 2;
@@ -154,7 +138,6 @@ function ClockChartComponent({
     setSelectedHour(prev => (prev === hour ? null : hour));
   }, []);
 
-  // Hour labels (0, 3, 6, 9, 12, 15, 18, 21)
   const clockLabels = [0, 3, 6, 9, 12, 15, 18, 21];
 
   return (
@@ -233,8 +216,8 @@ function ClockChartComponent({
                       })}
                   accessibilityLabel={
                     seg.totalPrice !== null
-                      ? `${seg.hour}:00 Uhr, ${seg.totalPrice.toFixed(2)} Cent pro kWh`
-                      : `${seg.hour}:00 Uhr, keine Daten`
+                      ? `${seg.hour}:00, ${seg.totalPrice.toFixed(2)} ${labels.pricePerKwh}`
+                      : `${seg.hour}:00, ${labels.noData}`
                   }
                 />
               </G>
@@ -262,32 +245,9 @@ function ClockChartComponent({
             );
           })()}
           <Circle cx={cx} cy={cy} r={4} fill={textColor} opacity={0.9} />
-
-          {/* Hour labels (0, 3, 6 … 21) */}
-          {clockLabels.map(h => {
-            const angle = (h / 24) * 360;
-            const pos = polarToCartesian(cx, cy, labelR, angle);
-            return (
-              <Text
-                key={`label-${h}`}
-                style={{
-                  position: 'absolute',
-                  left: pos.x - 10,
-                  top: pos.y - 8,
-                  fontSize: isPhone ? 9 : 10,
-                  color: textColor,
-                  opacity: 0.55,
-                  textAlign: 'center',
-                  width: 20,
-                }}
-              >
-                {h}
-              </Text>
-            );
-          })}
         </Svg>
 
-        {/* Overlay hour labels (SVG Text nicht ideal auf RN) */}
+        {/* Hour labels overlaid outside SVG (avoids RN-SVG Text limitations) */}
         {clockLabels.map(h => {
           const angle = (h / 24) * 360;
           const pos = polarToCartesian(cx, cy, labelR, angle);
