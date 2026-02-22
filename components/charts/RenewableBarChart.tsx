@@ -320,34 +320,6 @@ function RenewableBarChartComponent({
 
         {/* Bars (SVG) - Using pre-calculated bar data for performance */}
         <Svg width={chartWidth} height={chartHeight}>
-          {/* Renewable Zone Bands - subtle background zones */}
-          {(() => {
-            const chartAreaHeight = chartHeight - padding - bottomPadding;
-            const chartAreaWidth = chartWidth - leftPadding - rightPadding;
-            const zones = [
-              { min: 0, max: 50, color: '#F44336' }, // red: low renewable
-              { min: 50, max: 80, color: '#FFC107' }, // yellow: moderate
-              { min: 80, max: 100, color: '#4CAF50' }, // green: high renewable
-            ];
-            return zones.map((zone, i) => {
-              const yBottom =
-                chartHeight - bottomPadding - ((zone.min - min) / range) * chartAreaHeight;
-              const yTop =
-                chartHeight - bottomPadding - ((zone.max - min) / range) * chartAreaHeight;
-              return (
-                <Rect
-                  key={`zone-${i}`}
-                  x={leftPadding}
-                  y={yTop}
-                  width={chartAreaWidth}
-                  height={yBottom - yTop}
-                  fill={zone.color}
-                  opacity={0.06}
-                />
-              );
-            });
-          })()}
-
           {barData.map(bar => {
             // Render gray fading bar for missing data
             if (bar.value === null) {
