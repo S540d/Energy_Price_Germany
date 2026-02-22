@@ -8,6 +8,11 @@ const envFilePath = path.resolve(__dirname, `.env.${env}`);
 // Load environment variables from appropriate .env file
 dotenv.config({ path: envFilePath });
 
+// Read version info from app.json (single source of truth)
+const appJson = require('./app.json');
+const version = appJson.expo.version;
+const versionCode = appJson.expo.android.versionCode;
+
 // Get configuration from loaded environment variables
 const baseUrl = process.env.EXPO_PUBLIC_BASE_URL || '/Energy_Price_Germany';
 const apiBase = process.env.EXPO_PUBLIC_API_BASE || 'https://api.example.com';
@@ -17,25 +22,13 @@ module.exports = {
   expo: {
     name: 'Energy Prices Germany',
     slug: 'Energy_Price_Germany',
-    version: '1.3.0',
+    version: version,
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
     newArchEnabled: true,
-    privacy: 'public',
     primaryColor: '#4CAF50',
     description: 'Real-time visualization of electricity prices and renewable energy share in Germany. Track market prices, renewable energy percentages, and their correlation over time.',
-    keywords: [
-      'energy',
-      'electricity',
-      'prices',
-      'renewable',
-      'germany',
-      'market',
-      'visualization',
-      'charts'
-    ],
-    category: 'utilities',
     splash: {
       image: './assets/splash-icon.png',
       resizeMode: 'contain',
@@ -51,7 +44,7 @@ module.exports = {
         backgroundColor: '#ffffff'
       },
       package: 'com.sven4321.energypricegermany',
-      versionCode: 10,
+      versionCode: versionCode,
       permissions: [
         'INTERNET',
         'ACCESS_NETWORK_STATE'
