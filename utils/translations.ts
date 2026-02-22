@@ -21,6 +21,29 @@ export const translations = {
     gridFees: 'GRID FEES & TAXES',
     gridFeesHint: 'Grid fees and taxes in ¢/kWh',
     gridFeesValue: 'Grid Fees',
+    // Price Display Mode Section
+    priceDisplayMode: 'PRICE DISPLAY',
+    priceDisplayMarketOnly: 'Market Price',
+    priceDisplayWithFees: 'End-Customer Price',
+    // Price chart tooltip labels
+    tooltipMarketPrice: 'Market price:',
+    tooltipGridFees: '+ Grid fees:',
+    tooltipEndCustomer: 'End-customer:',
+    // Price Alert Section
+    priceAlertSection: 'PRICE ALERTS',
+    priceAlertHint:
+      'Get notified when the end-customer price crosses your thresholds (¢/kWh). Notifications only appear while the app is open.',
+    priceAlertLow: 'Alert below (¢/kWh)',
+    priceAlertHigh: 'Alert above (¢/kWh)',
+    priceAlertLowPlaceholder: 'e.g. 20',
+    priceAlertHighPlaceholder: 'e.g. 40',
+    priceAlertReset: 'Reset',
+    priceAlertActiveLow: 'Price below threshold',
+    priceAlertActiveHigh: 'Price above threshold',
+    priceAlertNotificationTitle: '⚡ Price Alert',
+    priceAlertNotificationLow: 'Current electricity price is cheap',
+    priceAlertNotificationHigh: 'Current electricity price is high',
+    priceAlertConflict: '⚠ Lower threshold must be less than upper threshold',
     // About Section
     about: 'ABOUT',
     version: 'Version',
@@ -56,6 +79,9 @@ export const translations = {
     costCheapestTime: 'Cheapest time',
     costSave: 'save',
     costCheaper: 'cheaper',
+    costTimeline: 'Best time today',
+    costTimelineRecommended: 'Recommended window',
+    costTimelineSave: 'save vs. now',
     // Other
     loadingData: 'Loading energy data...',
     renewableTitle: 'Share of Renewable Energy in Load',
@@ -107,6 +133,29 @@ export const translations = {
     gridFees: 'NETZENTGELTE & STEUERN',
     gridFeesHint: 'Netzentgelte und Steuern in ¢/kWh',
     gridFeesValue: 'Netzentgelte',
+    // Price Display Mode Section
+    priceDisplayMode: 'PREISDARSTELLUNG',
+    priceDisplayMarketOnly: 'Börsenstrompreis',
+    priceDisplayWithFees: 'Endkundenstrompreis',
+    // Price chart tooltip labels
+    tooltipMarketPrice: 'Börsenpreis:',
+    tooltipGridFees: '+ Netzentgelte:',
+    tooltipEndCustomer: 'Endkunde:',
+    // Price Alert Section
+    priceAlertSection: 'PREISALARM',
+    priceAlertHint:
+      'Benachrichtigung wenn der Endkundenpreis deine Schwellen über- oder unterschreitet (¢/kWh). Hinweis: Benachrichtigungen erscheinen nur solange die App geöffnet ist.',
+    priceAlertLow: 'Alarm unter (¢/kWh)',
+    priceAlertHigh: 'Alarm über (¢/kWh)',
+    priceAlertLowPlaceholder: 'z.B. 20',
+    priceAlertHighPlaceholder: 'z.B. 40',
+    priceAlertReset: 'Zurücksetzen',
+    priceAlertActiveLow: 'Preis unter Schwellenwert',
+    priceAlertActiveHigh: 'Preis über Schwellenwert',
+    priceAlertNotificationTitle: '⚡ Preisalarm',
+    priceAlertNotificationLow: 'Aktueller Strompreis ist günstig',
+    priceAlertNotificationHigh: 'Aktueller Strompreis ist hoch',
+    priceAlertConflict: '⚠ Untergrenze muss kleiner als Obergrenze sein',
     // About Section
     about: 'ÜBER',
     version: 'Version',
@@ -142,6 +191,9 @@ export const translations = {
     costCheapestTime: 'Günstigste Zeit',
     costSave: 'sparen',
     costCheaper: 'günstiger',
+    costTimeline: 'Beste Zeit heute',
+    costTimelineRecommended: 'Empfohlenes Fenster',
+    costTimelineSave: 'ggü. jetzt sparen',
     // Other
     loadingData: 'Lade Energiedaten...',
     renewableTitle: 'Anteil Erneuerbarer Energien an der Last',
@@ -169,9 +221,9 @@ export const translations = {
     legendExplanationSuffix: '¢/kWh (Netzentgelte & Steuern)',
     marketPriceLabel: 'Börsenstrompreis',
     gridFeesLabel: 'Netzentgelte & Steuern',
+    regionalDataLabel: 'Regionale Daten',
     // Clock View
     viewBar: 'Balkendiagramm',
     viewClock: 'Uhransicht',
-    regionalDataLabel: 'Regionale Daten',
   },
 } as const;
