@@ -4,7 +4,6 @@ import { useLanguageContext } from '../../context/LanguageContext';
 import { getThemeColors } from '../../utils/theme';
 import { useSettingsContext } from '../../context/SettingsContext';
 import { LanguageSection } from '../settings/LanguageSection';
-import { BetaModeSection } from '../settings/BetaModeSection';
 import { PostalCodeSection } from './PostalCodeSection';
 import { GridFeesSection } from './GridFeesSection';
 import { PriceDisplayModeSection } from './PriceDisplayModeSection';
@@ -46,11 +45,6 @@ export function CustomizeModal({ visible, onClose }: CustomizeModalProps) {
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
           {/* Language Section */}
           <LanguageSection />
-
-          <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-          {/* Beta Mode Section */}
-          <BetaModeSection />
 
           <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
