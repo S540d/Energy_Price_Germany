@@ -44,17 +44,17 @@ const ROW_LABEL_WIDTH = 108;
 function buildHourSlots(
   priceData: PricePoint[],
   gridFees: number,
-  currentHour: number
+  currentHourStartMs: number
 ): HourSlot[] {
   const hourMap = new Map<number, number[]>();
 
   priceData.forEach(item => {
-    // start_timestamp is in Europe/Berlin local time – use getHours() consistently
-    // with the rest of the app (CostCalculator, NowMarker, etc.)
+    // Only include slots that start at or after the beginning of the current hour.
+    // This correctly excludes past timestamps from previous days even when their
+    // hour-of-day value is >= currentHour (e.g. yesterday's 18:00 with currentHour=15).
+    if (item.start_timestamp < currentHourStartMs) return;
     const date = new Date(item.start_timestamp);
     const hour = date.getHours();
-    // Only include hours from now onwards so recommendations are always in the future
-    if (hour < currentHour) return;
     const priceCtPerKwh = item.marketprice * 0.1 + gridFees;
     const existing = hourMap.get(hour) ?? [];
     existing.push(priceCtPerKwh);
@@ -176,9 +176,18 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
 
   const currentHour = useMemo(() => new Date().getHours(), []);
 
+  // Start of the current hour in ms – used to filter out past timestamps correctly
+  // across multi-day rolling data windows (prevents yesterday's 18:00 from being
+  // treated as a future slot when currentHour is also 18).
+  const currentHourStartMs = useMemo(() => {
+    const now = new Date();
+    now.setMinutes(0, 0, 0);
+    return now.getTime();
+  }, []);
+
   const slots = useMemo(
-    () => buildHourSlots(priceData, gridFees, currentHour),
-    [priceData, gridFees, currentHour]
+    () => buildHourSlots(priceData, gridFees, currentHourStartMs),
+    [priceData, gridFees, currentHourStartMs]
   );
 
   const results: ApplianceResult[] = useMemo(() => {
