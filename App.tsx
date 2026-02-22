@@ -21,7 +21,7 @@ import { AboutView } from './components/AboutView';
 import { SettingsMenu } from './components/settings/SettingsMenu';
 import { CustomizeModal } from './components/customize/CustomizeModal';
 import { CostCalculatorView } from './components/CostCalculatorView';
-import { calculateMetrics, GRID_FEES_AND_TAXES } from './utils/metrics';
+import { calculateMetrics } from './utils/metrics';
 import { getThemeColors } from './utils/theme';
 import { isValidPostalCode } from './utils/postalCodeUtils';
 import { useEnergyData } from './hooks/useEnergyData';
@@ -427,7 +427,7 @@ function AppContent() {
                           }}
                         />
                         <Text style={{ color: colors.text, fontSize: 12 }}>
-                          {t.gridFeesLabel} ({GRID_FEES_AND_TAXES} ¢/kWh)
+                          {t.gridFeesLabel} ({gridFees} ¢/kWh)
                         </Text>
                       </View>
                     )}
