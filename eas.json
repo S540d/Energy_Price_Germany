@@ -47,7 +47,7 @@
       },
       "android": {
         "buildType": "app-bundle",
-        "credentialsSource": "local"
+        "credentialsSource": "remote"
       },
       "ios": {
         "simulator": false
