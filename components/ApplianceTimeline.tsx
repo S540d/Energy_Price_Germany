@@ -17,16 +17,16 @@ interface ApplianceTimelineProps {
 }
 
 interface HourSlot {
-  hour: number;
+  hour: number; // 0–23, always Berlin local time via getHours()
   label: string;
   avgPriceCtPerKwh: number;
 }
 
 interface ApplianceResult {
   appliance: Appliance;
+  /** Hours belonging to the optimal run window (may wrap past midnight). */
+  windowHours: Set<number>;
   bestStartHour: number;
-  bestEndHour: number;
-  bestAvgPrice: number;
   currentAvgPrice: number;
   savingsEuro: number;
 }
@@ -35,16 +35,18 @@ interface ApplianceResult {
  * A rendered column is either a single hour cell or a collapsed gap block
  * representing multiple consecutive "uninteresting" hours.
  */
-type Column = { type: 'hour'; slot: HourSlot } | { type: 'gap'; hours: number[] }; // collapsed hours
+type Column = { type: 'hour'; slot: HourSlot } | { type: 'gap'; hours: number[] };
 
 const HOUR_CELL_WIDTH = 36;
-const GAP_CELL_WIDTH = 20; // width of a collapsed gap column
+const GAP_CELL_WIDTH = 20;
 const ROW_LABEL_WIDTH = 108;
 
 function buildHourSlots(priceData: PricePoint[], gridFees: number): HourSlot[] {
   const hourMap = new Map<number, number[]>();
 
   priceData.forEach(item => {
+    // start_timestamp is in Europe/Berlin local time – use getHours() consistently
+    // with the rest of the app (CostCalculator, NowMarker, etc.)
     const date = new Date(item.start_timestamp);
     const hour = date.getHours();
     const priceCtPerKwh = item.marketprice * 0.1 + gridFees;
@@ -63,44 +65,74 @@ function buildHourSlots(priceData: PricePoint[], gridFees: number): HourSlot[] {
   return slots;
 }
 
+/**
+ * Finds the cheapest consecutive window of `durationHours` hours.
+ * Works on actual hour values (not array indices) so sparse data doesn't
+ * cause non-consecutive hours to be treated as adjacent.
+ * Returns the set of hours in the window and metadata.
+ */
 function findBestWindow(
   slots: HourSlot[],
   durationHours: number
-): { startIdx: number; endIdx: number; avgPrice: number } | null {
+): { windowHours: Set<number>; startHour: number; avgPrice: number } | null {
   if (slots.length < durationHours) return null;
 
+  // Build a lookup: hour → price
+  const priceByHour = new Map<number, number>(slots.map(s => [s.hour, s.avgPriceCtPerKwh]));
+
   let bestAvg = Infinity;
-  let bestStart = 0;
+  let bestStartIdx = 0;
 
   for (let i = 0; i <= slots.length - durationHours; i++) {
+    // Verify the window is truly consecutive (handles sparse slots)
+    let consecutive = true;
+    for (let j = i; j < i + durationHours - 1; j++) {
+      if (slots[j + 1].hour !== slots[j].hour + 1) {
+        consecutive = false;
+        break;
+      }
+    }
+    if (!consecutive) continue;
+
     let sum = 0;
     for (let j = i; j < i + durationHours; j++) sum += slots[j].avgPriceCtPerKwh;
     const avg = sum / durationHours;
     if (avg < bestAvg) {
       bestAvg = avg;
-      bestStart = i;
+      bestStartIdx = i;
     }
   }
 
-  return { startIdx: bestStart, endIdx: bestStart + durationHours - 1, avgPrice: bestAvg };
+  if (bestAvg === Infinity) return null; // no consecutive window found
+
+  const startHour = slots[bestStartIdx].hour;
+  const windowHours = new Set<number>();
+  for (let j = 0; j < durationHours; j++) {
+    windowHours.add((startHour + j) % 24);
+  }
+
+  // Re-calculate avgPrice from the priceByHour map for accuracy
+  let sum = 0;
+  windowHours.forEach(h => {
+    sum += priceByHour.get(h) ?? 0;
+  });
+  const avgPrice = sum / durationHours;
+
+  return { windowHours, startHour, avgPrice };
 }
 
 /**
- * Builds the list of Column descriptors.
- * Hours that are neither the current hour nor inside any appliance's best window
- * are collapsed into a single narrow gap column (min 2 consecutive hours).
+ * Builds Column descriptors. Consecutive uninteresting hours (≥2) are
+ * merged into a single narrow gap column.
  */
 function buildColumns(
   slots: HourSlot[],
   results: ApplianceResult[],
   currentHour: number
 ): Column[] {
-  // Collect all "interesting" hours
   const interesting = new Set<number>();
   interesting.add(currentHour);
-  results.forEach(r => {
-    for (let h = r.bestStartHour; h <= r.bestEndHour; h++) interesting.add(h);
-  });
+  results.forEach(r => r.windowHours.forEach(h => interesting.add(h)));
 
   const columns: Column[] = [];
   let gapAccum: number[] = [];
@@ -109,7 +141,6 @@ function buildColumns(
     if (gapAccum.length >= 2) {
       columns.push({ type: 'gap', hours: gapAccum });
     } else {
-      // Too short to collapse – keep as individual cells
       gapAccum.forEach(h => {
         const slot = slots.find(s => s.hour === h);
         if (slot) columns.push({ type: 'hour', slot });
@@ -131,7 +162,7 @@ function buildColumns(
   return columns;
 }
 
-export function ApplianceTimeline({ appliances, priceData, gridFees }: ApplianceTimelineProps) {
+function ApplianceTimelineComponent({ appliances, priceData, gridFees }: ApplianceTimelineProps) {
   const { t, language } = useLanguageContext();
   const { theme } = useSettingsContext();
   const systemTheme = useColorScheme();
@@ -147,8 +178,9 @@ export function ApplianceTimeline({ appliances, priceData, gridFees }: Appliance
     return appliances.map(appliance => {
       const best = findBestWindow(slots, appliance.durationHours);
 
+      // Average price starting from the current slot for the appliance duration
       const currentSlotIdx = slots.findIndex(s => s.hour >= currentHour);
-      let currentAvgPrice = slots[0]?.avgPriceCtPerKwh ?? 0;
+      let currentAvgPrice = slots[slots.length - 1]?.avgPriceCtPerKwh ?? 0; // fallback: last known slot
       if (currentSlotIdx >= 0) {
         const end = Math.min(currentSlotIdx + appliance.durationHours, slots.length);
         const count = end - currentSlotIdx;
@@ -159,16 +191,22 @@ export function ApplianceTimeline({ appliances, priceData, gridFees }: Appliance
       }
 
       const bestAvgPrice = best ? best.avgPrice : currentAvgPrice;
-      const bestStartHour = best ? slots[best.startIdx].hour : currentHour;
-      const bestEndHour = best
-        ? slots[best.endIdx].hour
-        : currentHour + appliance.durationHours - 1;
+      const bestStartHour = best ? best.startHour : currentHour;
+      const windowHours =
+        best?.windowHours ??
+        (() => {
+          const s = new Set<number>();
+          for (let j = 0; j < appliance.durationHours; j++) {
+            s.add((currentHour + j) % 24);
+          }
+          return s;
+        })();
 
       const currentCost = (appliance.kwh * currentAvgPrice) / 100;
       const bestCost = (appliance.kwh * bestAvgPrice) / 100;
       const savingsEuro = Math.max(0, currentCost - bestCost);
 
-      return { appliance, bestStartHour, bestEndHour, bestAvgPrice, currentAvgPrice, savingsEuro };
+      return { appliance, windowHours, bestStartHour, currentAvgPrice, savingsEuro };
     });
   }, [slots, appliances, currentHour]);
 
@@ -193,7 +231,7 @@ export function ApplianceTimeline({ appliances, priceData, gridFees }: Appliance
                 const first = col.hours[0];
                 const last = col.hours[col.hours.length - 1];
                 return (
-                  <View key={`gap-${first}`} style={[styles.gapCell]}>
+                  <View key={`gap-${first}`} style={styles.gapCell}>
                     <Text style={[styles.gapLabel, { color: colors.textTertiary }]}>
                       {first.toString().padStart(2, '0')}–{last.toString().padStart(2, '0')}
                     </Text>
@@ -222,7 +260,7 @@ export function ApplianceTimeline({ appliances, priceData, gridFees }: Appliance
 
           {/* Appliance rows */}
           {results.map(result => {
-            const { appliance, bestStartHour, bestEndHour, savingsEuro } = result;
+            const { appliance, windowHours, bestStartHour, savingsEuro } = result;
             const name = language === 'de' ? appliance.nameDE : appliance.nameEN;
 
             return (
@@ -238,8 +276,7 @@ export function ApplianceTimeline({ appliances, priceData, gridFees }: Appliance
                 {/* Columns */}
                 {columns.map((col, ci) => {
                   if (col.type === 'gap') {
-                    // Check if any hour in the gap is part of the window
-                    const anyInWindow = col.hours.some(h => h >= bestStartHour && h <= bestEndHour);
+                    const anyInWindow = col.hours.some(h => windowHours.has(h));
                     return (
                       <View
                         key={`gap-${col.hours[0]}`}
@@ -256,22 +293,27 @@ export function ApplianceTimeline({ appliances, priceData, gridFees }: Appliance
                     );
                   }
 
-                  const inWindow = col.slot.hour >= bestStartHour && col.slot.hour <= bestEndHour;
+                  const inWindow = windowHours.has(col.slot.hour);
                   const isStart = col.slot.hour === bestStartHour;
-                  const isEnd = col.slot.hour === bestEndHour;
 
-                  // Detect left/right edge: is the neighbour a gap that's also in-window?
+                  // Determine rounded corners: round left if no previous column is in-window
                   const prevCol = ci > 0 ? columns[ci - 1] : null;
                   const nextCol = ci < columns.length - 1 ? columns[ci + 1] : null;
                   const prevInWindow =
-                    prevCol?.type === 'gap' &&
-                    prevCol.hours.some(h => h >= bestStartHour && h <= bestEndHour);
+                    prevCol?.type === 'gap'
+                      ? prevCol.hours.some(h => windowHours.has(h))
+                      : prevCol?.type === 'hour'
+                        ? windowHours.has(prevCol.slot.hour)
+                        : false;
                   const nextInWindow =
-                    nextCol?.type === 'gap' &&
-                    nextCol.hours.some(h => h >= bestStartHour && h <= bestEndHour);
+                    nextCol?.type === 'gap'
+                      ? nextCol.hours.some(h => windowHours.has(h))
+                      : nextCol?.type === 'hour'
+                        ? windowHours.has(nextCol.slot.hour)
+                        : false;
 
-                  const roundLeft = isStart && !prevInWindow;
-                  const roundRight = isEnd && !nextInWindow;
+                  const roundLeft = inWindow && !prevInWindow;
+                  const roundRight = inWindow && !nextInWindow;
 
                   return (
                     <View
@@ -284,18 +326,16 @@ export function ApplianceTimeline({ appliances, priceData, gridFees }: Appliance
                           borderBottomWidth: 2,
                           borderColor: colors.success,
                         },
-                        inWindow &&
-                          roundLeft && {
-                            borderLeftWidth: 2,
-                            borderTopLeftRadius: 6,
-                            borderBottomLeftRadius: 6,
-                          },
-                        inWindow &&
-                          roundRight && {
-                            borderRightWidth: 2,
-                            borderTopRightRadius: 6,
-                            borderBottomRightRadius: 6,
-                          },
+                        roundLeft && {
+                          borderLeftWidth: 2,
+                          borderTopLeftRadius: 6,
+                          borderBottomLeftRadius: 6,
+                        },
+                        roundRight && {
+                          borderRightWidth: 2,
+                          borderTopRightRadius: 6,
+                          borderBottomRightRadius: 6,
+                        },
                       ]}
                     >
                       {isStart && savingsEuro > 0.005 && (
@@ -338,6 +378,8 @@ export function ApplianceTimeline({ appliances, priceData, gridFees }: Appliance
     </View>
   );
 }
+
+export const ApplianceTimeline = React.memo(ApplianceTimelineComponent);
 
 const styles = StyleSheet.create({
   container: {
