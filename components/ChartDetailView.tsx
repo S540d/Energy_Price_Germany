@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Modal, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { ThemeColors } from '../utils/theme';
 import { GRID_FEES_AND_TAXES } from '../utils/metrics';
+import { useLanguageContext } from '../context/LanguageContext';
 import { Button } from './ui/Button';
 
 type MetricsData =
@@ -35,27 +36,33 @@ type MetricsData =
 
 interface ChartDetailViewProps {
   children: React.ReactNode;
+  /** Optional override for the chart rendered inside the detail modal. */
+  detailChildren?: React.ReactNode;
   title: string;
   colors: ThemeColors;
   metrics?: MetricsData;
   chartType: 'renewable' | 'price' | 'correlation';
-  onToggleView?: () => void;
+  viewToggle?: React.ReactNode;
   legend?: React.ReactNode;
+  /** Optional override for the legend rendered inside the detail modal. */
+  detailLegend?: React.ReactNode;
   gridFees?: number;
 }
 
 export function ChartDetailView({
   children,
+  detailChildren,
   title,
   colors,
   metrics,
   chartType,
-  onToggleView: _onToggleView,
+  viewToggle,
   legend,
+  detailLegend,
   gridFees: _gridFees = GRID_FEES_AND_TAXES,
 }: ChartDetailViewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showMetrics, setShowMetrics] = useState(false);
+  const { t } = useLanguageContext();
 
   const renderMetricsView = () => {
     if (!metrics) return null;
@@ -64,118 +71,66 @@ export function ChartDetailView({
     const isPriceChart = 'marketPrice' in metrics && 'endCustomerPrice' in metrics;
 
     if (isPriceChart) {
-      // Render BOTH prices for price chart
+      // Detail view always shows both price sections
+      const sections: { data: typeof metrics.marketPrice; accentColor: string; label: string }[] = [
+        { data: metrics.marketPrice, accentColor: '#4CAF50', label: t.priceDisplayMarketOnly },
+        {
+          data: metrics.endCustomerPrice,
+          accentColor: colors.primary,
+          label: t.priceDisplayWithFees,
+        },
+      ];
+
       return (
         <View style={[styles.metricsContainer, { backgroundColor: colors.surfaceSecondary }]}>
           <Text style={[styles.metricsTitle, { color: colors.text }]}>{metrics.label}</Text>
 
-          {/* END-CUSTOMER PRICE (Top, Primary) */}
-          <View style={{ marginTop: 12 }}>
-            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-              Endkundenstrompreis
-            </Text>
+          {sections.map(({ data, accentColor, label }) => (
+            <View key={label} style={{ marginTop: 12 }}>
+              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>{label}</Text>
 
-            {/* Current End-Customer Price */}
-            {metrics.endCustomerPrice.current !== null &&
-              metrics.endCustomerPrice.current !== undefined && (
+              {data.current !== null && data.current !== undefined && (
                 <View
                   style={[
                     styles.currentValueContainer,
                     {
                       backgroundColor: colors.surface,
                       borderLeftWidth: 3,
-                      borderLeftColor: colors.primary,
+                      borderLeftColor: accentColor,
                     },
                   ]}
                 >
                   <Text style={[styles.currentLabel, { color: colors.text }]}>Aktuell</Text>
-                  <Text style={[styles.currentValue, { color: colors.primary }]}>
-                    {metrics.endCustomerPrice.current.toFixed(2)} {metrics.unit}
+                  <Text style={[styles.currentValue, { color: accentColor }]}>
+                    {data.current.toFixed(2)} {metrics.unit}
                   </Text>
                 </View>
               )}
 
-            {/* Min/Max/Avg End-Customer Price */}
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.text }]}>Minimum</Text>
-                <Text style={[styles.statValue, { color: colors.primary }]}>
-                  {metrics.endCustomerPrice.min.toFixed(2)} {metrics.unit}
-                </Text>
-              </View>
+              <View style={styles.statsContainer}>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statLabel, { color: colors.text }]}>Minimum</Text>
+                  <Text style={[styles.statValue, { color: accentColor }]}>
+                    {data.min.toFixed(2)} {metrics.unit}
+                  </Text>
+                </View>
 
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.text }]}>Durchschnitt</Text>
-                <Text style={[styles.statValue, { color: colors.primary }]}>
-                  {metrics.endCustomerPrice.avg.toFixed(2)} {metrics.unit}
-                </Text>
-              </View>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statLabel, { color: colors.text }]}>Durchschnitt</Text>
+                  <Text style={[styles.statValue, { color: accentColor }]}>
+                    {data.avg.toFixed(2)} {metrics.unit}
+                  </Text>
+                </View>
 
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.text }]}>Maximum</Text>
-                <Text style={[styles.statValue, { color: colors.primary }]}>
-                  {metrics.endCustomerPrice.max.toFixed(2)} {metrics.unit}
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* MARKET PRICE (Bottom, Secondary) */}
-          <View
-            style={{
-              marginTop: 16,
-              paddingTop: 12,
-              borderTopWidth: 1,
-              borderTopColor: colors.gridLine,
-            }}
-          >
-            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-              Börsenstrompreis
-            </Text>
-
-            {/* Current Market Price */}
-            {metrics.marketPrice.current !== null && metrics.marketPrice.current !== undefined && (
-              <View
-                style={[
-                  styles.currentValueContainer,
-                  {
-                    backgroundColor: colors.surface,
-                    borderLeftWidth: 3,
-                    borderLeftColor: '#4CAF50',
-                  },
-                ]}
-              >
-                <Text style={[styles.currentLabel, { color: colors.text }]}>Aktuell</Text>
-                <Text style={[styles.currentValue, { color: '#4CAF50' }]}>
-                  {metrics.marketPrice.current.toFixed(2)} {metrics.unit}
-                </Text>
-              </View>
-            )}
-
-            {/* Min/Max/Avg Market Price */}
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.text }]}>Minimum</Text>
-                <Text style={[styles.statValue, { color: '#4CAF50' }]}>
-                  {metrics.marketPrice.min.toFixed(2)} {metrics.unit}
-                </Text>
-              </View>
-
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.text }]}>Durchschnitt</Text>
-                <Text style={[styles.statValue, { color: '#4CAF50' }]}>
-                  {metrics.marketPrice.avg.toFixed(2)} {metrics.unit}
-                </Text>
-              </View>
-
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.text }]}>Maximum</Text>
-                <Text style={[styles.statValue, { color: '#4CAF50' }]}>
-                  {metrics.marketPrice.max.toFixed(2)} {metrics.unit}
-                </Text>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statLabel, { color: colors.text }]}>Maximum</Text>
+                  <Text style={[styles.statValue, { color: accentColor }]}>
+                    {data.max.toFixed(2)} {metrics.unit}
+                  </Text>
+                </View>
               </View>
             </View>
-          </View>
+          ))}
         </View>
       );
     }
@@ -224,69 +179,18 @@ export function ChartDetailView({
 
   const renderContent = () => (
     <View style={{ flex: 1 }}>
-      {/* Toggle buttons - only show if metrics are available */}
-      {metrics && (
-        <View style={styles.toggleContainer}>
-          <TouchableOpacity
-            style={[
-              styles.toggleButton,
-              !showMetrics && styles.toggleButtonActive,
-              {
-                backgroundColor: !showMetrics ? colors.primary : colors.gridLine,
-                borderColor: colors.gridLine,
-              },
-            ]}
-            onPress={() => setShowMetrics(false)}
-          >
-            <Text
-              style={{
-                color: !showMetrics ? '#fff' : colors.text,
-                fontSize: 12,
-                fontWeight: '600',
-              }}
-            >
-              Grafik
-            </Text>
-          </TouchableOpacity>
+      {/* Chart always shown – use detailChildren override when available */}
+      <View style={styles.chartContainer}>{detailChildren ?? children}</View>
 
-          <TouchableOpacity
-            style={[
-              styles.toggleButton,
-              showMetrics && styles.toggleButtonActive,
-              {
-                backgroundColor: showMetrics ? colors.primary : colors.gridLine,
-                borderColor: colors.gridLine,
-              },
-            ]}
-            onPress={() => setShowMetrics(true)}
-          >
-            <Text
-              style={{
-                color: showMetrics ? '#fff' : colors.text,
-                fontSize: 12,
-                fontWeight: '600',
-              }}
-            >
-              Metrik
-            </Text>
-          </TouchableOpacity>
+      {/* Legend - shown below chart, use detailLegend override when available */}
+      {(detailLegend ?? legend) && (
+        <View style={[styles.legendContainer, { backgroundColor: colors.surface }]}>
+          {detailLegend ?? legend}
         </View>
       )}
 
-      {/* Content */}
-      {showMetrics && metrics ? (
-        renderMetricsView()
-      ) : (
-        <>
-          <View style={styles.chartContainer}>{children}</View>
-          {/* Legend - show only when displaying chart (not metrics) */}
-          {legend && (
-            <View style={[styles.legendContainer, { backgroundColor: colors.surface }]}>
-              {legend}
-            </View>
-          )}
-        </>
-      )}
+      {/* Metrics - always shown below chart/legend when available */}
+      {metrics && renderMetricsView()}
     </View>
   );
 
@@ -321,6 +225,7 @@ export function ChartDetailView({
             ]}
           >
             <Text style={[styles.modalTitle, { color: colors.text }]}>{title}</Text>
+            {viewToggle && <View style={{ marginTop: 8 }}>{viewToggle}</View>}
           </View>
 
           {/* Content */}
@@ -380,28 +285,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
-  },
-  toggleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    padding: 16,
-    gap: 8,
-  },
-  toggleButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 0,
-    minWidth: 100,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  toggleButtonActive: {
-    // Active style handled via backgroundColor prop
   },
   metricsContainer: {
     margin: 16,

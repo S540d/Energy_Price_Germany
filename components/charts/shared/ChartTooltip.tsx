@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Platform } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { Animated, Easing, Platform } from 'react-native';
 import type { ThemeColors } from '../../../utils/theme';
 
 interface ChartTooltipProps {
@@ -20,10 +20,40 @@ function ChartTooltipComponent({
   minWidth,
 }: ChartTooltipProps) {
   const tooltipBgColor = backgroundColor === colors.surface ? colors.background : colors.surface;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
+
+  useEffect(() => {
+    opacity.setValue(0);
+
+    if (animationRef.current) {
+      animationRef.current.stop();
+    }
+
+    const animation = Animated.timing(opacity, {
+      toValue: 1,
+      duration: 150,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
+    });
+
+    animationRef.current = animation;
+    animation.start();
+
+    return () => {
+      if (animationRef.current) {
+        animationRef.current.stop();
+        animationRef.current = null;
+      }
+    };
+    // opacity is a stable Animated.Value ref – intentionally excluded
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tooltipLeft]);
 
   return (
-    <View
+    <Animated.View
       style={{
+        opacity,
         paddingVertical: 6,
         paddingHorizontal: 12,
         backgroundColor: tooltipBgColor,
@@ -46,7 +76,7 @@ function ChartTooltipComponent({
       }}
     >
       {children}
-    </View>
+    </Animated.View>
   );
 }
 
