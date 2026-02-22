@@ -79,7 +79,7 @@ export const translations = {
     costCheapestTime: 'Cheapest time',
     costSave: 'save',
     costCheaper: 'cheaper',
-    costTimeline: 'Best time today',
+    costTimeline: 'Best time in the future',
     costTimelineRecommended: 'Recommended window',
     costTimelineSave: 'save vs. now',
     // Other
@@ -191,7 +191,7 @@ export const translations = {
     costCheapestTime: 'Günstigste Zeit',
     costSave: 'sparen',
     costCheaper: 'günstiger',
-    costTimeline: 'Beste Zeit heute',
+    costTimeline: 'Beste Zeit in der Zukunft',
     costTimelineRecommended: 'Empfohlenes Fenster',
     costTimelineSave: 'ggü. jetzt sparen',
     // Other

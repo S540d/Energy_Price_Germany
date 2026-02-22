@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-02-22
+
+### Added
+- **Preisdarstellung wählbar** – Nutzer können zwischen Börsenstrompreis und Endkundenstrompreis (inkl. Netzentgelte) umschalten; Einstellung nur für den Hauptchart, Detail-View zeigt immer beide
+- **Geräte-Timeline (Appliance Timeline)** – Beste Betriebsstunden für Haushaltsgeräte mit Empfehlung der günstigsten Zeitfenster (#195)
+- **Preisalarm** – In-App-Benachrichtigungen und Web-Notifications bei Über-/Unterschreitung von Preisschwellen (Fix #2)
+- **24h-Uhransicht** – Alternativer Preis-Chart als 24-Stunden-Uhr (Clock View) mit Toggle (#165)
+- **Chart-Animationen** – Karten und Tooltips animieren beim Einblenden (#68)
+
+### Fixed
+- Detail-View zeigt immer gestapelten Chart (Börsenstrompreis + Netzentgelte), unabhängig vom gewählten Modus
+- Kostenrechner zeigt nur zukünftige Zeitslots (#197)
+- Label „Beste Zeit" in „Beste Zeit in der Zukunft" umbenannt
+- Zone-Bands und Runner-Bands aus Preis- und Erneuerbare-Charts entfernt
+- ClockChart-Labels in SVG verschoben; Preisalarm lädt Schwellen korrekt (value > 0 Validierung)
+- Beta-Modus aus „Personalisieren" entfernt
+- Metriken immer unter Grafik, View-Toggle im Header (#194)
+
+### Changed
+- Preisdarstellungs-Modus gilt nur für den Hauptchart; Detailansicht ist immer gestapelt (`forceStacked`)
+
+---
+
 ## [1.3.0] - 2026-01-04
 
 ### Added

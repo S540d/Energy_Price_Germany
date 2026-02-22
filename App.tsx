@@ -21,7 +21,7 @@ import { AboutView } from './components/AboutView';
 import { SettingsMenu } from './components/settings/SettingsMenu';
 import { CustomizeModal } from './components/customize/CustomizeModal';
 import { CostCalculatorView } from './components/CostCalculatorView';
-import { calculateMetrics, GRID_FEES_AND_TAXES } from './utils/metrics';
+import { calculateMetrics } from './utils/metrics';
 import { getThemeColors } from './utils/theme';
 import { isValidPostalCode } from './utils/postalCodeUtils';
 import { useEnergyData } from './hooks/useEnergyData';
@@ -41,7 +41,7 @@ function AppContent() {
   const [priceClockView, setPriceClockView] = useState(false);
 
   // Settings and Language from Context
-  const { theme, debouncedPostalCode, gridFees, priceAlertLow, priceAlertHigh } =
+  const { theme, debouncedPostalCode, gridFees, priceAlertLow, priceAlertHigh, priceDisplayMode } =
     useSettingsContext();
   const { language, t } = useLanguageContext();
 
@@ -415,7 +415,42 @@ function AppContent() {
                       <Text style={{ color: colors.text, fontSize: 12 }}>{t.marketPriceLabel}</Text>
                     </View>
 
-                    {/* Grid Fees */}
+                    {/* Grid Fees – only shown in end-customer price mode */}
+                    {priceDisplayMode === 'withGridFees' && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <View
+                          style={{
+                            width: 16,
+                            height: 16,
+                            backgroundColor: '#757575',
+                            borderRadius: 2,
+                          }}
+                        />
+                        <Text style={{ color: colors.text, fontSize: 12 }}>
+                          {t.gridFeesLabel} ({gridFees} ¢/kWh)
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              }
+              detailLegend={
+                <View style={{ gap: 8 }}>
+                  <Text style={[{ color: colors.text, fontSize: 13, fontWeight: '600' }]}>
+                    {t.legend}
+                  </Text>
+                  <View style={{ gap: 6 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <View
+                        style={{
+                          width: 16,
+                          height: 16,
+                          backgroundColor: '#4CAF50',
+                          borderRadius: 2,
+                        }}
+                      />
+                      <Text style={{ color: colors.text, fontSize: 12 }}>{t.marketPriceLabel}</Text>
+                    </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                       <View
                         style={{
@@ -426,11 +461,52 @@ function AppContent() {
                         }}
                       />
                       <Text style={{ color: colors.text, fontSize: 12 }}>
-                        {t.gridFeesLabel} ({GRID_FEES_AND_TAXES} ¢/kWh)
+                        {t.gridFeesLabel} ({gridFees} ¢/kWh)
                       </Text>
                     </View>
                   </View>
                 </View>
+              }
+              detailChildren={
+                priceClockView ? (
+                  <ClockChart
+                    data={filteredEnergyData}
+                    backgroundColor={colors.surface}
+                    textColor={colors.text}
+                    colors={colors}
+                    gridFees={gridFees}
+                    labels={{
+                      now: t.now,
+                      average: t.average,
+                      pricePerKwh: t.pricePerKwh,
+                      noData: t.noData,
+                    }}
+                  />
+                ) : (
+                  <PriceBarChart
+                    title={t.priceTitle}
+                    subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+                    data={filteredEnergyData}
+                    backgroundColor={colors.surface}
+                    textColor={colors.text}
+                    gridColor={colors.gridLine}
+                    colors={colors}
+                    labels={{
+                      yAxis: t.pricePerKwh,
+                      now: t.now,
+                      average: t.average,
+                      marketPrice: t.marketPrice,
+                      gridFeesAndTaxes: t.gridFeesAndTaxes,
+                      interpolated: t.interpolated,
+                      tooltipMarketPrice: t.tooltipMarketPrice,
+                      tooltipGridFees: t.tooltipGridFees,
+                      tooltipEndCustomer: t.tooltipEndCustomer,
+                    }}
+                    gridFees={gridFees}
+                    showLegend={false}
+                    forceStacked
+                  />
+                )
               }
             >
               {priceClockView ? (
@@ -469,7 +545,6 @@ function AppContent() {
                   }}
                   gridFees={gridFees}
                   showLegend={false}
-                  forceStacked
                 />
               )}
             </ChartDetailView>

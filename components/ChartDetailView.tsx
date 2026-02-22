@@ -3,7 +3,6 @@ import { View, Text, Modal, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { ThemeColors } from '../utils/theme';
 import { GRID_FEES_AND_TAXES } from '../utils/metrics';
-import { useSettingsContext } from '../context/SettingsContext';
 import { useLanguageContext } from '../context/LanguageContext';
 import { Button } from './ui/Button';
 
@@ -37,27 +36,32 @@ type MetricsData =
 
 interface ChartDetailViewProps {
   children: React.ReactNode;
+  /** Optional override for the chart rendered inside the detail modal. */
+  detailChildren?: React.ReactNode;
   title: string;
   colors: ThemeColors;
   metrics?: MetricsData;
   chartType: 'renewable' | 'price' | 'correlation';
   viewToggle?: React.ReactNode;
   legend?: React.ReactNode;
+  /** Optional override for the legend rendered inside the detail modal. */
+  detailLegend?: React.ReactNode;
   gridFees?: number;
 }
 
 export function ChartDetailView({
   children,
+  detailChildren,
   title,
   colors,
   metrics,
   chartType,
   viewToggle,
   legend,
+  detailLegend,
   gridFees: _gridFees = GRID_FEES_AND_TAXES,
 }: ChartDetailViewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const { priceDisplayMode } = useSettingsContext();
   const { t } = useLanguageContext();
 
   const renderMetricsView = () => {
@@ -67,61 +71,66 @@ export function ChartDetailView({
     const isPriceChart = 'marketPrice' in metrics && 'endCustomerPrice' in metrics;
 
     if (isPriceChart) {
-      const isMarketOnly = priceDisplayMode === 'marketOnly';
-      const data = isMarketOnly ? metrics.marketPrice : metrics.endCustomerPrice;
-      const accentColor = isMarketOnly ? '#4CAF50' : colors.primary;
-      const sectionLabel = isMarketOnly ? t.priceDisplayMarketOnly : t.priceDisplayWithFees;
+      // Detail view always shows both price sections
+      const sections: { data: typeof metrics.marketPrice; accentColor: string; label: string }[] = [
+        { data: metrics.marketPrice, accentColor: '#4CAF50', label: t.priceDisplayMarketOnly },
+        {
+          data: metrics.endCustomerPrice,
+          accentColor: colors.primary,
+          label: t.priceDisplayWithFees,
+        },
+      ];
 
       return (
         <View style={[styles.metricsContainer, { backgroundColor: colors.surfaceSecondary }]}>
           <Text style={[styles.metricsTitle, { color: colors.text }]}>{metrics.label}</Text>
 
-          <View style={{ marginTop: 12 }}>
-            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-              {sectionLabel}
-            </Text>
+          {sections.map(({ data, accentColor, label }) => (
+            <View key={label} style={{ marginTop: 12 }}>
+              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>{label}</Text>
 
-            {data.current !== null && data.current !== undefined && (
-              <View
-                style={[
-                  styles.currentValueContainer,
-                  {
-                    backgroundColor: colors.surface,
-                    borderLeftWidth: 3,
-                    borderLeftColor: accentColor,
-                  },
-                ]}
-              >
-                <Text style={[styles.currentLabel, { color: colors.text }]}>Aktuell</Text>
-                <Text style={[styles.currentValue, { color: accentColor }]}>
-                  {data.current.toFixed(2)} {metrics.unit}
-                </Text>
-              </View>
-            )}
+              {data.current !== null && data.current !== undefined && (
+                <View
+                  style={[
+                    styles.currentValueContainer,
+                    {
+                      backgroundColor: colors.surface,
+                      borderLeftWidth: 3,
+                      borderLeftColor: accentColor,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.currentLabel, { color: colors.text }]}>Aktuell</Text>
+                  <Text style={[styles.currentValue, { color: accentColor }]}>
+                    {data.current.toFixed(2)} {metrics.unit}
+                  </Text>
+                </View>
+              )}
 
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.text }]}>Minimum</Text>
-                <Text style={[styles.statValue, { color: accentColor }]}>
-                  {data.min.toFixed(2)} {metrics.unit}
-                </Text>
-              </View>
+              <View style={styles.statsContainer}>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statLabel, { color: colors.text }]}>Minimum</Text>
+                  <Text style={[styles.statValue, { color: accentColor }]}>
+                    {data.min.toFixed(2)} {metrics.unit}
+                  </Text>
+                </View>
 
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.text }]}>Durchschnitt</Text>
-                <Text style={[styles.statValue, { color: accentColor }]}>
-                  {data.avg.toFixed(2)} {metrics.unit}
-                </Text>
-              </View>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statLabel, { color: colors.text }]}>Durchschnitt</Text>
+                  <Text style={[styles.statValue, { color: accentColor }]}>
+                    {data.avg.toFixed(2)} {metrics.unit}
+                  </Text>
+                </View>
 
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.text }]}>Maximum</Text>
-                <Text style={[styles.statValue, { color: accentColor }]}>
-                  {data.max.toFixed(2)} {metrics.unit}
-                </Text>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statLabel, { color: colors.text }]}>Maximum</Text>
+                  <Text style={[styles.statValue, { color: accentColor }]}>
+                    {data.max.toFixed(2)} {metrics.unit}
+                  </Text>
+                </View>
               </View>
             </View>
-          </View>
+          ))}
         </View>
       );
     }
@@ -170,12 +179,14 @@ export function ChartDetailView({
 
   const renderContent = () => (
     <View style={{ flex: 1 }}>
-      {/* Chart always shown */}
-      <View style={styles.chartContainer}>{children}</View>
+      {/* Chart always shown – use detailChildren override when available */}
+      <View style={styles.chartContainer}>{detailChildren ?? children}</View>
 
-      {/* Legend - shown below chart */}
-      {legend && (
-        <View style={[styles.legendContainer, { backgroundColor: colors.surface }]}>{legend}</View>
+      {/* Legend - shown below chart, use detailLegend override when available */}
+      {(detailLegend ?? legend) && (
+        <View style={[styles.legendContainer, { backgroundColor: colors.surface }]}>
+          {detailLegend ?? legend}
+        </View>
       )}
 
       {/* Metrics - always shown below chart/legend when available */}
