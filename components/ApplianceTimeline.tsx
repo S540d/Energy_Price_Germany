@@ -41,7 +41,11 @@ const HOUR_CELL_WIDTH = 36;
 const GAP_CELL_WIDTH = 20;
 const ROW_LABEL_WIDTH = 108;
 
-function buildHourSlots(priceData: PricePoint[], gridFees: number): HourSlot[] {
+function buildHourSlots(
+  priceData: PricePoint[],
+  gridFees: number,
+  currentHour: number
+): HourSlot[] {
   const hourMap = new Map<number, number[]>();
 
   priceData.forEach(item => {
@@ -49,6 +53,8 @@ function buildHourSlots(priceData: PricePoint[], gridFees: number): HourSlot[] {
     // with the rest of the app (CostCalculator, NowMarker, etc.)
     const date = new Date(item.start_timestamp);
     const hour = date.getHours();
+    // Only include hours from now onwards so recommendations are always in the future
+    if (hour < currentHour) return;
     const priceCtPerKwh = item.marketprice * 0.1 + gridFees;
     const existing = hourMap.get(hour) ?? [];
     existing.push(priceCtPerKwh);
@@ -168,7 +174,10 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
   const systemTheme = useColorScheme();
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
 
-  const slots = useMemo(() => buildHourSlots(priceData, gridFees), [priceData, gridFees]);
+  const slots = useMemo(
+    () => buildHourSlots(priceData, gridFees, currentHour),
+    [priceData, gridFees, currentHour]
+  );
 
   const currentHour = useMemo(() => new Date().getHours(), []);
 
