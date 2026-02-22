@@ -19,7 +19,7 @@ interface ApplianceTimelineProps {
 interface HourSlot {
   hour: number;
   label: string;
-  avgPriceCtPerKwh: number; // ct/kWh including grid fees
+  avgPriceCtPerKwh: number;
 }
 
 interface ApplianceResult {
@@ -31,12 +31,16 @@ interface ApplianceResult {
   savingsEuro: number;
 }
 
+/**
+ * A rendered column is either a single hour cell or a collapsed gap block
+ * representing multiple consecutive "uninteresting" hours.
+ */
+type Column = { type: 'hour'; slot: HourSlot } | { type: 'gap'; hours: number[] }; // collapsed hours
+
 const HOUR_CELL_WIDTH = 36;
+const GAP_CELL_WIDTH = 20; // width of a collapsed gap column
 const ROW_LABEL_WIDTH = 108;
 
-/**
- * Aggregates 15-min price intervals into hourly average prices (ct/kWh incl. grid fees).
- */
 function buildHourSlots(priceData: PricePoint[], gridFees: number): HourSlot[] {
   const hourMap = new Map<number, number[]>();
 
@@ -54,15 +58,11 @@ function buildHourSlots(priceData: PricePoint[], gridFees: number): HourSlot[] {
     const prices = hourMap.get(h);
     if (!prices || prices.length === 0) continue;
     const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
-    const label = h.toString().padStart(2, '0');
-    slots.push({ hour: h, label, avgPriceCtPerKwh: avg });
+    slots.push({ hour: h, label: h.toString().padStart(2, '0'), avgPriceCtPerKwh: avg });
   }
   return slots;
 }
 
-/**
- * Finds the cheapest consecutive window of `durationHours` hours in the slots array.
- */
 function findBestWindow(
   slots: HourSlot[],
   durationHours: number
@@ -74,9 +74,7 @@ function findBestWindow(
 
   for (let i = 0; i <= slots.length - durationHours; i++) {
     let sum = 0;
-    for (let j = i; j < i + durationHours; j++) {
-      sum += slots[j].avgPriceCtPerKwh;
-    }
+    for (let j = i; j < i + durationHours; j++) sum += slots[j].avgPriceCtPerKwh;
     const avg = sum / durationHours;
     if (avg < bestAvg) {
       bestAvg = avg;
@@ -88,13 +86,49 @@ function findBestWindow(
 }
 
 /**
- * Returns current-hour average price from slots (or first slot as fallback).
+ * Builds the list of Column descriptors.
+ * Hours that are neither the current hour nor inside any appliance's best window
+ * are collapsed into a single narrow gap column (min 2 consecutive hours).
  */
-function getCurrentHourPrice(slots: HourSlot[]): number {
-  if (slots.length === 0) return 0;
-  const currentHour = new Date().getHours();
-  const slot = slots.find(s => s.hour === currentHour);
-  return slot ? slot.avgPriceCtPerKwh : slots[0].avgPriceCtPerKwh;
+function buildColumns(
+  slots: HourSlot[],
+  results: ApplianceResult[],
+  currentHour: number
+): Column[] {
+  // Collect all "interesting" hours
+  const interesting = new Set<number>();
+  interesting.add(currentHour);
+  results.forEach(r => {
+    for (let h = r.bestStartHour; h <= r.bestEndHour; h++) interesting.add(h);
+  });
+
+  const columns: Column[] = [];
+  let gapAccum: number[] = [];
+
+  const flush = () => {
+    if (gapAccum.length >= 2) {
+      columns.push({ type: 'gap', hours: gapAccum });
+    } else {
+      // Too short to collapse – keep as individual cells
+      gapAccum.forEach(h => {
+        const slot = slots.find(s => s.hour === h);
+        if (slot) columns.push({ type: 'hour', slot });
+      });
+    }
+    gapAccum = [];
+  };
+
+  slots.forEach(slot => {
+    if (interesting.has(slot.hour)) {
+      flush();
+      columns.push({ type: 'hour', slot });
+    } else {
+      gapAccum.push(slot.hour);
+    }
+  });
+  flush();
+
+  return columns;
 }
 
 export function ApplianceTimeline({ appliances, priceData, gridFees }: ApplianceTimelineProps) {
@@ -105,17 +139,16 @@ export function ApplianceTimeline({ appliances, priceData, gridFees }: Appliance
 
   const slots = useMemo(() => buildHourSlots(priceData, gridFees), [priceData, gridFees]);
 
+  const currentHour = useMemo(() => new Date().getHours(), []);
+
   const results: ApplianceResult[] = useMemo(() => {
     if (slots.length === 0) return [];
 
     return appliances.map(appliance => {
       const best = findBestWindow(slots, appliance.durationHours);
-      const currentHourPrice = getCurrentHourPrice(slots);
 
-      // Average price over current + following hours for the appliance duration
-      const currentHour = new Date().getHours();
       const currentSlotIdx = slots.findIndex(s => s.hour >= currentHour);
-      let currentAvgPrice = currentHourPrice;
+      let currentAvgPrice = slots[0]?.avgPriceCtPerKwh ?? 0;
       if (currentSlotIdx >= 0) {
         const end = Math.min(currentSlotIdx + appliance.durationHours, slots.length);
         const count = end - currentSlotIdx;
@@ -135,20 +168,16 @@ export function ApplianceTimeline({ appliances, priceData, gridFees }: Appliance
       const bestCost = (appliance.kwh * bestAvgPrice) / 100;
       const savingsEuro = Math.max(0, currentCost - bestCost);
 
-      return {
-        appliance,
-        bestStartHour,
-        bestEndHour,
-        bestAvgPrice,
-        currentAvgPrice,
-        savingsEuro,
-      };
+      return { appliance, bestStartHour, bestEndHour, bestAvgPrice, currentAvgPrice, savingsEuro };
     });
-  }, [slots, appliances]);
+  }, [slots, appliances, currentHour]);
+
+  const columns = useMemo(
+    () => buildColumns(slots, results, currentHour),
+    [slots, results, currentHour]
+  );
 
   if (slots.length === 0) return null;
-
-  const currentHour = new Date().getHours();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
@@ -156,14 +185,25 @@ export function ApplianceTimeline({ appliances, priceData, gridFees }: Appliance
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View>
-          {/* Hour header row */}
+          {/* Header row */}
           <View style={styles.headerRow}>
             <View style={{ width: ROW_LABEL_WIDTH }} />
-            {slots.map(slot => {
-              const isNow = slot.hour === currentHour;
+            {columns.map((col, ci) => {
+              if (col.type === 'gap') {
+                const first = col.hours[0];
+                const last = col.hours[col.hours.length - 1];
+                return (
+                  <View key={`gap-${first}`} style={[styles.gapCell]}>
+                    <Text style={[styles.gapLabel, { color: colors.textTertiary }]}>
+                      {first.toString().padStart(2, '0')}–{last.toString().padStart(2, '0')}
+                    </Text>
+                  </View>
+                );
+              }
+              const isNow = col.slot.hour === currentHour;
               return (
                 <View
-                  key={slot.hour}
+                  key={`h-${col.slot.hour}-${ci}`}
                   style={[styles.hourCell, isNow && { backgroundColor: `${colors.primary}20` }]}
                 >
                   <Text
@@ -173,7 +213,7 @@ export function ApplianceTimeline({ appliances, priceData, gridFees }: Appliance
                       isNow && { fontWeight: '700' },
                     ]}
                   >
-                    {slot.label}
+                    {col.slot.label}
                   </Text>
                 </View>
               );
@@ -187,7 +227,7 @@ export function ApplianceTimeline({ appliances, priceData, gridFees }: Appliance
 
             return (
               <View key={appliance.id} style={styles.applianceRow}>
-                {/* Row label */}
+                {/* Label */}
                 <View style={[styles.rowLabel, { width: ROW_LABEL_WIDTH }]}>
                   <Text style={styles.rowIcon}>{appliance.icon}</Text>
                   <Text style={[styles.rowName, { color: colors.text }]} numberOfLines={2}>
@@ -195,15 +235,47 @@ export function ApplianceTimeline({ appliances, priceData, gridFees }: Appliance
                   </Text>
                 </View>
 
-                {/* Hour cells */}
-                {slots.map(slot => {
-                  const inWindow = slot.hour >= bestStartHour && slot.hour <= bestEndHour;
-                  const isStart = slot.hour === bestStartHour;
-                  const isEnd = slot.hour === bestEndHour;
+                {/* Columns */}
+                {columns.map((col, ci) => {
+                  if (col.type === 'gap') {
+                    // Check if any hour in the gap is part of the window
+                    const anyInWindow = col.hours.some(h => h >= bestStartHour && h <= bestEndHour);
+                    return (
+                      <View
+                        key={`gap-${col.hours[0]}`}
+                        style={[
+                          styles.gapCell,
+                          anyInWindow && {
+                            backgroundColor: `${colors.success}30`,
+                            borderTopWidth: 2,
+                            borderBottomWidth: 2,
+                            borderColor: colors.success,
+                          },
+                        ]}
+                      />
+                    );
+                  }
+
+                  const inWindow = col.slot.hour >= bestStartHour && col.slot.hour <= bestEndHour;
+                  const isStart = col.slot.hour === bestStartHour;
+                  const isEnd = col.slot.hour === bestEndHour;
+
+                  // Detect left/right edge: is the neighbour a gap that's also in-window?
+                  const prevCol = ci > 0 ? columns[ci - 1] : null;
+                  const nextCol = ci < columns.length - 1 ? columns[ci + 1] : null;
+                  const prevInWindow =
+                    prevCol?.type === 'gap' &&
+                    prevCol.hours.some(h => h >= bestStartHour && h <= bestEndHour);
+                  const nextInWindow =
+                    nextCol?.type === 'gap' &&
+                    nextCol.hours.some(h => h >= bestStartHour && h <= bestEndHour);
+
+                  const roundLeft = isStart && !prevInWindow;
+                  const roundRight = isEnd && !nextInWindow;
 
                   return (
                     <View
-                      key={slot.hour}
+                      key={`h-${col.slot.hour}-${ci}`}
                       style={[
                         styles.hourCell,
                         inWindow && {
@@ -212,16 +284,18 @@ export function ApplianceTimeline({ appliances, priceData, gridFees }: Appliance
                           borderBottomWidth: 2,
                           borderColor: colors.success,
                         },
-                        isStart && {
-                          borderLeftWidth: 2,
-                          borderTopLeftRadius: 6,
-                          borderBottomLeftRadius: 6,
-                        },
-                        isEnd && {
-                          borderRightWidth: 2,
-                          borderTopRightRadius: 6,
-                          borderBottomRightRadius: 6,
-                        },
+                        inWindow &&
+                          roundLeft && {
+                            borderLeftWidth: 2,
+                            borderTopLeftRadius: 6,
+                            borderBottomLeftRadius: 6,
+                          },
+                        inWindow &&
+                          roundRight && {
+                            borderRightWidth: 2,
+                            borderTopRightRadius: 6,
+                            borderBottomRightRadius: 6,
+                          },
                       ]}
                     >
                       {isStart && savingsEuro > 0.005 && (
@@ -307,9 +381,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  gapCell: {
+    width: GAP_CELL_WIDTH,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   hourLabel: {
     fontSize: 10,
     fontWeight: '500',
+  },
+  gapLabel: {
+    fontSize: 7,
+    textAlign: 'center',
+    lineHeight: 9,
   },
   savingsLabel: {
     fontSize: 9,
