@@ -44,6 +44,8 @@ interface ChartDetailViewProps {
   chartType: 'renewable' | 'price' | 'correlation';
   viewToggle?: React.ReactNode;
   legend?: React.ReactNode;
+  /** Optional override for the legend rendered inside the detail modal. */
+  detailLegend?: React.ReactNode;
   gridFees?: number;
 }
 
@@ -56,6 +58,7 @@ export function ChartDetailView({
   chartType,
   viewToggle,
   legend,
+  detailLegend,
   gridFees: _gridFees = GRID_FEES_AND_TAXES,
 }: ChartDetailViewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -179,9 +182,11 @@ export function ChartDetailView({
       {/* Chart always shown – use detailChildren override when available */}
       <View style={styles.chartContainer}>{detailChildren ?? children}</View>
 
-      {/* Legend - shown below chart */}
-      {legend && (
-        <View style={[styles.legendContainer, { backgroundColor: colors.surface }]}>{legend}</View>
+      {/* Legend - shown below chart, use detailLegend override when available */}
+      {(detailLegend ?? legend) && (
+        <View style={[styles.legendContainer, { backgroundColor: colors.surface }]}>
+          {detailLegend ?? legend}
+        </View>
       )}
 
       {/* Metrics - always shown below chart/legend when available */}

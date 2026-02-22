@@ -434,6 +434,39 @@ function AppContent() {
                   </View>
                 </View>
               }
+              detailLegend={
+                <View style={{ gap: 8 }}>
+                  <Text style={[{ color: colors.text, fontSize: 13, fontWeight: '600' }]}>
+                    {t.legend}
+                  </Text>
+                  <View style={{ gap: 6 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <View
+                        style={{
+                          width: 16,
+                          height: 16,
+                          backgroundColor: '#4CAF50',
+                          borderRadius: 2,
+                        }}
+                      />
+                      <Text style={{ color: colors.text, fontSize: 12 }}>{t.marketPriceLabel}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <View
+                        style={{
+                          width: 16,
+                          height: 16,
+                          backgroundColor: '#757575',
+                          borderRadius: 2,
+                        }}
+                      />
+                      <Text style={{ color: colors.text, fontSize: 12 }}>
+                        {t.gridFeesLabel} ({gridFees} ¢/kWh)
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              }
               detailChildren={
                 priceClockView ? (
                   <ClockChart
