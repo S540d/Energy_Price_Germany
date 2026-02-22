@@ -23,7 +23,7 @@ export function PriceAlertSection() {
       return;
     }
     const value = parseFloat(sanitized);
-    if (!isNaN(value) && value >= 0) {
+    if (!isNaN(value) && value > 0) {
       setPriceAlertLow(value);
     }
   };
@@ -35,7 +35,7 @@ export function PriceAlertSection() {
       return;
     }
     const value = parseFloat(sanitized);
-    if (!isNaN(value) && value >= 0) {
+    if (!isNaN(value) && value > 0) {
       setPriceAlertHigh(value);
     }
   };
@@ -46,6 +46,10 @@ export function PriceAlertSection() {
   };
 
   const hasAlerts = priceAlertLow !== null || priceAlertHigh !== null;
+
+  // Warn when thresholds conflict (low >= high)
+  const thresholdConflict =
+    priceAlertLow !== null && priceAlertHigh !== null && priceAlertLow >= priceAlertHigh;
 
   return (
     <View style={styles.menuSection}>
@@ -60,6 +64,11 @@ export function PriceAlertSection() {
         )}
       </View>
       <Text style={[styles.hintText, { color: colors.textSecondary }]}>{t.priceAlertHint}</Text>
+      {thresholdConflict && (
+        <Text style={[styles.conflictWarning, { color: colors.error }]}>
+          {t.priceAlertConflict}
+        </Text>
+      )}
       <View style={styles.inputRow}>
         <View style={styles.inputGroup}>
           <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
@@ -127,6 +136,10 @@ const styles = StyleSheet.create({
   },
   hintText: {
     fontSize: 12,
+  },
+  conflictWarning: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   inputRow: {
     flexDirection: 'row',

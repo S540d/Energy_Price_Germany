@@ -92,7 +92,12 @@ function AppContent() {
   );
 
   // Web Notification when alert state changes (foreground only)
-  usePriceAlertNotification(alertState, t.priceAlertNotificationLow, t.priceAlertNotificationHigh);
+  usePriceAlertNotification(
+    alertState,
+    t.priceAlertNotificationTitle,
+    t.priceAlertNotificationLow,
+    t.priceAlertNotificationHigh
+  );
 
   // Performance: Memoized date formatter to prevent unnecessary recalculations
   // Only recreates when language changes

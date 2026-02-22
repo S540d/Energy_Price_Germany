@@ -11,6 +11,7 @@ import type { AlertState } from '../utils/priceAlertUtils';
  */
 export function usePriceAlertNotification(
   alertState: AlertState,
+  notificationTitle: string,
   notificationLow: string,
   notificationHigh: string
 ) {
@@ -33,14 +34,14 @@ export function usePriceAlertNotification(
     const body = current === 'low' ? notificationLow : notificationHigh;
 
     if (Notification.permission === 'granted') {
-      new Notification('⚡ Strompreis-Alarm', { body, icon: '/favicon.ico' });
+      new Notification(notificationTitle, { body, icon: '/favicon.ico' });
     } else if (Notification.permission === 'default') {
       Notification.requestPermission().then(permission => {
         if (permission === 'granted') {
-          new Notification('⚡ Strompreis-Alarm', { body, icon: '/favicon.ico' });
+          new Notification(notificationTitle, { body, icon: '/favicon.ico' });
         }
       });
     }
     // If permission === 'denied', we silently skip (graceful degradation)
-  }, [alertState, notificationLow, notificationHigh]);
+  }, [alertState, notificationTitle, notificationLow, notificationHigh]);
 }

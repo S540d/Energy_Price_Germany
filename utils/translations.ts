@@ -32,8 +32,10 @@ export const translations = {
     priceAlertReset: 'Reset',
     priceAlertActiveLow: 'Price below threshold',
     priceAlertActiveHigh: 'Price above threshold',
+    priceAlertNotificationTitle: '⚡ Price Alert',
     priceAlertNotificationLow: 'Current electricity price is cheap',
     priceAlertNotificationHigh: 'Current electricity price is high',
+    priceAlertConflict: '⚠ Lower threshold must be less than upper threshold',
     // About Section
     about: 'ABOUT',
     version: 'Version',
@@ -131,8 +133,10 @@ export const translations = {
     priceAlertReset: 'Zurücksetzen',
     priceAlertActiveLow: 'Preis unter Schwellenwert',
     priceAlertActiveHigh: 'Preis über Schwellenwert',
+    priceAlertNotificationTitle: '⚡ Preisalarm',
     priceAlertNotificationLow: 'Aktueller Strompreis ist günstig',
     priceAlertNotificationHigh: 'Aktueller Strompreis ist hoch',
+    priceAlertConflict: '⚠ Untergrenze muss kleiner als Obergrenze sein',
     // About Section
     about: 'ÜBER',
     version: 'Version',
