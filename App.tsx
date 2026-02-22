@@ -41,7 +41,7 @@ function AppContent() {
   const [priceClockView, setPriceClockView] = useState(false);
 
   // Settings and Language from Context
-  const { theme, debouncedPostalCode, gridFees, priceAlertLow, priceAlertHigh } =
+  const { theme, debouncedPostalCode, gridFees, priceAlertLow, priceAlertHigh, priceDisplayMode } =
     useSettingsContext();
   const { language, t } = useLanguageContext();
 
@@ -415,20 +415,22 @@ function AppContent() {
                       <Text style={{ color: colors.text, fontSize: 12 }}>{t.marketPriceLabel}</Text>
                     </View>
 
-                    {/* Grid Fees */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View
-                        style={{
-                          width: 16,
-                          height: 16,
-                          backgroundColor: '#757575',
-                          borderRadius: 2,
-                        }}
-                      />
-                      <Text style={{ color: colors.text, fontSize: 12 }}>
-                        {t.gridFeesLabel} ({GRID_FEES_AND_TAXES} ¢/kWh)
-                      </Text>
-                    </View>
+                    {/* Grid Fees – only shown in end-customer price mode */}
+                    {priceDisplayMode === 'withGridFees' && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <View
+                          style={{
+                            width: 16,
+                            height: 16,
+                            backgroundColor: '#757575',
+                            borderRadius: 2,
+                          }}
+                        />
+                        <Text style={{ color: colors.text, fontSize: 12 }}>
+                          {t.gridFeesLabel} ({GRID_FEES_AND_TAXES} ¢/kWh)
+                        </Text>
+                      </View>
+                    )}
                   </View>
                 </View>
               }
@@ -469,7 +471,6 @@ function AppContent() {
                   }}
                   gridFees={gridFees}
                   showLegend={false}
-                  forceStacked
                 />
               )}
             </ChartDetailView>
