@@ -27,6 +27,8 @@ import { isValidPostalCode } from './utils/postalCodeUtils';
 import { useEnergyData } from './hooks/useEnergyData';
 import { useLanguageContext } from './context/LanguageContext';
 import { useSettingsContext } from './context/SettingsContext';
+import { checkPriceAlert } from './utils/priceAlertUtils';
+import { usePriceAlertNotification } from './hooks/usePriceAlertNotification';
 
 const APP_VERSION = '1.3.0';
 
@@ -39,7 +41,8 @@ function AppContent() {
   const [priceClockView, setPriceClockView] = useState(false);
 
   // Settings and Language from Context
-  const { theme, debouncedPostalCode, gridFees } = useSettingsContext();
+  const { theme, debouncedPostalCode, gridFees, priceAlertLow, priceAlertHigh } =
+    useSettingsContext();
   const { language, t } = useLanguageContext();
 
   // Energy data from hook
@@ -76,6 +79,25 @@ function AppContent() {
 
   // Memoized metrics calculations for better performance
   const metrics = useMemo(() => calculateMetrics(filteredEnergyData), [filteredEnergyData]);
+
+  // Price alert state based on current end-customer price
+  const alertState = useMemo(
+    () =>
+      checkPriceAlert(
+        metrics?.today?.endCustomerPrice?.current ?? null,
+        priceAlertLow,
+        priceAlertHigh
+      ),
+    [metrics, priceAlertLow, priceAlertHigh]
+  );
+
+  // Web Notification when alert state changes (foreground only)
+  usePriceAlertNotification(
+    alertState,
+    t.priceAlertNotificationTitle,
+    t.priceAlertNotificationLow,
+    t.priceAlertNotificationHigh
+  );
 
   // Performance: Memoized date formatter to prevent unnecessary recalculations
   // Only recreates when language changes
@@ -176,6 +198,22 @@ function AppContent() {
       >
         <Text style={[styles.headerTitle, { color: colors.text }]}>Energy Price Germany</Text>
         <View style={styles.headerButtons}>
+          {alertState !== 'none' && (
+            <View
+              style={[
+                styles.alertBadge,
+                {
+                  backgroundColor: alertState === 'low' ? colors.success : colors.error,
+                },
+              ]}
+              accessibilityLabel={
+                alertState === 'low' ? t.priceAlertActiveLow : t.priceAlertActiveHigh
+              }
+              accessibilityRole="text"
+            >
+              <Text style={styles.alertBadgeText}>{alertState === 'low' ? '🔔↓' : '🔔↑'}</Text>
+            </View>
+          )}
           <TouchableOpacity
             onPress={() => setCalculatorVisible(true)}
             style={styles.headerButton}
@@ -312,6 +350,52 @@ function AppContent() {
                     }
                   : undefined
               }
+              viewToggle={
+                <View style={{ flexDirection: 'row', gap: 6 }}>
+                  <TouchableOpacity
+                    onPress={() => setPriceClockView(false)}
+                    style={{
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                      borderRadius: 8,
+                      backgroundColor: !priceClockView ? colors.primary : colors.gridLine,
+                    }}
+                    accessibilityLabel={t.viewBar}
+                    accessibilityRole="button"
+                  >
+                    <Text
+                      style={{
+                        color: !priceClockView ? '#fff' : colors.text,
+                        fontSize: 12,
+                        fontWeight: '600',
+                      }}
+                    >
+                      📊 {t.viewBar}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setPriceClockView(true)}
+                    style={{
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                      borderRadius: 8,
+                      backgroundColor: priceClockView ? colors.primary : colors.gridLine,
+                    }}
+                    accessibilityLabel={t.viewClock}
+                    accessibilityRole="button"
+                  >
+                    <Text
+                      style={{
+                        color: priceClockView ? '#fff' : colors.text,
+                        fontSize: 12,
+                        fontWeight: '600',
+                      }}
+                    >
+                      🕐 {t.viewClock}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              }
               legend={
                 <View style={{ gap: 8 }}>
                   <Text style={[{ color: colors.text, fontSize: 13, fontWeight: '600' }]}>
@@ -346,52 +430,6 @@ function AppContent() {
                       </Text>
                     </View>
                   </View>
-
-                  {/* View Toggle */}
-                  <View style={{ flexDirection: 'row', gap: 6, marginTop: 4 }}>
-                    <TouchableOpacity
-                      onPress={() => setPriceClockView(false)}
-                      style={{
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
-                        borderRadius: 8,
-                        backgroundColor: !priceClockView ? colors.primary : colors.gridLine,
-                      }}
-                      accessibilityLabel={t.viewBar}
-                      accessibilityRole="button"
-                    >
-                      <Text
-                        style={{
-                          color: !priceClockView ? '#fff' : colors.text,
-                          fontSize: 12,
-                          fontWeight: '600',
-                        }}
-                      >
-                        📊 {t.viewBar}
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => setPriceClockView(true)}
-                      style={{
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
-                        borderRadius: 8,
-                        backgroundColor: priceClockView ? colors.primary : colors.gridLine,
-                      }}
-                      accessibilityLabel={t.viewClock}
-                      accessibilityRole="button"
-                    >
-                      <Text
-                        style={{
-                          color: priceClockView ? '#fff' : colors.text,
-                          fontSize: 12,
-                          fontWeight: '600',
-                        }}
-                      >
-                        🕐 {t.viewClock}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
                 </View>
               }
             >
@@ -425,79 +463,33 @@ function AppContent() {
                     marketPrice: t.marketPrice,
                     gridFeesAndTaxes: t.gridFeesAndTaxes,
                     interpolated: t.interpolated,
+                    tooltipMarketPrice: t.tooltipMarketPrice,
+                    tooltipGridFees: t.tooltipGridFees,
+                    tooltipEndCustomer: t.tooltipEndCustomer,
                   }}
                   gridFees={gridFees}
                   showLegend={false}
+                  forceStacked
                 />
               )}
             </ChartDetailView>
 
-            <ChartDetailView
+            <CorrelationScatterChart
               title={t.correlationTitle}
+              subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+              data={filteredEnergyData}
+              backgroundColor={colors.surface}
+              textColor={colors.text}
+              gridColor={colors.gridLine}
               colors={colors}
-              chartType="correlation"
-              gridFees={gridFees}
-              metrics={undefined}
-              legend={
-                <View style={{ gap: 8 }}>
-                  <Text style={[{ color: colors.text, fontSize: 13, fontWeight: '600' }]}>
-                    {t.legend}
-                  </Text>
-                  <View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: 6,
-                          backgroundColor: '#2196F3',
-                        }}
-                      />
-                      <Text style={{ color: colors.text, fontSize: 12 }}>{t.night}</Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: 6,
-                          backgroundColor: '#FF9800',
-                        }}
-                      />
-                      <Text style={{ color: colors.text, fontSize: 12 }}>{t.morningEvening}</Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: 6,
-                          backgroundColor: '#FFEB3B',
-                        }}
-                      />
-                      <Text style={{ color: colors.text, fontSize: 12 }}>{t.day}</Text>
-                    </View>
-                  </View>
-                </View>
-              }
-            >
-              <CorrelationScatterChart
-                title={t.correlationTitle}
-                subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
-                data={filteredEnergyData}
-                backgroundColor={colors.surface}
-                textColor={colors.text}
-                gridColor={colors.gridLine}
-                colors={colors}
-                labels={{
-                  yAxisPrice: t.pricePerKwh,
-                  xAxisRenewables: t.renewablePercent,
-                  night: t.night,
-                  morningEvening: t.morningEvening,
-                  day: t.day,
-                }}
-              />
-            </ChartDetailView>
+              labels={{
+                yAxisPrice: t.pricePerKwh,
+                xAxisRenewables: t.renewablePercent,
+                night: t.night,
+                morningEvening: t.morningEvening,
+                day: t.day,
+              }}
+            />
           </>
         ) : null}
         {filteredEnergyData.length === 0 && (
@@ -652,6 +644,19 @@ const styles = StyleSheet.create({
   settingsHeaderButtonText: {
     fontSize: 24,
     fontWeight: '500',
+  },
+  alertBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 28,
+  },
+  alertBadgeText: {
+    fontSize: 13,
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   aboutButton: {
     paddingVertical: 14,

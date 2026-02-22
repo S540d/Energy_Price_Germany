@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import React, { createContext, useContext } from 'react';
 import { useSettings } from '../hooks/useSettings';
 import type { Theme } from '../utils/theme';
+import type { PriceDisplayMode } from '../hooks/useSettings';
 
 interface SettingsContextValue {
   theme: Theme;
@@ -11,6 +12,12 @@ interface SettingsContextValue {
   debouncedPostalCode: string;
   gridFees: number;
   setGridFees: (fees: number) => void;
+  priceAlertLow: number | null;
+  setPriceAlertLow: (value: number | null) => void;
+  priceAlertHigh: number | null;
+  setPriceAlertHigh: (value: number | null) => void;
+  priceDisplayMode: PriceDisplayMode;
+  setPriceDisplayMode: (mode: PriceDisplayMode) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);

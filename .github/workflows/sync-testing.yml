@@ -1,10 +1,9 @@
 name: Sync Testing Branch
 
 on:
-  # Automatic trigger disabled – sync is done manually
+  # Fully disabled – kept for reference only
   # push:
   #   branches: [ main ]
-  # Allow manual trigger
   workflow_dispatch:
 
 permissions:
@@ -13,6 +12,7 @@ permissions:
 jobs:
   sync-testing:
     name: 🔄 Sync main → testing
+    if: false  # Disabled – sync is done manually via PR workflow
     runs-on: ubuntu-latest
 
     steps:

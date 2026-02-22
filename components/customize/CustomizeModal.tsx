@@ -7,6 +7,8 @@ import { LanguageSection } from '../settings/LanguageSection';
 import { BetaModeSection } from '../settings/BetaModeSection';
 import { PostalCodeSection } from './PostalCodeSection';
 import { GridFeesSection } from './GridFeesSection';
+import { PriceDisplayModeSection } from './PriceDisplayModeSection';
+import { PriceAlertSection } from './PriceAlertSection';
 
 interface CustomizeModalProps {
   visible: boolean;
@@ -59,6 +61,16 @@ export function CustomizeModal({ visible, onClose }: CustomizeModalProps) {
 
           {/* Grid Fees Section */}
           <GridFeesSection />
+
+          <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+          {/* Price Display Mode Section */}
+          <PriceDisplayModeSection />
+
+          <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+          {/* Price Alert Section */}
+          <PriceAlertSection />
         </ScrollView>
       </View>
     </>

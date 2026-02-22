@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { View, Text, Platform } from 'react-native';
-import Svg, { Path, Circle, Line, G } from 'react-native-svg';
+import Svg, { Path, Circle, Line, G, Text as SvgText } from 'react-native-svg';
 import type { ThemeColors } from '../../utils/theme';
 import { getPriceColor } from '../../utils/chartHelpers';
 import { useChartDimensions } from '../../utils/chartUtils';
@@ -125,11 +125,13 @@ function ClockChartComponent({
 
   // Chart geometry
   const size = Math.min(chartWidth - cardPadding * 2, isPhone ? 280 : 340);
-  const cx = size / 2;
-  const cy = size / 2;
+  const labelMargin = 20; // extra canvas space so SVG labels are not clipped
+  const svgSize = size + labelMargin * 2;
+  const cx = svgSize / 2;
+  const cy = svgSize / 2;
   const outerR = size / 2 - 8;
   const innerR = outerR * 0.55;
-  const labelR = outerR * 1.12;
+  const labelR = outerR * 1.18;
 
   const selectedSegment = selectedHour !== null ? hourSegments[selectedHour] : null;
   const currentSegment = hourSegments[currentHour];
@@ -187,7 +189,7 @@ function ClockChartComponent({
 
       {/* Clock SVG */}
       <View style={{ alignItems: 'center' }}>
-        <Svg width={size} height={size}>
+        <Svg width={svgSize} height={svgSize}>
           {/* Background circle */}
           <Circle cx={cx} cy={cy} r={outerR + 4} fill={colors.gridLine} opacity={0.1} />
 
@@ -245,30 +247,26 @@ function ClockChartComponent({
             );
           })()}
           <Circle cx={cx} cy={cy} r={4} fill={textColor} opacity={0.9} />
-        </Svg>
 
-        {/* Hour labels overlaid outside SVG (avoids RN-SVG Text limitations) */}
-        {clockLabels.map(h => {
-          const angle = (h / 24) * 360;
-          const pos = polarToCartesian(cx, cy, labelR, angle);
-          return (
-            <Text
-              key={`ol-${h}`}
-              style={{
-                position: 'absolute',
-                left: pos.x - 10,
-                top: pos.y - 7,
-                fontSize: isPhone ? 9 : 10,
-                color: textColor,
-                opacity: 0.55,
-                textAlign: 'center',
-                width: 20,
-              }}
-            >
-              {h}h
-            </Text>
-          );
-        })}
+          {/* Hour labels inside SVG – correct coordinate system */}
+          {clockLabels.map(h => {
+            const angle = (h / 24) * 360;
+            const pos = polarToCartesian(cx, cy, labelR, angle);
+            return (
+              <SvgText
+                key={`ol-${h}`}
+                x={pos.x}
+                y={pos.y + 4}
+                textAnchor="middle"
+                fontSize={isPhone ? 9 : 10}
+                fill={textColor}
+                opacity={0.55}
+              >
+                {h}h
+              </SvgText>
+            );
+          })}
+        </Svg>
       </View>
     </ChartCard>
   );
