@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Modal, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { ThemeColors } from '../utils/theme';
 import { GRID_FEES_AND_TAXES } from '../utils/metrics';
@@ -39,7 +39,7 @@ interface ChartDetailViewProps {
   colors: ThemeColors;
   metrics?: MetricsData;
   chartType: 'renewable' | 'price' | 'correlation';
-  onToggleView?: () => void;
+  viewToggle?: React.ReactNode;
   legend?: React.ReactNode;
   gridFees?: number;
 }
@@ -50,12 +50,11 @@ export function ChartDetailView({
   colors,
   metrics,
   chartType,
-  onToggleView: _onToggleView,
+  viewToggle,
   legend,
   gridFees: _gridFees = GRID_FEES_AND_TAXES,
 }: ChartDetailViewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showMetrics, setShowMetrics] = useState(false);
 
   const renderMetricsView = () => {
     if (!metrics) return null;
@@ -224,69 +223,16 @@ export function ChartDetailView({
 
   const renderContent = () => (
     <View style={{ flex: 1 }}>
-      {/* Toggle buttons - only show if metrics are available */}
-      {metrics && (
-        <View style={styles.toggleContainer}>
-          <TouchableOpacity
-            style={[
-              styles.toggleButton,
-              !showMetrics && styles.toggleButtonActive,
-              {
-                backgroundColor: !showMetrics ? colors.primary : colors.gridLine,
-                borderColor: colors.gridLine,
-              },
-            ]}
-            onPress={() => setShowMetrics(false)}
-          >
-            <Text
-              style={{
-                color: !showMetrics ? '#fff' : colors.text,
-                fontSize: 12,
-                fontWeight: '600',
-              }}
-            >
-              Grafik
-            </Text>
-          </TouchableOpacity>
+      {/* Chart always shown */}
+      <View style={styles.chartContainer}>{children}</View>
 
-          <TouchableOpacity
-            style={[
-              styles.toggleButton,
-              showMetrics && styles.toggleButtonActive,
-              {
-                backgroundColor: showMetrics ? colors.primary : colors.gridLine,
-                borderColor: colors.gridLine,
-              },
-            ]}
-            onPress={() => setShowMetrics(true)}
-          >
-            <Text
-              style={{
-                color: showMetrics ? '#fff' : colors.text,
-                fontSize: 12,
-                fontWeight: '600',
-              }}
-            >
-              Metrik
-            </Text>
-          </TouchableOpacity>
-        </View>
+      {/* Legend - shown below chart */}
+      {legend && (
+        <View style={[styles.legendContainer, { backgroundColor: colors.surface }]}>{legend}</View>
       )}
 
-      {/* Content */}
-      {showMetrics && metrics ? (
-        renderMetricsView()
-      ) : (
-        <>
-          <View style={styles.chartContainer}>{children}</View>
-          {/* Legend - show only when displaying chart (not metrics) */}
-          {legend && (
-            <View style={[styles.legendContainer, { backgroundColor: colors.surface }]}>
-              {legend}
-            </View>
-          )}
-        </>
-      )}
+      {/* Metrics - always shown below chart/legend when available */}
+      {metrics && renderMetricsView()}
     </View>
   );
 
@@ -321,6 +267,7 @@ export function ChartDetailView({
             ]}
           >
             <Text style={[styles.modalTitle, { color: colors.text }]}>{title}</Text>
+            {viewToggle && <View style={{ marginTop: 8 }}>{viewToggle}</View>}
           </View>
 
           {/* Content */}
@@ -380,28 +327,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
-  },
-  toggleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    padding: 16,
-    gap: 8,
-  },
-  toggleButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 0,
-    minWidth: 100,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  toggleButtonActive: {
-    // Active style handled via backgroundColor prop
   },
   metricsContainer: {
     margin: 16,
