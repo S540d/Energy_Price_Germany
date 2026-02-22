@@ -68,61 +68,66 @@ export function ChartDetailView({
     const isPriceChart = 'marketPrice' in metrics && 'endCustomerPrice' in metrics;
 
     if (isPriceChart) {
-      // Detail view always shows end-customer price (priceDisplayMode only affects home screen)
-      const data = metrics.endCustomerPrice;
-      const accentColor = colors.primary;
-      const sectionLabel = t.priceDisplayWithFees;
+      // Detail view always shows both price sections
+      const sections: { data: typeof metrics.marketPrice; accentColor: string; label: string }[] = [
+        { data: metrics.marketPrice, accentColor: '#4CAF50', label: t.priceDisplayMarketOnly },
+        {
+          data: metrics.endCustomerPrice,
+          accentColor: colors.primary,
+          label: t.priceDisplayWithFees,
+        },
+      ];
 
       return (
         <View style={[styles.metricsContainer, { backgroundColor: colors.surfaceSecondary }]}>
           <Text style={[styles.metricsTitle, { color: colors.text }]}>{metrics.label}</Text>
 
-          <View style={{ marginTop: 12 }}>
-            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-              {sectionLabel}
-            </Text>
+          {sections.map(({ data, accentColor, label }) => (
+            <View key={label} style={{ marginTop: 12 }}>
+              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>{label}</Text>
 
-            {data.current !== null && data.current !== undefined && (
-              <View
-                style={[
-                  styles.currentValueContainer,
-                  {
-                    backgroundColor: colors.surface,
-                    borderLeftWidth: 3,
-                    borderLeftColor: accentColor,
-                  },
-                ]}
-              >
-                <Text style={[styles.currentLabel, { color: colors.text }]}>Aktuell</Text>
-                <Text style={[styles.currentValue, { color: accentColor }]}>
-                  {data.current.toFixed(2)} {metrics.unit}
-                </Text>
-              </View>
-            )}
+              {data.current !== null && data.current !== undefined && (
+                <View
+                  style={[
+                    styles.currentValueContainer,
+                    {
+                      backgroundColor: colors.surface,
+                      borderLeftWidth: 3,
+                      borderLeftColor: accentColor,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.currentLabel, { color: colors.text }]}>Aktuell</Text>
+                  <Text style={[styles.currentValue, { color: accentColor }]}>
+                    {data.current.toFixed(2)} {metrics.unit}
+                  </Text>
+                </View>
+              )}
 
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.text }]}>Minimum</Text>
-                <Text style={[styles.statValue, { color: accentColor }]}>
-                  {data.min.toFixed(2)} {metrics.unit}
-                </Text>
-              </View>
+              <View style={styles.statsContainer}>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statLabel, { color: colors.text }]}>Minimum</Text>
+                  <Text style={[styles.statValue, { color: accentColor }]}>
+                    {data.min.toFixed(2)} {metrics.unit}
+                  </Text>
+                </View>
 
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.text }]}>Durchschnitt</Text>
-                <Text style={[styles.statValue, { color: accentColor }]}>
-                  {data.avg.toFixed(2)} {metrics.unit}
-                </Text>
-              </View>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statLabel, { color: colors.text }]}>Durchschnitt</Text>
+                  <Text style={[styles.statValue, { color: accentColor }]}>
+                    {data.avg.toFixed(2)} {metrics.unit}
+                  </Text>
+                </View>
 
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: colors.text }]}>Maximum</Text>
-                <Text style={[styles.statValue, { color: accentColor }]}>
-                  {data.max.toFixed(2)} {metrics.unit}
-                </Text>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statLabel, { color: colors.text }]}>Maximum</Text>
+                  <Text style={[styles.statValue, { color: accentColor }]}>
+                    {data.max.toFixed(2)} {metrics.unit}
+                  </Text>
+                </View>
               </View>
             </View>
-          </View>
+          ))}
         </View>
       );
     }
