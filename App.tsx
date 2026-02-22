@@ -434,6 +434,47 @@ function AppContent() {
                   </View>
                 </View>
               }
+              detailChildren={
+                priceClockView ? (
+                  <ClockChart
+                    data={filteredEnergyData}
+                    backgroundColor={colors.surface}
+                    textColor={colors.text}
+                    colors={colors}
+                    gridFees={gridFees}
+                    labels={{
+                      now: t.now,
+                      average: t.average,
+                      pricePerKwh: t.pricePerKwh,
+                      noData: t.noData,
+                    }}
+                  />
+                ) : (
+                  <PriceBarChart
+                    title={t.priceTitle}
+                    subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+                    data={filteredEnergyData}
+                    backgroundColor={colors.surface}
+                    textColor={colors.text}
+                    gridColor={colors.gridLine}
+                    colors={colors}
+                    labels={{
+                      yAxis: t.pricePerKwh,
+                      now: t.now,
+                      average: t.average,
+                      marketPrice: t.marketPrice,
+                      gridFeesAndTaxes: t.gridFeesAndTaxes,
+                      interpolated: t.interpolated,
+                      tooltipMarketPrice: t.tooltipMarketPrice,
+                      tooltipGridFees: t.tooltipGridFees,
+                      tooltipEndCustomer: t.tooltipEndCustomer,
+                    }}
+                    gridFees={gridFees}
+                    showLegend={false}
+                    forceStacked
+                  />
+                )
+              }
             >
               {priceClockView ? (
                 <ClockChart

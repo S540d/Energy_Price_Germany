@@ -3,7 +3,6 @@ import { View, Text, Modal, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { ThemeColors } from '../utils/theme';
 import { GRID_FEES_AND_TAXES } from '../utils/metrics';
-import { useSettingsContext } from '../context/SettingsContext';
 import { useLanguageContext } from '../context/LanguageContext';
 import { Button } from './ui/Button';
 
@@ -37,6 +36,8 @@ type MetricsData =
 
 interface ChartDetailViewProps {
   children: React.ReactNode;
+  /** Optional override for the chart rendered inside the detail modal. */
+  detailChildren?: React.ReactNode;
   title: string;
   colors: ThemeColors;
   metrics?: MetricsData;
@@ -48,6 +49,7 @@ interface ChartDetailViewProps {
 
 export function ChartDetailView({
   children,
+  detailChildren,
   title,
   colors,
   metrics,
@@ -57,7 +59,6 @@ export function ChartDetailView({
   gridFees: _gridFees = GRID_FEES_AND_TAXES,
 }: ChartDetailViewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const { priceDisplayMode } = useSettingsContext();
   const { t } = useLanguageContext();
 
   const renderMetricsView = () => {
@@ -67,10 +68,10 @@ export function ChartDetailView({
     const isPriceChart = 'marketPrice' in metrics && 'endCustomerPrice' in metrics;
 
     if (isPriceChart) {
-      const isMarketOnly = priceDisplayMode === 'marketOnly';
-      const data = isMarketOnly ? metrics.marketPrice : metrics.endCustomerPrice;
-      const accentColor = isMarketOnly ? '#4CAF50' : colors.primary;
-      const sectionLabel = isMarketOnly ? t.priceDisplayMarketOnly : t.priceDisplayWithFees;
+      // Detail view always shows end-customer price (priceDisplayMode only affects home screen)
+      const data = metrics.endCustomerPrice;
+      const accentColor = colors.primary;
+      const sectionLabel = t.priceDisplayWithFees;
 
       return (
         <View style={[styles.metricsContainer, { backgroundColor: colors.surfaceSecondary }]}>
@@ -170,8 +171,8 @@ export function ChartDetailView({
 
   const renderContent = () => (
     <View style={{ flex: 1 }}>
-      {/* Chart always shown */}
-      <View style={styles.chartContainer}>{children}</View>
+      {/* Chart always shown – use detailChildren override when available */}
+      <View style={styles.chartContainer}>{detailChildren ?? children}</View>
 
       {/* Legend - shown below chart */}
       {legend && (
