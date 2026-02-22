@@ -8,7 +8,7 @@ const envFilePath = path.resolve(__dirname, `.env.${env}`);
 // Load environment variables from appropriate .env file
 dotenv.config({ path: envFilePath });
 
-// Read version info from app.json (single source of truth)
+// Use app.json as the source of truth for version and versionCode
 const appJson = require('./app.json');
 const version = appJson.expo.version;
 const versionCode = appJson.expo.android.versionCode;
