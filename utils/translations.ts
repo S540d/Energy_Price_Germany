@@ -25,6 +25,10 @@ export const translations = {
     priceDisplayMode: 'PRICE DISPLAY',
     priceDisplayMarketOnly: 'Market Price',
     priceDisplayWithFees: 'End-Customer Price',
+    // Price chart tooltip labels
+    tooltipMarketPrice: 'Market price:',
+    tooltipGridFees: '+ Grid fees:',
+    tooltipEndCustomer: 'End-customer:',
     // Price Alert Section
     priceAlertSection: 'PRICE ALERTS',
     priceAlertHint:
@@ -133,6 +137,10 @@ export const translations = {
     priceDisplayMode: 'PREISDARSTELLUNG',
     priceDisplayMarketOnly: 'Börsenstrompreis',
     priceDisplayWithFees: 'Endkundenstrompreis',
+    // Price chart tooltip labels
+    tooltipMarketPrice: 'Börsenpreis:',
+    tooltipGridFees: '+ Netzentgelte:',
+    tooltipEndCustomer: 'Endkunde:',
     // Price Alert Section
     priceAlertSection: 'PREISALARM',
     priceAlertHint:

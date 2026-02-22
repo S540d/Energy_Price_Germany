@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { ThemeColors } from '../utils/theme';
 import { GRID_FEES_AND_TAXES } from '../utils/metrics';
 import { useSettingsContext } from '../context/SettingsContext';
+import { useLanguageContext } from '../context/LanguageContext';
 import { Button } from './ui/Button';
 
 type MetricsData =
@@ -57,6 +58,7 @@ export function ChartDetailView({
 }: ChartDetailViewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const { priceDisplayMode } = useSettingsContext();
+  const { t } = useLanguageContext();
 
   const renderMetricsView = () => {
     if (!metrics) return null;
@@ -68,7 +70,7 @@ export function ChartDetailView({
       const isMarketOnly = priceDisplayMode === 'marketOnly';
       const data = isMarketOnly ? metrics.marketPrice : metrics.endCustomerPrice;
       const accentColor = isMarketOnly ? '#4CAF50' : colors.primary;
-      const sectionLabel = isMarketOnly ? 'Börsenstrompreis' : 'Endkundenstrompreis';
+      const sectionLabel = isMarketOnly ? t.priceDisplayMarketOnly : t.priceDisplayWithFees;
 
       return (
         <View style={[styles.metricsContainer, { backgroundColor: colors.surfaceSecondary }]}>

@@ -35,10 +35,14 @@ interface PriceBarChartProps {
     marketPrice: string;
     gridFeesAndTaxes: string;
     interpolated: string;
+    tooltipMarketPrice: string;
+    tooltipGridFees: string;
+    tooltipEndCustomer: string;
   };
   interactionHint?: string;
   gridFees?: number;
   showLegend?: boolean;
+  forceStacked?: boolean;
 }
 
 function PriceBarChartComponent({
@@ -53,10 +57,11 @@ function PriceBarChartComponent({
   interactionHint,
   gridFees = GRID_FEES_AND_TAXES,
   showLegend = true,
+  forceStacked = false,
 }: PriceBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const { priceDisplayMode } = useSettingsContext();
-  const isMarketOnly = priceDisplayMode === 'marketOnly';
+  const isMarketOnly = !forceStacked && priceDisplayMode === 'marketOnly';
 
   const handleBarInteraction = useCallback((index: number) => {
     setSelectedIndex(prev => (index === prev ? null : index));
@@ -200,7 +205,7 @@ function PriceBarChartComponent({
                   marginBottom: isMarketOnly ? 0 : 4,
                 }}
               >
-                <Text style={{ color: '#4CAF50', fontSize: 11 }}>Börsenpreis:</Text>
+                <Text style={{ color: '#4CAF50', fontSize: 11 }}>{labels.tooltipMarketPrice}</Text>
                 <Text style={{ color: colors.text, fontSize: 11, fontWeight: '600' }}>
                   {marketPriceCent.toFixed(2)} ¢
                 </Text>
@@ -218,7 +223,7 @@ function PriceBarChartComponent({
                     }}
                   >
                     <Text style={{ color: colors.textSecondary, fontSize: 11 }}>
-                      + Netzentgelte:
+                      {labels.tooltipGridFees}
                     </Text>
                     <Text style={{ color: colors.text, fontSize: 11, fontWeight: '600' }}>
                       {gridFees.toFixed(2)} ¢
@@ -238,7 +243,7 @@ function PriceBarChartComponent({
                   {/* Total Price */}
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                     <Text style={{ color: colors.text, fontSize: 12, fontWeight: '600' }}>
-                      Endkunde:
+                      {labels.tooltipEndCustomer}
                     </Text>
                     <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>
                       {totalPrice.toFixed(2)} ¢
