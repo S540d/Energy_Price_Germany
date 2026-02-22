@@ -21,6 +21,10 @@ export const translations = {
     gridFees: 'GRID FEES & TAXES',
     gridFeesHint: 'Grid fees and taxes in ¢/kWh',
     gridFeesValue: 'Grid Fees',
+    // Price Display Mode Section
+    priceDisplayMode: 'PRICE DISPLAY',
+    priceDisplayMarketOnly: 'Market Price',
+    priceDisplayWithFees: 'End-Customer Price',
     // Price Alert Section
     priceAlertSection: 'PRICE ALERTS',
     priceAlertHint:
@@ -125,6 +129,10 @@ export const translations = {
     gridFees: 'NETZENTGELTE & STEUERN',
     gridFeesHint: 'Netzentgelte und Steuern in ¢/kWh',
     gridFeesValue: 'Netzentgelte',
+    // Price Display Mode Section
+    priceDisplayMode: 'PREISDARSTELLUNG',
+    priceDisplayMarketOnly: 'Börsenstrompreis',
+    priceDisplayWithFees: 'Endkundenstrompreis',
     // Price Alert Section
     priceAlertSection: 'PREISALARM',
     priceAlertHint:

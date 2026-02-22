@@ -5,6 +5,7 @@ import type { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle, getPriceColor } from '../../utils/chartHelpers';
 import { GRID_FEES_AND_TAXES } from '../../utils/metrics';
 import { useChartDimensions } from '../../utils/chartUtils';
+import { useSettingsContext } from '../../context/SettingsContext';
 import {
   ChartGrid,
   ChartCard,
@@ -54,6 +55,8 @@ function PriceBarChartComponent({
   showLegend = true,
 }: PriceBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const { priceDisplayMode } = useSettingsContext();
+  const isMarketOnly = priceDisplayMode === 'marketOnly';
 
   const handleBarInteraction = useCallback((index: number) => {
     setSelectedIndex(prev => (index === prev ? null : index));
@@ -94,7 +97,7 @@ function PriceBarChartComponent({
     const maxPrice = Math.max(...pricesInCent);
     const min = Math.floor(minPrice / 5) * 5;
     const maxMarketPrice = Math.ceil(maxPrice / 5) * 5;
-    const maxTotal = maxMarketPrice + gridFees;
+    const maxTotal = isMarketOnly ? maxMarketPrice : maxMarketPrice + gridFees;
     const range = maxTotal - min;
 
     if (range === 0 || timeRange === 0) return null;
@@ -102,7 +105,7 @@ function PriceBarChartComponent({
     const avgMarketPrice = pricesInCent.reduce((sum, v) => sum + v, 0) / pricesInCent.length;
 
     return { minTime, maxTime, timeRange, min, maxTotal, range, avgMarketPrice };
-  }, [data, gridFees]);
+  }, [data, gridFees, isMarketOnly]);
 
   // Performance: Pre-calculate all bar positions, colors, and dimensions
   // This avoids redundant calculations during rendering (15-20% improvement)
@@ -126,7 +129,7 @@ function PriceBarChartComponent({
         };
       }
 
-      const totalPrice = marketPrice + gridFees;
+      const totalPrice = isMarketOnly ? marketPrice : marketPrice + gridFees;
       const color = getPriceColor(totalPrice);
       const marketBarHeight =
         ((marketPrice - cMin) / cRange) * (chartHeight - padding - bottomPadding);
@@ -159,6 +162,7 @@ function PriceBarChartComponent({
     padding,
     bottomPadding,
     gridFees,
+    isMarketOnly,
   ]);
 
   // Guard against invalid data
@@ -190,7 +194,11 @@ function PriceBarChartComponent({
             >
               {/* Market Price */}
               <View
-                style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  marginBottom: isMarketOnly ? 0 : 4,
+                }}
               >
                 <Text style={{ color: '#4CAF50', fontSize: 11 }}>Börsenpreis:</Text>
                 <Text style={{ color: colors.text, fontSize: 11, fontWeight: '600' }}>
@@ -198,35 +206,46 @@ function PriceBarChartComponent({
                 </Text>
               </View>
 
-              {/* Grid Fees */}
-              <View
-                style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}
-              >
-                <Text style={{ color: colors.textSecondary, fontSize: 11 }}>+ Netzentgelte:</Text>
-                <Text style={{ color: colors.text, fontSize: 11, fontWeight: '600' }}>
-                  {gridFees.toFixed(2)} ¢
-                </Text>
-              </View>
+              {/* Grid Fees + Total — only in withGridFees mode */}
+              {!isMarketOnly && (
+                <>
+                  {/* Grid Fees */}
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      marginBottom: 6,
+                    }}
+                  >
+                    <Text style={{ color: colors.textSecondary, fontSize: 11 }}>
+                      + Netzentgelte:
+                    </Text>
+                    <Text style={{ color: colors.text, fontSize: 11, fontWeight: '600' }}>
+                      {gridFees.toFixed(2)} ¢
+                    </Text>
+                  </View>
 
-              {/* Divider */}
-              <View
-                style={{
-                  height: 1,
-                  backgroundColor: colors.gridLine,
-                  marginVertical: 6,
-                  opacity: 0.5,
-                }}
-              />
+                  {/* Divider */}
+                  <View
+                    style={{
+                      height: 1,
+                      backgroundColor: colors.gridLine,
+                      marginVertical: 6,
+                      opacity: 0.5,
+                    }}
+                  />
 
-              {/* Total Price */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ color: colors.text, fontSize: 12, fontWeight: '600' }}>
-                  Endkunde:
-                </Text>
-                <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>
-                  {totalPrice.toFixed(2)} ¢
-                </Text>
-              </View>
+                  {/* Total Price */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ color: colors.text, fontSize: 12, fontWeight: '600' }}>
+                      Endkunde:
+                    </Text>
+                    <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>
+                      {totalPrice.toFixed(2)} ¢
+                    </Text>
+                  </View>
+                </>
+              )}
             </ChartTooltip>
           );
         })()}
@@ -280,12 +299,14 @@ function PriceBarChartComponent({
                 {labels.marketPrice}
               </Text>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={{ width: 12, height: 12, backgroundColor: '#757575' }} />
-              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>
-                {labels.gridFeesAndTaxes} ({gridFees} ¢/kWh)
-              </Text>
-            </View>
+            {!isMarketOnly && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={{ width: 12, height: 12, backgroundColor: '#757575' }} />
+                <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>
+                  {labels.gridFeesAndTaxes} ({gridFees} ¢/kWh)
+                </Text>
+              </View>
+            )}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50', opacity: 0.4 }} />
               <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>
@@ -343,18 +364,20 @@ function PriceBarChartComponent({
                   stroke={isSelected ? '#999999' : 'none'}
                   strokeWidth={isSelected ? 2 : 0}
                 />
-                <Rect
-                  x={bar.x - bar.barWidth / 2}
-                  y={bar.gridY}
-                  width={bar.barWidth}
-                  height={bar.gridBarHeight}
-                  fill="#757575"
-                  opacity={
-                    isSelected ? (bar.isInterpolated ? 0.5 : 0.8) : bar.isInterpolated ? 0.3 : 0.6
-                  }
-                  stroke={isSelected ? '#999999' : 'none'}
-                  strokeWidth={isSelected ? 2 : 0}
-                />
+                {!isMarketOnly && (
+                  <Rect
+                    x={bar.x - bar.barWidth / 2}
+                    y={bar.gridY}
+                    width={bar.barWidth}
+                    height={bar.gridBarHeight}
+                    fill="#757575"
+                    opacity={
+                      isSelected ? (bar.isInterpolated ? 0.5 : 0.8) : bar.isInterpolated ? 0.3 : 0.6
+                    }
+                    stroke={isSelected ? '#999999' : 'none'}
+                    strokeWidth={isSelected ? 2 : 0}
+                  />
+                )}
               </React.Fragment>
             );
           })}
@@ -405,9 +428,11 @@ function PriceBarChartComponent({
               style={{
                 position: 'absolute',
                 left: bar.x - bar.barWidth / 2,
-                top: bar.gridY,
+                top: isMarketOnly ? bar.marketY : bar.gridY,
                 width: bar.barWidth,
-                height: bar.marketBarHeight + bar.gridBarHeight,
+                height: isMarketOnly
+                  ? bar.marketBarHeight
+                  : bar.marketBarHeight + bar.gridBarHeight,
                 zIndex: 10,
                 cursor: Platform.OS === 'web' ? 'pointer' : undefined,
               }}
