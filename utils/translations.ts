@@ -71,6 +71,9 @@ export const translations = {
     costCheapestTime: 'Cheapest time',
     costSave: 'save',
     costCheaper: 'cheaper',
+    costTimeline: 'Best time today',
+    costTimelineRecommended: 'Recommended window',
+    costTimelineSave: 'save vs. now',
     // Other
     loadingData: 'Loading energy data...',
     renewableTitle: 'Share of Renewable Energy in Load',
@@ -172,6 +175,9 @@ export const translations = {
     costCheapestTime: 'Günstigste Zeit',
     costSave: 'sparen',
     costCheaper: 'günstiger',
+    costTimeline: 'Beste Zeit heute',
+    costTimelineRecommended: 'Empfohlenes Fenster',
+    costTimelineSave: 'ggü. jetzt sparen',
     // Other
     loadingData: 'Lade Energiedaten...',
     renewableTitle: 'Anteil Erneuerbarer Energien an der Last',

@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-
 import { useLanguageContext } from '../context/LanguageContext';
 import { getThemeColors } from '../utils/theme';
 import { useSettingsContext } from '../context/SettingsContext';
+import { ApplianceTimeline } from './ApplianceTimeline';
 
 export interface Appliance {
   id: string;
@@ -249,6 +250,11 @@ export function CostCalculator({
             </Text>
           )}
         </View>
+      )}
+
+      {/* Timeline: best hour windows for all appliances */}
+      {priceData.length > 0 && (
+        <ApplianceTimeline appliances={APPLIANCES} priceData={priceData} gridFees={gridFees} />
       )}
     </View>
   );
