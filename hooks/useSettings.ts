@@ -13,6 +13,8 @@ export function useSettings() {
   const [postalCode, setPostalCode] = useState<string>('');
   const [debouncedPostalCode, setDebouncedPostalCode] = useState<string>('');
   const [gridFees, setGridFees] = useState<number>(GRID_FEES_AND_TAXES);
+  const [priceAlertLow, setPriceAlertLow] = useState<number | null>(null);
+  const [priceAlertHigh, setPriceAlertHigh] = useState<number | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const { getItem, setItem } = usePersistence();
   const initRef = useRef(false);
@@ -45,6 +47,18 @@ export function useSettings() {
         const savedTheme = (await getItem('theme')) as Theme | null;
         if (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'system') {
           setTheme(savedTheme);
+        }
+
+        // Load price alerts
+        const savedAlertLow = await getItem('priceAlertLow');
+        if (savedAlertLow !== null) {
+          const value = parseFloat(savedAlertLow);
+          if (!isNaN(value)) setPriceAlertLow(value);
+        }
+        const savedAlertHigh = await getItem('priceAlertHigh');
+        if (savedAlertHigh !== null) {
+          const value = parseFloat(savedAlertHigh);
+          if (!isNaN(value)) setPriceAlertHigh(value);
         }
       } catch (error) {
       } finally {
@@ -94,6 +108,40 @@ export function useSettings() {
     saveTheme();
   }, [theme, isInitialized, setItem]);
 
+  // Save price alert low when it changes
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    async function saveAlertLow() {
+      try {
+        if (priceAlertLow === null) {
+          await setItem('priceAlertLow', '');
+        } else {
+          await setItem('priceAlertLow', priceAlertLow.toString());
+        }
+      } catch (error) {}
+    }
+
+    saveAlertLow();
+  }, [priceAlertLow, isInitialized, setItem]);
+
+  // Save price alert high when it changes
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    async function saveAlertHigh() {
+      try {
+        if (priceAlertHigh === null) {
+          await setItem('priceAlertHigh', '');
+        } else {
+          await setItem('priceAlertHigh', priceAlertHigh.toString());
+        }
+      } catch (error) {}
+    }
+
+    saveAlertHigh();
+  }, [priceAlertHigh, isInitialized, setItem]);
+
   // Debounce postal code for API calls
   useEffect(() => {
     if (debounceTimeoutRef.current) {
@@ -121,5 +169,9 @@ export function useSettings() {
     debouncedPostalCode,
     gridFees,
     setGridFees,
+    priceAlertLow,
+    setPriceAlertLow,
+    priceAlertHigh,
+    setPriceAlertHigh,
   };
 }

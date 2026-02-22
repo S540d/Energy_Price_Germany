@@ -11,6 +11,10 @@ interface SettingsContextValue {
   debouncedPostalCode: string;
   gridFees: number;
   setGridFees: (fees: number) => void;
+  priceAlertLow: number | null;
+  setPriceAlertLow: (value: number | null) => void;
+  priceAlertHigh: number | null;
+  setPriceAlertHigh: (value: number | null) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);

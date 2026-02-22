@@ -27,6 +27,8 @@ import { isValidPostalCode } from './utils/postalCodeUtils';
 import { useEnergyData } from './hooks/useEnergyData';
 import { useLanguageContext } from './context/LanguageContext';
 import { useSettingsContext } from './context/SettingsContext';
+import { checkPriceAlert } from './utils/priceAlertUtils';
+import { usePriceAlertNotification } from './hooks/usePriceAlertNotification';
 
 const APP_VERSION = '1.3.0';
 
@@ -39,7 +41,8 @@ function AppContent() {
   const [priceClockView, setPriceClockView] = useState(false);
 
   // Settings and Language from Context
-  const { theme, debouncedPostalCode, gridFees } = useSettingsContext();
+  const { theme, debouncedPostalCode, gridFees, priceAlertLow, priceAlertHigh } =
+    useSettingsContext();
   const { language, t } = useLanguageContext();
 
   // Energy data from hook
@@ -76,6 +79,25 @@ function AppContent() {
 
   // Memoized metrics calculations for better performance
   const metrics = useMemo(() => calculateMetrics(filteredEnergyData), [filteredEnergyData]);
+
+  // Price alert state based on current end-customer price
+  const alertState = useMemo(
+    () =>
+      checkPriceAlert(
+        metrics?.today?.endCustomerPrice?.current ?? null,
+        priceAlertLow,
+        priceAlertHigh
+      ),
+    [metrics, priceAlertLow, priceAlertHigh]
+  );
+
+  // Web Notification when alert state changes (foreground only)
+  usePriceAlertNotification(
+    alertState,
+    t.priceAlertNotificationTitle,
+    t.priceAlertNotificationLow,
+    t.priceAlertNotificationHigh
+  );
 
   // Performance: Memoized date formatter to prevent unnecessary recalculations
   // Only recreates when language changes
@@ -176,6 +198,22 @@ function AppContent() {
       >
         <Text style={[styles.headerTitle, { color: colors.text }]}>Energy Price Germany</Text>
         <View style={styles.headerButtons}>
+          {alertState !== 'none' && (
+            <View
+              style={[
+                styles.alertBadge,
+                {
+                  backgroundColor: alertState === 'low' ? colors.success : colors.error,
+                },
+              ]}
+              accessibilityLabel={
+                alertState === 'low' ? t.priceAlertActiveLow : t.priceAlertActiveHigh
+              }
+              accessibilityRole="text"
+            >
+              <Text style={styles.alertBadgeText}>{alertState === 'low' ? '🔔↓' : '🔔↑'}</Text>
+            </View>
+          )}
           <TouchableOpacity
             onPress={() => setCalculatorVisible(true)}
             style={styles.headerButton}
@@ -652,6 +690,19 @@ const styles = StyleSheet.create({
   settingsHeaderButtonText: {
     fontSize: 24,
     fontWeight: '500',
+  },
+  alertBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 28,
+  },
+  alertBadgeText: {
+    fontSize: 13,
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   aboutButton: {
     paddingVertical: 14,
