@@ -3,6 +3,8 @@ import { usePersistence } from './usePersistence';
 import type { Theme } from '../utils/theme';
 import { GRID_FEES_AND_TAXES } from '../utils/metrics';
 
+export type PriceDisplayMode = 'marketOnly' | 'withGridFees';
+
 /**
  * Hook for managing app settings (theme, postal code, grid fees)
  * Provides debounced postal code for API calls
@@ -15,6 +17,7 @@ export function useSettings() {
   const [gridFees, setGridFees] = useState<number>(GRID_FEES_AND_TAXES);
   const [priceAlertLow, setPriceAlertLow] = useState<number | null>(null);
   const [priceAlertHigh, setPriceAlertHigh] = useState<number | null>(null);
+  const [priceDisplayMode, setPriceDisplayMode] = useState<PriceDisplayMode>('withGridFees');
   const [isInitialized, setIsInitialized] = useState(false);
   const { getItem, setItem } = usePersistence();
   const initRef = useRef(false);
@@ -59,6 +62,12 @@ export function useSettings() {
         if (savedAlertHigh !== null) {
           const value = parseFloat(savedAlertHigh);
           if (!isNaN(value) && value > 0) setPriceAlertHigh(value);
+        }
+
+        // Load price display mode
+        const savedPriceDisplayMode = await getItem('priceDisplayMode');
+        if (savedPriceDisplayMode === 'marketOnly' || savedPriceDisplayMode === 'withGridFees') {
+          setPriceDisplayMode(savedPriceDisplayMode);
         }
       } catch (error) {
       } finally {
@@ -142,6 +151,19 @@ export function useSettings() {
     saveAlertHigh();
   }, [priceAlertHigh, isInitialized, setItem]);
 
+  // Save price display mode when it changes
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    async function savePriceDisplayMode() {
+      try {
+        await setItem('priceDisplayMode', priceDisplayMode);
+      } catch (error) {}
+    }
+
+    savePriceDisplayMode();
+  }, [priceDisplayMode, isInitialized, setItem]);
+
   // Debounce postal code for API calls
   useEffect(() => {
     if (debounceTimeoutRef.current) {
@@ -173,5 +195,7 @@ export function useSettings() {
     setPriceAlertLow,
     priceAlertHigh,
     setPriceAlertHigh,
+    priceDisplayMode,
+    setPriceDisplayMode,
   };
 }
