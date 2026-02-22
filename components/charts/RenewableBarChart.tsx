@@ -409,32 +409,6 @@ function RenewableBarChartComponent({
             );
           })}
 
-          {/* Runner Band - highlights current renewable share level */}
-          {now >= minTime &&
-            now <= maxTime &&
-            (() => {
-              const currentBar = barData.find(
-                b => b.value !== null && Math.abs(data[b.index].timestamp - now) <= 15 * 60 * 1000
-              );
-              if (!currentBar || currentBar.value === null) return null;
-              const bandHeight = 4;
-              const valueY =
-                chartHeight -
-                bottomPadding -
-                ((currentBar.value - min) / range) * (chartHeight - padding - bottomPadding);
-              return (
-                <Rect
-                  x={leftPadding}
-                  y={valueY - bandHeight / 2}
-                  width={chartWidth - leftPadding - rightPadding}
-                  height={bandHeight}
-                  fill={currentBar.color}
-                  opacity={0.25}
-                  rx={2}
-                />
-              );
-            })()}
-
           {/* Durchschnittslinie */}
           <Line
             x1={leftPadding}
