@@ -26,6 +26,11 @@ jest.mock('./components/charts/CorrelationScatterChart', () => {
   mockComponent.displayName = 'CorrelationScatterChart';
   return { CorrelationScatterChart: mockComponent };
 });
+jest.mock('./components/charts/ClockChart', () => {
+  const mockComponent = () => 'ClockChart';
+  mockComponent.displayName = 'ClockChart';
+  return { ClockChart: mockComponent };
+});
 jest.mock('./components/ChartDetailView', () => {
   const mockComponent = ({ children }: any) => children;
   mockComponent.displayName = 'ChartDetailView';

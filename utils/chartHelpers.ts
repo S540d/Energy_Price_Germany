@@ -1,4 +1,30 @@
 /**
+ * Interpolates between two RGB colors by a factor 0..1
+ */
+function interpolateColor(color1: number[], color2: number[], factor: number): string {
+  const r = Math.round(color1[0] + (color2[0] - color1[0]) * factor);
+  const g = Math.round(color1[1] + (color2[1] - color1[1]) * factor);
+  const b = Math.round(color1[2] + (color2[2] - color1[2]) * factor);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+/**
+ * Maps a total end-customer price (¢/kWh) to a color.
+ * Green = cheap (<25¢), Yellow = medium (25–<50¢), Red = expensive (>=50¢).
+ * Shared between PriceBarChart and ClockChart to keep colors in sync.
+ */
+export function getPriceColor(totalPrice: number): string {
+  const green = [76, 175, 80];
+  const yellow = [255, 193, 7];
+  const red = [244, 67, 54];
+
+  if (totalPrice < 25) return '#4CAF50';
+  if (totalPrice < 35) return interpolateColor(green, yellow, (totalPrice - 25) / 10);
+  if (totalPrice < 50) return interpolateColor(yellow, red, (totalPrice - 35) / 15);
+  return '#F44336';
+}
+
+/**
  * Berechnet die Position für rotierte Y-Achsen-Beschriftungen
  * Bei -90deg Rotation: 'top' steuert die horizontale Position (links/rechts)
  *
