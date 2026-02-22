@@ -463,9 +463,13 @@ function AppContent() {
                     marketPrice: t.marketPrice,
                     gridFeesAndTaxes: t.gridFeesAndTaxes,
                     interpolated: t.interpolated,
+                    tooltipMarketPrice: t.tooltipMarketPrice,
+                    tooltipGridFees: t.tooltipGridFees,
+                    tooltipEndCustomer: t.tooltipEndCustomer,
                   }}
                   gridFees={gridFees}
                   showLegend={false}
+                  forceStacked
                 />
               )}
             </ChartDetailView>
