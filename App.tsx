@@ -350,6 +350,52 @@ function AppContent() {
                     }
                   : undefined
               }
+              viewToggle={
+                <View style={{ flexDirection: 'row', gap: 6 }}>
+                  <TouchableOpacity
+                    onPress={() => setPriceClockView(false)}
+                    style={{
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                      borderRadius: 8,
+                      backgroundColor: !priceClockView ? colors.primary : colors.gridLine,
+                    }}
+                    accessibilityLabel={t.viewBar}
+                    accessibilityRole="button"
+                  >
+                    <Text
+                      style={{
+                        color: !priceClockView ? '#fff' : colors.text,
+                        fontSize: 12,
+                        fontWeight: '600',
+                      }}
+                    >
+                      📊 {t.viewBar}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setPriceClockView(true)}
+                    style={{
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                      borderRadius: 8,
+                      backgroundColor: priceClockView ? colors.primary : colors.gridLine,
+                    }}
+                    accessibilityLabel={t.viewClock}
+                    accessibilityRole="button"
+                  >
+                    <Text
+                      style={{
+                        color: priceClockView ? '#fff' : colors.text,
+                        fontSize: 12,
+                        fontWeight: '600',
+                      }}
+                    >
+                      🕐 {t.viewClock}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              }
               legend={
                 <View style={{ gap: 8 }}>
                   <Text style={[{ color: colors.text, fontSize: 13, fontWeight: '600' }]}>
@@ -383,52 +429,6 @@ function AppContent() {
                         {t.gridFeesLabel} ({GRID_FEES_AND_TAXES} ¢/kWh)
                       </Text>
                     </View>
-                  </View>
-
-                  {/* View Toggle */}
-                  <View style={{ flexDirection: 'row', gap: 6, marginTop: 4 }}>
-                    <TouchableOpacity
-                      onPress={() => setPriceClockView(false)}
-                      style={{
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
-                        borderRadius: 8,
-                        backgroundColor: !priceClockView ? colors.primary : colors.gridLine,
-                      }}
-                      accessibilityLabel={t.viewBar}
-                      accessibilityRole="button"
-                    >
-                      <Text
-                        style={{
-                          color: !priceClockView ? '#fff' : colors.text,
-                          fontSize: 12,
-                          fontWeight: '600',
-                        }}
-                      >
-                        📊 {t.viewBar}
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => setPriceClockView(true)}
-                      style={{
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
-                        borderRadius: 8,
-                        backgroundColor: priceClockView ? colors.primary : colors.gridLine,
-                      }}
-                      accessibilityLabel={t.viewClock}
-                      accessibilityRole="button"
-                    >
-                      <Text
-                        style={{
-                          color: priceClockView ? '#fff' : colors.text,
-                          fontSize: 12,
-                          fontWeight: '600',
-                        }}
-                      >
-                        🕐 {t.viewClock}
-                      </Text>
-                    </TouchableOpacity>
                   </View>
                 </View>
               }
@@ -470,72 +470,22 @@ function AppContent() {
               )}
             </ChartDetailView>
 
-            <ChartDetailView
+            <CorrelationScatterChart
               title={t.correlationTitle}
+              subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+              data={filteredEnergyData}
+              backgroundColor={colors.surface}
+              textColor={colors.text}
+              gridColor={colors.gridLine}
               colors={colors}
-              chartType="correlation"
-              gridFees={gridFees}
-              metrics={undefined}
-              legend={
-                <View style={{ gap: 8 }}>
-                  <Text style={[{ color: colors.text, fontSize: 13, fontWeight: '600' }]}>
-                    {t.legend}
-                  </Text>
-                  <View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: 6,
-                          backgroundColor: '#2196F3',
-                        }}
-                      />
-                      <Text style={{ color: colors.text, fontSize: 12 }}>{t.night}</Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: 6,
-                          backgroundColor: '#FF9800',
-                        }}
-                      />
-                      <Text style={{ color: colors.text, fontSize: 12 }}>{t.morningEvening}</Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: 6,
-                          backgroundColor: '#FFEB3B',
-                        }}
-                      />
-                      <Text style={{ color: colors.text, fontSize: 12 }}>{t.day}</Text>
-                    </View>
-                  </View>
-                </View>
-              }
-            >
-              <CorrelationScatterChart
-                title={t.correlationTitle}
-                subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
-                data={filteredEnergyData}
-                backgroundColor={colors.surface}
-                textColor={colors.text}
-                gridColor={colors.gridLine}
-                colors={colors}
-                labels={{
-                  yAxisPrice: t.pricePerKwh,
-                  xAxisRenewables: t.renewablePercent,
-                  night: t.night,
-                  morningEvening: t.morningEvening,
-                  day: t.day,
-                }}
-              />
-            </ChartDetailView>
+              labels={{
+                yAxisPrice: t.pricePerKwh,
+                xAxisRenewables: t.renewablePercent,
+                night: t.night,
+                morningEvening: t.morningEvening,
+                day: t.day,
+              }}
+            />
           </>
         ) : null}
         {filteredEnergyData.length === 0 && (
