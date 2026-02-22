@@ -174,12 +174,12 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
   const systemTheme = useColorScheme();
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
 
+  const currentHour = useMemo(() => new Date().getHours(), []);
+
   const slots = useMemo(
     () => buildHourSlots(priceData, gridFees, currentHour),
     [priceData, gridFees, currentHour]
   );
-
-  const currentHour = useMemo(() => new Date().getHours(), []);
 
   const results: ApplianceResult[] = useMemo(() => {
     if (slots.length === 0) return [];
