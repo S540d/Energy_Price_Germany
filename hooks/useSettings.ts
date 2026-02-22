@@ -49,16 +49,16 @@ export function useSettings() {
           setTheme(savedTheme);
         }
 
-        // Load price alerts
+        // Load price alerts (value > 0 consistent with input validation)
         const savedAlertLow = await getItem('priceAlertLow');
         if (savedAlertLow !== null) {
           const value = parseFloat(savedAlertLow);
-          if (!isNaN(value)) setPriceAlertLow(value);
+          if (!isNaN(value) && value > 0) setPriceAlertLow(value);
         }
         const savedAlertHigh = await getItem('priceAlertHigh');
         if (savedAlertHigh !== null) {
           const value = parseFloat(savedAlertHigh);
-          if (!isNaN(value)) setPriceAlertHigh(value);
+          if (!isNaN(value) && value > 0) setPriceAlertHigh(value);
         }
       } catch (error) {
       } finally {
