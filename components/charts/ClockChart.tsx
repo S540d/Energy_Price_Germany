@@ -5,6 +5,7 @@ import type { ThemeColors } from '../../utils/theme';
 import { getPriceColor } from '../../utils/chartHelpers';
 import { useChartDimensions } from '../../utils/chartUtils';
 import { ChartCard } from './shared';
+import { useSettingsContext } from '../../context/SettingsContext';
 
 interface ClockChartProps {
   data: Array<{
@@ -77,6 +78,8 @@ function ClockChartComponent({
 }: ClockChartProps) {
   // Single call – destructure everything needed
   const { margin, cardPadding, isPhone, chartWidth } = useChartDimensions();
+  const { priceDisplayMode } = useSettingsContext();
+  const isMarketOnly = priceDisplayMode === 'marketOnly';
   const [selectedHour, setSelectedHour] = useState<number | null>(null);
 
   // Aggregate data into 24 hourly buckets
@@ -107,7 +110,7 @@ function ClockChartComponent({
         };
       }
       const avgPrice = bucket.prices.reduce((a, b) => a + b, 0) / bucket.prices.length;
-      const totalPrice = avgPrice + gridFees;
+      const totalPrice = isMarketOnly ? avgPrice : avgPrice + gridFees;
       const isInterpolated = bucket.interpolated.every(Boolean);
       return {
         hour,
@@ -117,7 +120,7 @@ function ClockChartComponent({
         isInterpolated,
       };
     });
-  }, [data, gridFees, colors.gridLine]);
+  }, [data, gridFees, isMarketOnly, colors.gridLine]);
 
   // Current hour + now-marker angle
   const currentHour = new Date().getHours();
