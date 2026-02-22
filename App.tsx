@@ -30,7 +30,7 @@ import { useSettingsContext } from './context/SettingsContext';
 import { checkPriceAlert } from './utils/priceAlertUtils';
 import { usePriceAlertNotification } from './hooks/usePriceAlertNotification';
 
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.4.0';
 
 function AppContent() {
   // UI State only (modals)
