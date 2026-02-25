@@ -150,7 +150,7 @@ EXPO_ENV=production npx expo prebuild --platform android --clean
 
 # 2. Build signed AAB (for Play Store)
 cd android && ./gradlew bundleRelease --no-daemon --console=plain \
-  -PMYAPP_UPLOAD_STORE_FILE=/path/to/@devsven__Energy_Price_Germany.jks \
+  -PMYAPP_UPLOAD_STORE_FILE=../@devsven__Energy_Price_Germany.jks \
   -PMYAPP_UPLOAD_STORE_PASSWORD=<from credentials.json> \
   -PMYAPP_UPLOAD_KEY_ALIAS=<from credentials.json> \
   -PMYAPP_UPLOAD_KEY_PASSWORD=<from credentials.json>

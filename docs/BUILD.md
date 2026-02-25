@@ -61,12 +61,6 @@ Werte aus `credentials.json` entnehmen.
 android/app/build/outputs/bundle/release/app-release.aab
 ```
 
-**Alternativ via Claude Command:**
-
-```
-/build-android
-```
-
 ---
 
 ## Keystore-Informationen

@@ -313,7 +313,7 @@ android/app/build/outputs/bundle/release/app-release.aab
 Manueller Upload → Google Play Console
 ```
 
-Siehe [BUILD.md](BUILD.md) für detaillierte Build-Anleitung und `/build-android` Claude Command.
+Siehe [BUILD.md](BUILD.md) für detaillierte Build-Anleitung.
 
 ---
 
