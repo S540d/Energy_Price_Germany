@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, Modal, ScrollView, StyleSheet } from 'react-native';
+import { Alert, View, Text, Modal, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { ThemeColors } from '../utils/theme';
 import { GRID_FEES_AND_TAXES } from '../utils/metrics';
@@ -71,6 +71,8 @@ export function ChartDetailView({
     setIsSharing(true);
     try {
       await shareChart(chartCaptureRef, title);
+    } catch {
+      Alert.alert(t.shareChartError);
     } finally {
       setIsSharing(false);
     }
@@ -259,6 +261,7 @@ export function ChartDetailView({
                 colors={colors}
                 onPress={handleShare}
                 disabled={isSharing}
+                style={{ flex: 1 }}
               >
                 {isSharing ? t.shareChartSharing : t.shareChart}
               </Button>
@@ -267,7 +270,7 @@ export function ChartDetailView({
                 size="large"
                 colors={colors}
                 onPress={() => setIsExpanded(false)}
-                fullWidth
+                style={{ flex: 1 }}
               >
                 Schließen
               </Button>
