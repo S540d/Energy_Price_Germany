@@ -1,48 +1,24 @@
 # Build-Dokumentation - Energy Price Germany
 
-## 🏗️ Build-System
+## Build-Übersicht
 
-Dieses Projekt nutzt **EAS Build** (Expo Application Services) für Android-Builds.
+| Plattform | Methode | Ausgabe |
+|-----------|---------|---------|
+| Web | GitHub Actions (automatisch) | GitHub Pages |
+| Android | Lokaler Build | `.aab` für Play Store |
 
 ---
 
-## 📦 Android App Bundle erstellen
+## Android App Bundle bauen
 
 ### Voraussetzungen
 
-- Expo Account (devsven)
-- EAS CLI installiert: `npm install -g eas-cli`
-- Eingeloggt: `eas login`
+- **Java 17** (`java -version` sollte `openjdk 17` zeigen)
+  - Falls nicht vorhanden: `brew install openjdk@17`
+- **Keystore** `@devsven__Energy_Price_Germany.jks` im Projekt-Root (gitignored)
+- **Credentials** `credentials.json` im Projekt-Root (gitignored)
 
-### Build ausführen
-
-```bash
-# Production Build (AAB für Play Store)
-npx eas-cli build --platform android --profile production
-
-# Preview Build (APK zum Testen)
-npx eas-cli build --platform android --profile preview
-```
-
-### Build-Profile (eas.json)
-
-#### Production
-- **Format:** App Bundle (.aab)
-- **Signierung:** Lokal via `credentials.json`
-- **Verwendung:** Google Play Store Upload
-
-#### Preview
-- **Format:** APK (.apk)
-- **Distribution:** Internal Testing
-- **Verwendung:** Lokale Tests
-
----
-
-## 🔐 Keystore-Konfiguration
-
-### credentials.json
-
-Die Keystore-Informationen sind in `credentials.json` gespeichert:
+### Credentials-Struktur (`credentials.json`)
 
 ```json
 {
@@ -57,165 +33,143 @@ Die Keystore-Informationen sind in `credentials.json` gespeichert:
 }
 ```
 
-**WICHTIG:**
-- `credentials.json` ist in `.gitignore`
-- Keystore liegt im `keystore/`-Verzeichnis
-- Details siehe: `keystore/keystores.md`
+### Build-Schritte
 
-### Keystore-Fingerprints
+**Schritt 1: Android-Projekt generieren**
+
+```bash
+EXPO_ENV=production npx expo prebuild --platform android --clean
+```
+
+> Das `/android`-Verzeichnis wird neu generiert (nicht in Git).
+
+**Schritt 2: Signierten AAB bauen**
+
+```bash
+cd android && ./gradlew bundleRelease --no-daemon --console=plain \
+  -PMYAPP_UPLOAD_STORE_FILE=../@devsven__Energy_Price_Germany.jks \
+  -PMYAPP_UPLOAD_STORE_PASSWORD=<keystorePassword> \
+  -PMYAPP_UPLOAD_KEY_ALIAS=<keyAlias> \
+  -PMYAPP_UPLOAD_KEY_PASSWORD=<keyPassword>
+```
+
+Werte aus `credentials.json` entnehmen.
+
+**Ausgabe:**
+
+```
+android/app/build/outputs/bundle/release/app-release.aab
+```
+
+**Alternativ via Claude Command:**
+
+```
+/build-android
+```
+
+---
+
+## Keystore-Informationen
 
 | Property | Wert |
 |----------|------|
+| Datei | `@devsven__Energy_Price_Germany.jks` |
 | SHA1 | `EA:0D:A7:16:A1:CD:E1:C1:7C:F7:0D:1F:A8:14:99:8D:35:62:51:F3` |
 | SHA256 | `14:91:FB:86:0D:D5:A5:20:C5:5D:6B:21:6E:BC:71:D3:9A:B9:08:CD:92:3C:26:6B:22:25:62:F9:7A:FA:47:71` |
 
----
-
-## 📱 Aktuelle Version
-
-**Version:** 1.3.0
-**Version Code:** 10
-**Package:** com.sven4321.energypricegermany
+> **NIEMALS committen!** Bei Verlust kann die App nicht mehr aktualisiert werden. Backup sicher aufbewahren.
 
 ---
 
-## 🚀 Build-Verlauf
+## Google Play Store Upload
 
-### v1.1.0 (Build 4)
-- **Datum:** 8. November 2025
-- **Build-ID:** f0e2b03d-bf45-4763-ad88-97eb7b0c44db
-- **Build-Logs:** https://expo.dev/accounts/devsven/projects/Energy_Price_Germany/builds/f0e2b03d-bf45-4763-ad88-97eb7b0c44db
+1. Öffne [Google Play Console](https://play.google.com/console)
+2. Wähle "Energy Prices Germany"
+3. Gehe zu **Production** → **Create new release**
+4. Lade `app-release.aab` hoch
+5. Release Notes hinzufügen
+6. Review & Roll Out
 
 ---
 
-## 📥 Build herunterladen
+## Aktuelle Version
+
+**Version:** 1.4.0
+**Version Code:** 11
+**Package:** `com.sven4321.energypricegermany`
+
+> Versions-Wahrheit liegt in `app.json` → `expo.version` und `expo.android.versionCode`.
+> Bei jedem Release muss der `versionCode` um 1 erhöht werden.
+
+---
+
+## Web-Build
+
+Der Web-Build läuft vollautomatisch via GitHub Actions:
+
+- **Trigger:** Push auf `main`, `staging` oder `testing`
+- **Deployment:** GitHub Pages
+- **URLs:**
+  - Production: https://s540d.github.io/Energy_Price_Germany/
+  - Staging: https://s540d.github.io/Energy_Price_Germany/staging/
+  - Testing: https://s540d.github.io/Energy_Price_Germany/testing/
+
+Manueller lokaler Web-Build:
 
 ```bash
-# AAB von EAS herunterladen
-npx eas-cli build:download --platform android --profile production
+npm run build:web     # Production Build
+npm run serve:local   # Lokaler Dev-Server (Port 8080)
 ```
 
-Oder direkt vom Artifact Link (siehe Build-Logs).
-
 ---
 
-## 🔍 Build überprüfen
-
-### AAB inspizieren
+## AAB prüfen (optional)
 
 ```bash
-# Mit bundletool
-bundletool dump manifest --bundle=builds/energy-price-germany-v1.1.0.aab
+# Signatur verifizieren
+jarsigner -verify -verbose -certs android/app/build/outputs/bundle/release/app-release.aab
 
-# Signatur überprüfen
-jarsigner -verify -verbose -certs builds/energy-price-germany-v1.1.0.aab
-```
-
-### Lokales Testen
-
-```bash
-# APKs aus AAB generieren
+# Mit bundletool testen (APKs aus AAB generieren)
 bundletool build-apks \
-  --bundle=builds/energy-price-germany-v1.1.0.aab \
+  --bundle=android/app/build/outputs/bundle/release/app-release.aab \
   --output=app.apks \
   --mode=universal
-
-# APK extrahieren
 unzip app.apks -d apks/
-
-# Auf Gerät installieren
 adb install apks/universal.apk
 ```
 
 ---
 
-## 📤 Google Play Store Upload
+## Troubleshooting
 
-### Manueller Upload
-
-1. Öffne [Google Play Console](https://play.google.com/console)
-2. Wähle "Energy Prices Germany"
-3. Gehe zu **Production** → **Create new release**
-4. Upload: `builds/energy-price-germany-v1.1.0.aab`
-5. Release Notes hinzufügen
-6. Review & Roll Out
-
-### Automatischer Upload (Optional)
-
-Mit EAS Submit:
-
+### Java-Version falsch
 ```bash
-npx eas-cli submit --platform android --profile production
+brew install openjdk@17
+export JAVA_HOME=/opt/homebrew/opt/openjdk@17
 ```
 
-**Benötigt:** `google-service-account.json` (siehe `eas.json`)
+### Gradle-Build schlägt fehl
+```bash
+# Projekt neu generieren
+EXPO_ENV=production npx expo prebuild --platform android --clean
+
+# Gradle-Cache leeren
+cd android && ./gradlew clean
+```
+
+### Keystore nicht gefunden
+Sicherstellen dass `@devsven__Energy_Price_Germany.jks` im Projekt-Root liegt (nicht im `android/`-Verzeichnis).
 
 ---
 
-## ⚠️ Wichtige Hinweise
+## Build-Verlauf
 
-### Versionierung
-
-- **Version Name:** In `app.json` → `expo.version`
-- **Version Code:** Automatisch via EAS (remote)
-- Bei jedem Play Store Upload muss Version Code erhöht werden
-
-### Keystore
-
-- **NIEMALS** committen!
-- Backups sicher aufbewahren (siehe `keystore/KEYSTORE_BACKUP_GUIDE.md`)
-- Bei Verlust: App kann NICHT mehr aktualisiert werden
-
-### Build-Zeiten
-
-- **EAS Build:** ~5-10 Minuten
-- **Google Review:** 1-3 Tage
-- **Veröffentlichung:** Automatisch nach Approval
-
----
-
-## 🛠️ Troubleshooting
-
-### Build schlägt fehl
-
-```bash
-# Logs ansehen
-npx eas-cli build:view
-
-# Lokal testen
-npx expo run:android
-```
-
-### Credentials-Fehler
-
-```bash
-# Credentials zurücksetzen
-npx eas-cli credentials
-
-# Oder manuell credentials.json prüfen
-```
-
-### Version-Konflikt
-
-```bash
-# Remote Version anzeigen
-npx eas-cli build:version:get --platform android
-
-# Remote Version setzen
-npx eas-cli build:version:set --platform android
-```
-
----
-
-## 📚 Referenzen
-
-- [EAS Build Dokumentation](https://docs.expo.dev/build/introduction/)
-- [Android App Signing](https://developer.android.com/studio/publish/app-signing)
-- [Google Play Console](https://play.google.com/console)
-- [Expo Project](https://expo.dev/accounts/devsven/projects/Energy_Price_Germany)
+| Version | versionCode | Datum | Anmerkung |
+|---------|-------------|-------|-----------|
+| 1.4.0 | 11 | Februar 2026 | Erster lokaler Build (ohne EAS) |
+| 1.1.0 | 4 | November 2025 | EAS Build |
 
 ---
 
 **Letzte Aktualisierung:** Februar 2026
-**Build-System:** EAS Build (Expo)
-**Status:** ✅ Bereit für Play Store
+**Build-System:** Lokaler Build (expo prebuild + Gradle)

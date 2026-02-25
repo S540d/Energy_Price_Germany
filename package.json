@@ -38,18 +38,7 @@
     "deploy": "npm run build && npm run deploy:gh-pages",
     "deploy:gh-pages": "gh-pages -d dist -t --dotfiles",
     "validate": "./scripts/validate-release.sh",
-    "prepare": "husky install",
-    "eas:build:testing": "eas build --profile testing --platform all",
-    "eas:build:staging": "eas build --profile staging --platform all",
-    "eas:build:production": "eas build --profile production --platform all",
-    "eas:build:android:testing": "eas build --profile testing --platform android",
-    "eas:build:android:staging": "eas build --profile staging --platform android",
-    "eas:build:android:production": "eas build --profile production --platform android",
-    "eas:build:ios:testing": "eas build --profile testing --platform ios",
-    "eas:build:ios:staging": "eas build --profile staging --platform ios",
-    "eas:build:ios:production": "eas build --profile production --platform ios",
-    "eas:update:staging": "eas update --channel staging --message \"Beta update\"",
-    "eas:update:production": "eas update --channel production --message \"Production update\""
+    "prepare": "husky install"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
@@ -79,7 +68,6 @@
     "babel-jest": "~29.7.0",
     "cross-env": "^10.1.0",
     "dotenv": "^17.2.3",
-    "eas-cli": "^16.28.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-jest": "^28.14.0",
