@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, Modal, ScrollView, StyleSheet } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { Alert, View, Text, Modal, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { ThemeColors } from '../utils/theme';
 import { GRID_FEES_AND_TAXES } from '../utils/metrics';
 import { useLanguageContext } from '../context/LanguageContext';
 import { Button } from './ui/Button';
+import { shareChart } from '../utils/chartShare';
 
 type MetricsData =
   | {
@@ -62,7 +63,20 @@ export function ChartDetailView({
   gridFees: _gridFees = GRID_FEES_AND_TAXES,
 }: ChartDetailViewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const chartCaptureRef = useRef(null);
   const { t } = useLanguageContext();
+
+  const handleShare = async () => {
+    setIsSharing(true);
+    try {
+      await shareChart(chartCaptureRef, title);
+    } catch {
+      Alert.alert(t.shareChartError);
+    } finally {
+      setIsSharing(false);
+    }
+  };
 
   const renderMetricsView = () => {
     if (!metrics) return null;
@@ -180,7 +194,9 @@ export function ChartDetailView({
   const renderContent = () => (
     <View style={{ flex: 1 }}>
       {/* Chart always shown – use detailChildren override when available */}
-      <View style={styles.chartContainer}>{detailChildren ?? children}</View>
+      <View ref={chartCaptureRef} style={styles.chartContainer}>
+        {detailChildren ?? children}
+      </View>
 
       {/* Legend - shown below chart, use detailLegend override when available */}
       {(detailLegend ?? legend) && (
@@ -231,22 +247,34 @@ export function ChartDetailView({
           {/* Content */}
           <ScrollView style={{ flex: 1 }}>{renderContent()}</ScrollView>
 
-          {/* Close button at bottom */}
+          {/* Footer: Share + Close buttons */}
           <View
             style={[
               styles.closeButtonContainer,
               { backgroundColor: colors.surface, borderTopColor: colors.gridLine },
             ]}
           >
-            <Button
-              variant="filled"
-              size="large"
-              colors={colors}
-              onPress={() => setIsExpanded(false)}
-              fullWidth
-            >
-              Schließen
-            </Button>
+            <View style={styles.footerButtons}>
+              <Button
+                variant="outlined"
+                size="large"
+                colors={colors}
+                onPress={handleShare}
+                disabled={isSharing}
+                style={{ flex: 1 }}
+              >
+                {isSharing ? t.shareChartSharing : t.shareChart}
+              </Button>
+              <Button
+                variant="filled"
+                size="large"
+                colors={colors}
+                onPress={() => setIsExpanded(false)}
+                style={{ flex: 1 }}
+              >
+                Schließen
+              </Button>
+            </View>
           </View>
         </SafeAreaView>
       </Modal>
@@ -285,6 +313,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
+  },
+  footerButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'stretch',
   },
   metricsContainer: {
     margin: 16,
