@@ -272,7 +272,7 @@ export function ChartDetailView({
                 onPress={() => setIsExpanded(false)}
                 style={{ flex: 1 }}
               >
-                Schließen
+                {t.close}
               </Button>
             </View>
           </View>
