@@ -55,20 +55,28 @@ async function shareChartWeb(captureRef: React.RefObject<unknown>, title: string
   }
 
   const dataUrl = await toPng(node, { quality: 0.95 });
-  const filename = `${title.replace(/\s+/g, '_')}.png`;
+  // Sanitize filename: remove invalid characters, replace spaces with underscores
+  const filename = `${title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_')}.png`;
 
-  if (typeof navigator !== 'undefined' && navigator.share) {
-    const blob = await (await fetch(dataUrl)).blob();
-    const file = new File([blob], filename, { type: 'image/png' });
-    await navigator.share({
-      title,
-      files: [file],
-    });
-  } else {
-    // Fallback: trigger download
+  const triggerDownload = () => {
     const a = document.createElement('a');
     a.href = dataUrl;
     a.download = filename;
     a.click();
+  };
+
+  if (typeof navigator !== 'undefined' && navigator.share) {
+    const blob = await (await fetch(dataUrl)).blob();
+    const file = new File([blob], filename, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ title, files: [file] });
+        return;
+      } catch {
+        // Share cancelled or failed – fall through to download
+      }
+    }
   }
+
+  triggerDownload();
 }

@@ -117,6 +117,8 @@ export const translations = {
     shareChartSharing: 'Capturing...',
     shareChartError: 'Could not share chart',
     shareChartDownload: 'Download Chart',
+    // Common actions
+    close: 'Close',
   },
   de: {
     settings: 'Einstellungen',
@@ -235,5 +237,7 @@ export const translations = {
     shareChartSharing: 'Wird erstellt...',
     shareChartError: 'Diagramm konnte nicht geteilt werden',
     shareChartDownload: 'Diagramm herunterladen',
+    // Common actions
+    close: 'Schließen',
   },
 } as const;

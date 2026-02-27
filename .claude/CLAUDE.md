@@ -285,7 +285,7 @@ cd android && ./gradlew bundleRelease --no-daemon
 ```bash
 eas build --platform android --profile production
 ```
-> Note: Migration to local/GitHub Actions builds planned (Issue #202)
+> Note: Migration to local builds completed (Issue #202). EAS cloud build is now legacy and no longer used.
 
 ## Questions?
 Refer to documentation in root directory or check GitHub issues:
