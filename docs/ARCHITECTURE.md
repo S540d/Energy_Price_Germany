@@ -266,7 +266,7 @@ npm run serve:local
 # Open http://localhost:8080
 ```
 
-#### Build Process
+#### Web Build Process
 ```
 Source Code (TypeScript/JSX)
     ↓
@@ -285,16 +285,35 @@ update-cache-version.js
 Distributable (dist/)
 ```
 
-#### Deployment
+#### Web Deployment
 ```
-Local Build → npm run deploy
+Push to main/staging/testing
     ↓
-gh-pages Deploy
+GitHub Actions (deploy-unified.yml)
     ↓
 GitHub Pages (gh-pages branch)
     ↓
 Live: https://s540d.github.io/Energy_Price_Germany/
 ```
+
+#### Android Build Process (lokal)
+```
+main Branch (aktuell)
+    ↓
+expo prebuild --platform android --clean
+    ↓
+/android (generiert, nicht in Git)
+    ↓
+Gradle bundleRelease (signiert mit lokalem Keystore)
+├─ @devsven__Energy_Price_Germany.jks
+└─ credentials.json (gitignored)
+    ↓
+android/app/build/outputs/bundle/release/app-release.aab
+    ↓
+Manueller Upload → Google Play Console
+```
+
+Siehe [BUILD.md](BUILD.md) für detaillierte Build-Anleitung.
 
 ---
 
@@ -541,6 +560,6 @@ Success? ──Yes──→ ✅ Complete
 
 ---
 
-**Last Updated**: 2026-01-04
-**Current Version**: 1.3.0
+**Last Updated**: 2026-02-25
+**Current Version**: 1.4.0
 **Maintainer**: S540d
