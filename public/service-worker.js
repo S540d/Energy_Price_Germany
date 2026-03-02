@@ -3,7 +3,7 @@
 
 // SECURITY FIX: Use dynamic timestamp instead of hardcoded value
 // This ensures cache busting works correctly even after SW updates
-const CACHE_VERSION = '1.3.0';
+const CACHE_VERSION = '1.4.2';
 const CACHE_TIMESTAMP = Date.now(); // Dynamic timestamp
 const CACHE_NAME = `energy-price-germany-v${CACHE_VERSION}-${CACHE_TIMESTAMP}`;
 const urlsToCache = [
