@@ -10,7 +10,6 @@ import { CostCalculator } from './CostCalculator';
 interface CostCalculatorViewProps {
   visible: boolean;
   onClose: () => void;
-  currentPrice: number;
   priceData?: Array<{ start_timestamp: number; marketprice: number; renewable_share?: number }>;
   gridFees?: number;
 }
@@ -22,7 +21,6 @@ interface CostCalculatorViewProps {
 export function CostCalculatorView({
   visible,
   onClose,
-  currentPrice,
   priceData,
   gridFees,
 }: CostCalculatorViewProps) {
@@ -56,7 +54,7 @@ export function CostCalculatorView({
 
       {/* Content */}
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
-        <CostCalculator currentPrice={currentPrice} priceData={priceData} gridFees={gridFees} />
+        <CostCalculator priceData={priceData} gridFees={gridFees} />
       </ScrollView>
     </SafeAreaView>
   );

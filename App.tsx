@@ -591,11 +591,6 @@ function AppContent() {
       <CostCalculatorView
         visible={calculatorVisible}
         onClose={() => setCalculatorVisible(false)}
-        currentPrice={
-          metrics?.today?.marketPrice.current
-            ? metrics.today.marketPrice.current + gridFees
-            : gridFees
-        }
         priceData={filteredEnergyData
           .filter(item => item.marketPrice !== null)
           .map(item => ({

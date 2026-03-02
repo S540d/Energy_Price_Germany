@@ -66,7 +66,6 @@ export const APPLIANCES: Appliance[] = [
 ];
 
 interface CostCalculatorProps {
-  currentPrice: number; // in ct/kWh (includes grid fees)
   priceData?: Array<{ start_timestamp: number; marketprice: number; renewable_share?: number }>;
   gridFees?: number; // ct/kWh
 }
