@@ -48,13 +48,15 @@ export function CustomizeModal({ visible, onClose }: CustomizeModalProps) {
 
           <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
-          {/* Postal Code Section */}
-          <PostalCodeSection />
-
-          <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
-
-          {/* Grid Fees Section */}
-          <GridFeesSection />
+          {/* Postal Code + Grid Fees in one row */}
+          <View style={styles.inlineRow}>
+            <View style={styles.inlineItem}>
+              <PostalCodeSection />
+            </View>
+            <View style={styles.inlineItem}>
+              <GridFeesSection />
+            </View>
+          </View>
 
           <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
@@ -121,5 +123,12 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     marginVertical: 4,
+  },
+  inlineRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  inlineItem: {
+    flex: 1,
   },
 });
