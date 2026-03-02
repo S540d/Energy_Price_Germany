@@ -560,6 +560,6 @@ Success? ──Yes──→ ✅ Complete
 
 ---
 
-**Last Updated**: 2026-02-25
-**Current Version**: 1.4.0
+**Last Updated**: 2026-03-02
+**Current Version**: 1.4.1
 **Maintainer**: S540d

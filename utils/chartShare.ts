@@ -6,6 +6,7 @@
  * - Web: html-to-image + navigator.share() or download fallback
  */
 
+import type { RefObject } from 'react';
 import { isWeb, isMobile } from './platform';
 
 /**
@@ -14,10 +15,7 @@ import { isWeb, isMobile } from './platform';
  * @param captureRef - React ref attached to the View wrapping the chart
  * @param title - Chart title used as filename and share text
  */
-export async function shareChart(
-  captureRef: React.RefObject<unknown>,
-  title: string
-): Promise<void> {
+export async function shareChart(captureRef: RefObject<unknown>, title: string): Promise<void> {
   if (isMobile) {
     await shareChartMobile(captureRef, title);
   } else if (isWeb) {
@@ -25,10 +23,7 @@ export async function shareChart(
   }
 }
 
-async function shareChartMobile(
-  captureRef: React.RefObject<unknown>,
-  title: string
-): Promise<void> {
+async function shareChartMobile(captureRef: RefObject<unknown>, title: string): Promise<void> {
   const { captureRef: captureViewRef } = await import('react-native-view-shot');
   const { Share } = await import('react-native');
 
@@ -45,7 +40,7 @@ async function shareChartMobile(
   });
 }
 
-async function shareChartWeb(captureRef: React.RefObject<unknown>, title: string): Promise<void> {
+async function shareChartWeb(captureRef: RefObject<unknown>, title: string): Promise<void> {
   const { toPng } = await import('html-to-image');
 
   // On web, captureRef.current is the underlying DOM node
