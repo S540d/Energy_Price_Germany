@@ -112,6 +112,13 @@ export const translations = {
     // Clock View
     viewBar: 'Bar Chart',
     viewClock: 'Clock View',
+    // Share / Screenshot
+    shareChart: 'Share Chart',
+    shareChartSharing: 'Capturing...',
+    shareChartError: 'Could not share chart',
+    shareChartDownload: 'Download Chart',
+    // Common actions
+    close: 'Close',
   },
   de: {
     settings: 'Einstellungen',
@@ -225,5 +232,12 @@ export const translations = {
     // Clock View
     viewBar: 'Balkendiagramm',
     viewClock: 'Uhransicht',
+    // Share / Screenshot
+    shareChart: 'Diagramm teilen',
+    shareChartSharing: 'Wird erstellt...',
+    shareChartError: 'Diagramm konnte nicht geteilt werden',
+    shareChartDownload: 'Diagramm herunterladen',
+    // Common actions
+    close: 'Schließen',
   },
 } as const;

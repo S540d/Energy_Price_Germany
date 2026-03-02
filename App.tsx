@@ -30,7 +30,7 @@ import { useSettingsContext } from './context/SettingsContext';
 import { checkPriceAlert } from './utils/priceAlertUtils';
 import { usePriceAlertNotification } from './hooks/usePriceAlertNotification';
 
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.4.1';
 
 function AppContent() {
   // UI State only (modals)
@@ -591,11 +591,6 @@ function AppContent() {
       <CostCalculatorView
         visible={calculatorVisible}
         onClose={() => setCalculatorVisible(false)}
-        currentPrice={
-          metrics?.today?.marketPrice.current
-            ? metrics.today.marketPrice.current + gridFees
-            : gridFees
-        }
         priceData={filteredEnergyData
           .filter(item => item.marketPrice !== null)
           .map(item => ({
