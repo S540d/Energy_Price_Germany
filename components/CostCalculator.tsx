@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, useColorScheme } from 'react-native';
-import { useLanguageContext } from '../context/LanguageContext';
+import { View, StyleSheet, useColorScheme } from 'react-native';
 import { getThemeColors } from '../utils/theme';
 import { useSettingsContext } from '../context/SettingsContext';
 import { ApplianceTimeline } from './ApplianceTimeline';
@@ -77,18 +76,12 @@ interface CostCalculatorProps {
  * Shows a timeline of the best hours to run each household appliance.
  */
 export function CostCalculator({ priceData = [], gridFees = 0 }: CostCalculatorProps) {
-  const { t } = useLanguageContext();
   const { theme } = useSettingsContext();
   const systemTheme = useColorScheme();
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
-      <Text style={[styles.title, { color: colors.text }]}>{t.costCalculatorTitle}</Text>
-      <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-        {t.costCalculatorSubtitle}
-      </Text>
-
       {priceData.length > 0 && (
         <ApplianceTimeline appliances={APPLIANCES} priceData={priceData} gridFees={gridFees} />
       )}
@@ -102,13 +95,5 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginVertical: 10,
     gap: 16,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  subtitle: {
-    fontSize: 13,
-    lineHeight: 18,
   },
 });

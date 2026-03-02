@@ -32,41 +32,34 @@ export function GridFeesSection() {
   return (
     <View style={styles.menuSection}>
       <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.gridFees}</Text>
-      <View>
-        <Text style={[styles.hintText, { color: colors.textSecondary }]}>{t.gridFeesHint}</Text>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: colors.surface,
-              color: colors.text,
-              borderColor: colors.gridLine,
-            },
-          ]}
-          placeholder={t.gridFeesValue}
-          placeholderTextColor={colors.textSecondary}
-          value={gridFees.toString()}
-          onChangeText={handleGridFeesChange}
-          keyboardType="numeric"
-        />
-      </View>
+      <TextInput
+        style={[
+          styles.input,
+          {
+            backgroundColor: colors.surface,
+            color: colors.text,
+            borderColor: colors.gridLine,
+          },
+        ]}
+        placeholder={t.gridFeesValue}
+        placeholderTextColor={colors.textSecondary}
+        value={gridFees.toString()}
+        onChangeText={handleGridFeesChange}
+        keyboardType="numeric"
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   menuSection: {
-    gap: 12,
+    gap: 8,
   },
   sectionTitle: {
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-  },
-  hintText: {
-    fontSize: 12,
-    marginBottom: 8,
   },
   input: {
     borderWidth: 1,

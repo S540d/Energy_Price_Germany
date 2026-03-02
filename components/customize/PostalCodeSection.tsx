@@ -18,44 +18,37 @@ export function PostalCodeSection() {
   return (
     <View style={styles.menuSection}>
       <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.region}</Text>
-      <View>
-        <Text style={[styles.hintText, { color: colors.textSecondary }]}>{t.postalCodeHint}</Text>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: colors.surface,
-              color: colors.text,
-              borderColor: colors.gridLine,
-            },
-          ]}
-          placeholder={t.postalCode}
-          placeholderTextColor={colors.textSecondary}
-          value={postalCode}
-          onChangeText={text => {
-            setPostalCode(sanitizePostalCodeInput(text));
-          }}
-          keyboardType="numeric"
-          maxLength={5}
-        />
-      </View>
+      <TextInput
+        style={[
+          styles.input,
+          {
+            backgroundColor: colors.surface,
+            color: colors.text,
+            borderColor: colors.gridLine,
+          },
+        ]}
+        placeholder={t.postalCode}
+        placeholderTextColor={colors.textSecondary}
+        value={postalCode}
+        onChangeText={text => {
+          setPostalCode(sanitizePostalCodeInput(text));
+        }}
+        keyboardType="numeric"
+        maxLength={5}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   menuSection: {
-    gap: 12,
+    gap: 8,
   },
   sectionTitle: {
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-  },
-  hintText: {
-    fontSize: 12,
-    marginBottom: 8,
   },
   input: {
     borderWidth: 1,
