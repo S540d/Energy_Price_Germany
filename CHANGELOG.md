@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Diagramm teilen: `collapsable={false}` für den Capture-Container gesetzt, behebt "Diagramm kann nicht geteilt werden"-Fehler auf Android (#221)
 
 ### Changed
-- Dark Mode ist jetzt der Standard-Theme für Neuinstallationen (#220)
+- Dark Mode ist jetzt das Standard-Theme für Neuinstallationen (#220)
 
 ---
 
