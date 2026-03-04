@@ -1,6 +1,6 @@
 {
   "name": "energypricegermany",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "Energy price visualization for Germany with market data and renewable energy share",
   "main": "index.ts",
   "homepage": "https://s540d.github.io/Energy_Price_Germany/",
@@ -15,8 +15,8 @@
   "author": "S540d",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest",
     "test:watch": "jest --watch",
