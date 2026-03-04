@@ -11,7 +11,7 @@ export type PriceDisplayMode = 'marketOnly' | 'withGridFees';
  * Automatically persists changes to storage
  */
 export function useSettings() {
-  const [theme, setTheme] = useState<Theme>('system');
+  const [theme, setTheme] = useState<Theme>('dark');
   const [postalCode, setPostalCode] = useState<string>('');
   const [debouncedPostalCode, setDebouncedPostalCode] = useState<string>('');
   const [gridFees, setGridFees] = useState<number>(GRID_FEES_AND_TAXES);
