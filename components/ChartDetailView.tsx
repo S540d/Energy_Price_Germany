@@ -194,7 +194,7 @@ export function ChartDetailView({
   const renderContent = () => (
     <View style={{ flex: 1 }}>
       {/* Chart always shown – use detailChildren override when available */}
-      <View ref={chartCaptureRef} style={styles.chartContainer}>
+      <View ref={chartCaptureRef} style={styles.chartContainer} collapsable={false}>
         {detailChildren ?? children}
       </View>
 

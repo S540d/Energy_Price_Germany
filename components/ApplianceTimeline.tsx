@@ -131,13 +131,8 @@ function findBestWindow(
  * Builds Column descriptors. Consecutive uninteresting hours (≥2) are
  * merged into a single narrow gap column.
  */
-function buildColumns(
-  slots: HourSlot[],
-  results: ApplianceResult[],
-  currentHour: number
-): Column[] {
+function buildColumns(slots: HourSlot[], results: ApplianceResult[]): Column[] {
   const interesting = new Set<number>();
-  interesting.add(currentHour);
   results.forEach(r => r.windowHours.forEach(h => interesting.add(h)));
 
   const columns: Column[] = [];
@@ -228,10 +223,7 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
     });
   }, [slots, appliances, currentHour]);
 
-  const columns = useMemo(
-    () => buildColumns(slots, results, currentHour),
-    [slots, results, currentHour]
-  );
+  const columns = useMemo(() => buildColumns(slots, results), [slots, results]);
 
   if (slots.length === 0) return null;
 
@@ -256,19 +248,9 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
                   </View>
                 );
               }
-              const isNow = col.slot.hour === currentHour;
               return (
-                <View
-                  key={`h-${col.slot.hour}-${ci}`}
-                  style={[styles.hourCell, isNow && { backgroundColor: `${colors.primary}20` }]}
-                >
-                  <Text
-                    style={[
-                      styles.hourLabel,
-                      { color: isNow ? colors.primary : colors.textTertiary },
-                      isNow && { fontWeight: '700' },
-                    ]}
-                  >
+                <View key={`h-${col.slot.hour}-${ci}`} style={styles.hourCell}>
+                  <Text style={[styles.hourLabel, { color: colors.textTertiary }]}>
                     {col.slot.label}
                   </Text>
                 </View>
