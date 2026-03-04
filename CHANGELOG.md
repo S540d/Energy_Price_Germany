@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- Aktuelle-Stunde-Markierung aus der Geräte-Timeline entfernt – verhindert irreführende Darstellung, als würde eine vergangene Stunde empfohlen (#219)
+- Diagramm teilen: `collapsable={false}` für den Capture-Container gesetzt, behebt "Diagramm kann nicht geteilt werden"-Fehler auf Android (#221)
+
+### Changed
+- Dark Mode ist jetzt das Standard-Theme für Neuinstallationen (#220)
+
+---
+
 ## [1.4.2] - 2026-03-02
 
 ### Fixed
