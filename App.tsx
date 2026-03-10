@@ -211,19 +211,25 @@ function AppContent() {
               }
               accessibilityRole="text"
             >
-              <Text style={styles.alertBadgeText}>{alertState === 'low' ? '🔔↓' : '🔔↑'}</Text>
+              <Text style={styles.alertBadgeText}>{alertState === 'low' ? '↓' : '↑'}</Text>
             </View>
           )}
           <TouchableOpacity
             onPress={() => setCalculatorVisible(true)}
-            style={styles.headerButton}
+            style={[
+              styles.headerButton,
+              { borderColor: colors.gridLine, backgroundColor: colors.background },
+            ]}
             aria-label="Cost Calculator"
           >
-            <Text style={[styles.headerButtonText, { color: colors.text }]}>💶</Text>
+            <Text style={[styles.headerButtonText, { color: colors.text }]}>€</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setMenuVisible(true)}
-            style={styles.headerButton}
+            style={[
+              styles.headerButton,
+              { borderColor: colors.gridLine, backgroundColor: colors.background },
+            ]}
             aria-label="Settings"
           >
             <Text style={[styles.settingsHeaderButtonText, { color: colors.text }]}>⋮</Text>
@@ -370,7 +376,7 @@ function AppContent() {
                         fontWeight: '600',
                       }}
                     >
-                      📊 {t.viewBar}
+                      {t.viewBar}
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -391,7 +397,7 @@ function AppContent() {
                         fontWeight: '600',
                       }}
                     >
-                      🕐 {t.viewClock}
+                      {t.viewClock}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -688,13 +694,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: 0.2,
     flex: 1,
   },
   headerButtons: {
@@ -702,14 +709,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerButton: {
-    padding: 8,
+    padding: 10,
     minWidth: 44,
     minHeight: 44,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
   },
   headerButtonText: {
-    fontSize: 20,
+    fontSize: 18,
+    fontWeight: '700',
   },
   settingsHeaderButtonText: {
     fontSize: 24,
