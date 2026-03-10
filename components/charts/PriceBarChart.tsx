@@ -284,7 +284,7 @@ function PriceBarChartComponent({
               accessibilityRole="text"
               accessibilityLabel={interactionHint}
             >
-              💡 {interactionHint}
+              Hint: {interactionHint}
             </Text>
           )}
         </View>
@@ -563,7 +563,7 @@ function PriceBarChartComponent({
             marginTop: 8,
           }}
         >
-          💡 {interactionHint}
+          Hint: {interactionHint}
         </Text>
       )}
     </ChartCard>
