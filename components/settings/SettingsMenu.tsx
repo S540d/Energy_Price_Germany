@@ -1,5 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Linking, useColorScheme } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
 import { useLanguageContext } from '../../context/LanguageContext';
 import { getThemeColors } from '../../utils/theme';
 import { useSettingsContext } from '../../context/SettingsContext';
@@ -27,15 +34,43 @@ export function SettingsMenu({
   const systemTheme = useColorScheme();
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
 
-  if (!visible) return null;
+  const [isMounted, setIsMounted] = useState(false);
+  const translateY = useSharedValue(300);
+  const overlayOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    if (visible) {
+      setIsMounted(true);
+      translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
+      overlayOpacity.value = withTiming(0.5, { duration: 200 });
+    } else if (isMounted) {
+      translateY.value = withTiming(300, { duration: 250 });
+      overlayOpacity.value = withTiming(0, { duration: 250 }, () => {
+        runOnJS(setIsMounted)(false);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
+
+  const overlayAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: overlayOpacity.value,
+  }));
+
+  const menuAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  if (!isMounted) return null;
 
   return (
     <>
-      {/* Overlay */}
-      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose} />
+      {/* Animated Overlay */}
+      <Animated.View style={[styles.overlay, overlayAnimatedStyle]}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
+      </Animated.View>
 
-      {/* Menu Panel */}
-      <View style={[styles.menu, { backgroundColor: colors.surface }]}>
+      {/* Animated Menu Panel */}
+      <Animated.View style={[styles.menu, { backgroundColor: colors.surface }, menuAnimatedStyle]}>
         {/* Header with Close Button */}
         <View style={[styles.menuHeader, { borderBottomColor: colors.gridLine }]}>
           <Text style={[styles.menuTitle, { color: colors.text }]}>{t.settings}</Text>
@@ -97,7 +132,7 @@ export function SettingsMenu({
             <Text style={[styles.menuLinkText, { color: colors.primary }]}>{t.about}</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </Animated.View>
     </>
   );
 }
@@ -109,7 +144,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 1)',
     zIndex: 999,
   },
   menu: {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useColorScheme } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -23,6 +23,12 @@ import { checkPriceAlert } from './utils/priceAlertUtils';
 import { usePriceAlertNotification } from './hooks/usePriceAlertNotification';
 import { ChartSkeleton } from './components/ui/ChartSkeleton';
 import { Badge } from './components/ui/Badge';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
 
 const APP_VERSION = '1.4.3';
 
@@ -33,6 +39,28 @@ function AppContent() {
   const [aboutVisible, setAboutVisible] = useState(false);
   const [calculatorVisible, setCalculatorVisible] = useState(false);
   const [priceClockView, setPriceClockView] = useState(false);
+  const clockViewOpacity = useSharedValue(1);
+  const isAnimatingClockView = useRef(false);
+
+  const handlePriceClockViewChange = useCallback(
+    (newValue: boolean) => {
+      if (isAnimatingClockView.current || newValue === priceClockView) return;
+      isAnimatingClockView.current = true;
+      clockViewOpacity.value = withTiming(0, { duration: 120 }, () => {
+        runOnJS(setPriceClockView)(newValue);
+        clockViewOpacity.value = withTiming(1, { duration: 200 }, () => {
+          runOnJS(() => {
+            isAnimatingClockView.current = false;
+          })();
+        });
+      });
+    },
+    [priceClockView, clockViewOpacity]
+  );
+
+  const clockViewAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: clockViewOpacity.value,
+  }));
 
   // Settings and Language from Context
   const { theme, debouncedPostalCode, gridFees, priceAlertLow, priceAlertHigh, priceDisplayMode } =
@@ -356,7 +384,7 @@ function AppContent() {
               viewToggle={
                 <View style={{ flexDirection: 'row', gap: 6 }}>
                   <TouchableOpacity
-                    onPress={() => setPriceClockView(false)}
+                    onPress={() => handlePriceClockViewChange(false)}
                     style={{
                       paddingHorizontal: 10,
                       paddingVertical: 4,
@@ -377,7 +405,7 @@ function AppContent() {
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    onPress={() => setPriceClockView(true)}
+                    onPress={() => handlePriceClockViewChange(true)}
                     style={{
                       paddingHorizontal: 10,
                       paddingVertical: 4,
@@ -512,44 +540,46 @@ function AppContent() {
                 )
               }
             >
-              {priceClockView ? (
-                <ClockChart
-                  data={filteredEnergyData}
-                  backgroundColor={colors.surface}
-                  textColor={colors.text}
-                  colors={colors}
-                  gridFees={gridFees}
-                  labels={{
-                    now: t.now,
-                    average: t.average,
-                    pricePerKwh: t.pricePerKwh,
-                    noData: t.noData,
-                  }}
-                />
-              ) : (
-                <PriceBarChart
-                  title={t.priceTitle}
-                  subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
-                  data={filteredEnergyData}
-                  backgroundColor={colors.surface}
-                  textColor={colors.text}
-                  gridColor={colors.gridLine}
-                  colors={colors}
-                  labels={{
-                    yAxis: t.pricePerKwh,
-                    now: t.now,
-                    average: t.average,
-                    marketPrice: t.marketPrice,
-                    gridFeesAndTaxes: t.gridFeesAndTaxes,
-                    interpolated: t.interpolated,
-                    tooltipMarketPrice: t.tooltipMarketPrice,
-                    tooltipGridFees: t.tooltipGridFees,
-                    tooltipEndCustomer: t.tooltipEndCustomer,
-                  }}
-                  gridFees={gridFees}
-                  showLegend={false}
-                />
-              )}
+              <Animated.View style={clockViewAnimatedStyle}>
+                {priceClockView ? (
+                  <ClockChart
+                    data={filteredEnergyData}
+                    backgroundColor={colors.surface}
+                    textColor={colors.text}
+                    colors={colors}
+                    gridFees={gridFees}
+                    labels={{
+                      now: t.now,
+                      average: t.average,
+                      pricePerKwh: t.pricePerKwh,
+                      noData: t.noData,
+                    }}
+                  />
+                ) : (
+                  <PriceBarChart
+                    title={t.priceTitle}
+                    subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+                    data={filteredEnergyData}
+                    backgroundColor={colors.surface}
+                    textColor={colors.text}
+                    gridColor={colors.gridLine}
+                    colors={colors}
+                    labels={{
+                      yAxis: t.pricePerKwh,
+                      now: t.now,
+                      average: t.average,
+                      marketPrice: t.marketPrice,
+                      gridFeesAndTaxes: t.gridFeesAndTaxes,
+                      interpolated: t.interpolated,
+                      tooltipMarketPrice: t.tooltipMarketPrice,
+                      tooltipGridFees: t.tooltipGridFees,
+                      tooltipEndCustomer: t.tooltipEndCustomer,
+                    }}
+                    gridFees={gridFees}
+                    showLegend={false}
+                  />
+                )}
+              </Animated.View>
             </ChartDetailView>
 
             <CorrelationScatterChart
