@@ -45,8 +45,10 @@ export function SettingsMenu({
       overlayOpacity.value = withTiming(0.5, { duration: 200 });
     } else if (isMounted) {
       translateY.value = withTiming(300, { duration: 250 });
-      overlayOpacity.value = withTiming(0, { duration: 250 }, () => {
-        runOnJS(setIsMounted)(false);
+      overlayOpacity.value = withTiming(0, { duration: 250 }, finished => {
+        if (finished) {
+          runOnJS(setIsMounted)(false);
+        }
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -65,7 +67,10 @@ export function SettingsMenu({
   return (
     <>
       {/* Animated Overlay */}
-      <Animated.View style={[styles.overlay, overlayAnimatedStyle]}>
+      <Animated.View
+        style={[styles.overlay, overlayAnimatedStyle]}
+        pointerEvents={visible ? 'auto' : 'none'}
+      >
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
       </Animated.View>
 
