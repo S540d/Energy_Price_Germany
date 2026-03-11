@@ -1,14 +1,14 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View, useColorScheme } from 'react-native';
-import type { StyleProp, ViewStyle } from 'react-native';
+import type { LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
-  withSequence,
   withTiming,
 } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { borderRadius, spacing } from '../../utils/designSystem';
 import { getThemeColors } from '../../utils/theme';
 import { useSettingsContext } from '../../context/SettingsContext';
@@ -23,35 +23,53 @@ function SkeletonBase({ width = '100%', height, style }: SkeletonProps) {
   const { theme } = useSettingsContext();
   const systemTheme = useColorScheme();
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
+  const isDark = theme === 'dark' || (theme === 'system' && systemTheme === 'dark');
 
-  const opacity = useSharedValue(0.4);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const shimmerX = useSharedValue(-1);
 
   useEffect(() => {
-    opacity.value = withRepeat(
-      withSequence(withTiming(0.9, { duration: 700 }), withTiming(0.4, { duration: 700 })),
-      -1,
-      false
-    );
-    return () => cancelAnimation(opacity);
-  }, [opacity]);
+    shimmerX.value = withRepeat(withTiming(1, { duration: 1200 }), -1, false);
+    return () => cancelAnimation(shimmerX);
+  }, [shimmerX]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
+  const shimmerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shimmerX.value * containerWidth }],
   }));
 
+  const shimmerColors: [string, string, string] = isDark
+    ? ['transparent', 'rgba(255,255,255,0.10)', 'transparent']
+    : ['transparent', 'rgba(255,255,255,0.45)', 'transparent'];
+
+  const handleLayout = (e: LayoutChangeEvent) => {
+    setContainerWidth(e.nativeEvent.layout.width);
+  };
+
   return (
-    <Animated.View
+    <View
+      onLayout={handleLayout}
       style={[
         {
           width,
           height,
           backgroundColor: colors.border,
           borderRadius: borderRadius.md,
+          overflow: 'hidden',
         },
-        animatedStyle,
         style,
       ]}
-    />
+    >
+      {containerWidth > 0 && (
+        <Animated.View style={[StyleSheet.absoluteFill, shimmerStyle]}>
+          <LinearGradient
+            colors={shimmerColors}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={{ width: containerWidth, height: '100%' }}
+          />
+        </Animated.View>
+      )}
+    </View>
   );
 }
 
