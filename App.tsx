@@ -173,6 +173,13 @@ function AppContent() {
           contentContainerStyle={styles.skeletonScroll}
           scrollEnabled={false}
         >
+          <Text
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+            style={styles.skeletonA11yText}
+          >
+            {t.loadingData}
+          </Text>
           <ChartSkeleton />
         </ScrollView>
       </SafeAreaView>
@@ -606,6 +613,14 @@ const styles = StyleSheet.create({
   },
   skeletonScroll: {
     flexGrow: 1,
+  },
+  skeletonA11yText: {
+    // Visually hidden but announced by screen readers
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    overflow: 'hidden',
+    opacity: 0,
   },
   settingsOverlay: {
     position: 'absolute',

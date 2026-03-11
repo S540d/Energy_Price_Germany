@@ -35,6 +35,7 @@ export function Badge({
   return (
     <Animated.View
       style={[styles.badge, { backgroundColor }, animatedStyle]}
+      accessible={true}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="text"
     >

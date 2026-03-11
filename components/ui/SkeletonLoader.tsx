@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { StyleSheet, View, useColorScheme } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -15,7 +16,7 @@ import { useSettingsContext } from '../../context/SettingsContext';
 interface SkeletonProps {
   width?: number | `${number}%`;
   height: number;
-  style?: object;
+  style?: StyleProp<ViewStyle>;
 }
 
 function SkeletonBase({ width = '100%', height, style }: SkeletonProps) {
@@ -59,7 +60,7 @@ export function SkeletonText({
   style,
 }: {
   width?: number | `${number}%`;
-  style?: object;
+  style?: StyleProp<ViewStyle>;
 }) {
   return <SkeletonBase width={width} height={14} style={style} />;
 }
@@ -68,7 +69,13 @@ export function SkeletonBar({ width = '100%', height = 24, style }: SkeletonProp
   return <SkeletonBase width={width} height={height} style={style} />;
 }
 
-export function SkeletonCard({ height = 200, style }: { height?: number; style?: object }) {
+export function SkeletonCard({
+  height = 200,
+  style,
+}: {
+  height?: number;
+  style?: StyleProp<ViewStyle>;
+}) {
   const { theme } = useSettingsContext();
   const systemTheme = useColorScheme();
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
