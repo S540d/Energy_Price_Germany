@@ -32,15 +32,18 @@ export function AppearanceSection() {
   const pillWidth = useSharedValue(0);
   const pillHeight = useSharedValue(0);
 
-  const pillStyle = useAnimatedStyle(() => ({
-    position: 'absolute',
-    left: pillX.value,
-    width: pillWidth.value,
-    height: pillHeight.value,
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    zIndex: 0,
-  }));
+  const pillStyle = useAnimatedStyle(
+    () => ({
+      position: 'absolute',
+      left: pillX.value,
+      width: pillWidth.value,
+      height: pillHeight.value,
+      backgroundColor: colors.primary,
+      borderRadius: borderRadius.md,
+      zIndex: 0,
+    }),
+    [colors.primary]
+  );
 
   const handleLayout = (themeOption: Theme) => (e: LayoutChangeEvent) => {
     const { x, width, height } = e.nativeEvent.layout;
