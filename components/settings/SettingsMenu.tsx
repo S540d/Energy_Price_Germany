@@ -69,7 +69,7 @@ export function SettingsMenu({
       {/* Animated Overlay */}
       <Animated.View
         style={[styles.overlay, overlayAnimatedStyle]}
-        pointerEvents={visible ? 'auto' : 'none'}
+        pointerEvents={isMounted ? 'auto' : 'none'}
       >
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
       </Animated.View>
