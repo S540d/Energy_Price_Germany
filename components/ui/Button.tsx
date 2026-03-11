@@ -1,6 +1,7 @@
 import React from 'react';
 import type { StyleProp, ViewStyle, TextStyle } from 'react-native';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Pressable, Text, StyleSheet } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import type { ThemeColors } from '../../utils/theme';
 
 export type ButtonVariant = 'filled' | 'outlined' | 'ghost';
@@ -43,7 +44,12 @@ export function Button({
   textStyle,
   fullWidth = false,
 }: ButtonProps) {
-  // Build styles as array to avoid spreading StyleSheet IDs (which are numbers on native)
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   const buttonStyle: StyleProp<ViewStyle> = [
     styles.base,
     styles[`size_${size}` as keyof typeof styles],
@@ -65,18 +71,29 @@ export function Button({
   const textColor = variant === 'filled' ? '#FFFFFF' : disabled ? colors.disabled : colors.primary;
 
   return (
-    <TouchableOpacity onPress={onPress} disabled={disabled} style={buttonStyle} activeOpacity={0.7}>
-      <Text
-        style={[
-          styles.text,
-          styles[`text_${size}` as keyof typeof styles],
-          { color: textColor },
-          textStyle,
-        ]}
-      >
-        {children}
-      </Text>
-    </TouchableOpacity>
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      onPressIn={() => {
+        scale.value = withSpring(0.97, { damping: 15, stiffness: 400 });
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, { damping: 15, stiffness: 400 });
+      }}
+    >
+      <Animated.View style={[buttonStyle, animatedStyle]}>
+        <Text
+          style={[
+            styles.text,
+            styles[`text_${size}` as keyof typeof styles],
+            { color: textColor },
+            textStyle,
+          ]}
+        >
+          {children}
+        </Text>
+      </Animated.View>
+    </Pressable>
   );
 }
 
