@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, Pressable } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useLanguageContext } from '../../context/LanguageContext';
 import type { Theme } from '../../utils/theme';
 import { getThemeColors } from '../../utils/theme';
@@ -22,28 +23,73 @@ export function AppearanceSection() {
       <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.appearance}</Text>
       <View style={styles.themeToggle}>
         {themes.map(themeOption => (
-          <TouchableOpacity
+          <ThemeButton
             key={themeOption}
-            style={[
-              styles.themeButton,
-              theme === themeOption && styles.themeButtonActive,
-              { backgroundColor: theme === themeOption ? colors.primary : colors.gridLine },
-            ]}
+            label={t[themeOption]}
+            isActive={theme === themeOption}
+            activeColor={colors.primary}
+            inactiveColor={colors.gridLine}
+            activeTextColor="#fff"
+            inactiveTextColor={colors.text}
             onPress={() => setTheme(themeOption)}
-          >
-            <Text
-              style={{
-                color: theme === themeOption ? '#fff' : colors.text,
-                fontSize: 12,
-                fontWeight: '600',
-              }}
-            >
-              {t[themeOption]}
-            </Text>
-          </TouchableOpacity>
+          />
         ))}
       </View>
     </View>
+  );
+}
+
+interface ThemeButtonProps {
+  label: string;
+  isActive: boolean;
+  activeColor: string;
+  inactiveColor: string;
+  activeTextColor: string;
+  inactiveTextColor: string;
+  onPress: () => void;
+}
+
+function ThemeButton({
+  label,
+  isActive,
+  activeColor,
+  inactiveColor,
+  activeTextColor,
+  inactiveTextColor,
+  onPress,
+}: ThemeButtonProps) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Pressable
+      style={styles.pressable}
+      onPressIn={() => {
+        scale.value = withSpring(0.95, { damping: 15, stiffness: 400 });
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, { damping: 15, stiffness: 400 });
+      }}
+      onPress={onPress}
+    >
+      <Animated.View
+        style={[
+          styles.themeButton,
+          isActive && styles.themeButtonActive,
+          { backgroundColor: isActive ? activeColor : inactiveColor },
+          animatedStyle,
+        ]}
+      >
+        <Text
+          style={[styles.buttonText, { color: isActive ? activeTextColor : inactiveTextColor }]}
+        >
+          {label}
+        </Text>
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -61,8 +107,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
-  themeButton: {
+  pressable: {
     flex: 1,
+  },
+  themeButton: {
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -75,5 +123,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+  },
+  buttonText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
