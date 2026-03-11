@@ -49,7 +49,7 @@ function validateEnvironment(config: EnvironmentConfig): void {
   // Production uses 'api.example.com', while staging/testing use 'staging-api.example.com'
   if ((config.isTesting || config.isStaging) && !config.apiBase.includes('staging')) {
     throw new Error(
-      `🚨 Security Error: ${config.env} environment is configured with production API! ` +
+      `Security Error: ${config.env} environment is configured with production API! ` +
         `This is a critical misconfiguration. Please check .env.${config.env}`
     );
   }
@@ -57,7 +57,7 @@ function validateEnvironment(config: EnvironmentConfig): void {
   // Prevent production from using staging/testing API
   if (config.isProd && config.apiBase.includes('staging')) {
     throw new Error(
-      `🚨 Security Error: production environment is configured with staging/test API! ` +
+      `Security Error: production environment is configured with staging/test API! ` +
         `This is a critical misconfiguration. Please check .env.production`
     );
   }
@@ -65,17 +65,17 @@ function validateEnvironment(config: EnvironmentConfig): void {
   // Prevent production from using test baseUrl
   if (config.isProd && (config.baseUrl.includes('testing') || config.baseUrl.includes('staging'))) {
     throw new Error(
-      `🚨 Security Error: production environment is configured with test baseUrl! ` +
+      `Security Error: production environment is configured with test baseUrl! ` +
         `This is a critical misconfiguration. Please check .env.production`
     );
   }
 
   // Warn if baseUrl doesn't match expected pattern
   if (config.isTesting && !config.baseUrl.includes('testing')) {
-    console.warn(`⚠️  Warning: testing environment baseUrl doesn't contain 'testing'`);
+    console.warn(`Warning: testing environment baseUrl doesn't contain 'testing'`);
   }
   if (config.isStaging && !config.baseUrl.includes('staging')) {
-    console.warn(`⚠️  Warning: staging environment baseUrl doesn't contain 'staging'`);
+    console.warn(`Warning: staging environment baseUrl doesn't contain 'staging'`);
   }
 }
 

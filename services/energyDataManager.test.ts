@@ -261,7 +261,7 @@ describe('EnergyDataManager', () => {
         json: async () => {
           throw new Error('Invalid JSON');
         },
-      } as Response);
+      } as unknown as Response);
 
       const data = await manager.loadEnergyData();
 

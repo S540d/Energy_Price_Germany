@@ -10,7 +10,7 @@ export interface Appliance {
   nameEN: string;
   kwh: number;
   durationHours: number;
-  icon: string;
+  shortLabel: string;
 }
 
 // Typische Haushaltsgeräte mit realistischen Verbrauchswerten
@@ -21,7 +21,7 @@ export const APPLIANCES: Appliance[] = [
     nameEN: 'Washing Machine',
     kwh: 1.5,
     durationHours: 2,
-    icon: '🧺',
+    shortLabel: 'WM',
   },
   {
     id: 'dishwasher',
@@ -29,7 +29,7 @@ export const APPLIANCES: Appliance[] = [
     nameEN: 'Dishwasher',
     kwh: 1.2,
     durationHours: 3,
-    icon: '🍽️',
+    shortLabel: 'DW',
   },
   {
     id: 'dryer',
@@ -37,7 +37,7 @@ export const APPLIANCES: Appliance[] = [
     nameEN: 'Tumble Dryer',
     kwh: 3.5,
     durationHours: 2,
-    icon: '👕',
+    shortLabel: 'DR',
   },
   {
     id: 'ev_small',
@@ -45,7 +45,7 @@ export const APPLIANCES: Appliance[] = [
     nameEN: 'EV (10kWh)',
     kwh: 10.0,
     durationHours: 2,
-    icon: '🚗',
+    shortLabel: 'EV',
   },
   {
     id: 'ev_full',
@@ -53,7 +53,7 @@ export const APPLIANCES: Appliance[] = [
     nameEN: 'EV charging (44kWh)',
     kwh: 44.0,
     durationHours: 4,
-    icon: '🔋',
+    shortLabel: 'EV+',
   },
   {
     id: 'heat_pump',
@@ -61,7 +61,7 @@ export const APPLIANCES: Appliance[] = [
     nameEN: 'Heat Pump (1h)',
     kwh: 3.0,
     durationHours: 1,
-    icon: '🌡️',
+    shortLabel: 'HP',
   },
 ];
 
