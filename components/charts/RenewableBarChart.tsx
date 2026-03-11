@@ -264,7 +264,7 @@ function RenewableBarChartComponent({
               accessibilityRole="text"
               accessibilityLabel={interactionHint}
             >
-              Hint: {interactionHint}
+              {interactionHint}
             </Text>
           )}
         </View>
@@ -642,7 +642,7 @@ function RenewableBarChartComponent({
             marginTop: 8,
           }}
         >
-          Hint: {interactionHint}
+          {interactionHint}
         </Text>
       )}
     </ChartCard>

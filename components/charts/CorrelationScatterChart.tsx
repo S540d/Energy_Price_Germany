@@ -253,7 +253,7 @@ function CorrelationScatterChartComponent({
               accessibilityRole="text"
               accessibilityLabel={interactionHint}
             >
-              Hint: {interactionHint}
+              {interactionHint}
             </Text>
           )}
         </View>
@@ -452,7 +452,7 @@ function CorrelationScatterChartComponent({
             marginTop: 8,
           }}
         >
-          Hint: {interactionHint}
+          {interactionHint}
         </Text>
       )}
     </ChartCard>
