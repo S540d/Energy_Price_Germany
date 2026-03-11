@@ -3,6 +3,38 @@
   "source": "energy-charts",
   "data": [
     {
+      "start_timestamp": 1772565300000,
+      "end_timestamp": 1772566200000,
+      "marketprice": 138.31,
+      "renewable_share": 21.4,
+      "unit": "Eur/MWh",
+      "interpolated": false
+    },
+    {
+      "start_timestamp": 1772566200000,
+      "end_timestamp": 1772567100000,
+      "marketprice": 122.71,
+      "renewable_share": 21.8,
+      "unit": "Eur/MWh",
+      "interpolated": false
+    },
+    {
+      "start_timestamp": 1772567100000,
+      "end_timestamp": 1772568000000,
+      "marketprice": 113.59,
+      "renewable_share": 22.1,
+      "unit": "Eur/MWh",
+      "interpolated": false
+    },
+    {
+      "start_timestamp": 1772568000000,
+      "end_timestamp": 1772568900000,
+      "marketprice": 125.49,
+      "renewable_share": 21.7,
+      "unit": "Eur/MWh",
+      "interpolated": false
+    },
+    {
       "start_timestamp": 1772568900000,
       "end_timestamp": 1772569800000,
       "marketprice": 119.73,
@@ -6102,38 +6134,6 @@
       "start_timestamp": 1773254700000,
       "end_timestamp": 1773255600000,
       "marketprice": 156.72,
-      "renewable_share": null,
-      "unit": "Eur/MWh",
-      "interpolated": true
-    },
-    {
-      "start_timestamp": 1773255600000,
-      "end_timestamp": 1773256500000,
-      "marketprice": 132.19,
-      "renewable_share": null,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1773256500000,
-      "end_timestamp": 1773257400000,
-      "marketprice": 132.19,
-      "renewable_share": null,
-      "unit": "Eur/MWh",
-      "interpolated": true
-    },
-    {
-      "start_timestamp": 1773257400000,
-      "end_timestamp": 1773258300000,
-      "marketprice": 132.19,
-      "renewable_share": null,
-      "unit": "Eur/MWh",
-      "interpolated": true
-    },
-    {
-      "start_timestamp": 1773258300000,
-      "end_timestamp": 1773259200000,
-      "marketprice": 132.19,
       "renewable_share": null,
       "unit": "Eur/MWh",
       "interpolated": true

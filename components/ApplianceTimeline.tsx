@@ -4,6 +4,7 @@ import { useLanguageContext } from '../context/LanguageContext';
 import { getThemeColors } from '../utils/theme';
 import { useSettingsContext } from '../context/SettingsContext';
 import type { Appliance } from './CostCalculator';
+import { Chip } from './ui/Chip';
 
 interface PricePoint {
   start_timestamp: number;
@@ -267,7 +268,11 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
               <View key={appliance.id} style={styles.applianceRow}>
                 {/* Label */}
                 <View style={[styles.rowLabel, { width: ROW_LABEL_WIDTH }]}>
-                  <Text style={styles.rowIcon}>{appliance.icon}</Text>
+                  <Chip
+                    label={appliance.shortLabel}
+                    backgroundColor={colors.background}
+                    textColor={colors.textSecondary}
+                  />
                   <Text style={[styles.rowName, { color: colors.text }]} numberOfLines={2}>
                     {name}
                   </Text>
@@ -408,9 +413,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingRight: 8,
     gap: 4,
-  },
-  rowIcon: {
-    fontSize: 15,
   },
   rowName: {
     fontSize: 11,

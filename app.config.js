@@ -26,7 +26,6 @@ module.exports = {
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
-    newArchEnabled: true,
     primaryColor: '#4CAF50',
     description: 'Real-time visualization of electricity prices and renewable energy share in Germany. Track market prices, renewable energy percentages, and their correlation over time.',
     splash: {

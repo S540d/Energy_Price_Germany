@@ -37,7 +37,27 @@ The app uses a **hybrid data strategy** for maximum forecast coverage:
 
 **Result**: Up to 43+ hours of forecast data with high-quality renewable share information for the first 24 hours.
 
-📖 See [DATA-MERGE-STRATEGY.md](docs/DATA-MERGE-STRATEGY.md) for detailed information about the data merging logic.
+See [DATA-MERGE-STRATEGY.md](docs/DATA-MERGE-STRATEGY.md) for detailed information about the data merging logic.
+
+## UI Modernization Proposal
+
+To evolve the current look into a cleaner and more modern product, use this incremental plan:
+
+1. **Design Refresh (no framework risk)**
+   - Reduce decorative elements, use stronger typography hierarchy, and standardize spacing/radius tokens.
+   - Replace emoji-based affordances with textual labels or neutral iconography.
+   - Keep current feature set unchanged while improving visual clarity.
+
+2. **Rendering Upgrade (Skia-first charts)**
+   - Migrate chart rendering from SVG-heavy paths to `@shopify/react-native-skia` for smoother animation and better visual polish on mobile.
+   - Introduce Skia chart primitives behind feature flags and run both renderers in parallel during rollout.
+
+3. **Platform Upgrade (latest Expo SDK)**
+   - Upgrade Expo SDK and React Native in one controlled step, then validate Android, iOS, and web parity.
+   - Re-run performance baselines (initial render, chart interaction, memory) before and after migration.
+   - After stable rollout, remove legacy chart paths and consolidate theming tokens.
+
+This sequence keeps risk low: first improve UI immediately, then modernize rendering and platform stack with measurable checkpoints.
 
 ## Regional Data Feature
 
