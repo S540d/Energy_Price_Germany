@@ -1,10 +1,18 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, useColorScheme, Pressable } from 'react-native';
+import type { LayoutChangeEvent } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useLanguageContext } from '../../context/LanguageContext';
 import type { Theme } from '../../utils/theme';
 import { getThemeColors } from '../../utils/theme';
 import { useSettingsContext } from '../../context/SettingsContext';
+import { borderRadius } from '../../utils/designSystem';
+
+interface ButtonLayout {
+  x: number;
+  width: number;
+  height: number;
+}
 
 /**
  * Theme/Appearance selection section for Settings menu
@@ -17,21 +25,69 @@ export function AppearanceSection() {
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
 
   const themes: Theme[] = ['light', 'dark', 'system'];
+  const layouts = useRef<Partial<Record<Theme, ButtonLayout>>>({});
+  const [layoutsReady, setLayoutsReady] = useState(false);
+
+  const pillX = useSharedValue(0);
+  const pillWidth = useSharedValue(0);
+  const pillHeight = useSharedValue(0);
+
+  const pillStyle = useAnimatedStyle(
+    () => ({
+      position: 'absolute',
+      left: pillX.value,
+      width: pillWidth.value,
+      height: pillHeight.value,
+      backgroundColor: colors.primary,
+      borderRadius: borderRadius.md,
+      zIndex: 0,
+    }),
+    [colors.primary]
+  );
+
+  const handleLayout = (themeOption: Theme) => (e: LayoutChangeEvent) => {
+    const { x, width, height } = e.nativeEvent.layout;
+    layouts.current[themeOption] = { x, width, height };
+    if (themes.every(t => layouts.current[t])) {
+      const active = layouts.current[theme];
+      if (active) {
+        pillX.value = active.x;
+        pillWidth.value = active.width;
+        pillHeight.value = active.height;
+        setLayoutsReady(true);
+      }
+    }
+  };
+
+  const handleThemePress = (themeOption: Theme) => {
+    setTheme(themeOption);
+    const target = layouts.current[themeOption];
+    if (target) {
+      pillX.value = withSpring(target.x, { damping: 20, stiffness: 300 });
+      pillWidth.value = withSpring(target.width, { damping: 20, stiffness: 300 });
+      pillHeight.value = withSpring(target.height, { damping: 20, stiffness: 300 });
+    }
+  };
 
   return (
     <View style={styles.menuSection}>
       <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.appearance}</Text>
-      <View style={styles.themeToggle}>
+      <View
+        style={[
+          styles.themeToggle,
+          { backgroundColor: colors.gridLine, borderRadius: borderRadius.md },
+        ]}
+      >
+        {layoutsReady && <Animated.View style={pillStyle} />}
         {themes.map(themeOption => (
           <ThemeButton
             key={themeOption}
             label={t[themeOption]}
             isActive={theme === themeOption}
-            activeColor={colors.primary}
-            inactiveColor={colors.gridLine}
             activeTextColor="#fff"
             inactiveTextColor={colors.text}
-            onPress={() => setTheme(themeOption)}
+            onPress={() => handleThemePress(themeOption)}
+            onLayout={handleLayout(themeOption)}
           />
         ))}
       </View>
@@ -42,31 +98,31 @@ export function AppearanceSection() {
 interface ThemeButtonProps {
   label: string;
   isActive: boolean;
-  activeColor: string;
-  inactiveColor: string;
   activeTextColor: string;
   inactiveTextColor: string;
   onPress: () => void;
+  onLayout: (e: LayoutChangeEvent) => void;
 }
 
 function ThemeButton({
   label,
   isActive,
-  activeColor,
-  inactiveColor,
   activeTextColor,
   inactiveTextColor,
   onPress,
+  onLayout,
 }: ThemeButtonProps) {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
+    zIndex: 1,
   }));
 
   return (
     <Pressable
       style={styles.pressable}
+      onLayout={onLayout}
       onPressIn={() => {
         scale.value = withSpring(0.95, { damping: 15, stiffness: 400 });
       }}
@@ -75,14 +131,7 @@ function ThemeButton({
       }}
       onPress={onPress}
     >
-      <Animated.View
-        style={[
-          styles.themeButton,
-          isActive && styles.themeButtonActive,
-          { backgroundColor: isActive ? activeColor : inactiveColor },
-          animatedStyle,
-        ]}
-      >
+      <Animated.View style={[styles.themeButton, animatedStyle]}>
         <Text
           style={[styles.buttonText, { color: isActive ? activeTextColor : inactiveTextColor }]}
         >
@@ -105,7 +154,8 @@ const styles = StyleSheet.create({
   },
   themeToggle: {
     flexDirection: 'row',
-    gap: 8,
+    position: 'relative',
+    overflow: 'hidden',
   },
   pressable: {
     flex: 1,
@@ -116,13 +166,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  themeButtonActive: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   buttonText: {
     fontSize: 12,
