@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-03-11
+
+### Added
+- **Animierter Skeleton-Ladebildschirm** – Ersetzt den einfachen Ladeindikator durch einen animierten Shimmer-Effekt (via `expo-linear-gradient`), der die Chart-Struktur vorab andeutet
+- **Animierter Theme-Schieberegler** – In den Einstellungen gleitet ein Pill-Indikator beim Wechsel zwischen Hell/Dunkel/System-Theme
+
+### Changed
+- **Expo SDK 55** – Upgrade von SDK 54 auf SDK 55; `expo-av` durch `expo-audio` ersetzt
+- **Flüssigere Animationen** – Alle UI-Animationen auf `react-native-reanimated` 3.17 umgestellt (vorher: React Native `Animated` API)
+- **Einstellungen-Panel** – Öffnet und schließt sich jetzt mit einer Slide-up/down-Animation statt abrupt zu erscheinen
+- **Chart-Ansichts-Toggle** – Wechsel zwischen Balken- und Uhransicht erfolgt mit sanftem Übergang
+- **Emojis entfernt** – Emoji-Prefixe aus Hinweistexten und Übersetzungen entfernt für konsistenteres Erscheinungsbild
+- `newArchEnabled`-Flag aus App-Konfiguration entfernt (in SDK 55 nicht mehr benötigt)
+
+### Fixed
+- Hardcoded englischer "Hint:"-Prefix vor Hinweistexten in Charts entfernt – Text war bei deutscher Spracheinstellung nicht lokalisiert (#238)
+
+---
+
 ## [1.4.3] - 2026-03-04
 
 ### Fixed
