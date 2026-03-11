@@ -52,10 +52,9 @@ To evolve the current look into a cleaner and more modern product, use this incr
    - Migrate chart rendering from SVG-heavy paths to `@shopify/react-native-skia` for smoother animation and better visual polish on mobile.
    - Introduce Skia chart primitives behind feature flags and run both renderers in parallel during rollout.
 
-3. **Platform Upgrade (latest Expo SDK)**
-   - Upgrade Expo SDK and React Native in one controlled step, then validate Android, iOS, and web parity.
-   - Re-run performance baselines (initial render, chart interaction, memory) before and after migration.
-   - After stable rollout, remove legacy chart paths and consolidate theming tokens.
+3. **Platform Status (Expo SDK 55 / RN 0.83 — completed)**
+   - The project is already on Expo SDK 55 and React Native 0.83 in this release.
+   - Continue to validate Android, iOS, and web parity and monitor for any upgrade-related regressions.
 
 This sequence keeps risk low: first improve UI immediately, then modernize rendering and platform stack with measurable checkpoints.
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, useColorScheme, Pressable } from 'react-native';
 import type { LayoutChangeEvent } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
@@ -58,6 +58,16 @@ export function AppearanceSection() {
       }
     }
   };
+
+  useEffect(() => {
+    if (!layoutsReady) return;
+    const active = layouts.current[theme];
+    if (active) {
+      pillX.value = withSpring(active.x, { damping: 20, stiffness: 300 });
+      pillWidth.value = withSpring(active.width, { damping: 20, stiffness: 300 });
+      pillHeight.value = withSpring(active.height, { damping: 20, stiffness: 300 });
+    }
+  }, [theme, layoutsReady, pillX, pillWidth, pillHeight]);
 
   const handleThemePress = (themeOption: Theme) => {
     setTheme(themeOption);
