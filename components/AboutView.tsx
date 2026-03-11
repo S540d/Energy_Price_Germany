@@ -167,11 +167,12 @@ export function AboutView({
                   Linking.openURL(url);
                 }
               }}
-              style={styles.supportButton}
+              style={[
+                styles.supportButton,
+                { backgroundColor: colors.surface, borderColor: colors.gridLine },
+              ]}
             >
-              <Text style={[styles.linkText, { color: colors.primary }]}>
-                ☕ {t.supportProject}
-              </Text>
+              <Text style={[styles.linkText, { color: colors.primary }]}>{t.supportProject}</Text>
             </TouchableOpacity>
 
             {Platform.OS === 'android' && (
@@ -181,9 +182,12 @@ export function AboutView({
                     'https://play.google.com/store/apps/details?id=de.svenstroh.energypricegermany';
                   Linking.openURL(url);
                 }}
-                style={styles.supportButton}
+                style={[
+                  styles.supportButton,
+                  { backgroundColor: colors.surface, borderColor: colors.gridLine },
+                ]}
               >
-                <Text style={[styles.linkText, { color: colors.primary }]}>⭐ {t.rateApp}</Text>
+                <Text style={[styles.linkText, { color: colors.primary }]}>{t.rateApp}</Text>
               </TouchableOpacity>
             )}
 
@@ -197,9 +201,12 @@ export function AboutView({
                   Linking.openURL(url);
                 }
               }}
-              style={styles.supportButton}
+              style={[
+                styles.supportButton,
+                { backgroundColor: colors.surface, borderColor: colors.gridLine },
+              ]}
             >
-              <Text style={[styles.linkText, { color: colors.primary }]}>🐛 {t.reportBug}</Text>
+              <Text style={[styles.linkText, { color: colors.primary }]}>{t.reportBug}</Text>
             </TouchableOpacity>
           </View>
 
@@ -261,7 +268,8 @@ const styles = StyleSheet.create({
   supportButton: {
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     marginBottom: 8,
+    borderWidth: 1,
   },
 });
