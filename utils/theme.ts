@@ -51,7 +51,10 @@ export interface ThemeColors {
  * - Konsistente Farbpalette auf allen Geräten
  * - Semantische Farben für Zustände
  */
-export function getThemeColors(theme: Theme, systemTheme: 'light' | 'dark'): ThemeColors {
+export function getThemeColors(
+  theme: Theme,
+  systemTheme: 'light' | 'dark' | 'unspecified' | null
+): ThemeColors {
   const isDark = theme === 'dark' || (theme === 'system' && systemTheme === 'dark');
 
   return isDark

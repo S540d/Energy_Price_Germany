@@ -74,7 +74,7 @@ export function validateMarketDataResponse(data: unknown): MarketDataResponse {
     }
   }
 
-  return obj as MarketDataResponse;
+  return obj as unknown as MarketDataResponse;
 }
 
 /**
@@ -118,7 +118,7 @@ export function validateRegionalDataResponse(data: unknown): RegionalDataRespons
     throw new Error('unix_seconds and share arrays have different lengths');
   }
 
-  return obj as RegionalDataResponse;
+  return obj as unknown as RegionalDataResponse;
 }
 
 /**
