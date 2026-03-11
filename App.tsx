@@ -1,13 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  useColorScheme,
-  ActivityIndicator,
-} from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useColorScheme } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as Updates from 'expo-updates';
@@ -29,6 +21,7 @@ import { useLanguageContext } from './context/LanguageContext';
 import { useSettingsContext } from './context/SettingsContext';
 import { checkPriceAlert } from './utils/priceAlertUtils';
 import { usePriceAlertNotification } from './hooks/usePriceAlertNotification';
+import { ChartSkeleton } from './components/ui/ChartSkeleton';
 
 const APP_VERSION = '1.4.3';
 
@@ -174,10 +167,13 @@ function AppContent() {
         edges={['top', 'left', 'right']}
       >
         <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
-        <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.text }]}>{t.loadingData}</Text>
-        </View>
+        <ScrollView
+          style={{ backgroundColor: colors.background }}
+          contentContainerStyle={styles.skeletonScroll}
+          scrollEnabled={false}
+        >
+          <ChartSkeleton />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -614,14 +610,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
+  skeletonScroll: {
+    flexGrow: 1,
   },
   settingsOverlay: {
     position: 'absolute',
