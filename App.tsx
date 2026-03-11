@@ -22,6 +22,7 @@ import { useSettingsContext } from './context/SettingsContext';
 import { checkPriceAlert } from './utils/priceAlertUtils';
 import { usePriceAlertNotification } from './hooks/usePriceAlertNotification';
 import { ChartSkeleton } from './components/ui/ChartSkeleton';
+import { Badge } from './components/ui/Badge';
 
 const APP_VERSION = '1.4.3';
 
@@ -195,20 +196,13 @@ function AppContent() {
         <Text style={[styles.headerTitle, { color: colors.text }]}>Energy Price Germany</Text>
         <View style={styles.headerButtons}>
           {alertState !== 'none' && (
-            <View
-              style={[
-                styles.alertBadge,
-                {
-                  backgroundColor: alertState === 'low' ? colors.success : colors.error,
-                },
-              ]}
+            <Badge
+              label={alertState === 'low' ? '↓' : '↑'}
+              backgroundColor={alertState === 'low' ? colors.success : colors.error}
               accessibilityLabel={
                 alertState === 'low' ? t.priceAlertActiveLow : t.priceAlertActiveHigh
               }
-              accessibilityRole="text"
-            >
-              <Text style={styles.alertBadgeText}>{alertState === 'low' ? '↓' : '↑'}</Text>
-            </View>
+            />
           )}
           <TouchableOpacity
             onPress={() => setCalculatorVisible(true)}
@@ -714,19 +708,6 @@ const styles = StyleSheet.create({
   settingsHeaderButtonText: {
     fontSize: 24,
     fontWeight: '500',
-  },
-  alertBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 28,
-  },
-  alertBadgeText: {
-    fontSize: 13,
-    color: '#FFFFFF',
-    fontWeight: '600',
   },
   aboutButton: {
     paddingVertical: 14,
