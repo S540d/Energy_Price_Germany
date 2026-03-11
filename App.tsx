@@ -1,13 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  useColorScheme,
-  ActivityIndicator,
-} from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useColorScheme } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as Updates from 'expo-updates';
@@ -29,6 +21,8 @@ import { useLanguageContext } from './context/LanguageContext';
 import { useSettingsContext } from './context/SettingsContext';
 import { checkPriceAlert } from './utils/priceAlertUtils';
 import { usePriceAlertNotification } from './hooks/usePriceAlertNotification';
+import { ChartSkeleton } from './components/ui/ChartSkeleton';
+import { Badge } from './components/ui/Badge';
 
 const APP_VERSION = '1.4.3';
 
@@ -174,10 +168,20 @@ function AppContent() {
         edges={['top', 'left', 'right']}
       >
         <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
-        <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.text }]}>{t.loadingData}</Text>
-        </View>
+        <ScrollView
+          style={{ backgroundColor: colors.background }}
+          contentContainerStyle={styles.skeletonScroll}
+          scrollEnabled={false}
+        >
+          <Text
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+            style={styles.skeletonA11yText}
+          >
+            {t.loadingData}
+          </Text>
+          <ChartSkeleton />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -199,31 +203,30 @@ function AppContent() {
         <Text style={[styles.headerTitle, { color: colors.text }]}>Energy Price Germany</Text>
         <View style={styles.headerButtons}>
           {alertState !== 'none' && (
-            <View
-              style={[
-                styles.alertBadge,
-                {
-                  backgroundColor: alertState === 'low' ? colors.success : colors.error,
-                },
-              ]}
+            <Badge
+              label={alertState === 'low' ? '↓' : '↑'}
+              backgroundColor={alertState === 'low' ? colors.success : colors.error}
               accessibilityLabel={
                 alertState === 'low' ? t.priceAlertActiveLow : t.priceAlertActiveHigh
               }
-              accessibilityRole="text"
-            >
-              <Text style={styles.alertBadgeText}>{alertState === 'low' ? '🔔↓' : '🔔↑'}</Text>
-            </View>
+            />
           )}
           <TouchableOpacity
             onPress={() => setCalculatorVisible(true)}
-            style={styles.headerButton}
+            style={[
+              styles.headerButton,
+              { borderColor: colors.gridLine, backgroundColor: colors.background },
+            ]}
             aria-label="Cost Calculator"
           >
-            <Text style={[styles.headerButtonText, { color: colors.text }]}>💶</Text>
+            <Text style={[styles.headerButtonText, { color: colors.text }]}>€</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setMenuVisible(true)}
-            style={styles.headerButton}
+            style={[
+              styles.headerButton,
+              { borderColor: colors.gridLine, backgroundColor: colors.background },
+            ]}
             aria-label="Settings"
           >
             <Text style={[styles.settingsHeaderButtonText, { color: colors.text }]}>⋮</Text>
@@ -370,7 +373,7 @@ function AppContent() {
                         fontWeight: '600',
                       }}
                     >
-                      📊 {t.viewBar}
+                      {t.viewBar}
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -391,7 +394,7 @@ function AppContent() {
                         fontWeight: '600',
                       }}
                     >
-                      🕐 {t.viewClock}
+                      {t.viewClock}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -608,14 +611,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  skeletonScroll: {
+    flexGrow: 1,
   },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
+  skeletonA11yText: {
+    // Visually hidden but announced by screen readers
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    overflow: 'hidden',
+    opacity: 0,
   },
   settingsOverlay: {
     position: 'absolute',
@@ -688,13 +693,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: 0.2,
     flex: 1,
   },
   headerButtons: {
@@ -702,31 +708,21 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerButton: {
-    padding: 8,
+    padding: 10,
     minWidth: 44,
     minHeight: 44,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
   },
   headerButtonText: {
-    fontSize: 20,
+    fontSize: 18,
+    fontWeight: '700',
   },
   settingsHeaderButtonText: {
     fontSize: 24,
     fontWeight: '500',
-  },
-  alertBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 28,
-  },
-  alertBadgeText: {
-    fontSize: 13,
-    color: '#FFFFFF',
-    fontWeight: '600',
   },
   aboutButton: {
     paddingVertical: 14,

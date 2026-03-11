@@ -1,6 +1,11 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import type { ViewStyle } from 'react-native';
-import { Animated, Easing } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 interface ChartCardProps {
   backgroundColor: string;
@@ -19,43 +24,46 @@ function ChartCardComponent({
   style,
   animateIn = true,
 }: ChartCardProps) {
-  const opacity = useRef(new Animated.Value(animateIn ? 0 : 1)).current;
+  const opacity = useSharedValue(animateIn ? 0 : 1);
+  const translateY = useSharedValue(animateIn ? 8 : 0);
 
   useEffect(() => {
     if (!animateIn) return;
 
-    const animation = Animated.timing(opacity, {
-      toValue: 1,
-      duration: 400,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
-    });
-
-    animation.start();
+    opacity.value = withTiming(1, { duration: 350 });
+    translateY.value = withTiming(0, { duration: 350 });
 
     return () => {
-      animation.stop();
+      cancelAnimation(opacity);
+      cancelAnimation(translateY);
     };
-    // opacity is a stable Animated.Value ref – intentionally excluded
+    // shared values are stable refs – intentionally excluded
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animateIn]);
 
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
   return (
     <Animated.View
-      style={{
-        opacity,
-        backgroundColor,
-        margin,
-        padding: cardPadding,
-        borderRadius: 16,
-        alignSelf: 'stretch',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-        elevation: 3,
-        ...style,
-      }}
+      style={[
+        {
+          backgroundColor,
+          margin,
+          padding: cardPadding,
+          borderRadius: 16,
+          alignSelf: 'stretch',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 12,
+          elevation: 3,
+          ...style,
+        },
+        animatedStyle,
+      ]}
     >
       {children}
     </Animated.View>
