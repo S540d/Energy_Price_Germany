@@ -31,19 +31,21 @@ export function AppearanceSection() {
   const pillX = useSharedValue(0);
   const pillWidth = useSharedValue(0);
   const pillHeight = useSharedValue(0);
+  const pillColor = useSharedValue(colors.primary);
 
-  const pillStyle = useAnimatedStyle(
-    () => ({
-      position: 'absolute',
-      left: pillX.value,
-      width: pillWidth.value,
-      height: pillHeight.value,
-      backgroundColor: colors.primary,
-      borderRadius: borderRadius.md,
-      zIndex: 0,
-    }),
-    [colors.primary]
-  );
+  useEffect(() => {
+    pillColor.value = colors.primary;
+  }, [pillColor, colors.primary]);
+
+  const pillStyle = useAnimatedStyle(() => ({
+    position: 'absolute',
+    left: pillX.value,
+    width: pillWidth.value,
+    height: pillHeight.value,
+    backgroundColor: pillColor.value,
+    borderRadius: borderRadius.md,
+    zIndex: 0,
+  }));
 
   const handleLayout = (themeOption: Theme) => (e: LayoutChangeEvent) => {
     const { x, width, height } = e.nativeEvent.layout;
