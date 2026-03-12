@@ -39,31 +39,12 @@ The app uses a **hybrid data strategy** for maximum forecast coverage:
 
 See [DATA-MERGE-STRATEGY.md](docs/DATA-MERGE-STRATEGY.md) for detailed information about the data merging logic.
 
-## UI Modernization Proposal
-
-To evolve the current look into a cleaner and more modern product, use this incremental plan:
-
-1. **Design Refresh (no framework risk)**
-   - Reduce decorative elements, use stronger typography hierarchy, and standardize spacing/radius tokens.
-   - Replace emoji-based affordances with textual labels or neutral iconography.
-   - Keep current feature set unchanged while improving visual clarity.
-
-2. **Rendering Upgrade (Skia-first charts)**
-   - Migrate chart rendering from SVG-heavy paths to `@shopify/react-native-skia` for smoother animation and better visual polish on mobile.
-   - Introduce Skia chart primitives behind feature flags and run both renderers in parallel during rollout.
-
-3. **Platform Status (Expo SDK 55 / RN 0.83 — completed)**
-   - The project is already on Expo SDK 55 and React Native 0.83 in this release.
-   - Continue to validate Android, iOS, and web parity and monitor for any upgrade-related regressions.
-
-This sequence keeps risk low: first improve UI immediately, then modernize rendering and platform stack with measurable checkpoints.
-
 ## Regional Data Feature
 
 The app now supports **regional renewable energy data** based on your postal code:
 
 ### How to Use:
-1. Open the settings menu (⋮ icon in the top right)
+1. Open the settings menu (top right)
 2. Scroll to the "REGION" section
 3. Enter your 5-digit postal code (PLZ)
 4. The app will display two charts:
@@ -163,10 +144,11 @@ npm run deploy
 ## Technologies
 
 - **React Native** - Cross-platform mobile development
-- **Expo** - Framework for universal React applications
-- **Victory Native** - Charting library for React Native
+- **Expo 55** - Framework for universal React applications
 - **TypeScript** - Type-safe JavaScript
-- **React Native SVG** - SVG support for charts
+- **React Native SVG** - Custom SVG chart rendering
+- **React Native Reanimated** - Animations and transitions
+- **Cloudflare Workers** - CORS proxy for regional API
 
 ## Contributing
 
