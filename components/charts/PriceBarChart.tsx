@@ -98,9 +98,8 @@ function PriceBarChartComponent({
     if (validData.length === 0) return null;
 
     const pricesInCent = validData.map(d => (d.marketPrice ?? 0) * 0.1);
-    const minPrice = Math.min(...pricesInCent, 0);
     const maxPrice = Math.max(...pricesInCent);
-    const min = Math.floor(minPrice / 5) * 5;
+    const min = 0;
     const maxMarketPrice = Math.ceil(maxPrice / 5) * 5;
     const maxTotal = isMarketOnly ? maxMarketPrice : maxMarketPrice + gridFees;
     const range = maxTotal - min;
@@ -136,8 +135,9 @@ function PriceBarChartComponent({
 
       const totalPrice = isMarketOnly ? marketPrice : marketPrice + gridFees;
       const color = getPriceColor(totalPrice);
+      const clampedMarketPrice = Math.max(0, marketPrice);
       const marketBarHeight =
-        ((marketPrice - cMin) / cRange) * (chartHeight - padding - bottomPadding);
+        ((clampedMarketPrice - cMin) / cRange) * (chartHeight - padding - bottomPadding);
       const marketY = chartHeight - bottomPadding - marketBarHeight;
       const gridBarHeight = (gridFees / cRange) * (chartHeight - padding - bottomPadding);
       const gridY = marketY - gridBarHeight;
