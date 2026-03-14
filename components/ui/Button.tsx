@@ -1,6 +1,6 @@
 import React from 'react';
 import type { StyleProp, ViewStyle, TextStyle } from 'react-native';
-import { Pressable, Text, StyleSheet } from 'react-native';
+import { Platform, Pressable, Text, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import type { ThemeColors } from '../../utils/theme';
 
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
 
   // Text
   text: {
-    fontWeight: 'bold',
+    fontWeight: Platform.OS === 'android' ? 'bold' : '600',
   },
   text_small: {
     fontSize: 12,
