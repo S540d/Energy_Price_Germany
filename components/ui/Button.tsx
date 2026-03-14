@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
-    elevation: 1,
+    elevation: 0,
   },
   variant_ghost: {
     // No additional styles
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
 
   // Text
   text: {
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   text_small: {
     fontSize: 12,
