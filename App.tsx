@@ -30,7 +30,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 
-const APP_VERSION = '1.5.1';
+const APP_VERSION = '1.5.2';
 
 function AppContent() {
   // UI State only (modals)

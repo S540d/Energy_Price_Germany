@@ -40,16 +40,45 @@ async function shareChartMobile(captureRef: RefObject<unknown>, title: string): 
   });
 }
 
-async function shareChartWeb(captureRef: RefObject<unknown>, title: string): Promise<void> {
-  const { toPng } = await import('html-to-image');
+async function captureNodeAsPng(node: HTMLElement): Promise<string> {
+  const htmlToImage = await import('html-to-image');
 
+  const options = {
+    quality: 0.95,
+    cacheBust: true,
+    // Skipping font inlining avoids Safari/iOS WebKit crashes during serialization
+    skipFonts: true,
+  };
+
+  try {
+    // Attempt toPng first (works well on Chrome/Firefox)
+    return await htmlToImage.toPng(node, options);
+  } catch {
+    // Fallback: toCanvas is more reliable on Safari/iOS WebKit
+    const canvas = await htmlToImage.toCanvas(node, options);
+    return canvas.toDataURL('image/png', 0.95);
+  }
+}
+
+async function shareChartWeb(captureRef: RefObject<unknown>, title: string): Promise<void> {
   // On web, captureRef.current is the underlying DOM node
   const node = captureRef.current as HTMLElement | null;
   if (!node) {
     throw new Error('Chart container not found');
   }
 
-  const dataUrl = await toPng(node, { quality: 0.95 });
+  const dataUrl = await captureNodeAsPng(node);
+
+  // A valid PNG data URL starts with this prefix (~22 chars) plus base64 payload
+  const DATA_URL_PREFIX = 'data:image/png;base64,';
+  if (
+    !dataUrl ||
+    !dataUrl.startsWith(DATA_URL_PREFIX) ||
+    dataUrl.length <= DATA_URL_PREFIX.length
+  ) {
+    throw new Error('Chart capture produced empty image');
+  }
+
   // Sanitize filename: remove invalid characters, replace spaces with underscores
   const filename = `${title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_')}.png`;
 

@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.2] - 2026-03-15
+
+### Fixed
+- **Share-Button auf iOS Safari** – "Diagramm teilen" funktioniert jetzt auch auf iOS-Webversion (Fallback von `toPng` auf `toCanvas` + Data-URL-Validierung)
+- **Button-Darstellung im Detail-Modal auf älteren Android-Geräten** – "Teilen" und "Schließen" Buttons waren auf altem Android nicht lesbar (elevation-Artefakte)
+
+### Changed
+- **Dependency-Updates** – expo 55.0.6, expo-updates 55.0.13, expo-linear-gradient 55.0.8, lint-staged 16.4.0, dotenv 17.3.1 u.a.
+- **Security Audit** – 4 Vulnerabilities behoben (2 high, 2 moderate)
+
 ## [1.5.1] - 2026-03-14
 
 ### Fixed
