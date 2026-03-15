@@ -343,12 +343,12 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
                 <View style={styles.costCell}>
                   <Text style={[styles.costAmount, { color: colors.text }]}>
                     {bestCost < 0.1 ? `${(bestCost * 100).toFixed(0)}¢` : `${bestCost.toFixed(2)}€`}
+                    {savingsEuro > 0.005 && (
+                      <Text style={{ color: colors.success }}>
+                        {` (-${savingsEuro < 0.1 ? `${(savingsEuro * 100).toFixed(0)}¢` : `${savingsEuro.toFixed(2)}€`})`}
+                      </Text>
+                    )}
                   </Text>
-                  {savingsEuro > 0.005 && (
-                    <Text style={[styles.costSavings, { color: colors.success }]}>
-                      {`-${savingsEuro < 0.1 ? `${(savingsEuro * 100).toFixed(0)}¢` : `${savingsEuro.toFixed(2)}€`}`}
-                    </Text>
-                  )}
                 </View>
               </View>
             );
@@ -462,9 +462,5 @@ const styles = StyleSheet.create({
   costAmount: {
     fontSize: 12,
     fontWeight: '600',
-  },
-  costSavings: {
-    fontSize: 11,
-    fontWeight: '700',
   },
 });
