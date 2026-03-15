@@ -40,16 +40,40 @@ async function shareChartMobile(captureRef: RefObject<unknown>, title: string): 
   });
 }
 
-async function shareChartWeb(captureRef: RefObject<unknown>, title: string): Promise<void> {
-  const { toPng } = await import('html-to-image');
+async function captureNodeAsPng(node: HTMLElement): Promise<string> {
+  const htmlToImage = await import('html-to-image');
 
+  const options = {
+    quality: 0.95,
+    cacheBust: true,
+    // Skip foreign-object rendering which breaks in Safari/iOS
+    skipFonts: true,
+  };
+
+  try {
+    // Attempt toPng first (works well on Chrome/Firefox)
+    return await htmlToImage.toPng(node, options);
+  } catch {
+    // Fallback: toCanvas is more reliable on Safari/iOS WebKit
+    const canvas = await htmlToImage.toCanvas(node, options);
+    return canvas.toDataURL('image/png', 0.95);
+  }
+}
+
+async function shareChartWeb(captureRef: RefObject<unknown>, title: string): Promise<void> {
   // On web, captureRef.current is the underlying DOM node
   const node = captureRef.current as HTMLElement | null;
   if (!node) {
     throw new Error('Chart container not found');
   }
 
-  const dataUrl = await toPng(node, { quality: 0.95 });
+  const dataUrl = await captureNodeAsPng(node);
+
+  // Validate that we got a real image (Safari can return blank/tiny data URLs)
+  if (!dataUrl || dataUrl.length < 100) {
+    throw new Error('Chart capture produced empty image');
+  }
+
   // Sanitize filename: remove invalid characters, replace spaces with underscores
   const filename = `${title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_')}.png`;
 
