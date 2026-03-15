@@ -416,6 +416,7 @@ const styles = StyleSheet.create({
     height: 38,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'visible',
   },
   gapCell: {
     width: GAP_CELL_WIDTH,
@@ -433,9 +434,12 @@ const styles = StyleSheet.create({
     lineHeight: 12,
   },
   savingsLabel: {
+    position: 'absolute',
     fontSize: 10,
     fontWeight: '700',
     textAlign: 'center',
+    width: 56,
+    left: -10,
   },
   legend: {
     flexDirection: 'row',
