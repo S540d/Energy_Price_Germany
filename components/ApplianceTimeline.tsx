@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   rowName: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '500',
     flexShrink: 1,
   },
@@ -432,16 +432,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   hourLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '500',
   },
   gapLabel: {
-    fontSize: 7,
+    fontSize: 9,
     textAlign: 'center',
-    lineHeight: 9,
+    lineHeight: 12,
   },
   savingsLabel: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '700',
     textAlign: 'center',
   },
@@ -457,10 +457,10 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   legendText: {
-    fontSize: 11,
+    fontSize: 13,
   },
   legendSep: {
-    fontSize: 11,
+    fontSize: 13,
     marginHorizontal: 2,
   },
 });
