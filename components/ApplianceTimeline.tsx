@@ -343,7 +343,7 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
                 <View style={styles.costCell}>
                   <Text style={[styles.costAmount, { color: colors.text }]}>
                     {bestCost < 0.1 ? `${(bestCost * 100).toFixed(0)}¢` : `${bestCost.toFixed(2)}€`}
-                    {savingsEuro > 0.005 && (
+                    {savingsEuro > 0.001 && (
                       <Text style={{ color: colors.success }}>
                         {` (-${savingsEuro < 0.1 ? `${(savingsEuro * 100).toFixed(0)}¢` : `${savingsEuro.toFixed(2)}€`})`}
                       </Text>
