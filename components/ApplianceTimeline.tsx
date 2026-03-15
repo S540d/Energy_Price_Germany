@@ -29,6 +29,7 @@ interface ApplianceResult {
   bestStartHour: number;
   currentAvgPrice: number;
   savingsEuro: number;
+  bestCost: number;
 }
 
 /**
@@ -219,7 +220,7 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
       const bestCost = (appliance.kwh * bestAvgPrice) / 100;
       const savingsEuro = Math.max(0, currentCost - bestCost);
 
-      return { appliance, windowHours, bestStartHour, currentAvgPrice, savingsEuro };
+      return { appliance, windowHours, bestStartHour, currentAvgPrice, savingsEuro, bestCost };
     });
   }, [slots, appliances, currentHour]);
 
@@ -256,11 +257,12 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
                 </View>
               );
             })}
+            <View style={styles.costCell} />
           </View>
 
           {/* Appliance rows */}
           {results.map(result => {
-            const { appliance, windowHours, bestStartHour, savingsEuro } = result;
+            const { appliance, windowHours, savingsEuro, bestCost } = result;
             const name = language === 'de' ? appliance.nameDE : appliance.nameEN;
 
             return (
@@ -292,7 +294,6 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
                   }
 
                   const inWindow = windowHours.has(col.slot.hour);
-                  const isStart = col.slot.hour === bestStartHour;
 
                   // Determine rounded corners: round left if no previous column is in-window
                   const prevCol = ci > 0 ? columns[ci - 1] : null;
@@ -335,18 +336,20 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
                           borderBottomRightRadius: 6,
                         },
                       ]}
-                    >
-                      {isStart && savingsEuro > 0.005 && (
-                        <Text style={[styles.savingsLabel, { color: colors.success }]}>
-                          {'-'}
-                          {savingsEuro < 0.1
-                            ? `${(savingsEuro * 100).toFixed(0)}¢`
-                            : `${savingsEuro.toFixed(2)}€`}
-                        </Text>
-                      )}
-                    </View>
+                    />
                   );
                 })}
+                {/* Cost column */}
+                <View style={styles.costCell}>
+                  <Text style={[styles.costAmount, { color: colors.text }]}>
+                    {bestCost < 0.1 ? `${(bestCost * 100).toFixed(0)}¢` : `${bestCost.toFixed(2)}€`}
+                  </Text>
+                  {savingsEuro > 0.005 && (
+                    <Text style={[styles.costSavings, { color: colors.success }]}>
+                      {`-${savingsEuro < 0.1 ? `${(savingsEuro * 100).toFixed(0)}¢` : `${savingsEuro.toFixed(2)}€`}`}
+                    </Text>
+                  )}
+                </View>
               </View>
             );
           })}
@@ -433,14 +436,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 12,
   },
-  savingsLabel: {
-    position: 'absolute',
-    fontSize: 10,
-    fontWeight: '700',
-    textAlign: 'center',
-    width: 56,
-    left: -10,
-  },
   legend: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -458,5 +453,18 @@ const styles = StyleSheet.create({
   legendSep: {
     fontSize: 13,
     marginHorizontal: 2,
+  },
+  costCell: {
+    width: 64,
+    paddingLeft: 8,
+    justifyContent: 'center',
+  },
+  costAmount: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  costSavings: {
+    fontSize: 11,
+    fontWeight: '700',
   },
 });
