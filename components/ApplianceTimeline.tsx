@@ -4,7 +4,6 @@ import { useLanguageContext } from '../context/LanguageContext';
 import { getThemeColors } from '../utils/theme';
 import { useSettingsContext } from '../context/SettingsContext';
 import type { Appliance } from './CostCalculator';
-import { Chip } from './ui/Chip';
 
 interface PricePoint {
   start_timestamp: number;
@@ -30,6 +29,7 @@ interface ApplianceResult {
   bestStartHour: number;
   currentAvgPrice: number;
   savingsEuro: number;
+  bestCost: number;
 }
 
 /**
@@ -40,7 +40,7 @@ type Column = { type: 'hour'; slot: HourSlot } | { type: 'gap'; hours: number[] 
 
 const HOUR_CELL_WIDTH = 36;
 const GAP_CELL_WIDTH = 20;
-const ROW_LABEL_WIDTH = 108;
+const ROW_LABEL_WIDTH = 130;
 
 function buildHourSlots(
   priceData: PricePoint[],
@@ -220,7 +220,7 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
       const bestCost = (appliance.kwh * bestAvgPrice) / 100;
       const savingsEuro = Math.max(0, currentCost - bestCost);
 
-      return { appliance, windowHours, bestStartHour, currentAvgPrice, savingsEuro };
+      return { appliance, windowHours, bestStartHour, currentAvgPrice, savingsEuro, bestCost };
     });
   }, [slots, appliances, currentHour]);
 
@@ -257,27 +257,22 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
                 </View>
               );
             })}
+            <View style={styles.costCell} />
           </View>
 
           {/* Appliance rows */}
           {results.map(result => {
-            const { appliance, windowHours, bestStartHour, savingsEuro } = result;
+            const { appliance, windowHours, savingsEuro, bestCost } = result;
             const name = language === 'de' ? appliance.nameDE : appliance.nameEN;
 
             return (
               <View key={appliance.id} style={styles.applianceRow}>
                 {/* Label */}
                 <View style={[styles.rowLabel, { width: ROW_LABEL_WIDTH }]}>
-                  <Chip
-                    label={appliance.shortLabel}
-                    backgroundColor={colors.background}
-                    textColor={colors.textSecondary}
-                  />
                   <Text style={[styles.rowName, { color: colors.text }]} numberOfLines={2}>
                     {name}
                   </Text>
                 </View>
-
                 {/* Columns */}
                 {columns.map((col, ci) => {
                   if (col.type === 'gap') {
@@ -299,7 +294,6 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
                   }
 
                   const inWindow = windowHours.has(col.slot.hour);
-                  const isStart = col.slot.hour === bestStartHour;
 
                   // Determine rounded corners: round left if no previous column is in-window
                   const prevCol = ci > 0 ? columns[ci - 1] : null;
@@ -342,18 +336,20 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
                           borderBottomRightRadius: 6,
                         },
                       ]}
-                    >
-                      {isStart && savingsEuro > 0.005 && (
-                        <Text style={[styles.savingsLabel, { color: colors.success }]}>
-                          {'-'}
-                          {savingsEuro < 0.1
-                            ? `${(savingsEuro * 100).toFixed(0)}¢`
-                            : `${savingsEuro.toFixed(2)}€`}
-                        </Text>
-                      )}
-                    </View>
+                    />
                   );
                 })}
+                {/* Cost column */}
+                <View style={styles.costCell}>
+                  <Text style={[styles.costAmount, { color: colors.text }]}>
+                    {bestCost < 0.1 ? `${(bestCost * 100).toFixed(0)}¢` : `${bestCost.toFixed(2)}€`}
+                    {savingsEuro > 0.001 && (
+                      <Text style={{ color: colors.success }}>
+                        {` (-${savingsEuro < 0.1 ? `${(savingsEuro * 100).toFixed(0)}¢` : `${savingsEuro.toFixed(2)}€`})`}
+                      </Text>
+                    )}
+                  </Text>
+                </View>
               </View>
             );
           })}
@@ -412,10 +408,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingRight: 8,
-    gap: 4,
   },
   rowName: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '500',
     flexShrink: 1,
   },
@@ -424,6 +419,7 @@ const styles = StyleSheet.create({
     height: 38,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'visible',
   },
   gapCell: {
     width: GAP_CELL_WIDTH,
@@ -432,18 +428,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   hourLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '500',
   },
   gapLabel: {
-    fontSize: 7,
-    textAlign: 'center',
-    lineHeight: 9,
-  },
-  savingsLabel: {
     fontSize: 9,
-    fontWeight: '700',
     textAlign: 'center',
+    lineHeight: 12,
   },
   legend: {
     flexDirection: 'row',
@@ -457,10 +448,19 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   legendText: {
-    fontSize: 11,
+    fontSize: 13,
   },
   legendSep: {
-    fontSize: 11,
+    fontSize: 13,
     marginHorizontal: 2,
+  },
+  costCell: {
+    width: 64,
+    paddingLeft: 8,
+    justifyContent: 'center',
+  },
+  costAmount: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
