@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, useColorScheme } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, useColorScheme, Platform } from 'react-native';
 import { useLanguageContext } from '../context/LanguageContext';
 import { getThemeColors } from '../utils/theme';
 import { useSettingsContext } from '../context/SettingsContext';
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   rowName: {
-    fontSize: 11,
+    fontSize: Platform.OS === 'web' ? 13 : 11,
     fontWeight: '500',
     flexShrink: 1,
   },
@@ -432,16 +432,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   hourLabel: {
-    fontSize: 10,
+    fontSize: Platform.OS === 'web' ? 11 : 10,
     fontWeight: '500',
   },
   gapLabel: {
-    fontSize: 7,
+    fontSize: Platform.OS === 'web' ? 9 : 7,
     textAlign: 'center',
-    lineHeight: 9,
+    lineHeight: Platform.OS === 'web' ? 12 : 9,
   },
   savingsLabel: {
-    fontSize: 9,
+    fontSize: Platform.OS === 'web' ? 10 : 9,
     fontWeight: '700',
     textAlign: 'center',
   },
@@ -457,10 +457,10 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   legendText: {
-    fontSize: 11,
+    fontSize: Platform.OS === 'web' ? 13 : 11,
   },
   legendSep: {
-    fontSize: 11,
+    fontSize: Platform.OS === 'web' ? 13 : 11,
     marginHorizontal: 2,
   },
 });
