@@ -60,7 +60,7 @@ export function Button({
     },
     variant === 'outlined' && {
       borderColor: disabled ? colors.disabled : colors.primary,
-      backgroundColor: 'transparent',
+      backgroundColor: Platform.OS === 'android' ? colors.surface : 'transparent',
     },
     variant === 'ghost' && {
       backgroundColor: 'transparent',
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: Platform.OS === 'android' ? 0 : 3,
   },
   variant_outlined: {
     borderWidth: 1.5,
