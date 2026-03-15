@@ -46,7 +46,7 @@ async function captureNodeAsPng(node: HTMLElement): Promise<string> {
   const options = {
     quality: 0.95,
     cacheBust: true,
-    // Skip foreign-object rendering which breaks in Safari/iOS
+    // Skipping font inlining avoids Safari/iOS WebKit crashes during serialization
     skipFonts: true,
   };
 
@@ -69,8 +69,13 @@ async function shareChartWeb(captureRef: RefObject<unknown>, title: string): Pro
 
   const dataUrl = await captureNodeAsPng(node);
 
-  // Validate that we got a real image (Safari can return blank/tiny data URLs)
-  if (!dataUrl || dataUrl.length < 100) {
+  // A valid PNG data URL starts with this prefix (~22 chars) plus base64 payload
+  const DATA_URL_PREFIX = 'data:image/png;base64,';
+  if (
+    !dataUrl ||
+    !dataUrl.startsWith(DATA_URL_PREFIX) ||
+    dataUrl.length <= DATA_URL_PREFIX.length
+  ) {
     throw new Error('Chart capture produced empty image');
   }
 
