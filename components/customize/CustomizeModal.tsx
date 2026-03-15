@@ -127,6 +127,7 @@ const styles = StyleSheet.create({
   inlineRow: {
     flexDirection: 'row',
     gap: 12,
+    alignItems: 'flex-end',
   },
   inlineItem: {
     flex: 1,
