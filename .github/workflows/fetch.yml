@@ -1,15 +1,13 @@
 name: Fetch energy market data
 on:
   schedule:
-    # 5x täglich wenn neue Daten verfügbar sein könnten
+    # 3x täglich – abgestimmt auf API-Update-Zeiten
     # Energy Charts: Daten für "heute" werden über Nacht verfügbar (nicht Day-Ahead!)
     # aWATTar: Day-Ahead Daten für "morgen" ab ~14:00 CET verfügbar
-    # 12:00 UTC = 13:00 CET / 14:00 CEST (EC heute + AW morgen)
-    # 15:00 UTC = 16:00 CET / 17:00 CEST (Refresh + aktuelle AW Daten)
-    # 17:00 UTC = 18:00 CET / 19:00 CEST
-    # 19:00 UTC = 20:00 CET / 21:00 CEST
-    # 20:00 UTC = 21:00 CET / 22:00 CEST
-    - cron: '0 12,15,17,19,20 * * *'
+    # 03:00 UTC = 04:00 CET / 05:00 CEST (EC Nacht-Update abholen)
+    # 13:00 UTC = 14:00 CET / 15:00 CEST (aWATTar Day-Ahead grenzwertig verfügbar)
+    # 14:00 UTC = 15:00 CET / 16:00 CEST (aWATTar sicher verfügbar)
+    - cron: '0 3,13,14 * * *'
   workflow_dispatch:
 
 permissions:
