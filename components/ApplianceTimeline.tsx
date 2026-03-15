@@ -4,7 +4,6 @@ import { useLanguageContext } from '../context/LanguageContext';
 import { getThemeColors } from '../utils/theme';
 import { useSettingsContext } from '../context/SettingsContext';
 import type { Appliance } from './CostCalculator';
-import { Chip } from './ui/Chip';
 
 interface PricePoint {
   start_timestamp: number;
@@ -40,7 +39,6 @@ type Column = { type: 'hour'; slot: HourSlot } | { type: 'gap'; hours: number[] 
 
 const HOUR_CELL_WIDTH = 36;
 const GAP_CELL_WIDTH = 20;
-const ROW_LABEL_WIDTH = 130;
 
 function buildHourSlots(
   priceData: PricePoint[],
@@ -165,7 +163,7 @@ function buildColumns(slots: HourSlot[], results: ApplianceResult[]): Column[] {
 }
 
 function ApplianceTimelineComponent({ appliances, priceData, gridFees }: ApplianceTimelineProps) {
-  const { t, language } = useLanguageContext();
+  const { t } = useLanguageContext();
   const { theme } = useSettingsContext();
   const systemTheme = useColorScheme();
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
@@ -236,7 +234,6 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
         <View>
           {/* Header row */}
           <View style={styles.headerRow}>
-            <View style={{ width: ROW_LABEL_WIDTH }} />
             {columns.map((col, ci) => {
               if (col.type === 'gap') {
                 const first = col.hours[0];
@@ -262,22 +259,9 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
           {/* Appliance rows */}
           {results.map(result => {
             const { appliance, windowHours, bestStartHour, savingsEuro } = result;
-            const name = language === 'de' ? appliance.nameDE : appliance.nameEN;
 
             return (
               <View key={appliance.id} style={styles.applianceRow}>
-                {/* Label */}
-                <View style={[styles.rowLabel, { width: ROW_LABEL_WIDTH }]}>
-                  <Chip
-                    label={appliance.shortLabel}
-                    backgroundColor={colors.background}
-                    textColor={colors.textSecondary}
-                  />
-                  <Text style={[styles.rowName, { color: colors.text }]} numberOfLines={2}>
-                    {name}
-                  </Text>
-                </View>
-
                 {/* Columns */}
                 {columns.map((col, ci) => {
                   if (col.type === 'gap') {
@@ -407,17 +391,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minHeight: 44,
     marginVertical: 3,
-  },
-  rowLabel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingRight: 8,
-    gap: 4,
-  },
-  rowName: {
-    fontSize: 13,
-    fontWeight: '500',
-    flexShrink: 1,
   },
   hourCell: {
     width: HOUR_CELL_WIDTH,
