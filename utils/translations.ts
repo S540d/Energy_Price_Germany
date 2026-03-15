@@ -12,7 +12,7 @@ export const translations = {
     english: 'English',
     german: 'German',
     // Region Section
-    region: 'REGION',
+    region: 'REGION (BETA)',
     postalCode: 'Postal Code',
     postalCodeHint: 'Enter 5-digit postal code (PLZ)',
     regionalData: 'Region (Beta)',
@@ -131,7 +131,7 @@ export const translations = {
     english: 'English',
     german: 'Deutsch',
     // Region Section
-    region: 'REGION',
+    region: 'REGION (BETA)',
     postalCode: 'Postleitzahl',
     postalCodeHint: '5-stellige PLZ eingeben',
     regionalData: 'Region (Beta)',
