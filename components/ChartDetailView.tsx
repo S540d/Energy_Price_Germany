@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Alert, View, Text, Modal, ScrollView, StyleSheet } from 'react-native';
+import { Alert, Platform, View, Text, Modal, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { ThemeColors } from '../utils/theme';
 import { GRID_FEES_AND_TAXES } from '../utils/metrics';
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: Platform.OS === 'android' ? 0 : 4,
   },
   footerButtons: {
     flexDirection: 'row',
