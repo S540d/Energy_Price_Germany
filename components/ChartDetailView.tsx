@@ -286,7 +286,6 @@ const styles = StyleSheet.create({
   chartContainer: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
   },
   headerContainer: {
     position: 'absolute',
