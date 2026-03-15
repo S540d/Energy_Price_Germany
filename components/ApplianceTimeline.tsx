@@ -40,7 +40,7 @@ type Column = { type: 'hour'; slot: HourSlot } | { type: 'gap'; hours: number[] 
 
 const HOUR_CELL_WIDTH = 36;
 const GAP_CELL_WIDTH = 20;
-const ROW_LABEL_WIDTH = 108;
+const ROW_LABEL_WIDTH = 130;
 
 function buildHourSlots(
   priceData: PricePoint[],
