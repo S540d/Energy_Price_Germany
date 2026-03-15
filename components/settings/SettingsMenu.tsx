@@ -41,7 +41,7 @@ export function SettingsMenu({
   useEffect(() => {
     if (visible) {
       setIsMounted(true);
-      translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
+      translateY.value = withSpring(0, { damping: 30, stiffness: 300 });
       overlayOpacity.value = withTiming(0.5, { duration: 200 });
     } else if (isMounted) {
       translateY.value = withTiming(300, { duration: 250 });

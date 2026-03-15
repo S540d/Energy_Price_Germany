@@ -106,7 +106,9 @@ function PriceBarChartComponent({
 
     if (range === 0 || timeRange === 0) return null;
 
-    const avgMarketPrice = pricesInCent.reduce((sum, v) => sum + v, 0) / pricesInCent.length;
+    const avgMarketPrice =
+      pricesInCent.reduce((sum, v) => sum + v, 0) / pricesInCent.length +
+      (isMarketOnly ? 0 : gridFees);
 
     return { minTime, maxTime, timeRange, min, maxTotal, range, avgMarketPrice };
   }, [data, gridFees, isMarketOnly]);
