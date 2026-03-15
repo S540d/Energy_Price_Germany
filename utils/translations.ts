@@ -15,7 +15,7 @@ export const translations = {
     region: 'REGION',
     postalCode: 'Postal Code',
     postalCodeHint: 'Enter 5-digit postal code (PLZ)',
-    regionalData: 'Regional',
+    regionalData: 'Region (Beta)',
     nationalData: 'National',
     // Grid Fees Section
     gridFees: 'GRID FEES & TAXES',
@@ -134,7 +134,7 @@ export const translations = {
     region: 'REGION',
     postalCode: 'Postleitzahl',
     postalCodeHint: '5-stellige PLZ eingeben',
-    regionalData: 'Regional',
+    regionalData: 'Region (Beta)',
     nationalData: 'National',
     // Grid Fees Section
     gridFees: 'NETZENTGELTE & STEUERN',
