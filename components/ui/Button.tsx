@@ -65,7 +65,6 @@ export function Button({
     variant === 'ghost' && {
       backgroundColor: 'transparent',
     },
-    style,
   ];
 
   const textColor = variant === 'filled' ? '#FFFFFF' : disabled ? colors.disabled : colors.primary;
@@ -74,6 +73,7 @@ export function Button({
     <Pressable
       onPress={onPress}
       disabled={disabled}
+      style={style}
       onPressIn={() => {
         scale.value = withSpring(0.97, { damping: 15, stiffness: 400 });
       }}
@@ -89,6 +89,7 @@ export function Button({
             { color: textColor },
             textStyle,
           ]}
+          numberOfLines={1}
         >
           {children}
         </Text>
