@@ -261,7 +261,7 @@ export function ChartDetailView({
                 colors={colors}
                 onPress={handleShare}
                 disabled={isSharing}
-                style={{ flex: 1 }}
+                style={styles.footerButton}
               >
                 {isSharing ? t.shareChartSharing : t.shareChart}
               </Button>
@@ -270,7 +270,7 @@ export function ChartDetailView({
                 size="large"
                 colors={colors}
                 onPress={() => setIsExpanded(false)}
-                style={{ flex: 1 }}
+                style={[styles.footerButton, { marginLeft: 12 }]}
               >
                 {t.close}
               </Button>
@@ -315,8 +315,11 @@ const styles = StyleSheet.create({
   },
   footerButtons: {
     flexDirection: 'row',
-    gap: 12,
     alignItems: 'stretch',
+  },
+  footerButton: {
+    flex: 1,
+    minHeight: 48,
   },
   metricsContainer: {
     margin: 16,
