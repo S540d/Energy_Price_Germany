@@ -31,9 +31,7 @@ function AnimatedBar({
     opacity: progress.value,
   }));
 
-  return (
-    <Animated.View style={[styles.bar, { backgroundColor: color }, barStyle]} />
-  );
+  return <Animated.View style={[styles.bar, { backgroundColor: color }, barStyle]} />;
 }
 
 const ICON_SIZE = 120;
@@ -50,7 +48,11 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(12);
   const subtitleOpacity = useSharedValue(0);
-  const barWidths = [useSharedValue(0), useSharedValue(0), useSharedValue(0), useSharedValue(0)];
+  const bar0 = useSharedValue(0);
+  const bar1 = useSharedValue(0);
+  const bar2 = useSharedValue(0);
+  const bar3 = useSharedValue(0);
+  const barProgress = useMemo(() => [bar0, bar1, bar2, bar3], [bar0, bar1, bar2, bar3]);
   const containerOpacity = useSharedValue(1);
 
   useEffect(() => {
@@ -78,7 +80,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
     );
 
     // 4. Mini bar chart bars grow sequentially
-    barWidths.forEach((bar, i) => {
+    barProgress.forEach((bar, i) => {
       bar.value = withDelay(
         ANIMATION_DURATION * 0.8 + i * 100,
         withTiming(1, { duration: 300, easing: Easing.out(Easing.quad) })
@@ -87,14 +89,20 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
     // 5. Fade out entire splash and call onFinish
     const totalDuration = ANIMATION_DURATION * 0.8 + 4 * 100 + 300 + 400;
-    containerOpacity.value = withDelay(
-      totalDuration,
-      withTiming(0, { duration: 300 })
-    );
+    containerOpacity.value = withDelay(totalDuration, withTiming(0, { duration: 300 }));
 
     const timer = setTimeout(onFinish, totalDuration + 350);
     return () => clearTimeout(timer);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    onFinish,
+    barProgress,
+    containerOpacity,
+    iconOpacity,
+    iconScale,
+    subtitleOpacity,
+    titleOpacity,
+    titleTranslateY,
+  ]);
 
   const containerStyle = useAnimatedStyle(() => ({
     opacity: containerOpacity.value,
@@ -118,7 +126,9 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   const barColors = ['#66BB6A', '#43A047', '#2E7D32', '#1B5E20'];
 
   return (
-    <Animated.View style={[styles.container, { backgroundColor: colors.background }, containerStyle]}>
+    <Animated.View
+      style={[styles.container, { backgroundColor: colors.background }, containerStyle]}
+    >
       {/* Icon */}
       <Animated.View style={[styles.iconContainer, iconAnimatedStyle]}>
         <Image
@@ -139,7 +149,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
         {barHeights.map((heightFactor, i) => (
           <AnimatedBar
             key={i}
-            progress={barWidths[i]}
+            progress={barProgress[i]}
             heightFactor={heightFactor}
             color={barColors[i]}
           />
@@ -148,9 +158,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
       {/* Subtitle */}
       <Animated.View style={subtitleStyle}>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          {t.loadingData}
-        </Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t.loadingData}</Text>
       </Animated.View>
 
       {/* Version */}

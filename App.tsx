@@ -40,10 +40,14 @@ const APP_VERSION = '1.5.2';
 function AppContent() {
   // Splash screen state
   const [showSplash, setShowSplash] = useState(true);
+  const handleSplashFinish = useCallback(() => setShowSplash(false), []);
 
-  // Hide native splash once React is ready
+  // Hide native splash once React is ready, defer to next frame to avoid flash
   useEffect(() => {
-    SplashScreenModule.hideAsync().catch(() => {});
+    const frameId = requestAnimationFrame(() => {
+      SplashScreenModule.hideAsync().catch(() => {});
+    });
+    return () => cancelAnimationFrame(frameId);
   }, []);
 
   // UI State only (modals)
@@ -223,7 +227,7 @@ function AppContent() {
           </Text>
           <ChartSkeleton />
         </ScrollView>
-        {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+        {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
       </SafeAreaView>
     );
   }
