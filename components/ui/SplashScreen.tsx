@@ -15,6 +15,7 @@ import { useLanguageContext } from '../../context/LanguageContext';
 
 interface SplashScreenProps {
   onFinish: () => void;
+  version: string;
 }
 
 function AnimatedBar({
@@ -37,7 +38,7 @@ function AnimatedBar({
 const ICON_SIZE = 120;
 const ANIMATION_DURATION = 600;
 
-export function SplashScreen({ onFinish }: SplashScreenProps) {
+export function SplashScreen({ onFinish, version }: SplashScreenProps) {
   const { theme } = useSettingsContext();
   const systemTheme = useColorScheme();
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
@@ -138,7 +139,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
         />
       </Animated.View>
 
-      {/* Title */}
+      {/* Title – intentionally not translated (app brand name) */}
       <Animated.View style={titleStyle}>
         <Text style={[styles.title, { color: colors.text }]}>Energy Prices</Text>
         <Text style={[styles.titleAccent, { color: colors.primary }]}>Germany</Text>
@@ -164,6 +165,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
       {/* Version */}
       <Animated.View style={[styles.versionContainer, subtitleStyle]}>
         <Text style={[styles.version, { color: colors.textTertiary }]}>
+          v{version} ·{' '}
           {Platform.OS === 'web' ? 'Web' : Platform.OS === 'android' ? 'Android' : 'iOS'}
         </Text>
       </Animated.View>

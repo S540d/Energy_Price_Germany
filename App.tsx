@@ -227,7 +227,7 @@ function AppContent() {
           </Text>
           <ChartSkeleton />
         </ScrollView>
-        {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
+        {showSplash && <SplashScreen onFinish={handleSplashFinish} version={APP_VERSION} />}
       </SafeAreaView>
     );
   }
@@ -238,6 +238,7 @@ function AppContent() {
       edges={['top', 'left', 'right']}
     >
       <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
+      {showSplash && <SplashScreen onFinish={handleSplashFinish} version={APP_VERSION} />}
 
       {/* Header with Calculator and Settings Buttons */}
       <View
