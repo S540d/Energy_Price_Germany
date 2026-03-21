@@ -2,7 +2,9 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useColorScheme } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreenModule from 'expo-splash-screen';
 import * as Updates from 'expo-updates';
+
 import { getCurrentDataSource } from './services/energyDataManager';
 import { RenewableBarChart } from './components/charts/RenewableBarChart';
 import { PriceBarChart } from './components/charts/PriceBarChart';
@@ -22,6 +24,7 @@ import { useSettingsContext } from './context/SettingsContext';
 import { checkPriceAlert } from './utils/priceAlertUtils';
 import { usePriceAlertNotification } from './hooks/usePriceAlertNotification';
 import { ChartSkeleton } from './components/ui/ChartSkeleton';
+import { SplashScreen } from './components/ui/SplashScreen';
 import { Badge } from './components/ui/Badge';
 import Animated, {
   useSharedValue,
@@ -30,9 +33,23 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 
+SplashScreenModule.preventAutoHideAsync().catch(() => {});
+
 const APP_VERSION = '1.5.2';
 
 function AppContent() {
+  // Splash screen state
+  const [showSplash, setShowSplash] = useState(true);
+  const handleSplashFinish = useCallback(() => setShowSplash(false), []);
+
+  // Hide native splash once React is ready, defer to next frame to avoid flash
+  useEffect(() => {
+    const frameId = requestAnimationFrame(() => {
+      SplashScreenModule.hideAsync().catch(() => {});
+    });
+    return () => cancelAnimationFrame(frameId);
+  }, []);
+
   // UI State only (modals)
   const [menuVisible, setMenuVisible] = useState(false);
   const [customizeVisible, setCustomizeVisible] = useState(false);
@@ -210,6 +227,7 @@ function AppContent() {
           </Text>
           <ChartSkeleton />
         </ScrollView>
+        {showSplash && <SplashScreen onFinish={handleSplashFinish} version={APP_VERSION} />}
       </SafeAreaView>
     );
   }
@@ -220,6 +238,7 @@ function AppContent() {
       edges={['top', 'left', 'right']}
     >
       <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
+      {showSplash && <SplashScreen onFinish={handleSplashFinish} version={APP_VERSION} />}
 
       {/* Header with Calculator and Settings Buttons */}
       <View
