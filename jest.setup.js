@@ -90,7 +90,6 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 // Mock react-native-reanimated
 jest.mock('react-native-reanimated', () => {
   const React = require('react');
-  const RN = require('react-native');
 
   const createAnimatedComponent = (Component) => {
     const AnimatedComponent = React.forwardRef(({ children, ...rest }, ref) => {
@@ -112,7 +111,12 @@ jest.mock('react-native-reanimated', () => {
     useSharedValue: jest.fn((init) => ({ value: init })),
     useAnimatedStyle: jest.fn((fn) => ({})),
     withSpring: jest.fn((val) => val),
-    withTiming: jest.fn((val) => val),
+    withTiming: jest.fn((toValue, configOrCallback, maybeCallback) => {
+      const callback =
+        typeof configOrCallback === 'function' ? configOrCallback : maybeCallback;
+      callback?.(true);
+      return toValue;
+    }),
     withDelay: jest.fn((_delay, val) => val),
     withSequence: jest.fn((...vals) => vals[vals.length - 1]),
     withRepeat: jest.fn((val) => val),

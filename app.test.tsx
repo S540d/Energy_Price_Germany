@@ -51,11 +51,6 @@ jest.mock('./components/ui/SplashScreen', () => {
   mockComponent.displayName = 'SplashScreen';
   return { SplashScreen: mockComponent };
 });
-jest.mock('./components/ui/SplashScreen', () => {
-  const mockComponent = () => null;
-  mockComponent.displayName = 'SplashScreen';
-  return { SplashScreen: mockComponent };
-});
 
 const mockFetchEnergyData = fetchEnergyData as jest.MockedFunction<typeof fetchEnergyData>;
 
@@ -234,7 +229,7 @@ describe('App', () => {
     });
 
     it('should close settings menu when close button is pressed', async () => {
-      const { getByLabelText, getByText } = renderWithProviders(<App />);
+      const { getByLabelText, getByText, queryByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         fireEvent.press(getByLabelText('Settings'));
@@ -247,8 +242,9 @@ describe('App', () => {
       const closeButtons = getByText('✕');
       fireEvent.press(closeButtons);
 
-      // Verify close button was pressable (animation mock doesn't remove from DOM)
-      expect(closeButtons).toBeTruthy();
+      await waitFor(() => {
+        expect(queryByText('APPEARANCE')).toBeFalsy();
+      });
     });
 
     it('should display appearance section in settings', async () => {
