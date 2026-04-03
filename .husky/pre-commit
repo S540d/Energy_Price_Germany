@@ -42,4 +42,40 @@ if git diff --cached --name-only | grep -E "(package\.json|app\.json|App\.tsx|bu
   fi
 fi
 
+# ============================================================================
+# SECURITY: Sensitive data checks on staged diff (+lines only)
+# ============================================================================
+echo "Checking for sensitive data in staged changes..."
+
+# Get the diff of staged changes (only added lines)
+STAGED_DIFF=$(git diff --cached -U0 | grep '^+' | grep -v '^+++')
+
+# Check for SHA1/SHA256 signing fingerprints (XX:XX:XX:... colon-hex format)
+if echo "$STAGED_DIFF" | grep -qiE '[0-9A-F]{2}(:[0-9A-F]{2}){19,}'; then
+  echo "❌ ERROR: Potential signing fingerprint detected in staged changes!"
+  echo "SHA1/SHA256 fingerprints must not be committed. Use Repository Secrets instead."
+  echo "Affected lines:"
+  echo "$STAGED_DIFF" | grep -iE '[0-9A-F]{2}(:[0-9A-F]{2}){19,}'
+  exit 1
+fi
+
+# Check for hardcoded API keys or tokens (key = "value" patterns, not GitHub Secrets)
+if echo "$STAGED_DIFF" | grep -qiE '(api[_-]?key|api[_-]?token|access[_-]?token|auth[_-]?token)\s*[=:]\s*["'"'"'][A-Za-z0-9+/=_-]{16,}'; then
+  echo "❌ ERROR: Potential hardcoded API key/token detected in staged changes!"
+  echo "Use Repository Secrets (\${{ secrets.MY_SECRET }}) instead of hardcoding tokens."
+  exit 1
+fi
+
+# Warn (non-blocking) if keystore documentation or internal checklists are staged
+SENSITIVE_DOCS=$(git diff --cached --name-only | grep -E '^(keystore/|docs/ANDROID_STORE_CHECKLIST\.md|docs/RELEASE_CHECKLIST\.md)')
+if [ -n "$SENSITIVE_DOCS" ]; then
+  echo ""
+  echo "⚠️  WARNING: Internal/sensitive documentation files are staged:"
+  echo "$SENSITIVE_DOCS"
+  echo "   These files contain internal process details or signing information."
+  echo "   Consider adding them to .gitignore if they should stay local only."
+  echo "   Commit is NOT blocked – proceeding."
+  echo ""
+fi
+
 echo "✅ Pre-commit checks passed!"
