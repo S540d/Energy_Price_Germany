@@ -1,0 +1,93 @@
+name: Security Scan
+
+on:
+  pull_request:
+    branches: [main, staging, testing]
+
+permissions:
+  contents: read
+
+jobs:
+  sensitive-data-check:
+    name: 🔐 Sensitive Data Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR diff for signing fingerprints
+        run: |
+          echo "Scanning PR diff for signing fingerprints (SHA1/SHA256)..."
+
+          # Get only the added lines from the PR diff
+          ADDED_LINES=$(git diff origin/${{ github.base_ref }}...HEAD -U0 | grep '^+' | grep -v '^+++')
+
+          if echo "$ADDED_LINES" | grep -qiE '[0-9A-F]{2}(:[0-9A-F]{2}){19,}'; then
+            echo "❌ ERROR: Signing fingerprint detected in PR changes!"
+            echo ""
+            echo "Affected lines:"
+            echo "$ADDED_LINES" | grep -iE '[0-9A-F]{2}(:[0-9A-F]{2}){19,}'
+            echo ""
+            echo "SHA1/SHA256 fingerprints must not be committed to the repository."
+            echo "Use Repository Secrets instead: Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+
+          echo "✅ No signing fingerprints found"
+
+      - name: Check PR diff for hardcoded API keys or tokens
+        run: |
+          echo "Scanning PR diff for hardcoded API keys/tokens..."
+
+          ADDED_LINES=$(git diff origin/${{ github.base_ref }}...HEAD -U0 | grep '^+' | grep -v '^+++')
+
+          if echo "$ADDED_LINES" | grep -qiE '(api[_-]?key|api[_-]?token|access[_-]?token|auth[_-]?token)\s*[=:]\s*["'"'"'][A-Za-z0-9+/=_-]{16,}'; then
+            echo "❌ ERROR: Hardcoded API key/token detected in PR changes!"
+            echo ""
+            echo "Use Repository Secrets (\${{ secrets.MY_SECRET }}) instead of hardcoding tokens."
+            echo "Settings → Secrets and variables → Actions → New repository secret"
+            exit 1
+          fi
+
+          echo "✅ No hardcoded API keys/tokens found"
+
+      - name: Check for sensitive files added to PR
+        run: |
+          echo "Scanning for sensitive files in PR..."
+
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          # Block if keystore docs or .jks files are added
+          BLOCKED=$(echo "$CHANGED_FILES" | grep -E '^(keystore/|.*\.jks$|.*\.p12$|.*\.p8$|credentials\.json$|google-service-account\.json$)')
+          if [ -n "$BLOCKED" ]; then
+            echo "❌ ERROR: Sensitive files detected in PR:"
+            echo "$BLOCKED"
+            echo ""
+            echo "These files must never be committed. Add them to .gitignore."
+            exit 1
+          fi
+
+          # Warn for internal process docs (non-blocking)
+          WARNED=$(echo "$CHANGED_FILES" | grep -E '^(docs/ANDROID_STORE_CHECKLIST\.md|docs/RELEASE_CHECKLIST\.md)' || true)
+          if [ -n "$WARNED" ]; then
+            echo "⚠️  WARNING: Internal process documentation modified in this PR:"
+            echo "$WARNED"
+            echo "   Consider whether these files should be public. This check is non-blocking."
+          fi
+
+          echo "✅ No blocked sensitive files found"
+
+      - name: Summary
+        if: success()
+        run: |
+          echo "## 🔐 Security Scan Passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All sensitive data checks passed for this PR." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Signing fingerprints | ✅ Clean |" >> $GITHUB_STEP_SUMMARY
+          echo "| Hardcoded API keys/tokens | ✅ Clean |" >> $GITHUB_STEP_SUMMARY
+          echo "| Sensitive files | ✅ Clean |" >> $GITHUB_STEP_SUMMARY

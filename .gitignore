@@ -19,6 +19,9 @@ expo-env.d.ts
 *.mobileprovision
 credentials.json
 
+# Signing documentation (contains fingerprints + key aliases – keep local only)
+keystore/
+
 # Build outputs (can be downloaded from EAS)
 *.aab
 *.apk
