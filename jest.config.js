@@ -15,8 +15,12 @@ module.exports = {
       'react-native-svg|' +
       '@react-native-async-storage|' +
       'react-native-safe-area-context|' +
+      'react-native-reanimated|' +
+      'react-native-worklets|' +
       'expo-status-bar|' +
-      'expo-updates' +
+      'expo-updates|' +
+      'expo-splash-screen|' +
+      'expo-linear-gradient' +
     ')/)',
   ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
@@ -32,5 +36,6 @@ module.exports = {
   ],
   moduleNameMapper: {
     '\\.svg$': '<rootDir>/__mocks__/svgMock.js',
+    '\\.(png|jpg|jpeg|gif|webp)$': '<rootDir>/__mocks__/fileMock.js',
   },
 };

@@ -46,6 +46,11 @@ jest.mock('./components/settings/BetaModeSection', () => {
   mockComponent.displayName = 'BetaModeSection';
   return { BetaModeSection: mockComponent };
 });
+jest.mock('./components/ui/SplashScreen', () => {
+  const mockComponent = () => null;
+  mockComponent.displayName = 'SplashScreen';
+  return { SplashScreen: mockComponent };
+});
 
 const mockFetchEnergyData = fetchEnergyData as jest.MockedFunction<typeof fetchEnergyData>;
 
@@ -238,7 +243,6 @@ describe('App', () => {
       fireEvent.press(closeButtons);
 
       await waitFor(() => {
-        // Settings menu should still be rendered but overlay interaction closes it
         expect(queryByText('APPEARANCE')).toBeFalsy();
       });
     });
@@ -332,7 +336,7 @@ describe('App', () => {
     });
 
     it('should switch to German language and update UI', async () => {
-      const { getByLabelText, getByText } = renderWithProviders(<App />);
+      const { getByLabelText, getByText, getAllByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
         fireEvent.press(getByLabelText('Settings'));
@@ -349,7 +353,7 @@ describe('App', () => {
 
       await waitFor(() => {
         // CustomizeModal title switches to German translation
-        expect(getByText('Personalisieren')).toBeTruthy();
+        expect(getAllByText('Personalisieren').length).toBeGreaterThan(0);
       });
     });
   });
