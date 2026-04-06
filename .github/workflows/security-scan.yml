@@ -70,7 +70,7 @@ jobs:
           fi
 
           # Warn for internal process docs (non-blocking)
-          WARNED=$(echo "$CHANGED_FILES" | grep -E '^(docs/ANDROID_STORE_CHECKLIST\.md|docs/RELEASE_CHECKLIST\.md|keystore/)' || true)
+          WARNED=$(echo "$CHANGED_FILES" | grep -E '^(docs/ANDROID_STORE_CHECKLIST\.md|docs/RELEASE_CHECKLIST\.md)' || true)
           if [ -n "$WARNED" ]; then
             echo "⚠️  WARNING: Internal process documentation modified in this PR:"
             echo "$WARNED"
