@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.3] - 2026-04-06
+
+### Fixed
+- **Button-Sizing im Detail-Modal** – `style`-Prop (z.B. `flex: 1`, `minHeight`) wird jetzt korrekt auf den inneren `Animated.View` übertragen, sodass der Button-Hintergrund den gesamten zugewiesenen Bereich füllt
+- **Footer-Buttons Abstand** – `marginLeft`-Hack durch konsistentes `gap: 12` auf dem Container ersetzt (einheitlich mit dem Rest der Codebase)
+
+### Security
+- **flatted 3.4.1 → 3.4.2** – Prototype Pollution Vulnerability behoben (GHSA-rf6f-7fwh-wjgh)
+
+---
+
 ## [1.5.2] - 2026-03-15
 
 ### Fixed
