@@ -315,7 +315,6 @@ const styles = StyleSheet.create({
   },
   footerButtons: {
     flexDirection: 'row',
-    gap: 12,
     alignItems: 'stretch',
   },
   footerButton: {
