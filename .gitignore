@@ -46,9 +46,13 @@ yarn-error.*
 /ios
 /android
 
-# Private documentation
+# Private documentation (local only)
 PFLICHTENHEFT.md
 FooterSpezifikation.md
+docs/private/
+
+# Keystore directory (signing docs + fingerprints)
+keystore/
 
 # Local GitHub templates (from .templates submodule)
 # Only track via submodule, ignore local copies
