@@ -26,6 +26,7 @@ import { usePriceAlertNotification } from './hooks/usePriceAlertNotification';
 import { ChartSkeleton } from './components/ui/ChartSkeleton';
 import { SplashScreen } from './components/ui/SplashScreen';
 import { Badge } from './components/ui/Badge';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -322,6 +323,14 @@ function AppContent() {
       style={[styles.container, { backgroundColor: colors.background }]}
       edges={['top', 'left', 'right']}
     >
+      {isDark && (
+        <LinearGradient
+          colors={['#0a0f1e', '#0d1a2e', '#0a1628']}
+          locations={[0, 0.5, 1]}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          pointerEvents="none"
+        />
+      )}
       <StatusBar style={isDark ? 'light' : 'dark'} />
       {showSplash && <SplashScreen onFinish={handleSplashFinish} version={APP_VERSION} />}
 
@@ -402,10 +411,10 @@ function AppContent() {
 
       {/* Main Content */}
       <ScrollView
-        style={[styles.scrollView, { backgroundColor: colors.background }]}
+        style={[styles.scrollView, { backgroundColor: isDark ? 'transparent' : colors.background }]}
         contentContainerStyle={{
           flexGrow: 1,
-          backgroundColor: colors.background,
+          backgroundColor: isDark ? 'transparent' : colors.background,
           paddingBottom: 20,
         }}
         bounces={false}
