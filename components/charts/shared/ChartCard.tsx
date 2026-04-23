@@ -14,6 +14,7 @@ interface ChartCardProps {
   children: React.ReactNode;
   style?: ViewStyle;
   animateIn?: boolean;
+  accentColor?: string;
 }
 
 function ChartCardComponent({
@@ -23,6 +24,7 @@ function ChartCardComponent({
   children,
   style,
   animateIn = true,
+  accentColor,
 }: ChartCardProps) {
   const opacity = useSharedValue(animateIn ? 0 : 1);
   const translateY = useSharedValue(animateIn ? 8 : 0);
@@ -53,13 +55,16 @@ function ChartCardComponent({
           backgroundColor,
           margin,
           padding: cardPadding,
-          borderRadius: 16,
+          borderRadius: 20,
           alignSelf: 'stretch',
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.08,
           shadowRadius: 12,
           elevation: 3,
+          ...(accentColor?.startsWith('#')
+            ? { borderWidth: 1, borderColor: accentColor + '33' }
+            : {}),
           ...style,
         },
         animatedStyle,
