@@ -71,6 +71,7 @@ interface RenewableBarChartProps {
   dataKey?: RenewableDataKey;
   showRegionalLine?: boolean; // Zeigt gestrichelte Linie für regionale Daten
   showLegend?: boolean;
+  accentColor?: string;
 }
 
 function RenewableBarChartComponent({
@@ -86,6 +87,7 @@ function RenewableBarChartComponent({
   dataKey = 'renewableShare',
   showRegionalLine = false,
   showLegend = true,
+  accentColor,
 }: RenewableBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -209,7 +211,12 @@ function RenewableBarChartComponent({
   const { minTime, maxTime, timeRange, min, max, range, avgValue, lastValidValue } = chartCalcs;
 
   return (
-    <ChartCard backgroundColor={backgroundColor} margin={margin} cardPadding={cardPadding}>
+    <ChartCard
+      backgroundColor={backgroundColor}
+      margin={margin}
+      cardPadding={cardPadding}
+      accentColor={accentColor}
+    >
       {selectedIndex !== null &&
         data[selectedIndex]?.[dataKey] !== null &&
         data[selectedIndex]?.[dataKey] !== undefined &&

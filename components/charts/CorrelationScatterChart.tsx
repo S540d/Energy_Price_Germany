@@ -28,6 +28,7 @@ interface CorrelationScatterChartProps {
     day: string;
   };
   interactionHint?: string;
+  accentColor?: string;
 }
 
 function CorrelationScatterChartComponent({
@@ -40,6 +41,7 @@ function CorrelationScatterChartComponent({
   colors,
   labels,
   interactionHint,
+  accentColor,
 }: CorrelationScatterChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -193,7 +195,12 @@ function CorrelationScatterChartComponent({
   } = chartCalcs;
 
   return (
-    <ChartCard backgroundColor={backgroundColor} margin={margin} cardPadding={cardPadding}>
+    <ChartCard
+      backgroundColor={backgroundColor}
+      margin={margin}
+      cardPadding={cardPadding}
+      accentColor={accentColor}
+    >
       {selectedIndex !== null &&
         validData[selectedIndex] &&
         (() => {

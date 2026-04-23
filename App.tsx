@@ -370,6 +370,7 @@ function AppContent() {
                 dataKey="renewableShare"
                 showRegionalLine={isValidPostalCode(debouncedPostalCode) && hasRegionalData}
                 showLegend={false}
+                accentColor={colors.accentGreen}
               />
             </ChartDetailView>
 
@@ -555,6 +556,7 @@ function AppContent() {
                     gridFees={gridFees}
                     showLegend={false}
                     forceStacked
+                    accentColor={colors.accentAmber}
                   />
                 )
               }
@@ -596,6 +598,7 @@ function AppContent() {
                     }}
                     gridFees={gridFees}
                     showLegend={false}
+                    accentColor={colors.accentAmber}
                   />
                 )}
               </Animated.View>
