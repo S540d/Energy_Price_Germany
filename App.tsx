@@ -30,6 +30,9 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withRepeat,
+  withSequence,
+  cancelAnimation,
   runOnJS,
 } from 'react-native-reanimated';
 
@@ -88,8 +91,22 @@ function AppContent() {
   const { energyData, loading } = useEnergyData(debouncedPostalCode);
 
   const systemTheme = useColorScheme();
+  const isDark = theme === 'dark' || (theme === 'system' && systemTheme === 'dark');
 
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
+
+  const livePulseOpacity = useSharedValue(1);
+  const livePulseStyle = useAnimatedStyle(() => ({ opacity: livePulseOpacity.value }));
+
+  useEffect(() => {
+    livePulseOpacity.value = withRepeat(
+      withSequence(withTiming(0.2, { duration: 800 }), withTiming(1, { duration: 800 })),
+      -1
+    );
+    return () => cancelAnimation(livePulseOpacity);
+    // livePulseOpacity is a stable shared value ref
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Set body background color dynamically on web
   useEffect(() => {
@@ -212,7 +229,7 @@ function AppContent() {
         style={[styles.container, { backgroundColor: colors.background }]}
         edges={['top', 'left', 'right']}
       >
-        <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
+        <StatusBar style={isDark ? 'light' : 'dark'} />
         <ScrollView
           style={{ backgroundColor: colors.background }}
           contentContainerStyle={styles.skeletonScroll}
@@ -237,7 +254,7 @@ function AppContent() {
       style={[styles.container, { backgroundColor: colors.background }]}
       edges={['top', 'left', 'right']}
     >
-      <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       {showSplash && <SplashScreen onFinish={handleSplashFinish} version={APP_VERSION} />}
 
       {/* Header with Calculator and Settings Buttons */}
@@ -247,7 +264,20 @@ function AppContent() {
           { backgroundColor: colors.surface, borderBottomColor: colors.gridLine },
         ]}
       >
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Energy Price Germany</Text>
+        <View style={styles.headerTitleBlock}>
+          <View style={styles.headerLiveRow}>
+            <Animated.View
+              style={[
+                styles.headerLiveDot,
+                { backgroundColor: colors.accentGreen },
+                livePulseStyle,
+              ]}
+            />
+            <Text style={[styles.headerLiveLabel, { color: colors.accentGreen }]}>LIVE</Text>
+          </View>
+          <Text style={[styles.headerTitleLine1, { color: colors.text }]}>Energy Price</Text>
+          <Text style={[styles.headerTitleLine2, { color: colors.accentGreen }]}>Germany</Text>
+        </View>
         <View style={styles.headerButtons}>
           {alertState !== 'none' && (
             <Badge
@@ -262,7 +292,12 @@ function AppContent() {
             onPress={() => setCalculatorVisible(true)}
             style={[
               styles.headerButton,
-              { borderColor: colors.gridLine, backgroundColor: colors.background },
+              isDark
+                ? {
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                  }
+                : { borderColor: colors.gridLine, backgroundColor: colors.background },
             ]}
             aria-label="Cost Calculator"
           >
@@ -272,7 +307,12 @@ function AppContent() {
             onPress={() => setMenuVisible(true)}
             style={[
               styles.headerButton,
-              { borderColor: colors.gridLine, backgroundColor: colors.background },
+              isDark
+                ? {
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                  }
+                : { borderColor: colors.gridLine, backgroundColor: colors.background },
             ]}
             aria-label="Settings"
           >
@@ -749,11 +789,36 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 1,
   },
-  headerTitle: {
+  headerTitleBlock: {
+    flex: 1,
+  },
+  headerLiveRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 2,
+  },
+  headerLiveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  headerLiveLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+  },
+  headerTitleLine1: {
     fontSize: 20,
     fontWeight: '700',
-    letterSpacing: 0.2,
-    flex: 1,
+    letterSpacing: -0.3,
+    lineHeight: 24,
+  },
+  headerTitleLine2: {
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    lineHeight: 24,
   },
   headerButtons: {
     flexDirection: 'row',
