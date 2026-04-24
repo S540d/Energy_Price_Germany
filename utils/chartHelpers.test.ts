@@ -89,6 +89,7 @@ describe('chartHelpers.ts', () => {
           top: 100, // chartHeight / 2
           fontSize: 12,
           color: '#333',
+          opacity: 0.6,
           fontWeight: '600',
           transform: [{ rotate: '-90deg' }],
           width: 200,
@@ -142,6 +143,7 @@ describe('chartHelpers.ts', () => {
           top: 110, // 200 / 2 + 10
           fontSize: 12,
           color: '#00FF00',
+          opacity: 0.6,
           fontWeight: '600',
           transform: [{ rotate: '-90deg' }],
           width: 200,
@@ -189,6 +191,7 @@ describe('chartHelpers.ts', () => {
           top: 175, // 300 / 2 + 25
           fontSize: 12,
           color: '#123456',
+          opacity: 0.6,
           fontWeight: '600',
           transform: [{ rotate: '-90deg' }],
           width: 200,
