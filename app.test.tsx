@@ -140,7 +140,8 @@ describe('App', () => {
       const { getByText } = renderWithProviders(<App />);
 
       await waitFor(() => {
-        expect(getByText('Energy Price Germany')).toBeTruthy();
+        expect(getByText('Energy Price')).toBeTruthy();
+        expect(getByText('Germany')).toBeTruthy();
       });
     });
 
@@ -158,7 +159,8 @@ describe('App', () => {
       const { getByText, getByLabelText } = renderWithProviders(<App />);
 
       await waitFor(() => {
-        expect(getByText('Energy Price Germany')).toBeTruthy();
+        expect(getByText('Energy Price')).toBeTruthy();
+        expect(getByText('Germany')).toBeTruthy();
         expect(getByLabelText('Settings')).toBeTruthy();
       });
     });
