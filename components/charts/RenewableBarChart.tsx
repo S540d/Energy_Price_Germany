@@ -574,7 +574,7 @@ function RenewableBarChartComponent({
 
         {/* X-axis labels (every 6 hours) */}
         {(() => {
-          const labels = [];
+          const xAxisLabels = [];
           const startDate = new Date(minTime);
           const endDate = new Date(maxTime);
 
@@ -589,7 +589,7 @@ function RenewableBarChartComponent({
               ((timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
             const hour = current.getHours();
 
-            labels.push(
+            xAxisLabels.push(
               <Text
                 key={`xlabel-${timestamp}`}
                 style={{
@@ -608,7 +608,7 @@ function RenewableBarChartComponent({
             current.setHours(current.getHours() + 6);
           }
 
-          return labels;
+          return xAxisLabels;
         })()}
 
         {/* Y-Achsen-Label */}

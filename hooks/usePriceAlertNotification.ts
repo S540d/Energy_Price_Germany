@@ -34,10 +34,12 @@ export function usePriceAlertNotification(
     const body = current === 'low' ? notificationLow : notificationHigh;
 
     if (Notification.permission === 'granted') {
+      // eslint-disable-next-line no-new
       new Notification(notificationTitle, { body, icon: '/favicon.ico' });
     } else if (Notification.permission === 'default') {
       Notification.requestPermission().then(permission => {
         if (permission === 'granted') {
+          // eslint-disable-next-line no-new
           new Notification(notificationTitle, { body, icon: '/favicon.ico' });
         }
       });
