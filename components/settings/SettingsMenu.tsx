@@ -1,5 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Linking, useColorScheme } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Linking,
+  useColorScheme,
+  Platform,
+  Dimensions,
+} from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -157,6 +166,10 @@ const styles = StyleSheet.create({
     top: 60,
     right: 8,
     width: 320,
+    maxWidth:
+      Platform.OS === 'web'
+        ? ('calc(100vw - 16px)' as unknown as number)
+        : Dimensions.get('window').width - 16,
     maxHeight: '85%',
     borderRadius: 12,
     shadowColor: '#000',

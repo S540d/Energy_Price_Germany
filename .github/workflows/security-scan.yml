@@ -22,7 +22,7 @@ jobs:
           echo "Scanning PR diff for signing fingerprints (SHA1/SHA256)..."
 
           # Get only the added lines from the PR diff
-          ADDED_LINES=$(git diff origin/${{ github.base_ref }}...HEAD -U0 | grep '^+' | grep -v '^+++')
+          ADDED_LINES=$(git diff origin/${{ github.base_ref }}...HEAD -U0 | grep '^+' | grep -v '^+++' || true)
 
           if echo "$ADDED_LINES" | grep -qiE '[0-9A-F]{2}(:[0-9A-F]{2}){19,}'; then
             echo "❌ ERROR: Signing fingerprint detected in PR changes!"
@@ -41,7 +41,7 @@ jobs:
         run: |
           echo "Scanning PR diff for hardcoded API keys/tokens..."
 
-          ADDED_LINES=$(git diff origin/${{ github.base_ref }}...HEAD -U0 | grep '^+' | grep -v '^+++')
+          ADDED_LINES=$(git diff origin/${{ github.base_ref }}...HEAD -U0 | grep '^+' | grep -v '^+++' || true)
 
           if echo "$ADDED_LINES" | grep -qiE '(api[_-]?key|api[_-]?token|access[_-]?token|auth[_-]?token)\s*[=:]\s*["'"'"'][A-Za-z0-9+/=_-]{16,}'; then
             echo "❌ ERROR: Hardcoded API key/token detected in PR changes!"
@@ -60,7 +60,7 @@ jobs:
           CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
 
           # Block if keystore docs or .jks files are added
-          BLOCKED=$(echo "$CHANGED_FILES" | grep -E '^(keystore/|.*\.jks$|.*\.p12$|.*\.p8$|credentials\.json$|google-service-account\.json$)')
+          BLOCKED=$(echo "$CHANGED_FILES" | grep -E '^(keystore/|.*\.jks$|.*\.p12$|.*\.p8$|credentials\.json$|google-service-account\.json$)' || true)
           if [ -n "$BLOCKED" ]; then
             echo "❌ ERROR: Sensitive files detected in PR:"
             echo "$BLOCKED"

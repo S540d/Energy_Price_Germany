@@ -1,5 +1,14 @@
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, useColorScheme } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  useColorScheme,
+  Platform,
+  Dimensions,
+} from 'react-native';
 import { useLanguageContext } from '../../context/LanguageContext';
 import { getThemeColors } from '../../utils/theme';
 import { useSettingsContext } from '../../context/SettingsContext';
@@ -81,21 +90,28 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    zIndex: 999,
+    zIndex: 1099,
   },
   menu: {
     position: 'absolute',
     top: 60,
     right: 8,
-    width: 360,
-    maxHeight: '85%',
+    width: 400,
+    maxWidth:
+      Platform.OS === 'web'
+        ? ('calc(100vw - 16px)' as unknown as number)
+        : Dimensions.get('window').width - 16,
+    maxHeight:
+      Platform.OS === 'web'
+        ? ('calc(100vh - 80px)' as unknown as number)
+        : Dimensions.get('window').height - 80,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
-    zIndex: 1000,
+    zIndex: 1100,
   },
   scrollView: {
     flex: 1,
