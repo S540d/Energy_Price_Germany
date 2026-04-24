@@ -23,6 +23,7 @@ export const borderRadius = {
   md: 8,
   lg: 12,
   xl: 16,
+  xxl: 20,
   full: 9999,
 } as const;
 
@@ -181,6 +182,15 @@ export const colorScales = {
     800: '#333333',
     900: '#1A1A1A',
     950: '#0A0A0A',
+  },
+  navy: {
+    800: '#0a1628',
+    900: '#0d1a2e',
+    950: '#0a0f1e',
+  },
+  amber: {
+    400: '#eab308',
+    500: '#ca8a04',
   },
 } as const;
 
