@@ -455,17 +455,16 @@ function CorrelationScatterChartComponent({
             marginTop: 10,
             paddingHorizontal: 12,
             paddingVertical: 8,
-            backgroundColor: colors.surfaceSecondary ?? colors.gridLine,
             borderRadius: 10,
-            borderLeftWidth: 3,
-            borderLeftColor: colors.primary,
+            borderWidth: 1.5,
+            borderColor: colors.gridLine,
           }}
         >
           <Text
             style={{
               fontSize: 12,
               color: textColor,
-              opacity: 0.85,
+              opacity: 0.7,
             }}
           >
             {insightText}
