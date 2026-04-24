@@ -57,7 +57,8 @@ jobs:
         run: |
           echo "Scanning for sensitive files in PR..."
 
-          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          # Only look at *added* files (status A) – deletions are safe
+          CHANGED_FILES=$(git diff --name-status --diff-filter=A origin/${{ github.base_ref }}...HEAD | awk '{print $2}')
 
           # Block if keystore docs or .jks files are added
           BLOCKED=$(echo "$CHANGED_FILES" | grep -E '^(keystore/|.*\.jks$|.*\.p12$|.*\.p8$|credentials\.json$|google-service-account\.json$)' || true)
@@ -69,7 +70,7 @@ jobs:
             exit 1
           fi
 
-          # Warn for internal process docs (non-blocking)
+          # Warn for internal process docs (non-blocking) — also additions only
           WARNED=$(echo "$CHANGED_FILES" | grep -E '^(docs/ANDROID_STORE_CHECKLIST\.md|docs/RELEASE_CHECKLIST\.md)' || true)
           if [ -n "$WARNED" ]; then
             echo "⚠️  WARNING: Internal process documentation modified in this PR:"

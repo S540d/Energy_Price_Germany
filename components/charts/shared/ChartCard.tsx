@@ -63,7 +63,7 @@ function ChartCardComponent({
           shadowOpacity: 0.08,
           shadowRadius: 12,
           elevation: 3,
-          ...(accentColor?.startsWith('#')
+          ...(/^#[0-9A-Fa-f]{6}$/.test(accentColor ?? '')
             ? { borderWidth: 1, borderColor: accentColor + '33' }
             : {}),
           ...style,
