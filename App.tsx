@@ -72,7 +72,7 @@ function KpiCard({
       style={{
         flex: 1,
         backgroundColor: bg,
-        borderRadius: 16,
+        borderRadius: 20,
         borderWidth: 1,
         borderColor: border,
         padding: 14,

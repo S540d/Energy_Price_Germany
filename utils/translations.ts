@@ -246,6 +246,6 @@ export const translations = {
     // KPI Row
     renewableNow: 'Erneuerbare jetzt',
     priceNow: 'Börsenpreis jetzt',
-    dailyAvg: 'Tagesø',
+    dailyAvg: 'Tages-Ø',
   },
 } as const;
