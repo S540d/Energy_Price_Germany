@@ -28,6 +28,7 @@ interface CorrelationScatterChartProps {
     day: string;
   };
   interactionHint?: string;
+  insightText?: string;
   accentColor?: string;
 }
 
@@ -41,6 +42,7 @@ function CorrelationScatterChartComponent({
   colors,
   labels,
   interactionHint,
+  insightText,
   accentColor,
 }: CorrelationScatterChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -434,9 +436,10 @@ function CorrelationScatterChartComponent({
           style={{
             position: 'absolute',
             left: chartWidth / 2 - 60,
-            bottom: isPhone ? 0 : 3, // Moved down by 2px for both
+            bottom: isPhone ? 0 : 3,
             fontSize: 12,
             color: textColor,
+            opacity: 0.6,
             fontWeight: '600',
           }}
         >
@@ -446,6 +449,29 @@ function CorrelationScatterChartComponent({
           {labels.yAxisPrice}
         </Text>
       </View>
+      {insightText && (
+        <View
+          style={{
+            marginTop: 10,
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+            backgroundColor: colors.surfaceSecondary ?? colors.gridLine,
+            borderRadius: 10,
+            borderLeftWidth: 3,
+            borderLeftColor: colors.primary,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 12,
+              color: textColor,
+              opacity: 0.85,
+            }}
+          >
+            {insightText}
+          </Text>
+        </View>
+      )}
       {interactionHint && (
         <Text
           accessible={true}

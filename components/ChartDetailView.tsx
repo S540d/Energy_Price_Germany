@@ -48,6 +48,8 @@ interface ChartDetailViewProps {
   /** Optional override for the legend rendered inside the detail modal. */
   detailLegend?: React.ReactNode;
   gridFees?: number;
+  /** Accent color for the Details button to match chart bars */
+  accentColor?: string;
 }
 
 export function ChartDetailView({
@@ -61,6 +63,7 @@ export function ChartDetailView({
   legend,
   detailLegend,
   gridFees: _gridFees = GRID_FEES_AND_TAXES,
+  accentColor,
 }: ChartDetailViewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
@@ -210,21 +213,28 @@ export function ChartDetailView({
     </View>
   );
 
+  const detailButtonColors = accentColor
+    ? {
+        ...colors,
+        primary: accentColor,
+      }
+    : colors;
+
   return (
     <View>
-      {/* Normal view with expand button */}
-      <View>
+      {/* Normal view with expand button overlaid on chart */}
+      <View style={styles.chartWrapper}>
+        <View style={styles.chartContainer}>{children}</View>
         <View style={styles.headerContainer}>
           <Button
             variant="outlined"
             size="small"
-            colors={colors}
+            colors={detailButtonColors}
             onPress={() => setIsExpanded(true)}
           >
             Details
           </Button>
         </View>
-        <View style={styles.chartContainer}>{children}</View>
       </View>
 
       {/* Expanded detail modal */}
@@ -283,14 +293,17 @@ export function ChartDetailView({
 }
 
 const styles = StyleSheet.create({
+  chartWrapper: {
+    position: 'relative',
+  },
   chartContainer: {
-    flex: 1,
+    width: '100%',
     justifyContent: 'center',
   },
   headerContainer: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    bottom: 28,
+    right: 14,
     zIndex: 100,
   },
   modalContainer: {

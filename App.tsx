@@ -111,7 +111,6 @@ function KpiCard({
   );
 }
 
-
 function AppContent() {
   // Splash screen state
   const [showSplash, setShowSplash] = useState(true);
@@ -235,13 +234,54 @@ function AppContent() {
       return new Date(timestamp).toLocaleString(locale, {
         day: '2-digit',
         month: '2-digit',
-        year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
       });
     },
     [language]
   );
+
+  // Aggregate 15-min data to hourly for main view (avg per hour slot)
+  const hourlyEnergyData = useMemo(() => {
+    if (!filteredEnergyData.length) return filteredEnergyData;
+    const buckets = new Map<number, typeof filteredEnergyData>();
+    for (const d of filteredEnergyData) {
+      const hourTs = Math.floor(d.timestamp / 3_600_000) * 3_600_000;
+      if (!buckets.has(hourTs)) buckets.set(hourTs, []);
+      const bucket = buckets.get(hourTs);
+      if (bucket) bucket.push(d);
+    }
+    return Array.from(buckets.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([hourTs, items]) => {
+        const validPrice = items.filter(i => i.marketPrice !== null);
+        const validRenewable = items.filter(i => i.renewableShare !== null);
+        const avg = <T extends number | null>(arr: T[]): T =>
+          (arr.length ? arr.reduce((s, v) => s + (v as number), 0) / arr.length : null) as T;
+        return {
+          timestamp: hourTs,
+          marketPrice: validPrice.length ? avg(validPrice.map(i => i.marketPrice as number)) : null,
+          renewableShare: validRenewable.length
+            ? avg(validRenewable.map(i => i.renewableShare as number))
+            : null,
+          renewableShareRegional: (() => {
+            const v = items.filter(
+              i => i.renewableShareRegional !== null && i.renewableShareRegional !== undefined
+            );
+            return v.length ? avg(v.map(i => i.renewableShareRegional as number)) : undefined;
+          })(),
+          isMarketPriceInterpolated: items.some(i => i.isMarketPriceInterpolated),
+          isRenewableShareInterpolated: items.some(i => i.isRenewableShareInterpolated),
+        };
+      });
+  }, [filteredEnergyData]);
+
+  // Data is stale when the newest data point is more than 2 hours old
+  const isDataStale = useMemo(() => {
+    if (!filteredEnergyData.length) return false;
+    const newest = Math.max(...filteredEnergyData.map(d => d.timestamp));
+    return Date.now() - newest > 2 * 60 * 60 * 1000;
+  }, [filteredEnergyData]);
 
   // Language, postal code, and grid fees are now managed by hooks and contexts!
 
@@ -351,11 +391,18 @@ function AppContent() {
               <Animated.View
                 style={[
                   styles.headerLiveDot,
-                  { backgroundColor: colors.accentGreen },
+                  { backgroundColor: isDataStale ? colors.accentAmber : colors.accentGreen },
                   livePulseStyle,
                 ]}
               />
-              <Text style={[styles.headerLiveLabel, { color: colors.accentGreen }]}>LIVE</Text>
+              <Text
+                style={[
+                  styles.headerLiveLabel,
+                  { color: isDataStale ? colors.accentAmber : colors.accentGreen },
+                ]}
+              >
+                LIVE
+              </Text>
             </View>
             <Text style={[styles.headerTitleLine1, { color: colors.text }]}>Energy Price</Text>
             <Text style={[styles.headerTitleLine2, { color: colors.accentGreen }]}>Germany</Text>
@@ -465,6 +512,7 @@ function AppContent() {
                 colors={colors}
                 chartType="renewable"
                 gridFees={gridFees}
+                accentColor={colors.accentGreen}
                 metrics={
                   metrics
                     ? {
@@ -506,8 +554,8 @@ function AppContent() {
                       ? `${t.renewableTitle} (${t.nationalData} & ${t.regionalData})`
                       : t.renewableTitle
                   }
-                  subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
-                  data={filteredEnergyData}
+                  subtitle={`${t.timeRange}: ${hourlyEnergyData.length > 0 ? formatDate(hourlyEnergyData[0].timestamp) : t.loadingData} - ${hourlyEnergyData.length > 0 ? formatDate(hourlyEnergyData[hourlyEnergyData.length - 1].timestamp) : t.loadingData}`}
+                  data={hourlyEnergyData}
                   backgroundColor={colors.surface}
                   textColor={colors.text}
                   gridColor={colors.gridLine}
@@ -530,6 +578,7 @@ function AppContent() {
                 colors={colors}
                 chartType="price"
                 gridFees={gridFees}
+                accentColor={colors.accentAmber}
                 metrics={
                   metrics
                     ? {
@@ -734,8 +783,8 @@ function AppContent() {
                   ) : (
                     <PriceBarChart
                       title={t.priceTitle}
-                      subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
-                      data={filteredEnergyData}
+                      subtitle={`${t.timeRange}: ${hourlyEnergyData.length > 0 ? formatDate(hourlyEnergyData[0].timestamp) : t.loadingData} - ${hourlyEnergyData.length > 0 ? formatDate(hourlyEnergyData[hourlyEnergyData.length - 1].timestamp) : t.loadingData}`}
+                      data={hourlyEnergyData}
                       backgroundColor={colors.surface}
                       textColor={colors.text}
                       gridColor={colors.gridLine}
@@ -762,6 +811,7 @@ function AppContent() {
               <CorrelationScatterChart
                 title={t.correlationTitle}
                 subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+                insightText={t.correlationInsight}
                 data={filteredEnergyData}
                 backgroundColor={colors.surface}
                 textColor={colors.text}
