@@ -11,7 +11,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockNotification.permission = 'granted';
   mockNotification.requestPermission = jest.fn().mockResolvedValue('granted');
-  Object.defineProperty(window, 'Notification', {
+  Object.defineProperty(globalThis, 'Notification', {
     writable: true,
     value: Object.assign(NotificationConstructor, mockNotification),
   });
@@ -85,7 +85,7 @@ describe('usePriceAlertNotification', () => {
 
   it('requests permission when default and fires on grant', async () => {
     mockNotification.permission = 'default';
-    Object.defineProperty(window, 'Notification', {
+    Object.defineProperty(globalThis, 'Notification', {
       writable: true,
       value: Object.assign(NotificationConstructor, mockNotification),
     });
@@ -111,7 +111,7 @@ describe('usePriceAlertNotification', () => {
 
   it('silently skips when permission is denied', () => {
     mockNotification.permission = 'denied';
-    Object.defineProperty(window, 'Notification', {
+    Object.defineProperty(globalThis, 'Notification', {
       writable: true,
       value: Object.assign(NotificationConstructor, mockNotification),
     });
