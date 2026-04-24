@@ -302,8 +302,8 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     position: 'absolute',
-    bottom: 28,
-    right: 14,
+    top: 12,
+    right: 19,
     zIndex: 100,
   },
   modalContainer: {
