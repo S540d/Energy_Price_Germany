@@ -119,6 +119,10 @@ export const translations = {
     shareChartDownload: 'Download Chart',
     // Common actions
     close: 'Close',
+    // KPI Row
+    renewableNow: 'Renewables now',
+    priceNow: 'Price now',
+    dailyAvg: 'Daily avg',
   },
   de: {
     settings: 'Einstellungen',
@@ -239,5 +243,9 @@ export const translations = {
     shareChartDownload: 'Diagramm herunterladen',
     // Common actions
     close: 'Schließen',
+    // KPI Row
+    renewableNow: 'Erneuerbare jetzt',
+    priceNow: 'Börsenpreis jetzt',
+    dailyAvg: 'Tages-Ø',
   },
 } as const;

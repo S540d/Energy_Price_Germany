@@ -157,6 +157,7 @@ const styles = StyleSheet.create({
     top: 60,
     right: 8,
     width: 320,
+    maxWidth: 'calc(100vw - 16px)' as unknown as number,
     maxHeight: '85%',
     borderRadius: 12,
     shadowColor: '#000',
