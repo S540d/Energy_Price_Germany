@@ -1,8 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { usePriceAlertNotification } from '../usePriceAlertNotification';
 
-jest.mock('react-native', () => ({ Platform: { OS: 'web' } }));
-
 const NotificationConstructor = jest.fn();
 const mockNotification = {
   permission: 'granted' as NotificationPermission,
