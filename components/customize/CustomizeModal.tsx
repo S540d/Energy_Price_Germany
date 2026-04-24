@@ -1,5 +1,14 @@
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, useColorScheme } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  useColorScheme,
+  Platform,
+  Dimensions,
+} from 'react-native';
 import { useLanguageContext } from '../../context/LanguageContext';
 import { getThemeColors } from '../../utils/theme';
 import { useSettingsContext } from '../../context/SettingsContext';
@@ -88,8 +97,14 @@ const styles = StyleSheet.create({
     top: 60,
     right: 8,
     width: 400,
-    maxWidth: 'calc(100vw - 16px)' as unknown as number,
-    maxHeight: 'calc(100vh - 80px)' as unknown as number,
+    maxWidth:
+      Platform.OS === 'web'
+        ? ('calc(100vw - 16px)' as unknown as number)
+        : Dimensions.get('window').width - 16,
+    maxHeight:
+      Platform.OS === 'web'
+        ? ('calc(100vh - 80px)' as unknown as number)
+        : Dimensions.get('window').height - 80,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
