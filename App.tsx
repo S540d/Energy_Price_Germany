@@ -276,11 +276,17 @@ function AppContent() {
       });
   }, [filteredEnergyData]);
 
-  // Data is stale when the newest data point is more than 2 hours old
+  // Data is stale when the newest past data point is more than 2 hours old.
+  // Future timestamps (forecasts) are excluded so they don't mask stale live data.
   const isDataStale = useMemo(() => {
     if (!filteredEnergyData.length) return false;
-    const newest = Math.max(...filteredEnergyData.map(d => d.timestamp));
-    return Date.now() - newest > 2 * 60 * 60 * 1000;
+    const now = Date.now();
+    const pastTimestamps = filteredEnergyData
+      .map(d => d.timestamp)
+      .filter(ts => ts <= now);
+    if (!pastTimestamps.length) return false;
+    const newestPast = Math.max(...pastTimestamps);
+    return now - newestPast > 2 * 60 * 60 * 1000;
   }, [filteredEnergyData]);
 
   // Language, postal code, and grid fees are now managed by hooks and contexts!
@@ -546,6 +552,31 @@ function AppContent() {
                       </View>
                     </View>
                   ) : undefined
+                }
+                detailChildren={
+                  <RenewableBarChart
+                    title={
+                      isValidPostalCode(debouncedPostalCode) && hasRegionalData
+                        ? `${t.renewableTitle} (${t.nationalData} & ${t.regionalData})`
+                        : t.renewableTitle
+                    }
+                    subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
+                    data={filteredEnergyData}
+                    backgroundColor={colors.surface}
+                    textColor={colors.text}
+                    gridColor={colors.gridLine}
+                    colors={colors}
+                    labels={{
+                      yAxis: t.renewablePercent,
+                      now: t.now,
+                      average: t.average,
+                      regional: t.regionalData,
+                    }}
+                    dataKey="renewableShare"
+                    showRegionalLine={isValidPostalCode(debouncedPostalCode) && hasRegionalData}
+                    showLegend={false}
+                    accentColor={colors.accentGreen}
+                  />
                 }
               >
                 <RenewableBarChart
