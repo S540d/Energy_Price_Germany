@@ -1,4 +1,39 @@
-import { getYAxisLabelCenterPosition, getYAxisLabelStyle } from './chartHelpers';
+import { getPriceColor, getYAxisLabelCenterPosition, getYAxisLabelStyle } from './chartHelpers';
+
+describe('getPriceColor', () => {
+  it('returns green for prices below 25', () => {
+    expect(getPriceColor(0)).toBe('#4CAF50');
+    expect(getPriceColor(24.9)).toBe('#4CAF50');
+  });
+
+  it('returns interpolated color between green and yellow for 25–34', () => {
+    const color = getPriceColor(30);
+    expect(color).toMatch(/^rgb\(/);
+  });
+
+  it('returns interpolated color between yellow and red for 35–49', () => {
+    const color = getPriceColor(42);
+    expect(color).toMatch(/^rgb\(/);
+  });
+
+  it('returns red for prices 50 and above', () => {
+    expect(getPriceColor(50)).toBe('#F44336');
+    expect(getPriceColor(100)).toBe('#F44336');
+  });
+
+  it('returns green exactly at boundary 0', () => {
+    expect(getPriceColor(0)).toBe('#4CAF50');
+  });
+
+  it('transitions smoothly — midpoint 25 starts interpolation', () => {
+    const at25 = getPriceColor(25);
+    expect(at25).toMatch(/^rgb\(/);
+  });
+
+  it('negative prices return green', () => {
+    expect(getPriceColor(-10)).toBe('#4CAF50');
+  });
+});
 
 describe('chartHelpers.ts', () => {
   describe('getYAxisLabelCenterPosition', () => {

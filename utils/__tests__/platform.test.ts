@@ -206,4 +206,100 @@ describe('platform', () => {
       expect(result.data).toBe('value');
     });
   });
+
+  describe('supportsMatchMedia — with matchMedia available', () => {
+    it('returns true when matchMedia is a function', () => {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: jest.fn(() => ({
+          matches: false,
+          addEventListener: jest.fn(),
+          removeEventListener: jest.fn(),
+        })),
+      });
+      expect(supportsMatchMedia()).toBe(true);
+    });
+  });
+
+  describe('getSystemDarkModePreference — with matchMedia', () => {
+    it('returns true when prefers-color-scheme: dark matches', () => {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: jest.fn(() => ({
+          matches: true,
+          addEventListener: jest.fn(),
+          removeEventListener: jest.fn(),
+        })),
+      });
+      expect(getSystemDarkModePreference()).toBe(true);
+    });
+
+    it('returns false when prefers-color-scheme: dark does not match', () => {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: jest.fn(() => ({
+          matches: false,
+          addEventListener: jest.fn(),
+          removeEventListener: jest.fn(),
+        })),
+      });
+      expect(getSystemDarkModePreference()).toBe(false);
+    });
+  });
+
+  describe('addSystemThemeChangeListener — with matchMedia', () => {
+    it('calls callback when media query changes', () => {
+      let capturedHandler: ((e: MediaQueryListEvent) => void) | null = null;
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: jest.fn(() => ({
+          matches: false,
+          addEventListener: jest.fn((_event: string, handler: (e: MediaQueryListEvent) => void) => {
+            capturedHandler = handler;
+          }),
+          removeEventListener: jest.fn(),
+        })),
+      });
+      const callback = jest.fn();
+      addSystemThemeChangeListener(callback);
+      capturedHandler!({ matches: true } as MediaQueryListEvent);
+      expect(callback).toHaveBeenCalledWith(true);
+    });
+
+    it('cleanup removes event listener', () => {
+      const removeEventListener = jest.fn();
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: jest.fn(() => ({
+          matches: false,
+          addEventListener: jest.fn(),
+          removeEventListener,
+        })),
+      });
+      const unsubscribe = addSystemThemeChangeListener(jest.fn());
+      unsubscribe();
+      expect(removeEventListener).toHaveBeenCalled();
+    });
+  });
+
+  describe('Storage — localStorage paths', () => {
+    beforeEach(() => {
+      if (typeof localStorage !== 'undefined') localStorage.clear(); // platform-safe
+    });
+
+    it('setItem + getItem roundtrip', async () => {
+      await Storage.setItem('key1', 'value1');
+      expect(await Storage.getItem('key1')).toBe('value1');
+    });
+
+    it('getItem returns null for missing key', async () => {
+      expect(await Storage.getItem('does-not-exist-' + Date.now())).toBeNull();
+    });
+
+    it('removeItem deletes the key', async () => {
+      await Storage.setItem('key2', 'value2');
+      await Storage.removeItem('key2');
+      expect(await Storage.getItem('key2')).toBeNull();
+    });
+  });
 });
