@@ -43,6 +43,10 @@ export interface ThemeColors {
   warningText: string;
   infoBackground: string;
   infoText: string;
+
+  // Accent colors (redesign)
+  accentGreen: string;
+  accentAmber: string;
 }
 
 /**
@@ -59,11 +63,11 @@ export function getThemeColors(
 
   return isDark
     ? {
-        // Dark Mode - moderne tiefe Farben
-        background: colorScales.neutral[950], // #0A0A0A
-        surface: colorScales.neutral[900], // #1A1A1A
+        // Dark Mode - modernes Navy-Design
+        background: colorScales.navy[950], // #0a0f1e
+        surface: colorScales.navy[900], // #0d1a2e
         surfaceSecondary: colorScales.neutral[800], // #333333
-        card: colorScales.neutral[800], // #333333
+        card: 'rgba(255,255,255,0.04)', // glass effect
 
         text: colorScales.neutral[50], // #FAFAFA
         textSecondary: colorScales.neutral[400], // #D0D0D0
@@ -97,6 +101,9 @@ export function getThemeColors(
         warningText: colorScales.orange[300], // #FDBA74
         infoBackground: 'rgba(96, 165, 250, 0.15)',
         infoText: colorScales.blue[300], // #93C5FD
+
+        accentGreen: colorScales.green[500], // #22C55E
+        accentAmber: colorScales.amber[400], // #eab308
       }
     : {
         // Light Mode - frische, moderne Farben
@@ -137,5 +144,8 @@ export function getThemeColors(
         warningText: '#856404',
         infoBackground: '#D1ECF1',
         infoText: '#0C5460',
+
+        accentGreen: colorScales.green[600], // #16A34A
+        accentAmber: colorScales.amber[500], // #ca8a04
       };
 }

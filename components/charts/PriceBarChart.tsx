@@ -43,6 +43,7 @@ interface PriceBarChartProps {
   gridFees?: number;
   showLegend?: boolean;
   forceStacked?: boolean;
+  accentColor?: string;
 }
 
 function PriceBarChartComponent({
@@ -58,6 +59,7 @@ function PriceBarChartComponent({
   gridFees = GRID_FEES_AND_TAXES,
   showLegend = true,
   forceStacked = false,
+  accentColor,
 }: PriceBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const { priceDisplayMode } = useSettingsContext();
@@ -178,7 +180,12 @@ function PriceBarChartComponent({
   const { minTime, maxTime, timeRange, min, maxTotal, range, avgMarketPrice } = chartCalcs;
 
   return (
-    <ChartCard backgroundColor={backgroundColor} margin={margin} cardPadding={cardPadding}>
+    <ChartCard
+      backgroundColor={backgroundColor}
+      margin={margin}
+      cardPadding={cardPadding}
+      accentColor={accentColor}
+    >
       {selectedIndex !== null &&
         (() => {
           const item = data[selectedIndex];
