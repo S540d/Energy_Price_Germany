@@ -39,7 +39,7 @@ import Animated, {
 
 SplashScreenModule.preventAutoHideAsync().catch(() => {});
 
-const APP_VERSION = '1.5.2';
+const APP_VERSION = '1.5.3';
 
 function KpiCard({
   label,
