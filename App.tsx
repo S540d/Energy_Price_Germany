@@ -26,16 +26,90 @@ import { usePriceAlertNotification } from './hooks/usePriceAlertNotification';
 import { ChartSkeleton } from './components/ui/ChartSkeleton';
 import { SplashScreen } from './components/ui/SplashScreen';
 import { Badge } from './components/ui/Badge';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withRepeat,
+  withSequence,
+  cancelAnimation,
   runOnJS,
 } from 'react-native-reanimated';
 
 SplashScreenModule.preventAutoHideAsync().catch(() => {});
 
 const APP_VERSION = '1.5.2';
+
+function KpiCard({
+  label,
+  value,
+  unit,
+  avg,
+  avgLabel,
+  accentColor,
+  isDark: dark,
+  surfaceColor,
+  labelColor,
+}: {
+  label: string;
+  value: number | null | undefined;
+  unit: string;
+  avg: number | null | undefined;
+  avgLabel: string;
+  accentColor: string;
+  isDark: boolean;
+  surfaceColor: string;
+  labelColor: string;
+}) {
+  const displayValue = value !== null && value !== undefined ? `${value.toFixed(1)}${unit}` : '--';
+  const displayAvg = avg !== null && avg !== undefined ? `${avg.toFixed(1)}${unit}` : null;
+  const bg = dark ? 'rgba(255,255,255,0.04)' : surfaceColor;
+  const border = accentColor.startsWith('#') ? accentColor + '33' : 'transparent';
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: bg,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: border,
+        padding: 14,
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 10,
+          fontWeight: '600',
+          color: labelColor,
+          textTransform: 'uppercase',
+          letterSpacing: 0.8,
+          marginBottom: 6,
+        }}
+      >
+        {label}
+      </Text>
+      <Text
+        style={{
+          fontFamily: 'monospace',
+          fontSize: 28,
+          fontWeight: '700',
+          color: accentColor,
+          lineHeight: 32,
+          marginBottom: 4,
+        }}
+      >
+        {displayValue}
+      </Text>
+      {displayAvg && (
+        <Text style={{ fontSize: 11, color: labelColor }}>
+          {avgLabel} {displayAvg}
+        </Text>
+      )}
+    </View>
+  );
+}
 
 function AppContent() {
   // Splash screen state
@@ -88,8 +162,22 @@ function AppContent() {
   const { energyData, loading } = useEnergyData(debouncedPostalCode);
 
   const systemTheme = useColorScheme();
+  const isDark = theme === 'dark' || (theme === 'system' && systemTheme === 'dark');
 
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
+
+  const livePulseOpacity = useSharedValue(1);
+  const livePulseStyle = useAnimatedStyle(() => ({ opacity: livePulseOpacity.value }));
+
+  useEffect(() => {
+    livePulseOpacity.value = withRepeat(
+      withSequence(withTiming(0.2, { duration: 800 }), withTiming(1, { duration: 800 })),
+      -1
+    );
+    return () => cancelAnimation(livePulseOpacity);
+    // livePulseOpacity is a stable shared value ref
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Set body background color dynamically on web
   useEffect(() => {
@@ -212,7 +300,7 @@ function AppContent() {
         style={[styles.container, { backgroundColor: colors.background }]}
         edges={['top', 'left', 'right']}
       >
-        <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
+        <StatusBar style={isDark ? 'light' : 'dark'} />
         <ScrollView
           style={{ backgroundColor: colors.background }}
           contentContainerStyle={styles.skeletonScroll}
@@ -237,7 +325,15 @@ function AppContent() {
       style={[styles.container, { backgroundColor: colors.background }]}
       edges={['top', 'left', 'right']}
     >
-      <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
+      {isDark && (
+        <LinearGradient
+          colors={['#0a0f1e', '#0d1a2e', '#0a1628']}
+          locations={[0, 0.5, 1]}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          pointerEvents="none"
+        />
+      )}
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       {showSplash && <SplashScreen onFinish={handleSplashFinish} version={APP_VERSION} />}
 
       {/* Header with Calculator and Settings Buttons */}
@@ -247,7 +343,20 @@ function AppContent() {
           { backgroundColor: colors.surface, borderBottomColor: colors.gridLine },
         ]}
       >
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Energy Price Germany</Text>
+        <View style={styles.headerTitleBlock}>
+          <View style={styles.headerLiveRow}>
+            <Animated.View
+              style={[
+                styles.headerLiveDot,
+                { backgroundColor: colors.accentGreen },
+                livePulseStyle,
+              ]}
+            />
+            <Text style={[styles.headerLiveLabel, { color: colors.accentGreen }]}>LIVE</Text>
+          </View>
+          <Text style={[styles.headerTitleLine1, { color: colors.text }]}>Energy Price</Text>
+          <Text style={[styles.headerTitleLine2, { color: colors.accentGreen }]}>Germany</Text>
+        </View>
         <View style={styles.headerButtons}>
           {alertState !== 'none' && (
             <Badge
@@ -262,7 +371,12 @@ function AppContent() {
             onPress={() => setCalculatorVisible(true)}
             style={[
               styles.headerButton,
-              { borderColor: colors.gridLine, backgroundColor: colors.background },
+              isDark
+                ? {
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                  }
+                : { borderColor: colors.gridLine, backgroundColor: colors.background },
             ]}
             aria-label="Cost Calculator"
           >
@@ -272,7 +386,12 @@ function AppContent() {
             onPress={() => setMenuVisible(true)}
             style={[
               styles.headerButton,
-              { borderColor: colors.gridLine, backgroundColor: colors.background },
+              isDark
+                ? {
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                  }
+                : { borderColor: colors.gridLine, backgroundColor: colors.background },
             ]}
             aria-label="Settings"
           >
@@ -294,16 +413,42 @@ function AppContent() {
 
       {/* Main Content */}
       <ScrollView
-        style={[styles.scrollView, { backgroundColor: colors.background }]}
+        style={[styles.scrollView, { backgroundColor: isDark ? 'transparent' : colors.background }]}
         contentContainerStyle={{
           flexGrow: 1,
-          backgroundColor: colors.background,
+          backgroundColor: isDark ? 'transparent' : colors.background,
           paddingBottom: 20,
         }}
         bounces={false}
       >
         {filteredEnergyData.length > 0 ? (
           <>
+            {/* KPI Row */}
+            <View style={{ flexDirection: 'row', marginHorizontal: 12, marginTop: 12, gap: 8 }}>
+              <KpiCard
+                label={t.renewableNow}
+                value={metrics?.today?.renewable.current}
+                unit="%"
+                avg={metrics?.today?.renewable.avg}
+                avgLabel={t.dailyAvg}
+                accentColor={colors.accentGreen}
+                isDark={isDark}
+                surfaceColor={colors.surface}
+                labelColor={colors.textTertiary}
+              />
+              <KpiCard
+                label={t.priceNow}
+                value={metrics?.today?.marketPrice.current}
+                unit="¢"
+                avg={metrics?.today?.marketPrice.avg}
+                avgLabel={t.dailyAvg}
+                accentColor={colors.accentAmber}
+                isDark={isDark}
+                surfaceColor={colors.surface}
+                labelColor={colors.textTertiary}
+              />
+            </View>
+
             {/* Renewable Energy Chart - shows national data as bars, regional as dashed line */}
             <ChartDetailView
               title={
@@ -370,6 +515,7 @@ function AppContent() {
                 dataKey="renewableShare"
                 showRegionalLine={isValidPostalCode(debouncedPostalCode) && hasRegionalData}
                 showLegend={false}
+                accentColor={colors.accentGreen}
               />
             </ChartDetailView>
 
@@ -555,6 +701,7 @@ function AppContent() {
                     gridFees={gridFees}
                     showLegend={false}
                     forceStacked
+                    accentColor={colors.accentAmber}
                   />
                 )
               }
@@ -596,6 +743,7 @@ function AppContent() {
                     }}
                     gridFees={gridFees}
                     showLegend={false}
+                    accentColor={colors.accentAmber}
                   />
                 )}
               </Animated.View>
@@ -746,11 +894,36 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 1,
   },
-  headerTitle: {
+  headerTitleBlock: {
+    flex: 1,
+  },
+  headerLiveRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 2,
+  },
+  headerLiveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  headerLiveLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+  },
+  headerTitleLine1: {
     fontSize: 20,
     fontWeight: '700',
-    letterSpacing: 0.2,
-    flex: 1,
+    letterSpacing: -0.3,
+    lineHeight: 24,
+  },
+  headerTitleLine2: {
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    lineHeight: 24,
   },
   headerButtons: {
     flexDirection: 'row',
