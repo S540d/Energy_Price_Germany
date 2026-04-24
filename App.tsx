@@ -50,6 +50,7 @@ function KpiCard({
   accentColor,
   isDark: dark,
   surfaceColor,
+  labelColor,
 }: {
   label: string;
   value: number | null | undefined;
@@ -59,9 +60,10 @@ function KpiCard({
   accentColor: string;
   isDark: boolean;
   surfaceColor: string;
+  labelColor: string;
 }) {
   const displayValue = value !== null && value !== undefined ? `${value.toFixed(1)}${unit}` : '--';
-  const displayAvg = avg !== null && avg !== undefined ? `Ø ${avg.toFixed(1)}${unit}` : null;
+  const displayAvg = avg !== null && avg !== undefined ? `${avg.toFixed(1)}${unit}` : null;
   const bg = dark ? 'rgba(255,255,255,0.04)' : surfaceColor;
   const border = accentColor.startsWith('#') ? accentColor + '33' : 'transparent';
 
@@ -80,7 +82,7 @@ function KpiCard({
         style={{
           fontSize: 10,
           fontWeight: '600',
-          color: '#64748b',
+          color: labelColor,
           textTransform: 'uppercase',
           letterSpacing: 0.8,
           marginBottom: 6,
@@ -101,7 +103,7 @@ function KpiCard({
         {displayValue}
       </Text>
       {displayAvg && (
-        <Text style={{ fontSize: 11, color: '#64748b' }}>
+        <Text style={{ fontSize: 11, color: labelColor }}>
           {avgLabel} {displayAvg}
         </Text>
       )}
@@ -427,21 +429,23 @@ function AppContent() {
                 label={t.renewableNow}
                 value={metrics?.today?.renewable.current}
                 unit="%"
-                avg={metrics?.renewable.avg}
+                avg={metrics?.today?.renewable.avg}
                 avgLabel={t.dailyAvg}
                 accentColor={colors.accentGreen}
                 isDark={isDark}
                 surfaceColor={colors.surface}
+                labelColor={colors.textTertiary}
               />
               <KpiCard
                 label={t.priceNow}
                 value={metrics?.today?.marketPrice.current}
                 unit="¢"
-                avg={metrics?.marketPrice.avg}
+                avg={metrics?.today?.marketPrice.avg}
                 avgLabel={t.dailyAvg}
                 accentColor={colors.accentAmber}
                 isDark={isDark}
                 surfaceColor={colors.surface}
+                labelColor={colors.textTertiary}
               />
             </View>
 

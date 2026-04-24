@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import type { ViewStyle } from 'react-native';
+import { borderRadius } from '../../../utils/designSystem';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -55,7 +56,7 @@ function ChartCardComponent({
           backgroundColor,
           margin,
           padding: cardPadding,
-          borderRadius: 20,
+          borderRadius: borderRadius.xxl,
           alignSelf: 'stretch',
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 4 },
