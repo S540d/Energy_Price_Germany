@@ -125,7 +125,7 @@ function PriceBarChartComponent({
       const x =
         leftPadding +
         ((d.timestamp - cMinTime) / cTimeRange) * (chartWidth - leftPadding - rightPadding);
-      const barWidth = ((chartWidth - leftPadding - rightPadding) / data.length) * 0.8;
+      const barWidth = ((chartWidth - leftPadding - rightPadding) / data.length) * 0.95;
 
       if (marketPrice === null) {
         return {
@@ -274,8 +274,8 @@ function PriceBarChartComponent({
         <View>
           <Text
             style={{
-              fontSize: isPhone ? 16 : 18,
-              fontWeight: 'bold',
+              fontSize: isPhone ? 17 : 20,
+              fontWeight: '800',
               marginBottom: 0,
               color: textColor,
             }}
@@ -283,13 +283,21 @@ function PriceBarChartComponent({
             {title}
           </Text>
           {subtitle && (
-            <Text style={{ fontSize: 12, color: textColor, opacity: 0.7, marginBottom: 2 }}>
+            <Text
+              style={{
+                fontSize: 11,
+                color: textColor,
+                opacity: 0.7,
+                marginBottom: 2,
+                fontWeight: '600',
+              }}
+            >
               {subtitle}
             </Text>
           )}
           {interactionHint && (
             <Text
-              style={{ fontSize: 12, fontStyle: 'italic', opacity: 0.5, color: textColor }}
+              style={{ fontSize: 11, fontStyle: 'italic', opacity: 0.5, color: textColor }}
               accessibilityRole="text"
               accessibilityLabel={interactionHint}
             >
@@ -308,22 +316,22 @@ function PriceBarChartComponent({
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50' }} />
-              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>
+              <View style={{ width: 10, height: 10, backgroundColor: '#4CAF50' }} />
+              <Text style={{ fontSize: 11, color: textColor, opacity: 0.7 }}>
                 {labels.marketPrice}
               </Text>
             </View>
             {!isMarketOnly && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <View style={{ width: 12, height: 12, backgroundColor: '#757575' }} />
-                <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>
+                <View style={{ width: 10, height: 10, backgroundColor: '#757575' }} />
+                <Text style={{ fontSize: 11, color: textColor, opacity: 0.7 }}>
                   {labels.gridFeesAndTaxes} ({gridFees} ¢/kWh)
                 </Text>
               </View>
             )}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={{ width: 12, height: 12, backgroundColor: '#4CAF50', opacity: 0.4 }} />
-              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>
+              <View style={{ width: 10, height: 10, backgroundColor: '#4CAF50', opacity: 0.4 }} />
+              <Text style={{ fontSize: 11, color: textColor, opacity: 0.7 }}>
                 {labels.interpolated}
               </Text>
             </View>
@@ -469,10 +477,10 @@ function PriceBarChartComponent({
               chartHeight -
               bottomPadding -
               ((avgMarketPrice - min) / range) * (chartHeight - padding - bottomPadding) -
-              12,
-            fontSize: 12,
+              11,
+            fontSize: 11,
             color: textColor,
-            fontWeight: '600',
+            fontWeight: '700',
             opacity: 0.7,
           }}
         >
@@ -490,7 +498,7 @@ function PriceBarChartComponent({
                 position: 'absolute',
                 left: 10,
                 top: y - 8,
-                fontSize: 12,
+                fontSize: 11,
                 color: textColor,
                 opacity: 0.6,
                 textAlign: 'right',
@@ -526,9 +534,10 @@ function PriceBarChartComponent({
                   position: 'absolute',
                   left: x - 10,
                   top: chartHeight - bottomPadding + 5,
-                  fontSize: 12,
+                  fontSize: 11,
                   color: textColor,
                   opacity: 0.6,
+                  fontWeight: '600',
                 }}
               >
                 {hour}h
@@ -556,6 +565,23 @@ function PriceBarChartComponent({
           />
         )}
 
+        {/* End-of-chart label */}
+        <Text
+          style={{
+            position: 'absolute',
+            right: 2,
+            bottom: bottomPadding + 4,
+            fontSize: 10,
+            color: textColor,
+            opacity: 0.35,
+            fontWeight: '700',
+            textTransform: 'uppercase',
+            letterSpacing: 0.6,
+          }}
+        >
+          EPEX
+        </Text>
+
         {/* Y-Achsen-Label */}
         <Text style={getYAxisLabelStyle(chartHeight, -15, textColor, isPhone)}>{labels.yAxis}</Text>
       </View>
@@ -565,11 +591,11 @@ function PriceBarChartComponent({
           accessibilityRole="text"
           accessibilityLabel={interactionHint}
           style={{
-            fontSize: 12,
+            fontSize: 11,
             color: textColor,
             opacity: 0.5,
             fontStyle: 'italic',
-            marginTop: 8,
+            marginTop: 6,
           }}
         >
           {interactionHint}
