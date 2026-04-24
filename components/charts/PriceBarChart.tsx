@@ -6,14 +6,7 @@ import { getYAxisLabelStyle, getPriceColor } from '../../utils/chartHelpers';
 import { GRID_FEES_AND_TAXES } from '../../utils/metrics';
 import { useChartDimensions } from '../../utils/chartUtils';
 import { useSettingsContext } from '../../context/SettingsContext';
-import {
-  ChartGrid,
-  ChartCard,
-  ChartTooltip,
-  getTooltipLeft,
-  NowMarkerLine,
-  NowMarkerLabel,
-} from './shared';
+import { ChartGrid, ChartCard, ChartTooltip, getTooltipLeft, NowMarkerLine } from './shared';
 
 interface PriceBarChartProps {
   title: string;
@@ -510,13 +503,13 @@ function PriceBarChartComponent({
           );
         })}
 
-        {/* X-axis labels */}
+        {/* X-axis labels (every 6 hours) */}
         {(() => {
           const labels = [];
           const startDate = new Date(minTime);
           const endDate = new Date(maxTime);
 
-          const startHour = Math.ceil(startDate.getHours() / 3) * 3;
+          const startHour = Math.ceil(startDate.getHours() / 6) * 6;
           const current = new Date(startDate);
           current.setHours(startHour, 0, 0, 0);
 
@@ -544,26 +537,11 @@ function PriceBarChartComponent({
               </Text>
             );
 
-            current.setHours(current.getHours() + 3);
+            current.setHours(current.getHours() + 6);
           }
 
           return labels;
         })()}
-
-        {/* "Jetzt" Label */}
-        {now >= minTime && now <= maxTime && (
-          <NowMarkerLabel
-            now={now}
-            minTime={minTime}
-            timeRange={timeRange}
-            chartWidth={chartWidth}
-            chartHeight={chartHeight}
-            leftPadding={leftPadding}
-            rightPadding={rightPadding}
-            bottomPadding={bottomPadding}
-            label={labels.now}
-          />
-        )}
 
         {/* End-of-chart label */}
         <Text

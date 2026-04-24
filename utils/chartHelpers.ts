@@ -61,10 +61,11 @@ export function getYAxisLabelStyle(
 
   return {
     position: 'absolute' as const,
-    left: leftOffset, // Responsiver Abstand vom oberen Rand
+    left: leftOffset,
     top: getYAxisLabelCenterPosition(chartHeight, horizontalOffset),
     fontSize: 12,
     color: textColor,
+    opacity: 0.6,
     fontWeight: '600' as const,
     transform: [{ rotate: '-90deg' }],
     width: 200,

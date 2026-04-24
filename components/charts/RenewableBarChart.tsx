@@ -4,14 +4,7 @@ import Svg, { Rect, Line, Polyline } from 'react-native-svg';
 import type { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 import { useChartDimensions } from '../../utils/chartUtils';
-import {
-  ChartGrid,
-  ChartCard,
-  ChartTooltip,
-  getTooltipLeft,
-  NowMarkerLine,
-  NowMarkerLabel,
-} from './shared';
+import { ChartGrid, ChartCard, ChartTooltip, getTooltipLeft, NowMarkerLine } from './shared';
 
 // Performance: Move color helpers outside component for stable references
 const interpolateColor = (color1: number[], color2: number[], factor: number) => {
@@ -579,13 +572,13 @@ function RenewableBarChartComponent({
           );
         })}
 
-        {/* X-axis labels (alle 3 Stunden) */}
+        {/* X-axis labels (every 6 hours) */}
         {(() => {
           const labels = [];
           const startDate = new Date(minTime);
           const endDate = new Date(maxTime);
 
-          const startHour = Math.ceil(startDate.getHours() / 3) * 3;
+          const startHour = Math.ceil(startDate.getHours() / 6) * 6;
           const current = new Date(startDate);
           current.setHours(startHour, 0, 0, 0);
 
@@ -612,26 +605,11 @@ function RenewableBarChartComponent({
               </Text>
             );
 
-            current.setHours(current.getHours() + 3);
+            current.setHours(current.getHours() + 6);
           }
 
           return labels;
         })()}
-
-        {/* "Jetzt" Label */}
-        {now >= minTime && now <= maxTime && (
-          <NowMarkerLabel
-            now={now}
-            minTime={minTime}
-            timeRange={timeRange}
-            chartWidth={chartWidth}
-            chartHeight={chartHeight}
-            leftPadding={leftPadding}
-            rightPadding={rightPadding}
-            bottomPadding={bottomPadding}
-            label={labels.now}
-          />
-        )}
 
         {/* Y-Achsen-Label */}
         <Text style={getYAxisLabelStyle(chartHeight, -15, textColor, isPhone)}>{labels.yAxis}</Text>

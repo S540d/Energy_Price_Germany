@@ -87,6 +87,7 @@ export const translations = {
     renewableTitle: 'Share of Renewable Energy in Load',
     priceTitle: 'Market and End Customer Electricity Price',
     correlationTitle: 'Correlation: Price vs. Renewables',
+    correlationInsight: '💡 High renewable share correlates with lower market prices',
     timeRange: 'Time Range',
     noData: 'No data available',
     noDataMessage: 'The energy data could not be loaded. Please try again later.',
@@ -210,6 +211,7 @@ export const translations = {
     renewableTitle: 'Anteil Erneuerbarer Energien an der Last',
     priceTitle: 'Börsen- und Endkundenstrompreis',
     correlationTitle: 'Korrelation: Preis vs. Erneuerbare',
+    correlationInsight: '💡 Hoher Erneuerbaren-Anteil korreliert mit niedrigem Börsenpreis',
     timeRange: 'Zeitraum',
     noData: 'Keine Daten verfügbar',
     noDataMessage:
