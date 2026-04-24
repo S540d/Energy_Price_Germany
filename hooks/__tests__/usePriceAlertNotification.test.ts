@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react-native';
+import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { usePriceAlertNotification } from '../usePriceAlertNotification';
 
 jest.mock('react-native', () => ({ Platform: { OS: 'web' } }));
@@ -98,14 +98,16 @@ describe('usePriceAlertNotification', () => {
       { initialProps: { alertState: 'none' as const } }
     );
 
-    await act(async () => {
+    act(() => {
       rerender({ alertState: 'high' });
     });
 
-    expect(mockNotification.requestPermission).toHaveBeenCalled();
-    expect(NotificationConstructor).toHaveBeenCalledWith('Strompreis', {
-      body: 'Teuer',
-      icon: '/favicon.ico',
+    await waitFor(() => {
+      expect(mockNotification.requestPermission).toHaveBeenCalled();
+      expect(NotificationConstructor).toHaveBeenCalledWith('Strompreis', {
+        body: 'Teuer',
+        icon: '/favicon.ico',
+      });
     });
   });
 

@@ -2,36 +2,29 @@ import { getPriceColor, getYAxisLabelCenterPosition, getYAxisLabelStyle } from '
 
 describe('getPriceColor', () => {
   it('returns green for prices below 25', () => {
-    expect(getPriceColor(0)).toBe('#4CAF50');
-    expect(getPriceColor(24.9)).toBe('#4CAF50');
+    expect(getPriceColor(-10)).toBe('#4CAF50');
+    expect(getPriceColor(24.999)).toBe('#4CAF50');
   });
 
-  it('returns interpolated color between green and yellow for 25–34', () => {
-    const color = getPriceColor(30);
-    expect(color).toMatch(/^rgb\(/);
+  it('starts interpolation at exactly 25 (green→yellow)', () => {
+    expect(getPriceColor(25)).toBe('rgb(76, 175, 80)');
   });
 
-  it('returns interpolated color between yellow and red for 35–49', () => {
-    const color = getPriceColor(42);
-    expect(color).toMatch(/^rgb\(/);
+  it('interpolates correctly at midpoint 30 between green and yellow', () => {
+    expect(getPriceColor(30)).toBe('rgb(166, 184, 44)');
+  });
+
+  it('returns yellow exactly at boundary 35, starting interpolation toward red', () => {
+    expect(getPriceColor(35)).toBe('rgb(255, 193, 7)');
+  });
+
+  it('interpolates correctly at 42 between yellow and red', () => {
+    expect(getPriceColor(42)).toBe('rgb(250, 134, 29)');
   });
 
   it('returns red for prices 50 and above', () => {
     expect(getPriceColor(50)).toBe('#F44336');
     expect(getPriceColor(100)).toBe('#F44336');
-  });
-
-  it('returns green exactly at boundary 0', () => {
-    expect(getPriceColor(0)).toBe('#4CAF50');
-  });
-
-  it('transitions smoothly — midpoint 25 starts interpolation', () => {
-    const at25 = getPriceColor(25);
-    expect(at25).toMatch(/^rgb\(/);
-  });
-
-  it('negative prices return green', () => {
-    expect(getPriceColor(-10)).toBe('#4CAF50');
   });
 });
 

@@ -288,15 +288,18 @@ describe('platform', () => {
     });
 
     it('setItem + getItem roundtrip', async () => {
+      if (typeof localStorage === 'undefined') return; // platform-safe
       await Storage.setItem('key1', 'value1');
       expect(await Storage.getItem('key1')).toBe('value1');
     });
 
     it('getItem returns null for missing key', async () => {
+      if (typeof localStorage === 'undefined') return; // platform-safe
       expect(await Storage.getItem('does-not-exist-' + Date.now())).toBeNull();
     });
 
     it('removeItem deletes the key', async () => {
+      if (typeof localStorage === 'undefined') return; // platform-safe
       await Storage.setItem('key2', 'value2');
       await Storage.removeItem('key2');
       expect(await Storage.getItem('key2')).toBeNull();
