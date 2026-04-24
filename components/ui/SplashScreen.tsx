@@ -175,10 +175,15 @@ export function SplashScreen({ onFinish, version }: SplashScreenProps) {
 
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 9999,
+    ...(Platform.OS === 'web' ? ({ position: 'fixed' } as object) : {}),
   },
   iconContainer: {
     width: ICON_SIZE,
