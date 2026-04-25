@@ -134,7 +134,7 @@ export class EnergyDataManager {
   /**
    * Generiert Mock-Daten für Fallback
    */
-  private generateMockData(): EnergyData[] {
+  public generateMockData(): EnergyData[] {
     const mockData: EnergyData[] = [];
     const now = Date.now();
 
@@ -266,6 +266,5 @@ export function getCurrentDataSource(): DataSource {
 }
 
 export function generateMockData(): EnergyData[] {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (energyDataManager as any)['generateMockData']();
+  return energyDataManager.generateMockData();
 }
