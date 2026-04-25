@@ -182,21 +182,21 @@ export function ChartDetailView({
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Text style={[styles.statLabel, { color: colors.text }]}>{t.metricMin}</Text>
-            <Text style={[styles.statValue, { color: colors.primary }]}>
+            <Text style={[styles.statValue, { color: accentColor ?? colors.primary }]}>
               {metrics.min.toFixed(chartType === 'renewable' ? 1 : 2)} {metrics.unit}
             </Text>
           </View>
 
           <View style={styles.statItem}>
             <Text style={[styles.statLabel, { color: colors.text }]}>{t.metricAvg}</Text>
-            <Text style={[styles.statValue, { color: colors.primary }]}>
+            <Text style={[styles.statValue, { color: accentColor ?? colors.primary }]}>
               {metrics.avg.toFixed(chartType === 'renewable' ? 1 : 2)} {metrics.unit}
             </Text>
           </View>
 
           <View style={styles.statItem}>
             <Text style={[styles.statLabel, { color: colors.text }]}>{t.metricMax}</Text>
-            <Text style={[styles.statValue, { color: colors.primary }]}>
+            <Text style={[styles.statValue, { color: accentColor ?? colors.primary }]}>
               {metrics.max.toFixed(chartType === 'renewable' ? 1 : 2)} {metrics.unit}
             </Text>
           </View>
