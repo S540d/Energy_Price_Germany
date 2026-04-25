@@ -161,9 +161,18 @@ export function ChartDetailView({
 
         {/* Current Value if available */}
         {metrics.current !== null && metrics.current !== undefined && (
-          <View style={[styles.currentValueContainer, { backgroundColor: colors.surface }]}>
+          <View
+            style={[
+              styles.currentValueContainer,
+              {
+                backgroundColor: colors.surface,
+                borderLeftWidth: 3,
+                borderLeftColor: accentColor ?? colors.primary,
+              },
+            ]}
+          >
             <Text style={[styles.currentLabel, { color: colors.text }]}>{t.metricCurrent}</Text>
-            <Text style={[styles.currentValue, { color: colors.primary }]}>
+            <Text style={[styles.currentValue, { color: accentColor ?? colors.primary }]}>
               {metrics.current.toFixed(chartType === 'renewable' ? 1 : 2)} {metrics.unit}
             </Text>
           </View>
