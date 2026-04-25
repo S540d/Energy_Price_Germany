@@ -50,7 +50,7 @@ export function AppearanceSection() {
   const handleLayout = (themeOption: Theme) => (e: LayoutChangeEvent) => {
     const { x, width, height } = e.nativeEvent.layout;
     layouts.current[themeOption] = { x, width, height };
-    if (themes.every(t => layouts.current[t])) {
+    if (themes.every(themeKey => layouts.current[themeKey])) {
       const active = layouts.current[theme];
       if (active) {
         pillX.value = active.x;
