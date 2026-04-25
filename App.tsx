@@ -39,7 +39,7 @@ import Animated, {
 
 SplashScreenModule.preventAutoHideAsync().catch(() => {});
 
-const APP_VERSION = '1.5.3';
+const APP_VERSION = '1.6.0';
 
 function KpiCard({
   label,
@@ -281,9 +281,7 @@ function AppContent() {
   const isDataStale = useMemo(() => {
     if (!filteredEnergyData.length) return false;
     const now = Date.now();
-    const pastTimestamps = filteredEnergyData
-      .map(d => d.timestamp)
-      .filter(ts => ts <= now);
+    const pastTimestamps = filteredEnergyData.map(d => d.timestamp).filter(ts => ts <= now);
     if (!pastTimestamps.length) return false;
     const newestPast = Math.max(...pastTimestamps);
     return now - newestPast > 2 * 60 * 60 * 1000;

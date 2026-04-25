@@ -32,7 +32,7 @@ jest.mock('./components/charts/ClockChart', () => {
   return { ClockChart: mockComponent };
 });
 jest.mock('./components/ChartDetailView', () => {
-  const mockComponent = ({ children }: any) => children;
+  const mockComponent = ({ children }: { children: React.ReactNode }) => children;
   mockComponent.displayName = 'ChartDetailView';
   return { ChartDetailView: mockComponent };
 });
@@ -327,7 +327,7 @@ describe('App', () => {
 
     it('should use browser language as default on web when no saved preference', async () => {
       Platform.OS = 'web';
-      global.window.navigator = { language: 'de-DE' } as any; // platform-safe
+      global.window.navigator = { language: 'de-DE' } as unknown as Navigator; // platform-safe
 
       renderWithProviders(<App />);
 
