@@ -102,7 +102,7 @@ export function ChartDetailView({
         <View style={[styles.metricsContainer, { backgroundColor: colors.surfaceSecondary }]}>
           <Text style={[styles.metricsTitle, { color: colors.text }]}>{metrics.label}</Text>
 
-          {sections.map(({ data, accentColor, label }) => (
+          {sections.map(({ data, accentColor: sectionAccentColor, label }) => (
             <View key={label} style={{ marginTop: 12 }}>
               <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>{label}</Text>
 
@@ -113,12 +113,14 @@ export function ChartDetailView({
                     {
                       backgroundColor: colors.surface,
                       borderLeftWidth: 3,
-                      borderLeftColor: accentColor,
+                      borderLeftColor: sectionAccentColor,
                     },
                   ]}
                 >
-                  <Text style={[styles.currentLabel, { color: colors.text }]}>Aktuell</Text>
-                  <Text style={[styles.currentValue, { color: accentColor }]}>
+                  <Text style={[styles.currentLabel, { color: colors.text }]}>
+                    {t.metricCurrent}
+                  </Text>
+                  <Text style={[styles.currentValue, { color: sectionAccentColor }]}>
                     {data.current.toFixed(2)} {metrics.unit}
                   </Text>
                 </View>
@@ -126,22 +128,22 @@ export function ChartDetailView({
 
               <View style={styles.statsContainer}>
                 <View style={styles.statItem}>
-                  <Text style={[styles.statLabel, { color: colors.text }]}>Minimum</Text>
-                  <Text style={[styles.statValue, { color: accentColor }]}>
+                  <Text style={[styles.statLabel, { color: colors.text }]}>{t.metricMin}</Text>
+                  <Text style={[styles.statValue, { color: sectionAccentColor }]}>
                     {data.min.toFixed(2)} {metrics.unit}
                   </Text>
                 </View>
 
                 <View style={styles.statItem}>
-                  <Text style={[styles.statLabel, { color: colors.text }]}>Durchschnitt</Text>
-                  <Text style={[styles.statValue, { color: accentColor }]}>
+                  <Text style={[styles.statLabel, { color: colors.text }]}>{t.metricAvg}</Text>
+                  <Text style={[styles.statValue, { color: sectionAccentColor }]}>
                     {data.avg.toFixed(2)} {metrics.unit}
                   </Text>
                 </View>
 
                 <View style={styles.statItem}>
-                  <Text style={[styles.statLabel, { color: colors.text }]}>Maximum</Text>
-                  <Text style={[styles.statValue, { color: accentColor }]}>
+                  <Text style={[styles.statLabel, { color: colors.text }]}>{t.metricMax}</Text>
+                  <Text style={[styles.statValue, { color: sectionAccentColor }]}>
                     {data.max.toFixed(2)} {metrics.unit}
                   </Text>
                 </View>
@@ -159,9 +161,18 @@ export function ChartDetailView({
 
         {/* Current Value if available */}
         {metrics.current !== null && metrics.current !== undefined && (
-          <View style={[styles.currentValueContainer, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.currentLabel, { color: colors.text }]}>Aktuell</Text>
-            <Text style={[styles.currentValue, { color: colors.primary }]}>
+          <View
+            style={[
+              styles.currentValueContainer,
+              {
+                backgroundColor: colors.surface,
+                borderLeftWidth: 3,
+                borderLeftColor: accentColor ?? colors.primary,
+              },
+            ]}
+          >
+            <Text style={[styles.currentLabel, { color: colors.text }]}>{t.metricCurrent}</Text>
+            <Text style={[styles.currentValue, { color: accentColor ?? colors.primary }]}>
               {metrics.current.toFixed(chartType === 'renewable' ? 1 : 2)} {metrics.unit}
             </Text>
           </View>
@@ -170,22 +181,22 @@ export function ChartDetailView({
         {/* Min/Max/Avg Values */}
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Text style={[styles.statLabel, { color: colors.text }]}>Minimum</Text>
-            <Text style={[styles.statValue, { color: colors.primary }]}>
+            <Text style={[styles.statLabel, { color: colors.text }]}>{t.metricMin}</Text>
+            <Text style={[styles.statValue, { color: accentColor ?? colors.primary }]}>
               {metrics.min.toFixed(chartType === 'renewable' ? 1 : 2)} {metrics.unit}
             </Text>
           </View>
 
           <View style={styles.statItem}>
-            <Text style={[styles.statLabel, { color: colors.text }]}>Durchschnitt</Text>
-            <Text style={[styles.statValue, { color: colors.primary }]}>
+            <Text style={[styles.statLabel, { color: colors.text }]}>{t.metricAvg}</Text>
+            <Text style={[styles.statValue, { color: accentColor ?? colors.primary }]}>
               {metrics.avg.toFixed(chartType === 'renewable' ? 1 : 2)} {metrics.unit}
             </Text>
           </View>
 
           <View style={styles.statItem}>
-            <Text style={[styles.statLabel, { color: colors.text }]}>Maximum</Text>
-            <Text style={[styles.statValue, { color: colors.primary }]}>
+            <Text style={[styles.statLabel, { color: colors.text }]}>{t.metricMax}</Text>
+            <Text style={[styles.statValue, { color: accentColor ?? colors.primary }]}>
               {metrics.max.toFixed(chartType === 'renewable' ? 1 : 2)} {metrics.unit}
             </Text>
           </View>

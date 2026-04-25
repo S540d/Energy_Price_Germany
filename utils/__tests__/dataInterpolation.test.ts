@@ -119,7 +119,7 @@ describe('dataInterpolation', () => {
     });
 
     it('should handle empty array', () => {
-      const data: any[] = [];
+      const data: InterpolatedDataPoint[] = [];
 
       const result = interpolateMarketPrices(data);
 

@@ -124,6 +124,11 @@ export const translations = {
     renewableNow: 'Renewables now',
     priceNow: 'Price now',
     dailyAvg: 'Daily avg',
+    // Metrics labels
+    metricCurrent: 'Current',
+    metricMin: 'Minimum',
+    metricAvg: 'Average',
+    metricMax: 'Maximum',
   },
   de: {
     settings: 'Einstellungen',
@@ -249,5 +254,10 @@ export const translations = {
     renewableNow: 'Erneuerbare jetzt',
     priceNow: 'Börsenpreis jetzt',
     dailyAvg: 'Tages-Ø',
+    // Metrics labels
+    metricCurrent: 'Aktuell',
+    metricMin: 'Minimum',
+    metricAvg: 'Durchschnitt',
+    metricMax: 'Maximum',
   },
 } as const;

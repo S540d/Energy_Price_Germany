@@ -505,7 +505,7 @@ function PriceBarChartComponent({
 
         {/* X-axis labels (every 6 hours) */}
         {(() => {
-          const labels = [];
+          const xAxisLabels = [];
           const startDate = new Date(minTime);
           const endDate = new Date(maxTime);
 
@@ -520,7 +520,7 @@ function PriceBarChartComponent({
               ((timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
             const hour = current.getHours();
 
-            labels.push(
+            xAxisLabels.push(
               <Text
                 key={`xlabel-${timestamp}`}
                 style={{
@@ -540,7 +540,7 @@ function PriceBarChartComponent({
             current.setHours(current.getHours() + 6);
           }
 
-          return labels;
+          return xAxisLabels;
         })()}
 
         {/* End-of-chart label */}
