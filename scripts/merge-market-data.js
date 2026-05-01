@@ -2,81 +2,77 @@
 
 const fs = require("fs");
 
-// Detect anomalies in data (large jumps, negative values)
+// Detect anomalies in data (large jumps, invalid values)
+// Returns { warnings: string[], critical: string[] }
+// Critical anomalies (physically impossible values) cause CI failure.
+// Warnings (large but plausible jumps) are logged only.
 function detectAnomalies(data, sourceName = "data") {
-  if (!data || data.length === 0) return;
+  if (!data || data.length === 0) return { warnings: [], critical: [] };
 
   const warnings = [];
-  const RENEWABLE_JUMP_THRESHOLD = 20; // percent points
-  const PRICE_JUMP_THRESHOLD = 100; // EUR/MWh
+  const critical = [];
+  const RENEWABLE_JUMP_THRESHOLD = 20; // percent points per 15 min
+  const PRICE_JUMP_THRESHOLD = 100; // EUR/MWh per 15 min
 
   for (let i = 1; i < data.length; i++) {
     const prev = data[i - 1];
     const curr = data[i];
     const timeDiffMin = (curr.start_timestamp - prev.start_timestamp) / (1000 * 60);
 
-    // Check for renewable share anomalies
     if (prev.renewable_share !== null && curr.renewable_share !== null) {
       const renewableDiff = Math.abs(curr.renewable_share - prev.renewable_share);
 
-      // Large jump in renewable share (> 20 percentage points in 15 min)
       if (timeDiffMin <= 15 && renewableDiff > RENEWABLE_JUMP_THRESHOLD) {
-        const timestamp = new Date(curr.start_timestamp).toISOString();
+        const ts = new Date(curr.start_timestamp).toISOString();
         warnings.push(
-          `⚠️  Large renewable share jump: ${prev.renewable_share.toFixed(1)}% → ${curr.renewable_share.toFixed(1)}% ` +
-          `(${renewableDiff.toFixed(1)} pp) at ${timestamp}`
+          `Large renewable share jump: ${prev.renewable_share.toFixed(1)}% → ${curr.renewable_share.toFixed(1)}% ` +
+          `(${renewableDiff.toFixed(1)} pp) at ${ts}`
         );
       }
 
-      // Negative renewable share
-      if (curr.renewable_share < 0) {
-        const timestamp = new Date(curr.start_timestamp).toISOString();
-        warnings.push(`⚠️  Negative renewable share: ${curr.renewable_share.toFixed(1)}% at ${timestamp}`);
-      }
-
-      // Renewable share > 100%
-      if (curr.renewable_share > 100) {
-        const timestamp = new Date(curr.start_timestamp).toISOString();
-        warnings.push(`⚠️  Renewable share > 100%: ${curr.renewable_share.toFixed(1)}% at ${timestamp}`);
+      // Physically impossible: renewable share outside [0, 100]
+      if (curr.renewable_share < 0 || curr.renewable_share > 100) {
+        const ts = new Date(curr.start_timestamp).toISOString();
+        critical.push(`Renewable share out of range [0,100]: ${curr.renewable_share.toFixed(1)}% at ${ts}`);
       }
     }
 
-    // Check for price anomalies
     if (prev.marketprice !== null && curr.marketprice !== null) {
       const priceDiff = Math.abs(curr.marketprice - prev.marketprice);
 
-      // Large price jump (> 100 EUR/MWh in 15 min)
       if (timeDiffMin <= 15 && priceDiff > PRICE_JUMP_THRESHOLD) {
-        const timestamp = new Date(curr.start_timestamp).toISOString();
+        const ts = new Date(curr.start_timestamp).toISOString();
         warnings.push(
-          `⚠️  Large price jump: ${prev.marketprice.toFixed(2)} → ${curr.marketprice.toFixed(2)} EUR/MWh ` +
-          `(${priceDiff.toFixed(2)}) at ${timestamp}`
+          `Large price jump: ${prev.marketprice.toFixed(2)} → ${curr.marketprice.toFixed(2)} EUR/MWh ` +
+          `(${priceDiff.toFixed(2)}) at ${ts}`
         );
       }
 
-      // Extremely negative prices (< -200 EUR/MWh)
-      if (curr.marketprice < -200) {
-        const timestamp = new Date(curr.start_timestamp).toISOString();
-        warnings.push(`⚠️  Extremely negative price: ${curr.marketprice.toFixed(2)} EUR/MWh at ${timestamp}`);
+      // Physically implausible: prices beyond observed extremes
+      if (curr.marketprice < -500) {
+        const ts = new Date(curr.start_timestamp).toISOString();
+        critical.push(`Price below -500 EUR/MWh: ${curr.marketprice.toFixed(2)} at ${ts}`);
       }
-
-      // Extremely high prices (> 500 EUR/MWh)
-      if (curr.marketprice > 500) {
-        const timestamp = new Date(curr.start_timestamp).toISOString();
-        warnings.push(`⚠️  Extremely high price: ${curr.marketprice.toFixed(2)} EUR/MWh at ${timestamp}`);
+      if (curr.marketprice > 4000) {
+        const ts = new Date(curr.start_timestamp).toISOString();
+        critical.push(`Price above 4000 EUR/MWh: ${curr.marketprice.toFixed(2)} at ${ts}`);
       }
     }
   }
 
+  if (critical.length > 0) {
+    console.error(`\n❌ CRITICAL data quality errors in ${sourceName} (${critical.length}):`);
+    critical.forEach(e => console.error(`   ${e}`));
+  }
   if (warnings.length > 0) {
-    console.log(`\n🚨 Data Quality Warnings (${sourceName}):`);
-    warnings.forEach(w => console.log(w));
-    console.log(`Total anomalies detected: ${warnings.length}\n`);
-  } else {
+    console.log(`\n⚠️  Data quality warnings in ${sourceName} (${warnings.length}):`);
+    warnings.forEach(w => console.log(`   ${w}`));
+  }
+  if (critical.length === 0 && warnings.length === 0) {
     console.log(`✓ No anomalies detected in ${sourceName}`);
   }
 
-  return warnings;
+  return { warnings, critical };
 }
 
 // Interpolate aWATTar hourly data to 15-minute intervals
@@ -202,8 +198,12 @@ try {
   // Sort final data
   finalData.sort((a, b) => a.start_timestamp - b.start_timestamp);
 
-  // Detect anomalies in new data
-  detectAnomalies(finalData, source);
+  // Detect anomalies in new data – critical errors block the pipeline
+  const { critical } = detectAnomalies(finalData, source);
+  if (critical.length > 0) {
+    console.error("❌ Aborting: physically impossible values detected. Data will not be written.");
+    process.exit(1);
+  }
 
   // Merge with existing data to preserve history
   let mergedData = finalData;
