@@ -1,23 +1,19 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useColorScheme } from 'react-native';
+import { StyleSheet, Text, ScrollView, useColorScheme } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreenModule from 'expo-splash-screen';
 import * as Updates from 'expo-updates';
 
 import { getCurrentDataSource } from './services/energyDataManager';
-import { RenewableBarChart } from './components/charts/RenewableBarChart';
-import { PriceBarChart } from './components/charts/PriceBarChart';
-import { ClockChart } from './components/charts/ClockChart';
-import { CorrelationScatterChart } from './components/charts/CorrelationScatterChart';
-import { ChartDetailView } from './components/ChartDetailView';
 import { AboutView } from './components/AboutView';
 import { SettingsMenu } from './components/settings/SettingsMenu';
 import { CustomizeModal } from './components/customize/CustomizeModal';
 import { CostCalculatorView } from './components/CostCalculatorView';
+import { AppHeader } from './components/AppHeader';
+import { ChartSection } from './components/ChartSection';
 import { calculateMetrics } from './utils/metrics';
 import { getThemeColors } from './utils/theme';
-import { isValidPostalCode } from './utils/postalCodeUtils';
 import { useEnergyData } from './hooks/useEnergyData';
 import { useLanguageContext } from './context/LanguageContext';
 import { useSettingsContext } from './context/SettingsContext';
@@ -25,9 +21,8 @@ import { checkPriceAlert } from './utils/priceAlertUtils';
 import { usePriceAlertNotification } from './hooks/usePriceAlertNotification';
 import { ChartSkeleton } from './components/ui/ChartSkeleton';
 import { SplashScreen } from './components/ui/SplashScreen';
-import { Badge } from './components/ui/Badge';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
+import {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
@@ -41,82 +36,10 @@ SplashScreenModule.preventAutoHideAsync().catch(() => {});
 
 const APP_VERSION = '1.6.0';
 
-function KpiCard({
-  label,
-  value,
-  unit,
-  avg,
-  avgLabel,
-  accentColor,
-  isDark: dark,
-  surfaceColor,
-  labelColor,
-}: {
-  label: string;
-  value: number | null | undefined;
-  unit: string;
-  avg: number | null | undefined;
-  avgLabel: string;
-  accentColor: string;
-  isDark: boolean;
-  surfaceColor: string;
-  labelColor: string;
-}) {
-  const displayValue = value !== null && value !== undefined ? `${value.toFixed(1)}${unit}` : '--';
-  const displayAvg = avg !== null && avg !== undefined ? `${avg.toFixed(1)}${unit}` : null;
-  const bg = dark ? 'rgba(255,255,255,0.04)' : surfaceColor;
-  const border = accentColor.startsWith('#') ? accentColor + '33' : 'transparent';
-
-  return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: bg,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: border,
-        padding: 14,
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 10,
-          fontWeight: '600',
-          color: labelColor,
-          textTransform: 'uppercase',
-          letterSpacing: 0.8,
-          marginBottom: 6,
-        }}
-      >
-        {label}
-      </Text>
-      <Text
-        style={{
-          fontFamily: 'monospace',
-          fontSize: 28,
-          fontWeight: '700',
-          color: accentColor,
-          lineHeight: 32,
-          marginBottom: 4,
-        }}
-      >
-        {displayValue}
-      </Text>
-      {displayAvg && (
-        <Text style={{ fontSize: 11, color: labelColor }}>
-          {avgLabel} {displayAvg}
-        </Text>
-      )}
-    </View>
-  );
-}
-
 function AppContent() {
-  // Splash screen state
   const [showSplash, setShowSplash] = useState(true);
   const handleSplashFinish = useCallback(() => setShowSplash(false), []);
 
-  // Hide native splash once React is ready, defer to next frame to avoid flash
   useEffect(() => {
     const frameId = requestAnimationFrame(() => {
       SplashScreenModule.hideAsync().catch(() => {});
@@ -124,7 +47,6 @@ function AppContent() {
     return () => cancelAnimationFrame(frameId);
   }, []);
 
-  // UI State only (modals)
   const [menuVisible, setMenuVisible] = useState(false);
   const [customizeVisible, setCustomizeVisible] = useState(false);
   const [aboutVisible, setAboutVisible] = useState(false);
@@ -153,17 +75,13 @@ function AppContent() {
     opacity: clockViewOpacity.value,
   }));
 
-  // Settings and Language from Context
   const { theme, debouncedPostalCode, gridFees, priceAlertLow, priceAlertHigh, priceDisplayMode } =
     useSettingsContext();
   const { language, t } = useLanguageContext();
-
-  // Energy data from hook
   const { energyData, loading } = useEnergyData(debouncedPostalCode);
 
   const systemTheme = useColorScheme();
   const isDark = theme === 'dark' || (theme === 'system' && systemTheme === 'dark');
-
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
 
   const livePulseOpacity = useSharedValue(1);
@@ -179,35 +97,28 @@ function AppContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Set body background color dynamically on web
   useEffect(() => {
     if (typeof document !== 'undefined') {
       document.body.style.backgroundColor = colors.background;
     }
   }, [colors.background]);
 
-  // Filter data to show only 24h of past and all future data
   const filteredEnergyData = useMemo(() => {
     if (!energyData.length) return energyData;
-
-    const now = Date.now();
-    const past24h = now - 24 * 60 * 60 * 1000; // 24 hours ago
-
-    const filtered = energyData.filter(item => item.timestamp >= past24h);
-    return filtered;
+    const past24h = Date.now() - 24 * 60 * 60 * 1000;
+    return energyData.filter(item => item.timestamp >= past24h);
   }, [energyData]);
 
-  // Check if regional data is available
-  const hasRegionalData = useMemo(() => {
-    return filteredEnergyData.some(
-      item => item.renewableShareRegional !== null && item.renewableShareRegional !== undefined
-    );
-  }, [filteredEnergyData]);
+  const hasRegionalData = useMemo(
+    () =>
+      filteredEnergyData.some(
+        item => item.renewableShareRegional !== null && item.renewableShareRegional !== undefined
+      ),
+    [filteredEnergyData]
+  );
 
-  // Memoized metrics calculations for better performance
   const metrics = useMemo(() => calculateMetrics(filteredEnergyData), [filteredEnergyData]);
 
-  // Price alert state based on current end-customer price
   const alertState = useMemo(
     () =>
       checkPriceAlert(
@@ -218,7 +129,6 @@ function AppContent() {
     [metrics, priceAlertLow, priceAlertHigh]
   );
 
-  // Web Notification when alert state changes (foreground only)
   usePriceAlertNotification(
     alertState,
     t.priceAlertNotificationTitle,
@@ -226,8 +136,6 @@ function AppContent() {
     t.priceAlertNotificationHigh
   );
 
-  // Performance: Memoized date formatter to prevent unnecessary recalculations
-  // Only recreates when language changes
   const formatDate = useCallback(
     (timestamp: number) => {
       const locale = language === 'de' ? 'de-DE' : 'en-US';
@@ -241,7 +149,6 @@ function AppContent() {
     [language]
   );
 
-  // Aggregate 15-min data to hourly for main view (avg per hour slot)
   const hourlyEnergyData = useMemo(() => {
     if (!filteredEnergyData.length) return filteredEnergyData;
     const buckets = new Map<number, typeof filteredEnergyData>();
@@ -276,22 +183,14 @@ function AppContent() {
       });
   }, [filteredEnergyData]);
 
-  // Data is stale when the newest past data point is more than 2 hours old.
-  // Future timestamps (forecasts) are excluded so they don't mask stale live data.
   const isDataStale = useMemo(() => {
     if (!filteredEnergyData.length) return false;
     const now = Date.now();
     const pastTimestamps = filteredEnergyData.map(d => d.timestamp).filter(ts => ts <= now);
     if (!pastTimestamps.length) return false;
-    const newestPast = Math.max(...pastTimestamps);
-    return now - newestPast > 2 * 60 * 60 * 1000;
+    return now - Math.max(...pastTimestamps) > 2 * 60 * 60 * 1000;
   }, [filteredEnergyData]);
 
-  // Language, postal code, and grid fees are now managed by hooks and contexts!
-
-  // Check for app updates
-  // Note: Channel selection (staging/production) is handled by BetaModeSection
-  // When user toggles beta mode, they are prompted to restart the app
   useEffect(() => {
     async function checkAndApplyUpdates() {
       if (!__DEV__) {
@@ -301,19 +200,14 @@ function AppContent() {
             await Updates.fetchUpdateAsync();
             await Updates.reloadAsync();
           }
-        } catch (error) {
-          // Silently fail - app will continue to work with current version
+        } catch {
+          // Silently fail – app continues with current version
         }
       }
     }
-
     checkAndApplyUpdates();
   }, []);
 
-  // Data loading is now managed by useEnergyData hook!
-  // Postal code debouncing is now managed by useSettings hook!
-
-  // Performance: Memoized data source info to prevent unnecessary recalculations
   const getDataSourceInfo = useCallback(() => {
     const source = getCurrentDataSource();
     switch (source) {
@@ -329,13 +223,8 @@ function AppContent() {
           license: 'Proprietary',
           url: 'awattar.at',
         };
-      case 'none':
       default:
-        return {
-          name: 'Mock Data (Demo)',
-          license: 'Generated',
-          url: 'demo',
-        };
+        return { name: 'Mock Data (Demo)', license: 'Generated', url: 'demo' };
     }
   }, []);
 
@@ -383,78 +272,18 @@ function AppContent() {
         )}
         <StatusBar style={isDark ? 'light' : 'dark'} />
 
-        {/* Header with Calculator and Settings Buttons */}
-        <View
-          style={[
-            styles.header,
-            { backgroundColor: colors.surface, borderBottomColor: colors.gridLine },
-          ]}
-        >
-          <View style={styles.headerTitleBlock}>
-            <View style={styles.headerLiveRow}>
-              <Animated.View
-                style={[
-                  styles.headerLiveDot,
-                  { backgroundColor: isDataStale ? colors.accentAmber : colors.accentGreen },
-                  livePulseStyle,
-                ]}
-              />
-              <Text
-                style={[
-                  styles.headerLiveLabel,
-                  { color: isDataStale ? colors.accentAmber : colors.accentGreen },
-                ]}
-              >
-                LIVE
-              </Text>
-            </View>
-            <Text style={[styles.headerTitleLine1, { color: colors.text }]}>Energy Price</Text>
-            <Text style={[styles.headerTitleLine2, { color: colors.accentGreen }]}>Germany</Text>
-          </View>
-          <View style={styles.headerButtons}>
-            {alertState !== 'none' && (
-              <Badge
-                label={alertState === 'low' ? '↓' : '↑'}
-                backgroundColor={alertState === 'low' ? colors.success : colors.error}
-                accessibilityLabel={
-                  alertState === 'low' ? t.priceAlertActiveLow : t.priceAlertActiveHigh
-                }
-              />
-            )}
-            <TouchableOpacity
-              onPress={() => setCalculatorVisible(true)}
-              style={[
-                styles.headerButton,
-                isDark
-                  ? {
-                      borderColor: 'rgba(255,255,255,0.1)',
-                      backgroundColor: 'rgba(255,255,255,0.06)',
-                    }
-                  : { borderColor: colors.gridLine, backgroundColor: colors.background },
-              ]}
-              aria-label="Cost Calculator"
-            >
-              <Text style={[styles.headerButtonText, { color: colors.text }]}>€</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setMenuVisible(true)}
-              style={[
-                styles.headerButton,
-                isDark
-                  ? {
-                      borderColor: 'rgba(255,255,255,0.1)',
-                      backgroundColor: 'rgba(255,255,255,0.06)',
-                    }
-                  : { borderColor: colors.gridLine, backgroundColor: colors.background },
-              ]}
-              aria-label="Settings"
-            >
-              <Text style={[styles.settingsHeaderButtonText, { color: colors.text }]}>⋮</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        <AppHeader
+          colors={colors}
+          isDark={isDark}
+          isDataStale={isDataStale}
+          alertState={alertState}
+          livePulseStyle={livePulseStyle}
+          alertLowLabel={t.priceAlertActiveLow}
+          alertHighLabel={t.priceAlertActiveHigh}
+          onOpenCalculator={() => setCalculatorVisible(true)}
+          onOpenSettings={() => setMenuVisible(true)}
+        />
 
-        {/* Settings Modal */}
         <SettingsMenu
           visible={menuVisible}
           onClose={() => setMenuVisible(false)}
@@ -462,10 +291,8 @@ function AppContent() {
           onOpenAbout={() => setAboutVisible(true)}
         />
 
-        {/* Customize Modal */}
         <CustomizeModal visible={customizeVisible} onClose={() => setCustomizeVisible(false)} />
 
-        {/* Main Content */}
         <ScrollView
           style={[
             styles.scrollView,
@@ -478,395 +305,24 @@ function AppContent() {
           }}
           bounces={false}
         >
-          {filteredEnergyData.length > 0 ? (
-            <>
-              {/* KPI Row */}
-              <View style={{ flexDirection: 'row', marginHorizontal: 12, marginTop: 12, gap: 8 }}>
-                <KpiCard
-                  label={t.renewableNow}
-                  value={metrics?.today?.renewable.current}
-                  unit="%"
-                  avg={metrics?.today?.renewable.avg}
-                  avgLabel={t.dailyAvg}
-                  accentColor={colors.accentGreen}
-                  isDark={isDark}
-                  surfaceColor={colors.surface}
-                  labelColor={colors.textTertiary}
-                />
-                <KpiCard
-                  label={t.priceNow}
-                  value={metrics?.today?.marketPrice.current}
-                  unit="¢"
-                  avg={metrics?.today?.marketPrice.avg}
-                  avgLabel={t.dailyAvg}
-                  accentColor={colors.accentAmber}
-                  isDark={isDark}
-                  surfaceColor={colors.surface}
-                  labelColor={colors.textTertiary}
-                />
-              </View>
-
-              {/* Renewable Energy Chart - shows national data as bars, regional as dashed line */}
-              <ChartDetailView
-                title={
-                  isValidPostalCode(debouncedPostalCode) && hasRegionalData
-                    ? `${t.renewableTitle} (${t.nationalData} & ${t.regionalData})`
-                    : t.renewableTitle
-                }
-                colors={colors}
-                chartType="renewable"
-                gridFees={gridFees}
-                accentColor={colors.accentGreen}
-                metrics={
-                  metrics
-                    ? {
-                        min: metrics.renewable.min,
-                        max: metrics.renewable.max,
-                        avg: metrics.renewable.avg,
-                        current: metrics.today?.renewable.current,
-                        unit: '%',
-                        label: t.renewablePercent,
-                      }
-                    : undefined
-                }
-                legend={
-                  isValidPostalCode(debouncedPostalCode) && hasRegionalData ? (
-                    <View style={{ gap: 8 }}>
-                      <Text style={[{ color: colors.text, fontSize: 13, fontWeight: '600' }]}>
-                        {t.legend}
-                      </Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <View
-                          style={{
-                            width: 16,
-                            height: 3,
-                            backgroundColor: '#FF9800',
-                            borderRadius: 1.5,
-                          }}
-                        />
-                        <Text style={{ color: colors.text, fontSize: 12 }}>
-                          {t.regionalDataLabel}
-                        </Text>
-                      </View>
-                    </View>
-                  ) : undefined
-                }
-                detailChildren={
-                  <RenewableBarChart
-                    title={
-                      isValidPostalCode(debouncedPostalCode) && hasRegionalData
-                        ? `${t.renewableTitle} (${t.nationalData} & ${t.regionalData})`
-                        : t.renewableTitle
-                    }
-                    subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
-                    data={filteredEnergyData}
-                    backgroundColor={colors.surface}
-                    textColor={colors.text}
-                    gridColor={colors.gridLine}
-                    colors={colors}
-                    labels={{
-                      yAxis: t.renewablePercent,
-                      now: t.now,
-                      average: t.average,
-                      regional: t.regionalData,
-                    }}
-                    dataKey="renewableShare"
-                    showRegionalLine={isValidPostalCode(debouncedPostalCode) && hasRegionalData}
-                    showLegend={false}
-                    accentColor={colors.accentGreen}
-                  />
-                }
-              >
-                <RenewableBarChart
-                  title={
-                    isValidPostalCode(debouncedPostalCode) && hasRegionalData
-                      ? `${t.renewableTitle} (${t.nationalData} & ${t.regionalData})`
-                      : t.renewableTitle
-                  }
-                  subtitle={`${t.timeRange}: ${hourlyEnergyData.length > 0 ? formatDate(hourlyEnergyData[0].timestamp) : t.loadingData} - ${hourlyEnergyData.length > 0 ? formatDate(hourlyEnergyData[hourlyEnergyData.length - 1].timestamp) : t.loadingData}`}
-                  data={hourlyEnergyData}
-                  backgroundColor={colors.surface}
-                  textColor={colors.text}
-                  gridColor={colors.gridLine}
-                  colors={colors}
-                  labels={{
-                    yAxis: t.renewablePercent,
-                    now: t.now,
-                    average: t.average,
-                    regional: t.regionalData,
-                  }}
-                  dataKey="renewableShare"
-                  showRegionalLine={isValidPostalCode(debouncedPostalCode) && hasRegionalData}
-                  showLegend={false}
-                  accentColor={colors.accentGreen}
-                />
-              </ChartDetailView>
-
-              <ChartDetailView
-                title={t.priceTitle}
-                colors={colors}
-                chartType="price"
-                gridFees={gridFees}
-                accentColor={colors.accentAmber}
-                metrics={
-                  metrics
-                    ? {
-                        marketPrice: {
-                          min: metrics.marketPrice.min,
-                          max: metrics.marketPrice.max,
-                          avg: metrics.marketPrice.avg,
-                          current: metrics.today?.marketPrice.current,
-                        },
-                        endCustomerPrice: {
-                          min: metrics.marketPrice.min + gridFees,
-                          max: metrics.marketPrice.max + gridFees,
-                          avg: metrics.marketPrice.avg + gridFees,
-                          current: metrics.today?.marketPrice.current
-                            ? metrics.today.marketPrice.current + gridFees
-                            : undefined,
-                        },
-                        unit: '¢',
-                        label: t.pricePerKwh,
-                      }
-                    : undefined
-                }
-                viewToggle={
-                  <View style={{ flexDirection: 'row', gap: 6 }}>
-                    <TouchableOpacity
-                      onPress={() => handlePriceClockViewChange(false)}
-                      style={{
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
-                        borderRadius: 8,
-                        backgroundColor: !priceClockView ? colors.primary : colors.gridLine,
-                      }}
-                      accessibilityLabel={t.viewBar}
-                      accessibilityRole="button"
-                    >
-                      <Text
-                        style={{
-                          color: !priceClockView ? '#fff' : colors.text,
-                          fontSize: 12,
-                          fontWeight: '600',
-                        }}
-                      >
-                        {t.viewBar}
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => handlePriceClockViewChange(true)}
-                      style={{
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
-                        borderRadius: 8,
-                        backgroundColor: priceClockView ? colors.primary : colors.gridLine,
-                      }}
-                      accessibilityLabel={t.viewClock}
-                      accessibilityRole="button"
-                    >
-                      <Text
-                        style={{
-                          color: priceClockView ? '#fff' : colors.text,
-                          fontSize: 12,
-                          fontWeight: '600',
-                        }}
-                      >
-                        {t.viewClock}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                }
-                legend={
-                  <View style={{ gap: 8 }}>
-                    <Text style={[{ color: colors.text, fontSize: 13, fontWeight: '600' }]}>
-                      {t.legend}
-                    </Text>
-                    <View style={{ gap: 6 }}>
-                      {/* Market Price */}
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <View
-                          style={{
-                            width: 16,
-                            height: 16,
-                            backgroundColor: '#4CAF50',
-                            borderRadius: 2,
-                          }}
-                        />
-                        <Text style={{ color: colors.text, fontSize: 12 }}>
-                          {t.marketPriceLabel}
-                        </Text>
-                      </View>
-
-                      {/* Grid Fees – only shown in end-customer price mode */}
-                      {priceDisplayMode === 'withGridFees' && (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                          <View
-                            style={{
-                              width: 16,
-                              height: 16,
-                              backgroundColor: '#757575',
-                              borderRadius: 2,
-                            }}
-                          />
-                          <Text style={{ color: colors.text, fontSize: 12 }}>
-                            {t.gridFeesLabel} ({gridFees} ¢/kWh)
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  </View>
-                }
-                detailLegend={
-                  <View style={{ gap: 8 }}>
-                    <Text style={[{ color: colors.text, fontSize: 13, fontWeight: '600' }]}>
-                      {t.legend}
-                    </Text>
-                    <View style={{ gap: 6 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <View
-                          style={{
-                            width: 16,
-                            height: 16,
-                            backgroundColor: '#4CAF50',
-                            borderRadius: 2,
-                          }}
-                        />
-                        <Text style={{ color: colors.text, fontSize: 12 }}>
-                          {t.marketPriceLabel}
-                        </Text>
-                      </View>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <View
-                          style={{
-                            width: 16,
-                            height: 16,
-                            backgroundColor: '#757575',
-                            borderRadius: 2,
-                          }}
-                        />
-                        <Text style={{ color: colors.text, fontSize: 12 }}>
-                          {t.gridFeesLabel} ({gridFees} ¢/kWh)
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                }
-                detailChildren={
-                  priceClockView ? (
-                    <ClockChart
-                      data={filteredEnergyData}
-                      backgroundColor={colors.surface}
-                      textColor={colors.text}
-                      colors={colors}
-                      gridFees={gridFees}
-                      labels={{
-                        now: t.now,
-                        average: t.average,
-                        pricePerKwh: t.pricePerKwh,
-                        noData: t.noData,
-                      }}
-                    />
-                  ) : (
-                    <PriceBarChart
-                      title={t.priceTitle}
-                      subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
-                      data={filteredEnergyData}
-                      backgroundColor={colors.surface}
-                      textColor={colors.text}
-                      gridColor={colors.gridLine}
-                      colors={colors}
-                      labels={{
-                        yAxis: t.pricePerKwh,
-                        now: t.now,
-                        average: t.average,
-                        marketPrice: t.marketPrice,
-                        gridFeesAndTaxes: t.gridFeesAndTaxes,
-                        interpolated: t.interpolated,
-                        tooltipMarketPrice: t.tooltipMarketPrice,
-                        tooltipGridFees: t.tooltipGridFees,
-                        tooltipEndCustomer: t.tooltipEndCustomer,
-                      }}
-                      gridFees={gridFees}
-                      showLegend={false}
-                      forceStacked
-                      accentColor={colors.accentAmber}
-                    />
-                  )
-                }
-              >
-                <Animated.View style={clockViewAnimatedStyle}>
-                  {priceClockView ? (
-                    <ClockChart
-                      data={filteredEnergyData}
-                      backgroundColor={colors.surface}
-                      textColor={colors.text}
-                      colors={colors}
-                      gridFees={gridFees}
-                      labels={{
-                        now: t.now,
-                        average: t.average,
-                        pricePerKwh: t.pricePerKwh,
-                        noData: t.noData,
-                      }}
-                    />
-                  ) : (
-                    <PriceBarChart
-                      title={t.priceTitle}
-                      subtitle={`${t.timeRange}: ${hourlyEnergyData.length > 0 ? formatDate(hourlyEnergyData[0].timestamp) : t.loadingData} - ${hourlyEnergyData.length > 0 ? formatDate(hourlyEnergyData[hourlyEnergyData.length - 1].timestamp) : t.loadingData}`}
-                      data={hourlyEnergyData}
-                      backgroundColor={colors.surface}
-                      textColor={colors.text}
-                      gridColor={colors.gridLine}
-                      colors={colors}
-                      labels={{
-                        yAxis: t.pricePerKwh,
-                        now: t.now,
-                        average: t.average,
-                        marketPrice: t.marketPrice,
-                        gridFeesAndTaxes: t.gridFeesAndTaxes,
-                        interpolated: t.interpolated,
-                        tooltipMarketPrice: t.tooltipMarketPrice,
-                        tooltipGridFees: t.tooltipGridFees,
-                        tooltipEndCustomer: t.tooltipEndCustomer,
-                      }}
-                      gridFees={gridFees}
-                      showLegend={false}
-                      accentColor={colors.accentAmber}
-                    />
-                  )}
-                </Animated.View>
-              </ChartDetailView>
-
-              <CorrelationScatterChart
-                title={t.correlationTitle}
-                subtitle={`${t.timeRange}: ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[0].timestamp) : t.loadingData} - ${filteredEnergyData.length > 0 ? formatDate(filteredEnergyData[filteredEnergyData.length - 1].timestamp) : t.loadingData}`}
-                insightText={t.correlationInsight}
-                data={filteredEnergyData}
-                backgroundColor={colors.surface}
-                textColor={colors.text}
-                gridColor={colors.gridLine}
-                colors={colors}
-                labels={{
-                  yAxisPrice: t.pricePerKwh,
-                  xAxisRenewables: t.renewablePercent,
-                  night: t.night,
-                  morningEvening: t.morningEvening,
-                  day: t.day,
-                }}
-              />
-            </>
-          ) : null}
-          {filteredEnergyData.length === 0 && (
-            <View style={[styles.card, { backgroundColor: colors.surface }]}>
-              <Text style={[styles.cardTitle, { color: colors.text }]}>{t.noData}</Text>
-              <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-                {t.noDataMessage}
-              </Text>
-            </View>
-          )}
+          <ChartSection
+            filteredEnergyData={filteredEnergyData}
+            hourlyEnergyData={hourlyEnergyData}
+            metrics={metrics}
+            colors={colors}
+            isDark={isDark}
+            debouncedPostalCode={debouncedPostalCode}
+            hasRegionalData={hasRegionalData}
+            gridFees={gridFees}
+            priceDisplayMode={priceDisplayMode}
+            priceClockView={priceClockView}
+            clockViewAnimatedStyle={clockViewAnimatedStyle}
+            formatDate={formatDate}
+            handlePriceClockViewChange={handlePriceClockViewChange}
+            t={t}
+          />
         </ScrollView>
 
-        {/* About View Modal */}
         <AboutView
           visible={aboutVisible}
           onClose={() => setAboutVisible(false)}
@@ -876,7 +332,6 @@ function AppContent() {
           dataSourceInfo={getDataSourceInfo()}
         />
 
-        {/* Cost Calculator View */}
         <CostCalculatorView
           visible={calculatorVisible}
           onClose={() => setCalculatorVisible(false)}
@@ -903,160 +358,17 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   skeletonA11yText: {
-    // Visually hidden but announced by screen readers
     position: 'absolute',
     width: 1,
     height: 1,
     overflow: 'hidden',
     opacity: 0,
   },
-  settingsOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    zIndex: 999,
-  },
-  menu: {
-    position: 'absolute',
-    top: '10%',
-    left: '50%',
-    maxHeight: '80%',
-    width: '80%',
-    maxWidth: 400,
-    transform: [{ translateX: '-50%' }],
-    borderRadius: 12,
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    zIndex: 1000,
-  },
-  menuHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  legendBox: {
-    width: 12,
-    height: 12,
-    marginRight: 8,
-  },
-  legendText: {
-    fontSize: 12,
-  },
   scrollView: {
     flex: 1,
   },
-  card: {
-    margin: 12,
-    padding: 12,
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  infoText: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-  },
-  headerTitleBlock: {
-    flex: 1,
-  },
-  headerLiveRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginBottom: 2,
-  },
-  headerLiveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  headerLiveLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-  },
-  headerTitleLine1: {
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-    lineHeight: 24,
-  },
-  headerTitleLine2: {
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-    lineHeight: 24,
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  headerButton: {
-    padding: 10,
-    minWidth: 44,
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  headerButtonText: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  settingsHeaderButtonText: {
-    fontSize: 24,
-    fontWeight: '500',
-  },
-  aboutButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  aboutButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  aboutInfoText: {
-    fontSize: 13,
-    fontWeight: '400',
-    marginTop: 4,
-    lineHeight: 1.5,
-  },
 });
 
-// Wrap the app with SafeAreaProvider and Context Providers
 import { SettingsProvider } from './context/SettingsContext';
 import { LanguageProvider } from './context/LanguageContext';
 
