@@ -202,9 +202,10 @@ export function ChartSection({
                   min: metrics.marketPrice.min + gridFees,
                   max: metrics.marketPrice.max + gridFees,
                   avg: metrics.marketPrice.avg + gridFees,
-                  current: metrics.today?.marketPrice.current
-                    ? metrics.today.marketPrice.current + gridFees
-                    : undefined,
+                  current:
+                    metrics.today?.marketPrice.current != null
+                      ? metrics.today.marketPrice.current + gridFees
+                      : undefined,
                 },
                 unit: '¢',
                 label: t.pricePerKwh,

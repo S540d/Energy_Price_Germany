@@ -4,8 +4,7 @@ import type { AnimatedStyle } from 'react-native-reanimated';
 import Animated from 'react-native-reanimated';
 import { Badge } from './ui/Badge';
 import type { ThemeColors } from '../utils/theme';
-
-type AlertState = 'none' | 'low' | 'high';
+import type { AlertState } from '../utils/priceAlertUtils';
 
 type Props = {
   colors: ThemeColors;
@@ -74,14 +73,16 @@ export function AppHeader({
         <TouchableOpacity
           onPress={onOpenCalculator}
           style={[styles.button, glassButtonStyle]}
-          aria-label="Cost Calculator"
+          accessibilityLabel="Cost Calculator"
+          accessibilityRole="button"
         >
           <Text style={[styles.buttonText, { color: colors.text }]}>€</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={onOpenSettings}
           style={[styles.button, glassButtonStyle]}
-          aria-label="Settings"
+          accessibilityLabel="Settings"
+          accessibilityRole="button"
         >
           <Text style={[styles.settingsButtonText, { color: colors.text }]}>⋮</Text>
         </TouchableOpacity>
