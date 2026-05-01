@@ -155,16 +155,21 @@ jobs:
             process.exit(1);
           }
 
-          // Must have at least some price data (not all nulls)
-          const priceCount = data.filter(d => d.marketprice !== null).length;
+          // Must have at least some price data – count only finite numeric values
+          const priceCount = data.filter(d => typeof d.marketprice === "number" && isFinite(d.marketprice)).length;
           if (priceCount === 0) {
-            console.error("❌ All marketprice values are null – no usable price data");
+            console.error("❌ All marketprice values are null/invalid – no usable price data");
             process.exit(1);
           }
 
-          // Coverage check: newest timestamp must be within the last 36h
+          // Coverage check: newest finite timestamp must be within the last 36h
           const now = Date.now();
-          const maxTs = Math.max(...data.map(d => d.start_timestamp));
+          const validTs = data.map(d => d.start_timestamp).filter(ts => typeof ts === "number" && isFinite(ts) && ts > 0);
+          if (validTs.length === 0) {
+            console.error("❌ No valid start_timestamp values found");
+            process.exit(1);
+          }
+          const maxTs = Math.max(...validTs);
           const ageHours = (now - maxTs) / (1000 * 60 * 60);
           if (ageHours > 36) {
             console.error("❌ Newest data point is " + ageHours.toFixed(1) + "h old (max 36h)");

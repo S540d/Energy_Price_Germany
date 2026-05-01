@@ -19,36 +19,14 @@ function detectAnomalies(data, sourceName = "data") {
     const curr = data[i];
     const timeDiffMin = (curr.start_timestamp - prev.start_timestamp) / (1000 * 60);
 
-    if (prev.renewable_share !== null && curr.renewable_share !== null) {
-      const renewableDiff = Math.abs(curr.renewable_share - prev.renewable_share);
-
-      if (timeDiffMin <= 15 && renewableDiff > RENEWABLE_JUMP_THRESHOLD) {
-        const ts = new Date(curr.start_timestamp).toISOString();
-        warnings.push(
-          `Large renewable share jump: ${prev.renewable_share.toFixed(1)}% → ${curr.renewable_share.toFixed(1)}% ` +
-          `(${renewableDiff.toFixed(1)} pp) at ${ts}`
-        );
-      }
-
-      // Physically impossible: renewable share outside [0, 100]
+    // Bounds checks: run on curr alone (don't require prev to be non-null)
+    if (curr.renewable_share !== null) {
       if (curr.renewable_share < 0 || curr.renewable_share > 100) {
         const ts = new Date(curr.start_timestamp).toISOString();
         critical.push(`Renewable share out of range [0,100]: ${curr.renewable_share.toFixed(1)}% at ${ts}`);
       }
     }
-
-    if (prev.marketprice !== null && curr.marketprice !== null) {
-      const priceDiff = Math.abs(curr.marketprice - prev.marketprice);
-
-      if (timeDiffMin <= 15 && priceDiff > PRICE_JUMP_THRESHOLD) {
-        const ts = new Date(curr.start_timestamp).toISOString();
-        warnings.push(
-          `Large price jump: ${prev.marketprice.toFixed(2)} → ${curr.marketprice.toFixed(2)} EUR/MWh ` +
-          `(${priceDiff.toFixed(2)}) at ${ts}`
-        );
-      }
-
-      // Physically implausible: prices beyond observed extremes
+    if (curr.marketprice !== null && typeof curr.marketprice === "number" && isFinite(curr.marketprice)) {
       if (curr.marketprice < -500) {
         const ts = new Date(curr.start_timestamp).toISOString();
         critical.push(`Price below -500 EUR/MWh: ${curr.marketprice.toFixed(2)} at ${ts}`);
@@ -56,6 +34,29 @@ function detectAnomalies(data, sourceName = "data") {
       if (curr.marketprice > 4000) {
         const ts = new Date(curr.start_timestamp).toISOString();
         critical.push(`Price above 4000 EUR/MWh: ${curr.marketprice.toFixed(2)} at ${ts}`);
+      }
+    }
+
+    // Jump checks: require both prev and curr to be non-null
+    if (prev.renewable_share !== null && curr.renewable_share !== null) {
+      const renewableDiff = Math.abs(curr.renewable_share - prev.renewable_share);
+      if (timeDiffMin <= 15 && renewableDiff > RENEWABLE_JUMP_THRESHOLD) {
+        const ts = new Date(curr.start_timestamp).toISOString();
+        warnings.push(
+          `Large renewable share jump: ${prev.renewable_share.toFixed(1)}% → ${curr.renewable_share.toFixed(1)}% ` +
+          `(${renewableDiff.toFixed(1)} pp) at ${ts}`
+        );
+      }
+    }
+
+    if (prev.marketprice !== null && curr.marketprice !== null) {
+      const priceDiff = Math.abs(curr.marketprice - prev.marketprice);
+      if (timeDiffMin <= 15 && priceDiff > PRICE_JUMP_THRESHOLD) {
+        const ts = new Date(curr.start_timestamp).toISOString();
+        warnings.push(
+          `Large price jump: ${prev.marketprice.toFixed(2)} → ${curr.marketprice.toFixed(2)} EUR/MWh ` +
+          `(${priceDiff.toFixed(2)}) at ${ts}`
+        );
       }
     }
   }
