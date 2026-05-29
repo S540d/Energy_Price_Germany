@@ -44,6 +44,13 @@ export const translations = {
     priceAlertNotificationLow: 'Current electricity price is cheap',
     priceAlertNotificationHigh: 'Current electricity price is high',
     priceAlertConflict: 'Lower threshold must be less than upper threshold',
+    // History Cache Section (#307)
+    historyCacheTitle: 'Historical Data Cache',
+    historyCacheHint: 'How much storage the app may use to keep historical data on this device.',
+    historyCacheUsed: 'Used',
+    historyCacheClear: 'Clear cache',
+    historyCacheDay: 'day',
+    historyCacheDays: 'days',
     // About Section
     about: 'ABOUT',
     version: 'Version',
@@ -173,6 +180,14 @@ export const translations = {
     priceAlertNotificationLow: 'Aktueller Strompreis ist günstig',
     priceAlertNotificationHigh: 'Aktueller Strompreis ist hoch',
     priceAlertConflict: 'Untergrenze muss kleiner als Obergrenze sein',
+    // History Cache Section (#307)
+    historyCacheTitle: 'Cache für historische Daten',
+    historyCacheHint:
+      'Wie viel Speicher die App nutzen darf, um historische Daten auf diesem Gerät vorzuhalten.',
+    historyCacheUsed: 'Belegt',
+    historyCacheClear: 'Cache leeren',
+    historyCacheDay: 'Tag',
+    historyCacheDays: 'Tage',
     // About Section
     about: 'ÜBER',
     version: 'Version',

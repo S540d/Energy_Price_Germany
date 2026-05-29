@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreenModule from 'expo-splash-screen';
 import * as Updates from 'expo-updates';
 
-import { getCurrentDataSource } from './services/energyDataManager';
+import { getCurrentDataSource, energyDataManager } from './services/energyDataManager';
 import { AboutView } from './components/AboutView';
 import { SettingsMenu } from './components/settings/SettingsMenu';
 import { CustomizeModal } from './components/customize/CustomizeModal';
@@ -75,10 +75,22 @@ function AppContent() {
     opacity: clockViewOpacity.value,
   }));
 
-  const { theme, debouncedPostalCode, gridFees, priceAlertLow, priceAlertHigh, priceDisplayMode } =
-    useSettingsContext();
+  const {
+    theme,
+    debouncedPostalCode,
+    gridFees,
+    priceAlertLow,
+    priceAlertHigh,
+    priceDisplayMode,
+    historyCacheLimitMb,
+  } = useSettingsContext();
   const { language, t } = useLanguageContext();
   const { energyData, loading } = useEnergyData(debouncedPostalCode);
+
+  // Nutzer-Limit für die persistente Historie an den Daten-Manager weitergeben (#307)
+  useEffect(() => {
+    energyDataManager.setHistoryLimitBytes(historyCacheLimitMb * 1024 * 1024);
+  }, [historyCacheLimitMb]);
 
   const systemTheme = useColorScheme();
   const isDark = theme === 'dark' || (theme === 'system' && systemTheme === 'dark');
