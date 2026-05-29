@@ -1,5 +1,7 @@
+import { Platform } from 'react-native';
 import { Storage } from '../utils/platform';
 import type { EnergyData } from '../utils/metrics';
+import { validateMarketDataResponse, fetchWithTimeout } from '../utils/apiValidation';
 
 /**
  * Historical Data Store
@@ -66,8 +68,21 @@ export function dayStringFromTimestamp(ts: number): string {
 }
 
 export class HistoricalDataStore {
+  // Tage, die in dieser Session bereits vom Server angefragt wurden
+  // (Erfolg oder 404) – verhindert wiederholte Fehlanfragen.
+  private serverFetchAttempted = new Set<string>();
+
   private dayKey(date: string): string {
     return `${HISTORY_DAY_KEY_PREFIX}${date}`;
+  }
+
+  /**
+   * URL der serverseitigen Tages-History (analog EnergyDataManager).
+   */
+  private historyDayUrl(date: string): string {
+    return Platform.OS === 'web'
+      ? `./data/history/${date}.json`
+      : `https://s540d.github.io/Energy_Price_Germany/data/history/${date}.json`;
   }
 
   /**
@@ -140,45 +155,9 @@ export class HistoricalDataStore {
       if (byDay.size === 0) return;
 
       const index = await this.loadIndex();
-
       for (const [day, points] of byDay) {
-        const existing = await this.loadDay(day);
-
-        // Merge per Timestamp (neue Werte gewinnen)
-        const merged = new Map<number, EnergyData>();
-        if (existing) {
-          for (const p of existing.data) merged.set(p.timestamp, p);
-        }
-        for (const p of points) merged.set(p.timestamp, p);
-
-        const sorted = Array.from(merged.values()).sort((a, b) => a.timestamp - b.timestamp);
-
-        const updatedAt = Date.now();
-        // bytes erst aus den Daten schätzen, dann finalen Eintrag schreiben.
-        const dataBytes = JSON.stringify(sorted).length;
-        const entry: HistoryDayEntry = {
-          date: day,
-          data: sorted,
-          bytes: dataBytes,
-          updatedAt,
-        };
-        const serialized = JSON.stringify(entry);
-        await Storage.setItem(this.dayKey(day), serialized);
-
-        // Index aktualisieren (Gesamtgröße des gespeicherten Strings)
-        const idxEntry: HistoryIndexDay = {
-          date: day,
-          bytes: serialized.length,
-          updatedAt,
-        };
-        const pos = index.days.findIndex(d => d.date === day);
-        if (pos >= 0) {
-          index.days[pos] = idxEntry;
-        } else {
-          index.days.push(idxEntry);
-        }
+        await this.mergeAndWriteDay(day, points, index);
       }
-
       await this.saveIndex(index);
       await this.enforceLimit(limitBytes);
     } catch {
@@ -187,15 +166,122 @@ export class HistoricalDataStore {
   }
 
   /**
+   * Merged neue Punkte in den Tages-Eintrag (neue Werte gewinnen per Timestamp),
+   * schreibt ihn in den Storage und aktualisiert den übergebenen Index in-place.
+   * Speichert den Index NICHT (Aufrufer sammelt mehrere Tage und ruft saveIndex).
+   */
+  private async mergeAndWriteDay(
+    day: string,
+    points: EnergyData[],
+    index: HistoryIndex
+  ): Promise<void> {
+    const existing = await this.loadDay(day);
+
+    const merged = new Map<number, EnergyData>();
+    if (existing) {
+      for (const p of existing.data) merged.set(p.timestamp, p);
+    }
+    for (const p of points) merged.set(p.timestamp, p);
+
+    const sorted = Array.from(merged.values()).sort((a, b) => a.timestamp - b.timestamp);
+
+    const updatedAt = Date.now();
+    const dataBytes = JSON.stringify(sorted).length;
+    const entry: HistoryDayEntry = { date: day, data: sorted, bytes: dataBytes, updatedAt };
+    const serialized = JSON.stringify(entry);
+    await Storage.setItem(this.dayKey(day), serialized);
+
+    const idxEntry: HistoryIndexDay = { date: day, bytes: serialized.length, updatedAt };
+    const pos = index.days.findIndex(d => d.date === day);
+    if (pos >= 0) {
+      index.days[pos] = idxEntry;
+    } else {
+      index.days.push(idxEntry);
+    }
+  }
+
+  /**
+   * Liefert alle Tag-Strings (YYYY-MM-DD) zwischen fromDay und toDay inklusive.
+   */
+  private enumerateDays(fromDay: string, toDay: string): string[] {
+    const days: string[] = [];
+    const cursor = new Date(`${fromDay}T00:00:00`);
+    const end = new Date(`${toDay}T00:00:00`);
+    // Sicherheitsgrenze gegen Endlosschleifen
+    let guard = 0;
+    while (cursor <= end && guard < 400) {
+      days.push(dayStringFromTimestamp(cursor.getTime()));
+      cursor.setDate(cursor.getDate() + 1);
+      guard++;
+    }
+    return days;
+  }
+
+  /**
+   * Lädt eine serverseitige Tages-History und schreibt sie in den Store.
+   * 404/Fehler werden still ignoriert. Markiert den Tag als angefragt.
+   */
+  private async loadServerDayIntoStore(date: string, index: HistoryIndex): Promise<void> {
+    this.serverFetchAttempted.add(date);
+    try {
+      const url = `${this.historyDayUrl(date)}?v=${Date.now()}`;
+      const response = await fetchWithTimeout(url, {}, 10000);
+      if (!response.ok) return;
+
+      const json = await response.json();
+      const validated = validateMarketDataResponse(json);
+      if (!validated.data.length) return;
+
+      const points: EnergyData[] = validated.data.map(item => ({
+        timestamp: item.start_timestamp,
+        marketPrice: item.marketprice ?? null,
+        renewableShare: item.renewable_share ?? null,
+        isMarketPriceInterpolated: item.interpolated || false,
+        isRenewableShareInterpolated: false,
+      }));
+
+      await this.mergeAndWriteDay(date, points, index);
+    } catch {
+      // Non-blocking – Tag bleibt einfach leer
+    }
+  }
+
+  /**
    * Liefert alle gespeicherten Datenpunkte im Zeitbereich [fromTs, toTs]
    * (inklusive), aufsteigend nach Timestamp sortiert.
+   *
+   * Standardmäßig werden fehlende vergangene Tage aus der serverseitigen
+   * History (public/data/history/) nachgeladen und in den Cache geschrieben
+   * (Issue #307 – Gerätecache primär, Server als Fallback).
+   *
+   * @param allowServerFallback Server-Fallback deaktivieren (z.B. offline-only)
    */
-  async getRange(fromTs: number, toTs: number): Promise<EnergyData[]> {
+  async getRange(
+    fromTs: number,
+    toTs: number,
+    allowServerFallback: boolean = true
+  ): Promise<EnergyData[]> {
     try {
       if (fromTs > toTs) return [];
-      const index = await this.loadIndex();
+      let index = await this.loadIndex();
       const fromDay = dayStringFromTimestamp(fromTs);
       const toDay = dayStringFromTimestamp(toTs);
+      const today = dayStringFromTimestamp(Date.now());
+
+      // Fehlende vergangene Tage vom Server nachladen (nicht heute/Zukunft).
+      if (allowServerFallback) {
+        const cachedDays = new Set(index.days.map(d => d.date));
+        const missing = this.enumerateDays(fromDay, toDay).filter(
+          d => d < today && !cachedDays.has(d) && !this.serverFetchAttempted.has(d)
+        );
+        if (missing.length) {
+          for (const d of missing) {
+            await this.loadServerDayIntoStore(d, index);
+          }
+          await this.saveIndex(index);
+          index = await this.loadIndex();
+        }
+      }
 
       const relevantDays = index.days.filter(d => d.date >= fromDay && d.date <= toDay);
 

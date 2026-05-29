@@ -3,6 +3,7 @@ import { Storage } from '../utils/platform';
 import type { EnergyData } from '../utils/metrics';
 
 jest.mock('../utils/platform');
+global.fetch = jest.fn();
 
 /**
  * In-Memory-Fake für die Storage-Abstraktion, damit Reads/Writes
@@ -124,6 +125,63 @@ describe('HistoricalDataStore', () => {
       const after = await store.getStorageInfo();
       expect(after.dayCount).toBe(1);
       expect(after.newestDate).toBe('2026-05-28'); // jüngster Tag bleibt
+    });
+  });
+
+  describe('getRange server fallback', () => {
+    // Ein sicher in der Vergangenheit liegender Tag
+    const pastDay = '2020-01-02';
+    const dayStartTs = new Date(`${pastDay}T00:00:00`).getTime();
+    const dayEndTs = dayStartTs + 24 * 60 * 60 * 1000 - 1;
+
+    const serverResponse = {
+      date: pastDay,
+      source: 'energy-charts',
+      data: [
+        {
+          start_timestamp: dayStartTs + 10 * 60 * 60 * 1000,
+          end_timestamp: dayStartTs + 10 * 60 * 60 * 1000 + 900000,
+          marketprice: 42.0,
+          renewable_share: 55.5,
+          interpolated: false,
+        },
+      ],
+    };
+
+    it('fetches a missing past day from the server and caches it', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => serverResponse,
+      });
+
+      const range = await store.getRange(dayStartTs, dayEndTs);
+
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(range).toHaveLength(1);
+      expect(range[0].marketPrice).toBe(42.0);
+
+      // Tag ist nun im Cache -> kein erneuter Fetch
+      const range2 = await store.getRange(dayStartTs, dayEndTs);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(range2).toHaveLength(1);
+    });
+
+    it('ignores a 404 and does not refetch the same day in-session', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({ ok: false, status: 404 });
+
+      const range = await store.getRange(dayStartTs, dayEndTs);
+      expect(range).toEqual([]);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+
+      // serverFetchAttempted verhindert erneuten Fetch
+      await store.getRange(dayStartTs, dayEndTs);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not fetch when server fallback is disabled', async () => {
+      const range = await store.getRange(dayStartTs, dayEndTs, false);
+      expect(global.fetch).not.toHaveBeenCalled();
+      expect(range).toEqual([]);
     });
   });
 
