@@ -10,6 +10,7 @@ import { AboutView } from './components/AboutView';
 import { SettingsMenu } from './components/settings/SettingsMenu';
 import { CustomizeModal } from './components/customize/CustomizeModal';
 import { CostCalculatorView } from './components/CostCalculatorView';
+import { HistoricalDataView } from './components/HistoricalDataView';
 import { AppHeader } from './components/AppHeader';
 import { ChartSection } from './components/ChartSection';
 import { calculateMetrics } from './utils/metrics';
@@ -51,6 +52,7 @@ function AppContent() {
   const [customizeVisible, setCustomizeVisible] = useState(false);
   const [aboutVisible, setAboutVisible] = useState(false);
   const [calculatorVisible, setCalculatorVisible] = useState(false);
+  const [historyVisible, setHistoryVisible] = useState(false);
   const [priceClockView, setPriceClockView] = useState(false);
   const clockViewOpacity = useSharedValue(1);
   const isAnimatingClockView = useRef(false);
@@ -301,6 +303,7 @@ function AppContent() {
           onClose={() => setMenuVisible(false)}
           onOpenCustomize={() => setCustomizeVisible(true)}
           onOpenAbout={() => setAboutVisible(true)}
+          onOpenHistory={() => setHistoryVisible(true)}
         />
 
         <CustomizeModal visible={customizeVisible} onClose={() => setCustomizeVisible(false)} />
@@ -354,6 +357,13 @@ function AppContent() {
               marketprice: item.marketPrice ?? 0,
               renewable_share: item.renewableShare ?? undefined,
             }))}
+          gridFees={gridFees}
+        />
+
+        <HistoricalDataView
+          visible={historyVisible}
+          onClose={() => setHistoryVisible(false)}
+          liveData={energyData}
           gridFees={gridFees}
         />
       </SafeAreaView>
