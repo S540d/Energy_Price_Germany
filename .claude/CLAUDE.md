@@ -146,6 +146,13 @@ Validation rules enforced by Husky:
    - **UI:** `HistoricalDataView` (Settings → "Verlauf") = range selector 24h/48h/7d/30d (#1),
      charts aggregated via `dataAggregation.ts` (15min/hourly/daily), stats via
      `historicalStats.ts` (#3). The live main screen is intentionally unchanged.
+   - **Period comparison (#311):** `HistoricalDataView` also loads the equally long
+     *previous* period `[from - window, from)` (parallel `getRange`) and shows a
+     "vs. Vorperiode" row per stat block via `computePeriodComparison` in
+     `historicalStats.ts` (Δ avg absolute + %, direction). Each series (price/renewable)
+     is `null` only when that series has no data in one of the periods; when
+     `previousAvg == 0` the object is still returned and only `deltaPct` is `null`.
+     i18n key `historyStatVsPrev` (must exist in BOTH `en`+`de`).
 
 ## Common Tasks
 
@@ -274,7 +281,7 @@ utils/
 ├── theme.ts              # Color management
 ├── translations.ts       # i18n support (DE/EN)
 ├── postalCodeUtils.ts    # PLZ validation
-├── historicalStats.ts    # Stats over EnergyData[] (avg/min/max/median/trend) (#3)
+├── historicalStats.ts    # Stats over EnergyData[] (avg/min/max/median/trend) + period comparison (#3/#311)
 ├── dataAggregation.ts    # Bucket EnergyData[] hourly/daily for long ranges (#1)
 └── designSystem.ts       # Design tokens
 
