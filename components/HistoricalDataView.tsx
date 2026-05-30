@@ -15,7 +15,12 @@ import { getThemeColors } from '../utils/theme';
 import { useSettingsContext } from '../context/SettingsContext';
 import { historicalDataStore } from '../services/historicalDataStore';
 import { aggregateEnergyData } from '../utils/dataAggregation';
-import { computeHistoricalStats, type SeriesStat } from '../utils/historicalStats';
+import {
+  computeHistoricalStats,
+  computePeriodComparison,
+  type SeriesStat,
+  type SeriesComparison,
+} from '../utils/historicalStats';
 import type { EnergyData } from '../utils/metrics';
 import { PriceBarChart } from './charts/PriceBarChart';
 import { RenewableBarChart } from './charts/RenewableBarChart';
@@ -66,6 +71,7 @@ export function HistoricalDataView({
 
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
   const [rangeData, setRangeData] = useState<EnergyData[]>([]);
+  const [previousData, setPreviousData] = useState<EnergyData[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -75,8 +81,15 @@ export function HistoricalDataView({
     async function load() {
       setLoading(true);
       const now = Date.now();
-      const from = now - RANGE_WINDOW_MS[timeRange];
-      const historical = await historicalDataStore.getRange(from, now);
+      const window = RANGE_WINDOW_MS[timeRange];
+      const from = now - window;
+      const prevFrom = from - window;
+
+      // Aktuelle Periode (Cache + Server-Fallback) und Vorperiode parallel laden
+      const [historical, previousHistorical] = await Promise.all([
+        historicalDataStore.getRange(from, now),
+        historicalDataStore.getRange(prevFrom, from),
+      ]);
       if (cancelled) return;
 
       // Cache + Live mergen (Live gewinnt per Timestamp), nur ab "from".
@@ -89,7 +102,13 @@ export function HistoricalDataView({
         .filter(d => d.timestamp >= from)
         .sort((a, b) => a.timestamp - b.timestamp);
 
+      // Vorperiode: [prevFrom, from) – Grenze "from" gehört zur aktuellen Periode
+      const previous = previousHistorical
+        .filter(d => d.timestamp >= prevFrom && d.timestamp < from)
+        .sort((a, b) => a.timestamp - b.timestamp);
+
       setRangeData(merged);
+      setPreviousData(previous);
       setLoading(false);
     }
 
@@ -105,6 +124,10 @@ export function HistoricalDataView({
   }, [rangeData, timeRange]);
 
   const stats = useMemo(() => computeHistoricalStats(rangeData), [rangeData]);
+  const comparison = useMemo(
+    () => computePeriodComparison(rangeData, previousData),
+    [rangeData, previousData]
+  );
 
   const priceLabels = {
     yAxis: t.pricePerKwh,
@@ -195,6 +218,7 @@ export function HistoricalDataView({
               <StatBlock
                 title={t.historyPriceSection}
                 stat={stats.price}
+                comparison={comparison.price}
                 unit="¢"
                 colors={colors}
                 t={t}
@@ -202,6 +226,7 @@ export function HistoricalDataView({
               <StatBlock
                 title={t.historyRenewableSection}
                 stat={stats.renewable}
+                comparison={comparison.renewable}
                 unit="%"
                 colors={colors}
                 t={t}
@@ -251,15 +276,26 @@ function trendLabel(stat: SeriesStat, t: Record<string, string>): string {
   return `→ ${t.historyTrendFlat}`;
 }
 
+/** "↑ +2.3 ¢ (+12.5%)" – Veränderung des Durchschnitts ggü. Vorperiode (#311). */
+function comparisonLabel(c: SeriesComparison, unit: string): string {
+  const arrow = c.direction === 'up' ? '↑' : c.direction === 'down' ? '↓' : '→';
+  const absSign = c.deltaAbs >= 0 ? '+' : '-';
+  const absStr = `${absSign}${Math.abs(c.deltaAbs).toFixed(1)} ${unit}`;
+  if (c.deltaPct === null) return `${arrow} ${absStr}`;
+  const pctSign = c.deltaPct >= 0 ? '+' : '-';
+  return `${arrow} ${absStr} (${pctSign}${Math.abs(c.deltaPct).toFixed(1)}%)`;
+}
+
 interface StatBlockProps {
   title: string;
   stat: SeriesStat | null;
+  comparison: SeriesComparison | null;
   unit: string;
   colors: ReturnType<typeof getThemeColors>;
   t: Record<string, string>;
 }
 
-function StatBlock({ title, stat, unit, colors, t }: StatBlockProps) {
+function StatBlock({ title, stat, comparison, unit, colors, t }: StatBlockProps) {
   if (!stat) return null;
   const fmt = (v: number) => `${v.toFixed(1)} ${unit}`;
   const rows: Array<[string, string]> = [
@@ -269,6 +305,9 @@ function StatBlock({ title, stat, unit, colors, t }: StatBlockProps) {
     [t.historyStatMedian, fmt(stat.median)],
     [t.historyStatTrend, trendLabel(stat, t)],
   ];
+  if (comparison) {
+    rows.push([t.historyStatVsPrev, comparisonLabel(comparison, unit)]);
+  }
   return (
     <View style={styles.statBlock}>
       <Text style={[styles.statBlockTitle, { color: colors.textSecondary }]}>{title}</Text>
