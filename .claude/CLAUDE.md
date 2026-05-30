@@ -95,6 +95,9 @@ Validation rules enforced by Husky:
 4. **Security – Hardcoded tokens** (Issue #276): blocks API keys/tokens in staged `+` lines
 5. **Security – Internal docs warning**: warns (non-blocking) if `keystore/` or internal checklists are staged
 
+> Note (PR #309): The hook runs under husky's `sh -e`; the sensitive-data greps
+> use `|| true` so a no-match (exit 1) no longer aborts the hook on normal commits.
+
 ### Testing & Environments
 - **Production:** https://s540d.github.io/Energy_Price_Germany/
 - **Local Dev:** `expo start --web`
@@ -124,6 +127,25 @@ Validation rules enforced by Husky:
    - Performance-optimized with useMemo/useCallback/React.memo
    - Responsive design via `useChartDimensions()` hook
    - Touch/hover interactions (platform-aware)
+
+5. **Historical Data (`services/historicalDataStore.ts`) – Issues #307/#1/#3 (PR #309):**
+   - **Device cache is the primary source.** Every successful national fetch in
+     `EnergyDataManager.performDataLoad` records a per-day snapshot
+     (`recordSnapshot`, deferred/fire-and-forget) into `Storage` (localStorage/AsyncStorage).
+   - **Storage layout** (versioned like `energy_regional_cache_v1`):
+     `energy_history_v1:<YYYY-MM-DD>` per day + `energy_history_index_v1` index
+     (date + byte size per day for fast range/size queries).
+   - **Day keys are Europe/Berlin** (`dayStringFromTimestamp` via `Intl`/`formatToParts`),
+     NOT device-local — must match the Berlin-dated `public/data/history/YYYY-MM-DD.json`.
+   - **MB-based eviction:** user sets `historyCacheLimitMb` (5/10/25/50; default 10) in the
+     Customize modal (`HistoryCacheSection`); `App.tsx` forwards it via
+     `energyDataManager.setHistoryLimitBytes`; `enforceLimit` drops oldest days over budget.
+   - **Server fallback:** `getRange(from, to, allowServerFallback=true)` loads missing *past*
+     days from `data/history/<date>.json` (validated via `apiValidation`) into the cache;
+     404/errors ignored; `serverFetchAttempted` avoids repeat misses per session.
+   - **UI:** `HistoricalDataView` (Settings → "Verlauf") = range selector 24h/48h/7d/30d (#1),
+     charts aggregated via `dataAggregation.ts` (15min/hourly/daily), stats via
+     `historicalStats.ts` (#3). The live main screen is intentionally unchanged.
 
 ## Common Tasks
 
@@ -227,7 +249,9 @@ components/
 │       └── index.ts              # Barrel exports
 ├── settings/
 │   ├── AppearanceSection.tsx     # Theme pill selector with spring animation
-│   └── SettingsMenu.tsx          # Settings panel (slide-up/down animation)
+│   └── SettingsMenu.tsx          # Settings panel (slide-up/down animation; "Verlauf" entry)
+├── customize/
+│   └── HistoryCacheSection.tsx   # History cache size (MB) selector + "Cache leeren" (#307)
 ├── ui/
 │   ├── Button.tsx                # Scale-spring on press
 │   ├── SkeletonLoader.tsx        # Shimmer skeleton (LinearGradient + Reanimated)
@@ -237,6 +261,7 @@ components/
 ├── ChartDetailView.tsx           # Expandable detail modal with share button
 ├── CostCalculator.tsx            # Cost calculator logic
 ├── CostCalculatorView.tsx        # Full-screen cost calculator view
+├── HistoricalDataView.tsx        # Full-screen history view: range select + charts + stats (#1/#3/#307)
 └── LoadingIndicator.tsx          # Loading states
 
 utils/
@@ -249,11 +274,14 @@ utils/
 ├── theme.ts              # Color management
 ├── translations.ts       # i18n support (DE/EN)
 ├── postalCodeUtils.ts    # PLZ validation
+├── historicalStats.ts    # Stats over EnergyData[] (avg/min/max/median/trend) (#3)
+├── dataAggregation.ts    # Bucket EnergyData[] hourly/daily for long ranges (#1)
 └── designSystem.ts       # Design tokens
 
 services/
 ├── energyDataManager.ts  # Data orchestration (fetch, cache, process)
 ├── regionalDataCache.ts  # Dual-layer regional cache (memory + persistent)
+├── historicalDataStore.ts # Persistent per-day history in device cache (#307)
 └── dataMerger.ts         # Regional-to-national data merge
 
 scripts/
@@ -267,6 +295,8 @@ scripts/
 3. User enters PLZ → Fetch regional data via Cloudflare
 4. Merge all data → Display in charts
 5. Cache in AsyncStorage for offline use
+6. Record per-day snapshot into the historical store (#307); the "Verlauf" view
+   reads it back (with server fallback) for 24h/48h/7d/30d ranges + statistics
 
 ## Do's and Don'ts
 
