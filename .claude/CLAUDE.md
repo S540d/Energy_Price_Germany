@@ -149,8 +149,10 @@ Validation rules enforced by Husky:
    - **Period comparison (#311):** `HistoricalDataView` also loads the equally long
      *previous* period `[from - window, from)` (parallel `getRange`) and shows a
      "vs. Vorperiode" row per stat block via `computePeriodComparison` in
-     `historicalStats.ts` (Δ avg absolute + %, direction; null when a period is empty
-     or `previousAvg == 0`). i18n key `historyStatVsPrev` (must exist in BOTH `en`+`de`).
+     `historicalStats.ts` (Δ avg absolute + %, direction). Each series (price/renewable)
+     is `null` only when that series has no data in one of the periods; when
+     `previousAvg == 0` the object is still returned and only `deltaPct` is `null`.
+     i18n key `historyStatVsPrev` (must exist in BOTH `en`+`de`).
 
 ## Common Tasks
 
