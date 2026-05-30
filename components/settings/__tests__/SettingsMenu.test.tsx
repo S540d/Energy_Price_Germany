@@ -37,6 +37,7 @@ describe('SettingsMenu', () => {
   const mockOnClose = jest.fn();
   const mockOnOpenCustomize = jest.fn();
   const mockOnOpenAbout = jest.fn();
+  const mockOnOpenHistory = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -50,6 +51,7 @@ describe('SettingsMenu', () => {
           onClose={mockOnClose}
           onOpenCustomize={mockOnOpenCustomize}
           onOpenAbout={mockOnOpenAbout}
+          onOpenHistory={mockOnOpenHistory}
         />
       </TestWrapper>
     );
@@ -67,6 +69,7 @@ describe('SettingsMenu', () => {
           onClose={mockOnClose}
           onOpenCustomize={mockOnOpenCustomize}
           onOpenAbout={mockOnOpenAbout}
+          onOpenHistory={mockOnOpenHistory}
         />
       </TestWrapper>
     );
@@ -82,6 +85,7 @@ describe('SettingsMenu', () => {
           onClose={mockOnClose}
           onOpenCustomize={mockOnOpenCustomize}
           onOpenAbout={mockOnOpenAbout}
+          onOpenHistory={mockOnOpenHistory}
         />
       </TestWrapper>
     );

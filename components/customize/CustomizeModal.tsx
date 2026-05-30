@@ -17,6 +17,7 @@ import { PostalCodeSection } from './PostalCodeSection';
 import { GridFeesSection } from './GridFeesSection';
 import { PriceDisplayModeSection } from './PriceDisplayModeSection';
 import { PriceAlertSection } from './PriceAlertSection';
+import { HistoryCacheSection } from './HistoryCacheSection';
 
 interface CustomizeModalProps {
   visible: boolean;
@@ -76,6 +77,11 @@ export function CustomizeModal({ visible, onClose }: CustomizeModalProps) {
 
           {/* Price Alert Section */}
           <PriceAlertSection />
+
+          <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
+          {/* History Cache Section (#307) */}
+          <HistoryCacheSection />
         </ScrollView>
       </View>
     </>

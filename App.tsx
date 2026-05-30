@@ -5,11 +5,12 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreenModule from 'expo-splash-screen';
 import * as Updates from 'expo-updates';
 
-import { getCurrentDataSource } from './services/energyDataManager';
+import { getCurrentDataSource, energyDataManager } from './services/energyDataManager';
 import { AboutView } from './components/AboutView';
 import { SettingsMenu } from './components/settings/SettingsMenu';
 import { CustomizeModal } from './components/customize/CustomizeModal';
 import { CostCalculatorView } from './components/CostCalculatorView';
+import { HistoricalDataView } from './components/HistoricalDataView';
 import { AppHeader } from './components/AppHeader';
 import { ChartSection } from './components/ChartSection';
 import { calculateMetrics } from './utils/metrics';
@@ -51,6 +52,7 @@ function AppContent() {
   const [customizeVisible, setCustomizeVisible] = useState(false);
   const [aboutVisible, setAboutVisible] = useState(false);
   const [calculatorVisible, setCalculatorVisible] = useState(false);
+  const [historyVisible, setHistoryVisible] = useState(false);
   const [priceClockView, setPriceClockView] = useState(false);
   const clockViewOpacity = useSharedValue(1);
   const isAnimatingClockView = useRef(false);
@@ -75,10 +77,22 @@ function AppContent() {
     opacity: clockViewOpacity.value,
   }));
 
-  const { theme, debouncedPostalCode, gridFees, priceAlertLow, priceAlertHigh, priceDisplayMode } =
-    useSettingsContext();
+  const {
+    theme,
+    debouncedPostalCode,
+    gridFees,
+    priceAlertLow,
+    priceAlertHigh,
+    priceDisplayMode,
+    historyCacheLimitMb,
+  } = useSettingsContext();
   const { language, t } = useLanguageContext();
   const { energyData, loading } = useEnergyData(debouncedPostalCode);
+
+  // Nutzer-Limit für die persistente Historie an den Daten-Manager weitergeben (#307)
+  useEffect(() => {
+    energyDataManager.setHistoryLimitBytes(historyCacheLimitMb * 1024 * 1024);
+  }, [historyCacheLimitMb]);
 
   const systemTheme = useColorScheme();
   const isDark = theme === 'dark' || (theme === 'system' && systemTheme === 'dark');
@@ -289,6 +303,7 @@ function AppContent() {
           onClose={() => setMenuVisible(false)}
           onOpenCustomize={() => setCustomizeVisible(true)}
           onOpenAbout={() => setAboutVisible(true)}
+          onOpenHistory={() => setHistoryVisible(true)}
         />
 
         <CustomizeModal visible={customizeVisible} onClose={() => setCustomizeVisible(false)} />
@@ -342,6 +357,13 @@ function AppContent() {
               marketprice: item.marketPrice ?? 0,
               renewable_share: item.renewableShare ?? undefined,
             }))}
+          gridFees={gridFees}
+        />
+
+        <HistoricalDataView
+          visible={historyVisible}
+          onClose={() => setHistoryVisible(false)}
+          liveData={energyData}
           gridFees={gridFees}
         />
       </SafeAreaView>
