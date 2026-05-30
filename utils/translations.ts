@@ -146,6 +146,7 @@ export const translations = {
     historyStatsTitle: 'Statistics',
     historyStatMedian: 'Median',
     historyStatTrend: 'Trend',
+    historyStatVsPrev: 'vs. previous period',
     historyTrendUp: 'rising',
     historyTrendDown: 'falling',
     historyTrendFlat: 'stable',

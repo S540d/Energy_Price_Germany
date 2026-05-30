@@ -72,6 +72,81 @@ function computeSeries(points: Point[]): SeriesStat | null {
 }
 
 /**
+ * Vergleich einer Serie (Preis oder Erneuerbare) zwischen aktueller und
+ * vorangegangener Periode (Issue #311).
+ */
+export interface SeriesComparison {
+  currentAvg: number;
+  previousAvg: number;
+  /** currentAvg - previousAvg (gleiche Einheit wie die Serie). */
+  deltaAbs: number;
+  /** Prozentuale Veränderung; null, wenn previousAvg == 0. */
+  deltaPct: number | null;
+  direction: Trend;
+}
+
+export interface PeriodComparison {
+  /** Preis in ¢/kWh; null, wenn eine der Perioden keine Preisdaten hat. */
+  price: SeriesComparison | null;
+  /** Erneuerbaren-Anteil in %; null, wenn eine Periode keine Daten hat. */
+  renewable: SeriesComparison | null;
+}
+
+/** Extrahiert Preis- (¢/kWh) und Erneuerbaren-Werte aus EnergyData[]. */
+function extractValues(data: EnergyData[]): { price: number[]; renewable: number[] } {
+  const price: number[] = [];
+  const renewable: number[] = [];
+  for (const d of data) {
+    if (d.marketPrice !== null && d.marketPrice !== undefined) {
+      price.push(d.marketPrice * 0.1);
+    }
+    if (d.renewableShare !== null && d.renewableShare !== undefined) {
+      renewable.push(d.renewableShare);
+    }
+  }
+  return { price, renewable };
+}
+
+function compareSeries(current: number[], previous: number[]): SeriesComparison | null {
+  if (current.length === 0 || previous.length === 0) return null;
+
+  const currentAvg = average(current);
+  const previousAvg = average(previous);
+  const deltaAbs = currentAvg - previousAvg;
+  const deltaPct = previousAvg !== 0 ? (deltaAbs / Math.abs(previousAvg)) * 100 : null;
+
+  // "flat" bei < 0.5% Änderung (bzw. ~0 absolut, falls previousAvg == 0)
+  let direction: Trend = 'flat';
+  if (deltaPct !== null) {
+    if (deltaPct > 0.5) direction = 'up';
+    else if (deltaPct < -0.5) direction = 'down';
+  } else if (deltaAbs > 1e-9) {
+    direction = 'up';
+  } else if (deltaAbs < -1e-9) {
+    direction = 'down';
+  }
+
+  return { currentAvg, previousAvg, deltaAbs, deltaPct, direction };
+}
+
+/**
+ * Vergleicht die aktuelle Periode mit der unmittelbar vorangegangenen,
+ * gleich langen Periode (Issue #311). Liefert je Serie die Veränderung des
+ * Durchschnitts (absolut + prozentual) oder null, wenn Daten fehlen.
+ */
+export function computePeriodComparison(
+  current: EnergyData[],
+  previous: EnergyData[]
+): PeriodComparison {
+  const cur = extractValues(current);
+  const prev = extractValues(previous);
+  return {
+    price: compareSeries(cur.price, prev.price),
+    renewable: compareSeries(cur.renewable, prev.renewable),
+  };
+}
+
+/**
  * Berechnet Preis- und Erneuerbaren-Statistiken über den gegebenen Datensatz.
  * Preis wird in ¢/kWh ausgegeben (Marktpreis * 0.1).
  */

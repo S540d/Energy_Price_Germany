@@ -1,4 +1,4 @@
-import { computeHistoricalStats } from './historicalStats';
+import { computeHistoricalStats, computePeriodComparison } from './historicalStats';
 import type { EnergyData } from './metrics';
 
 function point(ts: number, marketPrice: number | null, renewableShare: number | null): EnergyData {
@@ -64,5 +64,51 @@ describe('computeHistoricalStats', () => {
     const stats = computeHistoricalStats(data);
     expect(stats.price?.trend).toBe('flat');
     expect(stats.renewable?.trend).toBe('flat');
+  });
+});
+
+describe('computePeriodComparison', () => {
+  it('returns null series when a period has no data', () => {
+    const result = computePeriodComparison([point(1000, 100, 40)], []);
+    expect(result.price).toBeNull();
+    expect(result.renewable).toBeNull();
+  });
+
+  it('computes absolute and percentage delta of the averages', () => {
+    // current price avg (¢/kWh): (10 + 30)/2 = 20 ; previous: (10 + 10)/2 = 10
+    const current = [point(3000, 100, 60), point(4000, 300, 80)];
+    const previous = [point(1000, 100, 40), point(2000, 100, 40)];
+    const result = computePeriodComparison(current, previous);
+
+    expect(result.price?.currentAvg).toBeCloseTo(20);
+    expect(result.price?.previousAvg).toBeCloseTo(10);
+    expect(result.price?.deltaAbs).toBeCloseTo(10);
+    expect(result.price?.deltaPct).toBeCloseTo(100);
+    expect(result.price?.direction).toBe('up');
+
+    // renewable: current avg 70, previous 40 -> +30, +75%
+    expect(result.renewable?.deltaAbs).toBeCloseTo(30);
+    expect(result.renewable?.deltaPct).toBeCloseTo(75);
+    expect(result.renewable?.direction).toBe('up');
+  });
+
+  it('reports a downward direction', () => {
+    const current = [point(3000, 100, 30)];
+    const previous = [point(1000, 300, 90)];
+    const result = computePeriodComparison(current, previous);
+    expect(result.price?.direction).toBe('down');
+    expect(result.renewable?.direction).toBe('down');
+  });
+
+  it('reports flat for sub-0.5% change and null deltaPct when previous avg is 0', () => {
+    const current = [point(3000, 1000, 50.1)];
+    const previous = [point(1000, 1000, 50.0)];
+    const flat = computePeriodComparison(current, previous);
+    expect(flat.price?.direction).toBe('flat');
+
+    // previous renewable avg 0 -> deltaPct null, direction by absolute sign
+    const zeroPrev = computePeriodComparison([point(2, 100, 5)], [point(1, 100, 0)]);
+    expect(zeroPrev.renewable?.deltaPct).toBeNull();
+    expect(zeroPrev.renewable?.direction).toBe('up');
   });
 });
