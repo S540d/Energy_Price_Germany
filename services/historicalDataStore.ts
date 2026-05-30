@@ -57,9 +57,41 @@ export interface HistoryStorageInfo {
 }
 
 /**
- * Liefert YYYY-MM-DD (lokale Zeit) für einen Timestamp in Millisekunden.
+ * Liefert YYYY-MM-DD im Europe/Berlin-Zeitraum für einen Timestamp (ms).
+ *
+ * Wichtig: Alle Daten der App liegen in Europe/Berlin vor und die
+ * serverseitigen History-Dateien (public/data/history/YYYY-MM-DD.json) sind
+ * ebenfalls Berlin-datiert. Ohne feste Zeitzone würden Punkte um Mitternacht
+ * auf Geräten in anderen Zeitzonen unter einem abweichenden Tag landen und
+ * Cache/Range/Server-Fallback gegeneinander verschieben.
  */
+const berlinDayFormatter: Intl.DateTimeFormat | null = (() => {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Berlin',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+  } catch {
+    return null;
+  }
+})();
+
 export function dayStringFromTimestamp(ts: number): string {
+  if (berlinDayFormatter) {
+    try {
+      const parts = berlinDayFormatter.formatToParts(new Date(ts));
+      const get = (type: string) => parts.find(p => p.type === type)?.value ?? '';
+      const year = get('year');
+      const month = get('month');
+      const day = get('day');
+      if (year && month && day) return `${year}-${month}-${day}`;
+    } catch {
+      // Fällt unten auf lokale Zeit zurück
+    }
+  }
+  // Fallback (sollte praktisch nie greifen): lokale Zeit
   const d = new Date(ts);
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -202,16 +234,21 @@ export class HistoricalDataStore {
 
   /**
    * Liefert alle Tag-Strings (YYYY-MM-DD) zwischen fromDay und toDay inklusive.
+   * Reine Kalenderdatums-Iteration über UTC (Mittag), damit das Ergebnis
+   * unabhängig von der Geräte-Zeitzone stabil bleibt.
    */
   private enumerateDays(fromDay: string, toDay: string): string[] {
     const days: string[] = [];
-    const cursor = new Date(`${fromDay}T00:00:00`);
-    const end = new Date(`${toDay}T00:00:00`);
+    const cursor = new Date(`${fromDay}T12:00:00Z`);
+    const end = new Date(`${toDay}T12:00:00Z`);
     // Sicherheitsgrenze gegen Endlosschleifen
     let guard = 0;
-    while (cursor <= end && guard < 400) {
-      days.push(dayStringFromTimestamp(cursor.getTime()));
-      cursor.setDate(cursor.getDate() + 1);
+    while (cursor.getTime() <= end.getTime() && guard < 400) {
+      const year = cursor.getUTCFullYear();
+      const month = String(cursor.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(cursor.getUTCDate()).padStart(2, '0');
+      days.push(`${year}-${month}-${day}`);
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
       guard++;
     }
     return days;

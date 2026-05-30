@@ -21,9 +21,14 @@ function installStorageFake() {
   return map;
 }
 
-/** Hilfsfunktion: Punkt an einem bestimmten Tag (lokal) zu einer Stunde. */
+/**
+ * Hilfsfunktion: Punkt an einem bestimmten Tag zu einer UTC-Stunde.
+ * Bewusst über Date.UTC (zeitzonenunabhängig); Stunden 0..21 fallen sicher
+ * auf denselben Europe/Berlin-Kalendertag, egal in welcher Test-Zeitzone.
+ */
 function pointAt(date: string, hour: number, marketPrice = 50, renewableShare = 60): EnergyData {
-  const ts = new Date(`${date}T00:00:00`).getTime() + hour * 60 * 60 * 1000;
+  const [y, m, d] = date.split('-').map(Number);
+  const ts = Date.UTC(y, m - 1, d, hour, 0, 0);
   return {
     timestamp: ts,
     marketPrice,
@@ -43,9 +48,16 @@ describe('HistoricalDataStore', () => {
   });
 
   describe('dayStringFromTimestamp', () => {
-    it('formats a timestamp as local YYYY-MM-DD', () => {
-      const ts = new Date('2026-05-28T10:00:00').getTime();
+    it('formats a timestamp as Europe/Berlin YYYY-MM-DD', () => {
+      // 12:00 UTC im Sommer -> 14:00 Berlin (CEST) -> selber Kalendertag
+      const ts = Date.UTC(2026, 4, 28, 12, 0, 0);
       expect(dayStringFromTimestamp(ts)).toBe('2026-05-28');
+    });
+
+    it('buckets a late-evening UTC instant into the next Berlin day', () => {
+      // 23:30 UTC -> 01:30 Berlin (CET, Winter) -> nächster Kalendertag
+      const ts = Date.UTC(2026, 0, 10, 23, 30, 0);
+      expect(dayStringFromTimestamp(ts)).toBe('2026-01-11');
     });
   });
 
@@ -69,9 +81,9 @@ describe('HistoricalDataStore', () => {
       // Gleicher Timestamp, neuer Preis -> soll überschreiben
       await store.recordSnapshot([pointAt('2026-05-28', 10, 99), pointAt('2026-05-28', 11, 40)]);
 
-      const from = new Date('2026-05-28T00:00:00').getTime();
+      const from = Date.UTC(2026, 4, 28, 0, 0, 0);
       const to = from + 24 * 60 * 60 * 1000;
-      const range = await store.getRange(from, to);
+      const range = await store.getRange(from, to, false);
 
       expect(range).toHaveLength(2);
       expect(range[0].marketPrice).toBe(99); // überschrieben
@@ -94,9 +106,9 @@ describe('HistoricalDataStore', () => {
         pointAt('2026-05-28', 6),
       ]);
 
-      const from = new Date('2026-05-27T00:00:00').getTime();
-      const to = new Date('2026-05-27T23:59:59').getTime();
-      const range = await store.getRange(from, to);
+      const from = Date.UTC(2026, 4, 27, 0, 0, 0);
+      const to = Date.UTC(2026, 4, 27, 23, 59, 59);
+      const range = await store.getRange(from, to, false);
 
       expect(range).toHaveLength(2);
       expect(range[0].timestamp).toBeLessThan(range[1].timestamp);
@@ -129,18 +141,19 @@ describe('HistoricalDataStore', () => {
   });
 
   describe('getRange server fallback', () => {
-    // Ein sicher in der Vergangenheit liegender Tag
-    const pastDay = '2020-01-02';
-    const dayStartTs = new Date(`${pastDay}T00:00:00`).getTime();
-    const dayEndTs = dayStartTs + 24 * 60 * 60 * 1000 - 1;
+    // Fenster komplett innerhalb EINES Berlin-Tages (unabhängig von der
+    // Test-Zeitzone): 12:00 UTC ± 2h fällt im Sommer auf den 15.06.2020 Berlin.
+    const noonUtc = Date.UTC(2020, 5, 15, 12, 0, 0);
+    const fromTs = noonUtc - 2 * 60 * 60 * 1000;
+    const toTs = noonUtc + 2 * 60 * 60 * 1000;
 
     const serverResponse = {
-      date: pastDay,
+      date: '2020-06-15',
       source: 'energy-charts',
       data: [
         {
-          start_timestamp: dayStartTs + 10 * 60 * 60 * 1000,
-          end_timestamp: dayStartTs + 10 * 60 * 60 * 1000 + 900000,
+          start_timestamp: noonUtc,
+          end_timestamp: noonUtc + 900000,
           marketprice: 42.0,
           renewable_share: 55.5,
           interpolated: false,
@@ -154,14 +167,14 @@ describe('HistoricalDataStore', () => {
         json: async () => serverResponse,
       });
 
-      const range = await store.getRange(dayStartTs, dayEndTs);
+      const range = await store.getRange(fromTs, toTs);
 
       expect(global.fetch).toHaveBeenCalledTimes(1);
       expect(range).toHaveLength(1);
       expect(range[0].marketPrice).toBe(42.0);
 
       // Tag ist nun im Cache -> kein erneuter Fetch
-      const range2 = await store.getRange(dayStartTs, dayEndTs);
+      const range2 = await store.getRange(fromTs, toTs);
       expect(global.fetch).toHaveBeenCalledTimes(1);
       expect(range2).toHaveLength(1);
     });
@@ -169,17 +182,17 @@ describe('HistoricalDataStore', () => {
     it('ignores a 404 and does not refetch the same day in-session', async () => {
       (global.fetch as jest.Mock).mockResolvedValue({ ok: false, status: 404 });
 
-      const range = await store.getRange(dayStartTs, dayEndTs);
+      const range = await store.getRange(fromTs, toTs);
       expect(range).toEqual([]);
       expect(global.fetch).toHaveBeenCalledTimes(1);
 
       // serverFetchAttempted verhindert erneuten Fetch
-      await store.getRange(dayStartTs, dayEndTs);
+      await store.getRange(fromTs, toTs);
       expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
     it('does not fetch when server fallback is disabled', async () => {
-      const range = await store.getRange(dayStartTs, dayEndTs, false);
+      const range = await store.getRange(fromTs, toTs, false);
       expect(global.fetch).not.toHaveBeenCalled();
       expect(range).toEqual([]);
     });
