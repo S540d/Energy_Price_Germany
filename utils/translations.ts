@@ -301,6 +301,7 @@ export const translations = {
     historyStatsTitle: 'Statistik',
     historyStatMedian: 'Median',
     historyStatTrend: 'Trend',
+    historyStatVsPrev: 'vs. Vorperiode',
     historyTrendUp: 'steigend',
     historyTrendDown: 'fallend',
     historyTrendFlat: 'stabil',
