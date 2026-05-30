@@ -49,7 +49,9 @@ fi
 echo "Checking for sensitive data in staged changes..."
 
 # Get the diff of staged changes (only added lines)
-STAGED_DIFF=$(git diff --cached -U0 | grep '^+' | grep -v '^+++')
+# '|| true': grep exits non-zero when nothing matches, which would abort the
+# hook under husky's 'sh -e' runner (Issue: false-positive Hook-Abbruch).
+STAGED_DIFF=$(git diff --cached -U0 | grep '^+' | grep -v '^+++' || true)
 
 # Check for SHA1/SHA256 signing fingerprints (XX:XX:XX:... colon-hex format)
 if echo "$STAGED_DIFF" | grep -qiE '[0-9A-F]{2}(:[0-9A-F]{2}){19,}'; then
@@ -68,7 +70,7 @@ if echo "$STAGED_DIFF" | grep -qiE '(api[_-]?key|api[_-]?token|access[_-]?token|
 fi
 
 # Warn (non-blocking) if keystore documentation or internal checklists are staged
-SENSITIVE_DOCS=$(git diff --cached --name-only | grep -E '^(keystore/|docs/ANDROID_STORE_CHECKLIST\.md|docs/RELEASE_CHECKLIST\.md)')
+SENSITIVE_DOCS=$(git diff --cached --name-only | grep -E '^(keystore/|docs/ANDROID_STORE_CHECKLIST\.md|docs/RELEASE_CHECKLIST\.md)' || true)
 if [ -n "$SENSITIVE_DOCS" ]; then
   echo ""
   echo "⚠️  WARNING: Internal/sensitive documentation files are staged:"

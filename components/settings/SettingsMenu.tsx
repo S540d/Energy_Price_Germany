@@ -26,6 +26,7 @@ interface SettingsMenuProps {
   onClose: () => void;
   onOpenCustomize: () => void;
   onOpenAbout: () => void;
+  onOpenHistory: () => void;
 }
 
 /**
@@ -37,6 +38,7 @@ export function SettingsMenu({
   onClose,
   onOpenCustomize,
   onOpenAbout,
+  onOpenHistory,
 }: SettingsMenuProps) {
   const { t } = useLanguageContext();
   const { theme } = useSettingsContext();
@@ -106,6 +108,19 @@ export function SettingsMenu({
             }}
           >
             <Text style={[styles.customizeButtonText, { color: '#fff' }]}>{t.customize}</Text>
+          </TouchableOpacity>
+
+          {/* History (#1, #3) */}
+          <TouchableOpacity
+            style={[styles.historyButton, { borderColor: colors.primary }]}
+            onPress={() => {
+              onOpenHistory();
+              onClose();
+            }}
+          >
+            <Text style={[styles.customizeButtonText, { color: colors.primary }]}>
+              {t.historyOpen}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -221,6 +236,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  historyButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   menuLinkFlex: {
     flex: 1,

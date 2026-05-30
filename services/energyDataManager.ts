@@ -4,6 +4,7 @@ import { isValidPostalCode } from '../utils/postalCodeUtils';
 import { validateMarketDataResponse, fetchWithTimeout } from '../utils/apiValidation';
 import { RegionalDataCache } from './regionalDataCache';
 import { mergeRegionalData } from './dataMerger';
+import { historicalDataStore } from './historicalDataStore';
 
 /**
  * Datenquelle-Typen
@@ -48,6 +49,10 @@ export class EnergyDataManager {
 
   // Regional data cache (delegated to dedicated module)
   private regionalCache = new RegionalDataCache();
+
+  // Nutzer-konfiguriertes Limit für die persistente Historie (Bytes).
+  // Wird von der App nach dem Laden der Einstellungen gesetzt (#307).
+  private historyLimitBytes: number | undefined = undefined;
 
   // Cache-Konfiguration
   private readonly cacheConfig: CacheConfig = {
@@ -202,6 +207,13 @@ export class EnergyDataManager {
       this.cachedData = processedData;
       this.cacheTimestamp = Date.now();
 
+      // Persistente Historie aktualisieren (fire-and-forget, nationale Daten) – #307.
+      // Per Microtask verzögert, damit das Snapshotting nicht mit den
+      // Storage-Lesezugriffen des Regional-Caches im selben Tick verschachtelt.
+      Promise.resolve()
+        .then(() => historicalDataStore.recordSnapshot(processedData, this.historyLimitBytes))
+        .catch(() => {});
+
       // If postal code is provided, fetch and merge regional data
       if (isValidPostalCode(postalCode) && postalCode) {
         const regionalData = await this.regionalCache.fetchRegionalData(postalCode);
@@ -219,6 +231,14 @@ export class EnergyDataManager {
 
       return mockData;
     }
+  }
+
+  /**
+   * Setzt das Speicher-Limit (Bytes) für die persistente Historie (#307).
+   * Wird von der App gesetzt, sobald die Einstellungen geladen sind.
+   */
+  public setHistoryLimitBytes(bytes: number): void {
+    this.historyLimitBytes = bytes;
   }
 
   /**
