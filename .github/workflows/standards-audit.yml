@@ -1,0 +1,38 @@
+name: Standards Audit
+
+# Konsumiert die zentralen Reusable Workflows aus project-templates
+# (S540d/project-templates#7 – Cross-Project-Standardisierung).
+# Läuft bei:
+#   - PRs (Audits gaten Code-Änderungen)
+#   - weekly-self-audit Dispatch (von project-templates/weekly-audit.yml, Mo 08:00)
+#   - manuell (workflow_dispatch)
+#
+# Alle uses-Referenzen sind auf @v1 gepinnt (nie @main – S540d/project-templates#7, Punkt 1).
+
+on:
+  pull_request:
+    branches: [main, staging, testing]
+  repository_dispatch:
+    types: [weekly-self-audit]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  security-scan:
+    uses: S540d/project-templates/.github/workflows/reusable-security-scan.yml@v1
+    with:
+      fail_on_findings: true
+
+  gitignore-audit:
+    uses: S540d/project-templates/.github/workflows/reusable-gitignore-audit.yml@v1
+    with:
+      fail_on_missing: true
+
+  # Rein informativ: der Audit-Step im Reusable Workflow ist intern non-blocking
+  # (läuft auch bei Abweichungen grün durch). Ein job-level continue-on-error ist
+  # auf uses:-Jobs nicht erlaubt – die Non-Blocking-Semantik muss daher im Template
+  # bleiben; security-scan und gitignore-audit (fail_on_*: true) gaten den Merge.
+  dev-standards-audit:
+    uses: S540d/project-templates/.github/workflows/reusable-dev-standards-audit.yml@v1
