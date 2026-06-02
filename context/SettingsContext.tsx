@@ -18,6 +18,8 @@ interface SettingsContextValue {
   setPriceAlertHigh: (value: number | null) => void;
   priceDisplayMode: PriceDisplayMode;
   setPriceDisplayMode: (mode: PriceDisplayMode) => void;
+  historyCacheLimitMb: number;
+  setHistoryCacheLimitMb: (mb: number) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);

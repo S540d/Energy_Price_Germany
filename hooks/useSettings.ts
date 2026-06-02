@@ -5,6 +5,11 @@ import { GRID_FEES_AND_TAXES } from '../utils/metrics';
 
 export type PriceDisplayMode = 'marketOnly' | 'withGridFees';
 
+/** Auswählbare Cache-Obergrenzen für historische Daten (MB) – Issue #307. */
+export const HISTORY_CACHE_LIMIT_OPTIONS_MB = [5, 10, 25, 50] as const;
+/** Standard-Obergrenze für den Historie-Cache (MB). */
+export const DEFAULT_HISTORY_CACHE_LIMIT_MB = 10;
+
 /**
  * Hook for managing app settings (theme, postal code, grid fees)
  * Provides debounced postal code for API calls
@@ -18,6 +23,9 @@ export function useSettings() {
   const [priceAlertLow, setPriceAlertLow] = useState<number | null>(null);
   const [priceAlertHigh, setPriceAlertHigh] = useState<number | null>(null);
   const [priceDisplayMode, setPriceDisplayMode] = useState<PriceDisplayMode>('withGridFees');
+  const [historyCacheLimitMb, setHistoryCacheLimitMb] = useState<number>(
+    DEFAULT_HISTORY_CACHE_LIMIT_MB
+  );
   const [isInitialized, setIsInitialized] = useState(false);
   const { getItem, setItem } = usePersistence();
   const initRef = useRef(false);
@@ -68,6 +76,15 @@ export function useSettings() {
         const savedPriceDisplayMode = await getItem('priceDisplayMode');
         if (savedPriceDisplayMode === 'marketOnly' || savedPriceDisplayMode === 'withGridFees') {
           setPriceDisplayMode(savedPriceDisplayMode);
+        }
+
+        // Load history cache limit (MB)
+        const savedHistoryLimit = await getItem('historyCacheLimitMb');
+        if (savedHistoryLimit) {
+          const value = parseInt(savedHistoryLimit, 10);
+          if (!isNaN(value) && value > 0) {
+            setHistoryCacheLimitMb(value);
+          }
         }
       } catch (error) {
       } finally {
@@ -164,6 +181,19 @@ export function useSettings() {
     savePriceDisplayMode();
   }, [priceDisplayMode, isInitialized, setItem]);
 
+  // Save history cache limit when it changes
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    async function saveHistoryCacheLimit() {
+      try {
+        await setItem('historyCacheLimitMb', historyCacheLimitMb.toString());
+      } catch (error) {}
+    }
+
+    saveHistoryCacheLimit();
+  }, [historyCacheLimitMb, isInitialized, setItem]);
+
   // Debounce postal code for API calls
   useEffect(() => {
     if (debounceTimeoutRef.current) {
@@ -197,5 +227,7 @@ export function useSettings() {
     setPriceAlertHigh,
     priceDisplayMode,
     setPriceDisplayMode,
+    historyCacheLimitMb,
+    setHistoryCacheLimitMb,
   };
 }
