@@ -20,14 +20,14 @@ permissions:
 
 jobs:
   security-scan:
-    uses: S540d/project-templates/.github/workflows/reusable-security-scan.yml@v1
+    uses: S540d/project-templates/.github/workflows/reusable-security-scan.yml@10eb4dfae35ce008e1134fde4235972be8d8922e
     with:
       fail_on_findings: true
 
   gitignore-audit:
-    uses: S540d/project-templates/.github/workflows/reusable-gitignore-audit.yml@v1
+    uses: S540d/project-templates/.github/workflows/reusable-gitignore-audit.yml@10eb4dfae35ce008e1134fde4235972be8d8922e
     with:
       fail_on_missing: true
 
   dev-standards-audit:
-    uses: S540d/project-templates/.github/workflows/reusable-dev-standards-audit.yml@v1
+    uses: S540d/project-templates/.github/workflows/reusable-dev-standards-audit.yml@10eb4dfae35ce008e1134fde4235972be8d8922e
