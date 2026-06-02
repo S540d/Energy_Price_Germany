@@ -1,0 +1,33 @@
+name: Standards Audit
+
+# Konsumiert die zentralen Reusable Workflows aus project-templates (Issue #7).
+# Läuft bei:
+#   - PRs (Audits gaten Code-Änderungen)
+#   - weekly-self-audit Dispatch (von project-templates/weekly-audit.yml, Mo 08:00)
+#   - manuell (workflow_dispatch)
+#
+# Alle uses-Referenzen sind auf @v1 gepinnt (nie @main – Issue #7, Punkt 1).
+
+on:
+  pull_request:
+    branches: [main, staging, testing]
+  repository_dispatch:
+    types: [weekly-self-audit]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  security-scan:
+    uses: S540d/project-templates/.github/workflows/reusable-security-scan.yml@v1
+    with:
+      fail_on_findings: true
+
+  gitignore-audit:
+    uses: S540d/project-templates/.github/workflows/reusable-gitignore-audit.yml@v1
+    with:
+      fail_on_missing: true
+
+  dev-standards-audit:
+    uses: S540d/project-templates/.github/workflows/reusable-dev-standards-audit.yml@v1
