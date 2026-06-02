@@ -116,6 +116,73 @@ jobs:
       - name: Merge Energy Charts with aWATTar or use aWATTar as fallback
         run: node scripts/merge-market-data.js
 
+      - name: Validate merged market data
+        run: |
+          node -e '
+          const fs = require("fs");
+
+          const file = "public/data/marketdata_new.json";
+          if (!fs.existsSync(file)) {
+            console.error("❌ marketdata_new.json not found");
+            process.exit(1);
+          }
+
+          let parsed;
+          try {
+            parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+          } catch (e) {
+            console.error("❌ Invalid JSON in marketdata_new.json:", e.message);
+            process.exit(1);
+          }
+
+          const errors = [];
+
+          // Schema checks
+          if (parsed.object !== "list") errors.push("Missing or wrong \"object\" field");
+          if (!["energy-charts", "awattar"].includes(parsed.source)) errors.push("Invalid source: " + parsed.source);
+          if (!Array.isArray(parsed.data)) errors.push("\"data\" is not an array");
+
+          if (errors.length > 0) {
+            errors.forEach(e => console.error("❌ " + e));
+            process.exit(1);
+          }
+
+          const data = parsed.data;
+
+          // Minimum data points: at least 24h of 15-min intervals (96 points)
+          if (data.length < 96) {
+            console.error("❌ Too few data points: " + data.length + " (minimum 96)");
+            process.exit(1);
+          }
+
+          // Must have at least some price data – count only finite numeric values
+          const priceCount = data.filter(d => typeof d.marketprice === "number" && isFinite(d.marketprice)).length;
+          if (priceCount === 0) {
+            console.error("❌ All marketprice values are null/invalid – no usable price data");
+            process.exit(1);
+          }
+
+          // Coverage check: newest finite timestamp must be within the last 36h
+          const now = Date.now();
+          const validTs = data.map(d => d.start_timestamp).filter(ts => typeof ts === "number" && isFinite(ts) && ts > 0);
+          if (validTs.length === 0) {
+            console.error("❌ No valid start_timestamp values found");
+            process.exit(1);
+          }
+          const maxTs = Math.max(...validTs);
+          const ageHours = (now - maxTs) / (1000 * 60 * 60);
+          if (ageHours > 36) {
+            console.error("❌ Newest data point is " + ageHours.toFixed(1) + "h old (max 36h)");
+            process.exit(1);
+          }
+
+          console.log("✅ Quality check passed:");
+          console.log("   Data points : " + data.length);
+          console.log("   Price points: " + priceCount);
+          console.log("   Newest entry: " + new Date(maxTs).toISOString() + " (" + ageHours.toFixed(1) + "h ago)");
+          console.log("   Source      : " + parsed.source);
+          '
+
       - name: Compare with previous data
         id: compare
         run: |
