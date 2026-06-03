@@ -81,4 +81,24 @@ if [ -n "$SENSITIVE_DOCS" ]; then
   echo ""
 fi
 
+# ============================================================================
+# GITIGNORE AUDIT: Pflicht-Einträge (spiegelt reusable-gitignore-audit.yml)
+# ============================================================================
+echo "Checking .gitignore for required entries..."
+GITIGNORE_PROBLEMS=0
+# set -f: disable glob expansion so *.jks is not expanded to matching filenames
+set -f
+REQUIRED_GITIGNORE_ENTRIES=".env .env.local credentials.json *.jks *.keystore *.p12 *.p8 docs/private/"
+for entry in $REQUIRED_GITIGNORE_ENTRIES; do
+  if ! grep -Fq "$entry" .gitignore 2>/dev/null; then
+    echo "❌ ERROR: Missing required .gitignore entry: '$entry'"
+    GITIGNORE_PROBLEMS=1
+  fi
+done
+set +f
+if [ "$GITIGNORE_PROBLEMS" -ne 0 ]; then
+  echo "Add the missing entries to .gitignore before committing."
+  exit 1
+fi
+
 echo "✅ Pre-commit checks passed!"
