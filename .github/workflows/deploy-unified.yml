@@ -1,9 +1,9 @@
 name: Deploy (Unified)
 
 on:
-  # Automatic trigger on push to main, staging, testing
+  # Automatic trigger on push to main, testing
   push:
-    branches: [ main, staging, testing ]
+    branches: [ main, testing ]
   # Fallback: Scheduled deployment every 6 hours for main branch
   schedule:
     - cron: '0 4,11,16,18,21 * * *'
@@ -36,11 +36,6 @@ jobs:
               echo "EXPO_ENV=production" >> $GITHUB_OUTPUT
               echo "TARGET_FOLDER=." >> $GITHUB_OUTPUT
               echo "URL=https://s540d.github.io/Energy_Price_Germany/" >> $GITHUB_OUTPUT
-              ;;
-            "refs/heads/staging")
-              echo "EXPO_ENV=staging" >> $GITHUB_OUTPUT
-              echo "TARGET_FOLDER=staging" >> $GITHUB_OUTPUT
-              echo "URL=https://s540d.github.io/Energy_Price_Germany/staging/" >> $GITHUB_OUTPUT
               ;;
             "refs/heads/testing")
               echo "EXPO_ENV=testing" >> $GITHUB_OUTPUT
@@ -101,7 +96,7 @@ jobs:
 
             # Save other environment folders
             PRESERVED_FOLDERS=()
-            for folder in staging testing; do
+            for folder in testing; do
               if [ -d "$folder" ]; then
                 PRESERVED_FOLDERS+=("$folder")
                 mv "$folder" "$folder.bak"
