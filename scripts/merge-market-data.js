@@ -26,7 +26,7 @@ function detectAnomalies(data, sourceName = "data") {
         const ts = new Date(curr.start_timestamp).toISOString();
         critical.push(`Renewable share out of range [0,200]: ${curr.renewable_share.toFixed(1)}% at ${ts}`);
       } else if (curr.renewable_share > 100) {
-        // Values 100–200% are physically possible (renewable overproduction / net export)
+        // Values 100-200% are physically possible (renewable overproduction / net export)
         const ts = new Date(curr.start_timestamp).toISOString();
         warnings.push(`Renewable share above 100% (overproduction): ${curr.renewable_share.toFixed(1)}% at ${ts}`);
       }
