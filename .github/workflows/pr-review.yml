@@ -1,0 +1,22 @@
+name: PR Review (Claude)
+
+# Automatischer Code-Review via Anthropic API bei jedem PR.
+# Voraussetzung: ANTHROPIC_API_KEY als Repository- oder Org-Secret gesetzt.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  pr-review:
+    uses: S540d/project-templates/.github/workflows/reusable-pr-review.yml@v1
+    secrets:
+      anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+    with:
+      language: 'de'
+      # model: 'claude-sonnet-4-6'            # tiefere Analyse (default)
+      # model: 'claude-haiku-4-5-20251001'    # schnell + günstig
