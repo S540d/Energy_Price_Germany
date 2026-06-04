@@ -21,9 +21,14 @@ function detectAnomalies(data, sourceName = "data") {
 
     // Bounds checks: run on curr alone (don't require prev to be non-null)
     if (curr.renewable_share !== null) {
-      if (curr.renewable_share < 0 || curr.renewable_share > 100) {
+      if (curr.renewable_share < 0 || curr.renewable_share > 200) {
+        // Values < 0 or > 200 are clearly API errors
         const ts = new Date(curr.start_timestamp).toISOString();
-        critical.push(`Renewable share out of range [0,100]: ${curr.renewable_share.toFixed(1)}% at ${ts}`);
+        critical.push(`Renewable share out of range [0,200]: ${curr.renewable_share.toFixed(1)}% at ${ts}`);
+      } else if (curr.renewable_share > 100) {
+        // Values 100–200% are physically possible (renewable overproduction / net export)
+        const ts = new Date(curr.start_timestamp).toISOString();
+        warnings.push(`Renewable share above 100% (overproduction): ${curr.renewable_share.toFixed(1)}% at ${ts}`);
       }
     }
     if (curr.marketprice !== null && typeof curr.marketprice === "number" && isFinite(curr.marketprice)) {
