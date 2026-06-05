@@ -2,6 +2,47 @@
 
 A React Native/Expo app for visualizing energy prices and renewable energy share in Germany. This project provides real-time data visualization of electricity market prices and the percentage of renewable energy in the grid.
 
+## Live
+
+- **Web App:** [https://s540d.github.io/Energy_Price_Germany/](https://s540d.github.io/Energy_Price_Germany/)
+- **Testing:** [https://s540d.github.io/Energy_Price_Germany/testing/](https://s540d.github.io/Energy_Price_Germany/testing/)
+
+[![Play Store](https://img.shields.io/badge/Google_Play-Download-green?logo=google-play)](https://play.google.com/store/apps/details?id=com.sven4321.energypricegermany)
+
+## Tech Stack
+
+| Technology | Role |
+|---|---|
+| React Native + Expo 55 | Cross-platform framework |
+| TypeScript | Type-safe JavaScript |
+| React Native SVG | Custom chart rendering |
+| React Native Reanimated | Animations and transitions |
+| Cloudflare Workers | CORS proxy for regional API |
+| GitHub Pages | Web deployment |
+
+## Setup
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/S540d/Energy_Price_Germany.git
+   cd Energy_Price_Germany
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the development server:
+   ```bash
+   npm start
+   ```
+
+4. For web:
+   ```bash
+   npm run web
+   ```
+
 ## Features
 
 - **Real-time Data**: Fetches current energy market data from reliable sources
@@ -85,41 +126,6 @@ The regional data feature uses a **Cloudflare Worker** to proxy requests to the 
 - Automatically deployed via GitHub Actions
 - No API keys or authentication required (public data only)
 
-## Testing & Environments
-
-The app supports three separate environments for development, testing, and production:
-
-- **Production** (`main` branch): https://s540d.github.io/Energy_Price_Germany/
-- **Staging** (`staging` branch): https://s540d.github.io/Energy_Price_Germany/staging/
-- **Testing** (`testing` branch): https://s540d.github.io/Energy_Price_Germany/testing/
-
-Each environment has its own EXPO_ENV configuration, .env file, and deployment URL.
-
-**For detailed testing workflows, environment setup, and troubleshooting, see [TESTING.md](docs/TESTING.md)**
-
-## Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/S540d/Energy_Price_Germany.git
-   cd Energy_Price_Germany
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Start the development server:
-   ```bash
-   npm start
-   ```
-
-4. For web deployment:
-   ```bash
-   npm run web
-   ```
-
 ## Build & Deploy
 
 ### Web Build
@@ -140,15 +146,6 @@ npm run deploy
 - `npm run data:update` - Update market data
 - `npm run cache:update` - Update cache version
 - `npm run version:update` - Bump version and update cache
-
-## Technologies
-
-- **React Native** - Cross-platform mobile development
-- **Expo 55** - Framework for universal React applications
-- **TypeScript** - Type-safe JavaScript
-- **React Native SVG** - Custom SVG chart rendering
-- **React Native Reanimated** - Animations and transitions
-- **Cloudflare Workers** - CORS proxy for regional API
 
 ## Contributing
 
