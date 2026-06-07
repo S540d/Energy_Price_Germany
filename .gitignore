@@ -68,5 +68,13 @@ keystore/
 .github/workflows/implement-issue.yml
 coverage/
 
-# Claude Code local files
-.claude/
+# Claude Code – nur .claude/commands/ wird versioniert (Issue #31)
+# Alle maschinen-/projektlokalen .claude-Artefakte explizit ignorieren:
+.claude/CLAUDE.md
+.claude/settings.json
+.claude/settings.local.json
+.claude/memory/
+.claude/todos/
+.claude/cache/
+.claude/data/
+.claude/commands/README.md
