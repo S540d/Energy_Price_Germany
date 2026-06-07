@@ -16,7 +16,7 @@ Einen Pull Request gründlich prüfen, Code-Review-Suggestions umsetzen und für
 
 ### 1. PR Status prüfen
 - Zeige PR-Details (Titel, Beschreibung, Files Changed)
-- Prüfe ob PR-Ziel-Branch aktuell ist mit main/staging
+- Prüfe ob PR-Ziel-Branch aktuell ist mit main (kein staging – GLOBAL POLICY)
 - Falls outdated: Frage ob Target-Branch in PR-Branch gemergt werden soll
 - Prüfe CI/CD Status (Tests, Linting, Build)
 - Zeige offene Review-Comments
@@ -89,7 +89,7 @@ Bei Findings:
   **1 Approval** verlangt. Als Solo-Dev kann man den eigenen PR nicht approven →
   dieser eine Block ist nur per Admin-Bypass lösbar. Das ist der **bewusste
   manuelle Release-Schritt**, NICHT mit dem `review-gate` zu verwechseln.
-- Merge: `gh pr merge <nr> --squash --admin` (kein `--delete-branch` für langlebige Branches!)
+- Merge: `gh pr merge <nr> --squash` (kein `--delete-branch` für langlebige Branches!)
 - **Nur mit expliziter schriftlicher Freigabe** (siehe GLOBAL POLICY oben).
 
 ### 9. Post-Merge Cleanup

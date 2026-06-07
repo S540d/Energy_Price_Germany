@@ -38,8 +38,9 @@ Führe den täglichen Cleanup-Workflow durch:
 - Manuelles Update anbieten falls nötig
 
 ## 8. Sync & Push
-- Pushe alle lokalen Commits
-- Hole neueste Änderungen von origin
+- Zeige alle lokalen Commits, die noch nicht gepusht sind (`git log @{u}..HEAD`)
+- **Frage vor Push:** "Soll ich diese Commits jetzt pushen?" — nie automatisch pushen
+- Falls Ja: pushe und hole neueste Änderungen von origin
 - Zeige finale Status-Zusammenfassung
 
 ## 9. Zusammenfassung

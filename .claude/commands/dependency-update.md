@@ -1,6 +1,7 @@
-# Dependency Update & Security Audit
+# Dependency Update & Security Audit (npm/yarn/pnpm)
 
-Sichere Aktualisierung von Dependencies mit Security-Checks
+Sichere Aktualisierung von Dependencies mit Security-Checks.
+Paketmanager: npm (Standard), yarn oder pnpm – Befehle ggf. anpassen.
 
 ## Ziel
 Dependencies aktualisieren, Security-Vulnerabilities fixen, Breaking Changes prüfen
@@ -36,8 +37,8 @@ Dependencies aktualisieren, Security-Vulnerabilities fixen, Breaking Changes pr�
 - Für jedes Major Update:
   - Zeige Package-Name, alte Version, neue Version
   - Suche nach CHANGELOG oder Breaking Changes:
-    - Check GitHub Releases: `gh repo view [package] --web`
-    - Check npm page für CHANGELOG
+    - Check npm page: `npm show <package> homepage` oder Suche auf npmjs.com
+    - Check GitHub Releases des jeweiligen Repos (URL aus `npm show <package> repository.url`)
   - Zeige Breaking Changes falls gefunden
   - Frage: "Update installieren?"
   - Falls Ja: `npm install package@latest`
