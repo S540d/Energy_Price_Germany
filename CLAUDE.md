@@ -73,6 +73,8 @@ Vorgehen:
 - „Allow specified actors to bypass required pull requests" → Repo-Owner eintragen, **oder**
 - Required approvals auf 0 setzen (nur für main←testing Releases sinnvoll)
 
+> ⚠️ **Achtung:** „Required approvals auf 0" ist nur als temporäre Maßnahme für Owner-Merges gedacht und schwächt das Review-Gate grundsätzlich. Nach dem Release sofort wieder auf ≥ 1 zurücksetzen.
+
 ### Git Push aus Remote-Execution-Environment
 Direktes `git push` auf `testing`/`main` schlägt mit **403** fehl (kein SSH-Key / eingeschränkte Rechte). Stattdessen GitHub MCP API nutzen:
 ```
@@ -80,6 +82,12 @@ mcp__github__create_or_update_file  # für einzelne Dateien (SHA des Blobs erfor
 mcp__github__push_files             # für mehrere Dateien
 ```
 SHA ermitteln: `git rev-parse origin/<branch>:<path>`
+> **Hinweis SHA-Typen:** `git rev-parse origin/<branch>:<path>` liefert den **Blob-SHA** (SHA des Datei-Inhalts), nicht den Commit-SHA. `create_or_update_file` erwartet diesen Blob-SHA im Feld `sha`. Für den Branch-HEAD (Commit-SHA) stattdessen `git rev-parse origin/<branch>` (ohne Pfad) verwenden.
+
+### Sicherheitshinweis: MCP-Token und KI-gesteuerte Pushes
+- MCP-GitHub-Token sollte **minimale Scopes** haben (empfohlen: `repo` ohne `admin`-Rechte).
+- KI-gesteuerte direkte Pushes auf `main`/`testing` unterliegen denselben Risiken wie manuelle Force-Pushes. Im Zweifelsfall lieber PR-Workflow nutzen.
+- Nach jeder MCP-Push-Sitzung: **Audit-Log in GitHub prüfen** (Settings → Audit log), um unbeabsichtigte Änderungen zu erkennen.
 
 ---
 
