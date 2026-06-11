@@ -9,8 +9,9 @@ on:
 
 permissions:
   pull-requests: write
-  contents: read
+  contents: write
   statuses: write
+  id-token: write   # OIDC-Token für claude-code-action (autofix)
 
 jobs:
   pr-review:
