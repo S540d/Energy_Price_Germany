@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__github__pull_request_read",
+      "mcp__github__actions_list",
+      "mcp__github__get_job_logs",
+      "Bash(npm audit)",
+      "Bash(npm audit *)",
+      "Bash(npm run lint)",
+      "Bash(npm run type-check)"
+    ]
+  }
+}

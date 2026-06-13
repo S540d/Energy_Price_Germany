@@ -1,0 +1,21 @@
+name: Mergeability Report
+
+# Kostenloser Mergeability-Report + Merge-Gate (review-gate) bei jedem PR.
+# Postet einen Sticky-Kommentar (Zielbranch, Konflikt-Status, CI-Übersicht,
+# Checkliste) und setzt den required Status-Check "review-gate". Reine GitHub-API,
+# verbraucht KEINE Anthropic-API-Token. Keine Secrets nötig.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  statuses: write
+
+jobs:
+  mergeability:
+    uses: S540d/project-templates/.github/workflows/reusable-mergeability.yml@v2
+    # with:
+    #   block_on_protected_base: true   # zusätzlich direkte PRs gegen main blocken

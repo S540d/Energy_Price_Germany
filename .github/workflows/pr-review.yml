@@ -1,23 +1,30 @@
-name: PR Review (Claude)
+name: PR Review (Claude) — optional, on-demand
 
-# Automatischer Code-Review via Anthropic API bei jedem PR.
-# Voraussetzung: ANTHROPIC_API_KEY als Repository- oder Org-Secret gesetzt.
+# OPTIONALER KI-Review via Anthropic API. ⚠️ Kostet metered API-Token.
+# Läuft NICHT automatisch, sondern nur wenn das Label "ai-review" an den PR
+# vergeben wird. Rein beratend — blockiert den Merge nicht (das Gate setzt der
+# kostenlose mergeability.yml-Workflow).
+#
+# Primärer, kostenloser Review-Weg: /review aus Claude Code (Pro/Max-Abo) — lokal
+# am PC oder in einer Web-Session vom Telefon, ohne Pay-per-Token. Dieser Workflow
+# ist nur der optionale API-Fallback.
+#
+# Voraussetzung: Secret ANTHROPIC_API_KEY (Repo oder Org) + Label "ai-review".
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [labeled]
 
 permissions:
   pull-requests: write
   contents: read
-  statuses: write
 
 jobs:
   pr-review:
-    uses: S540d/project-templates/.github/workflows/reusable-pr-review.yml@v1
+    if: github.event.label.name == 'ai-review'
+    uses: S540d/project-templates/.github/workflows/reusable-pr-review.yml@v2
     secrets:
       anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
     with:
       language: 'de'
-      # model: 'claude-sonnet-4-6'            # tiefere Analyse (default)
-      # model: 'claude-haiku-4-5-20251001'    # schnell + günstig
+      model: 'claude-haiku-4-5-20251001' # günstigstes Modell für den Fallback
