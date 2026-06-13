@@ -58,13 +58,12 @@ gh pr create --base testing --title "..." --body "..."
 - At least one code review (if available)
 
 ### Automated Claude PR Review (Merge-Gate)
-PRs gegen `testing` und `main` lösen automatisch einen einstufigen Claude-Review aus
-(`reusable-pr-review.yml@v1`, nur Review – der frühere Autofix-Job wurde entfernt):
+PRs gegen `testing` und `main` lösen automatisch einen zweistufigen Claude-Review aus:
 
-- **Review:** Bewertet den PR-Diff und setzt den required Status-Check **`review-gate`** sowie ein Label:
-  - Keine offenen Findings → 🟢 `ready to merge` → Merge frei
-  - Findings übrig → 🔴 `needs human review` + Inline-Kommentare
-  - Kein `ANTHROPIC_API_KEY` gesetzt → Review übersprungen, Gate bleibt grün (Repo mergebar)
+1. **Autofix:** Ein Claude-Agent fixt alle umsetzbaren Findings selbst (Commit `[auto]` + Push auf den PR-Branch).
+2. **Review:** Bewertet den korrigierten End-Stand und setzt den required Status-Check **`review-gate`** sowie ein Label:
+   - Keine offenen Findings → 🟢 `ready to merge` → Merge frei
+   - Findings übrig → 🔴 `needs human review` + Inline-Kommentare
 
 Bei `needs human review`:
 1. Review-Kommentar und Inline-Findings lesen
