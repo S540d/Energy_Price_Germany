@@ -1,0 +1,36 @@
+name: Cache Cleanup
+
+# Löscht alte GitHub-Actions-Caches, damit das 10-GB-Repo-Limit nicht von
+# Build-Caches (node_modules, Gradle, Expo) vollläuft.
+# Läuft wöchentlich (So 03:00 UTC) oder manuell.
+on:
+  schedule:
+    - cron: "0 3 * * 0"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  cleanup:
+    name: 🧹 Clean Old Caches
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Cleanup old caches
+        run: |
+          echo "Fetching cache list..."
+          gh extension install actions/gh-actions-cache || true
+
+          echo "Current cache usage:"
+          gh actions-cache list -R ${{ github.repository }} --limit 100 || true
+
+          echo "Deleting caches older than 7 days..."
+          gh actions-cache list -R ${{ github.repository }} --limit 100 | \
+            awk '{print $1}' | \
+            tail -n +2 | \
+            xargs -I {} gh actions-cache delete {} -R ${{ github.repository }} --confirm || true
+
+          echo "✅ Cache cleanup complete"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
