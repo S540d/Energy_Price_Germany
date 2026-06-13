@@ -58,22 +58,24 @@ gh pr create --base testing --title "..." --body "..."
 - At least one code review (if available)
 
 ### Automated Claude PR Review (Merge-Gate)
-PRs gegen `testing` und `main` lösen automatisch einen Claude-Code-Review aus (`pr-review / claude-review`). Bei Findings erscheint ein 🔴-Kommentar mit der Anforderung:
-> Label **`suggestions gelesen und verstanden`** setzen → erst dann ist der Merge entsperrt
+PRs gegen `testing` und `main` lösen automatisch einen zweistufigen Claude-Review aus:
 
-Vorgehen:
-1. Review-Kommentar lesen
-2. Findings bewerten (Issue anlegen wenn sinnvoll)
-3. Label `suggestions gelesen und verstanden` auf dem PR setzen (via GitHub UI oder MCP `issue_write` update)
+1. **Autofix:** Ein Claude-Agent fixt alle umsetzbaren Findings selbst (Commit `[auto]` + Push auf den PR-Branch).
+2. **Review:** Bewertet den korrigierten End-Stand und setzt den required Status-Check **`review-gate`** sowie ein Label:
+   - Keine offenen Findings → 🟢 `ready to merge` → Merge frei
+   - Findings übrig → 🔴 `needs human review` + Inline-Kommentare
+
+Bei `needs human review`:
+1. Review-Kommentar und Inline-Findings lesen
+2. Findings klären/umsetzen und pushen → frischer Review-Lauf startet automatisch
+3. Es gibt **kein** manuelles Quittierungs-Label mehr — den roten Gate öffnet nur ein sauberer Re-Run
 
 ### Release-PRs testing → main (Branch Protection)
-`main` hat Branch Protection mit **Required Approvals ≥ 1**. Da der Repo-Owner keine eigenen PRs approven kann, blockiert dies Release-PRs im Solo-Projekt.
+`main` liegt unter dem `Main`-Ruleset mit **Required Approvals = 1**. Als Solo-Dev kann man den eigenen PR nicht approven → Admin-Bypass nötig.
 
-**Lösung:** In `Settings → Branches → main` entweder:
-- „Allow specified actors to bypass required pull requests" → Repo-Owner eintragen, **oder**
-- Required approvals auf 0 setzen (nur für main←testing Releases sinnvoll)
+Merge: `gh pr merge <nr> --squash --admin` (kein `--delete-branch` für langlebige Branches)
 
-> ⚠️ **Achtung:** „Required approvals auf 0" ist nur als temporäre Maßnahme für Owner-Merges gedacht und schwächt das Review-Gate grundsätzlich. Nach dem Release sofort wieder auf ≥ 1 zurücksetzen.
+> Nur mit expliziter schriftlicher Freigabe — dies ist der bewusste manuelle Release-Schritt, nicht mit dem `review-gate` zu verwechseln.
 
 ### Git Push aus Remote-Execution-Environment
 Direktes `git push` auf `testing`/`main` schlägt mit **403** fehl (kein SSH-Key / eingeschränkte Rechte). Stattdessen GitHub MCP API nutzen:
