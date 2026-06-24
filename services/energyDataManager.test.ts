@@ -161,7 +161,7 @@ describe('EnergyDataManager', () => {
         json: async () => mockRegionalDataResponse,
       } as Response);
 
-      const data = await manager.loadEnergyData('12345');
+      const data = await manager.loadEnergyData('de', '12345');
 
       expect(mockFetch).toHaveBeenCalledTimes(2);
       expect(data.length).toBeGreaterThan(0);
@@ -190,7 +190,7 @@ describe('EnergyDataManager', () => {
         json: async () => mockMarketDataResponse,
       } as Response);
 
-      const data = await manager.loadEnergyData('12345');
+      const data = await manager.loadEnergyData('de', '12345');
 
       // Should only fetch national data (1 call), not regional (uses cache)
       expect(mockFetch).toHaveBeenCalledTimes(1);
@@ -223,7 +223,7 @@ describe('EnergyDataManager', () => {
         json: async () => mockRegionalDataResponse,
       } as Response);
 
-      await manager.loadEnergyData('12345');
+      await manager.loadEnergyData('de', '12345');
 
       // Should fetch both national AND regional (2 calls)
       expect(mockFetch).toHaveBeenCalledTimes(2);
@@ -279,7 +279,7 @@ describe('EnergyDataManager', () => {
       // Mock failed regional data fetch
       mockFetch.mockRejectedValueOnce(new Error('Regional API error'));
 
-      const data = await manager.loadEnergyData('12345');
+      const data = await manager.loadEnergyData('de', '12345');
 
       // Should still return national data
       expect(data.length).toBeGreaterThan(0);
@@ -302,7 +302,7 @@ describe('EnergyDataManager', () => {
         json: async () => mockRegionalDataResponse,
       } as Response);
 
-      const data = await manager.loadEnergyData('12345');
+      const data = await manager.loadEnergyData('de', '12345');
 
       // Should still work, just without cached data
       expect(data.length).toBeGreaterThan(0);
@@ -323,7 +323,7 @@ describe('EnergyDataManager', () => {
         json: async () => mockRegionalDataResponse,
       } as Response);
 
-      const data = await manager.loadEnergyData('12345');
+      const data = await manager.loadEnergyData('de', '12345');
 
       // Should still return data even if caching fails
       expect(data.length).toBeGreaterThan(0);
@@ -360,7 +360,7 @@ describe('EnergyDataManager', () => {
         json: async () => mockRegionalDataResponse,
       } as Response);
 
-      await manager.loadEnergyData('12345');
+      await manager.loadEnergyData('de', '12345');
 
       // Invalidate regional cache
       await manager.invalidateRegionalCache();

@@ -5,6 +5,8 @@ import { validateMarketDataResponse, fetchWithTimeout } from '../utils/apiValida
 import { RegionalDataCache } from './regionalDataCache';
 import { mergeRegionalData } from './dataMerger';
 import { historicalDataStore } from './historicalDataStore';
+import type { CountryCode } from '../utils/countries';
+import { COUNTRIES, DEFAULT_COUNTRY } from '../utils/countries';
 
 /**
  * Datenquelle-Typen
@@ -43,6 +45,8 @@ export class EnergyDataManager {
   private static instance: EnergyDataManager;
   private cachedData: EnergyData[] | null = null;
   private cacheTimestamp: number = 0;
+  // Country the cached data belongs to – switching country invalidates the cache.
+  private dataCountry: CountryCode | null = null;
   private currentDataSource: DataSource = 'none';
   private isLoading: boolean = false;
   private loadingPromise: Promise<EnergyData[]> | null = null;
@@ -92,15 +96,18 @@ export class EnergyDataManager {
    * Lädt Rohdaten von der API
    * Includes timeout protection and response validation
    */
-  private async fetchRawData(): Promise<MarketDataResponse> {
+  private async fetchRawData(country: CountryCode): Promise<MarketDataResponse> {
     // Cache-busting Parameter
     const cacheBust = Date.now();
+
+    // Country-specific data path (Germany stays on legacy flat path).
+    const dataPath = COUNTRIES[country].marketDataPath;
 
     // For native apps, use full URL; for web, use relative path
     const dataUrl =
       Platform.OS === 'web'
-        ? `./data/marketdata.json?v=${cacheBust}`
-        : `https://s540d.github.io/Energy_Price_Germany/data/marketdata.json?v=${cacheBust}`;
+        ? `./${dataPath}?v=${cacheBust}`
+        : `https://s540d.github.io/Energy_Price_Germany/${dataPath}?v=${cacheBust}`;
 
     const response = await fetchWithTimeout(dataUrl, {}, 10000);
 
@@ -161,18 +168,24 @@ export class EnergyDataManager {
   /**
    * Lädt und verarbeitet Energiedaten
    * Verwendet Cache wenn verfügbar und gültig
-   * @param postalCode Optional postal code for regional data
+   * @param country Active country (determines data source + regional availability)
+   * @param postalCode Optional postal code for regional data (DE only)
    */
-  public async loadEnergyData(postalCode?: string): Promise<EnergyData[]> {
+  public async loadEnergyData(
+    country: CountryCode = DEFAULT_COUNTRY,
+    postalCode?: string
+  ): Promise<EnergyData[]> {
     // Wenn bereits ein Ladevorgang läuft, warte darauf
     if (this.isLoading && this.loadingPromise) {
       return this.loadingPromise;
     }
 
-    // Prüfe Cache
-    if (this.isCacheValid()) {
-      // If postal code is provided, merge regional data
-      if (isValidPostalCode(postalCode) && postalCode) {
+    const regionalEnabled = COUNTRIES[country].hasRegionalData;
+
+    // Prüfe Cache – nur gültig, wenn er zum selben Land gehört
+    if (this.dataCountry === country && this.isCacheValid()) {
+      // If postal code is provided (regional countries only), merge regional data
+      if (regionalEnabled && isValidPostalCode(postalCode) && postalCode) {
         const regionalData = await this.regionalCache.fetchRegionalData(postalCode);
         if (regionalData && this.cachedData) {
           return mergeRegionalData(this.cachedData, regionalData);
@@ -184,7 +197,7 @@ export class EnergyDataManager {
 
     // Starte Ladevorgang
     this.isLoading = true;
-    this.loadingPromise = this.performDataLoad(postalCode);
+    this.loadingPromise = this.performDataLoad(country, postalCode);
 
     try {
       const data = await this.loadingPromise;
@@ -198,24 +211,31 @@ export class EnergyDataManager {
   /**
    * Führt den eigentlichen Datenlade-Vorgang aus
    */
-  private async performDataLoad(postalCode?: string): Promise<EnergyData[]> {
+  private async performDataLoad(country: CountryCode, postalCode?: string): Promise<EnergyData[]> {
+    const regionalEnabled = COUNTRIES[country].hasRegionalData;
     try {
-      const rawData = await this.fetchRawData();
+      const rawData = await this.fetchRawData(country);
       let processedData = this.processRawData(rawData);
 
       // Cache die verarbeiteten Daten
       this.cachedData = processedData;
       this.cacheTimestamp = Date.now();
+      this.dataCountry = country;
 
       // Persistente Historie aktualisieren (fire-and-forget, nationale Daten) – #307.
       // Per Microtask verzögert, damit das Snapshotting nicht mit den
       // Storage-Lesezugriffen des Regional-Caches im selben Tick verschachtelt.
-      Promise.resolve()
-        .then(() => historicalDataStore.recordSnapshot(processedData, this.historyLimitBytes))
-        .catch(() => {});
+      // Hinweis (#356): Der Historien-Store ist noch nicht länder-namespaced
+      // (Folge-Schritt), daher wird vorerst nur für das Default-Land (DE)
+      // ein Snapshot aufgezeichnet, um die DE-Historie nicht zu vermischen.
+      if (country === DEFAULT_COUNTRY) {
+        Promise.resolve()
+          .then(() => historicalDataStore.recordSnapshot(processedData, this.historyLimitBytes))
+          .catch(() => {});
+      }
 
-      // If postal code is provided, fetch and merge regional data
-      if (isValidPostalCode(postalCode) && postalCode) {
+      // If postal code is provided (regional countries only), fetch + merge regional data
+      if (regionalEnabled && isValidPostalCode(postalCode) && postalCode) {
         const regionalData = await this.regionalCache.fetchRegionalData(postalCode);
         if (regionalData) {
           processedData = mergeRegionalData(processedData, regionalData);
@@ -228,6 +248,7 @@ export class EnergyDataManager {
       const mockData = this.generateMockData();
       this.cachedData = mockData;
       this.cacheTimestamp = Date.now();
+      this.dataCountry = country;
 
       return mockData;
     }
@@ -247,6 +268,7 @@ export class EnergyDataManager {
   public invalidateCache(): void {
     this.cachedData = null;
     this.cacheTimestamp = 0;
+    this.dataCountry = null;
     this.currentDataSource = 'none';
   }
 
@@ -277,8 +299,11 @@ export class EnergyDataManager {
 export const energyDataManager = EnergyDataManager.getInstance();
 
 // Legacy-Funktionen für Abwärtskompatibilität
-export async function fetchEnergyData(postalCode?: string): Promise<EnergyData[]> {
-  return energyDataManager.loadEnergyData(postalCode);
+export async function fetchEnergyData(
+  country: CountryCode = DEFAULT_COUNTRY,
+  postalCode?: string
+): Promise<EnergyData[]> {
+  return energyDataManager.loadEnergyData(country, postalCode);
 }
 
 export function getCurrentDataSource(): DataSource {
