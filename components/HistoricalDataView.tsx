@@ -13,7 +13,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useLanguageContext } from '../context/LanguageContext';
 import { getThemeColors } from '../utils/theme';
 import { useSettingsContext } from '../context/SettingsContext';
-import { historicalDataStore } from '../services/historicalDataStore';
+import { historicalDataStoreForCountry } from '../services/historicalDataStore';
 import { aggregateEnergyData } from '../utils/dataAggregation';
 import {
   computeHistoricalStats,
@@ -22,6 +22,7 @@ import {
   type SeriesComparison,
 } from '../utils/historicalStats';
 import type { EnergyData } from '../utils/metrics';
+import type { CountryCode } from '../utils/countries';
 import { PriceBarChart } from './charts/PriceBarChart';
 import { RenewableBarChart } from './charts/RenewableBarChart';
 
@@ -51,6 +52,8 @@ interface HistoricalDataViewProps {
   /** Aktuelle (Live-)Daten aus dem Hauptscreen für den jüngsten Zeitraum. */
   liveData: EnergyData[];
   gridFees: number;
+  /** Aktives Land – steuert, aus welchem länder-namespaced Store gelesen wird. */
+  country: CountryCode;
 }
 
 /**
@@ -63,6 +66,7 @@ export function HistoricalDataView({
   onClose,
   liveData,
   gridFees,
+  country,
 }: HistoricalDataViewProps) {
   const { t } = useLanguageContext();
   const { theme } = useSettingsContext();
@@ -85,10 +89,12 @@ export function HistoricalDataView({
       const from = now - window;
       const prevFrom = from - window;
 
-      // Aktuelle Periode (Cache + Server-Fallback) und Vorperiode parallel laden
+      // Aktuelle Periode (Cache + Server-Fallback) und Vorperiode parallel laden,
+      // aus dem länder-namespaced Store des aktiven Landes.
+      const store = historicalDataStoreForCountry(country);
       const [historical, previousHistorical] = await Promise.all([
-        historicalDataStore.getRange(from, now),
-        historicalDataStore.getRange(prevFrom, from),
+        store.getRange(from, now),
+        store.getRange(prevFrom, from),
       ]);
       if (cancelled) return;
 
@@ -116,7 +122,7 @@ export function HistoricalDataView({
     return () => {
       cancelled = true;
     };
-  }, [visible, timeRange, liveData]);
+  }, [visible, timeRange, liveData, country]);
 
   const displayData = useMemo(() => {
     const bucket = RANGE_BUCKET_MS[timeRange];

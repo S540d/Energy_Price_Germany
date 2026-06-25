@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-06-25
+
+### Added
+- **Europäische Datenexpansion – Niederlande (Issue #356):** Neuer Länder-Umschalter (🇩🇪/🇳🇱) im „Personalisieren"-Modal. Für die Niederlande werden nationale Börsenpreise + Erneuerbaren-Anteile von Energy Charts angezeigt (BETA).
+  - **Länder-Registry** (`utils/countries.ts`) als Single Source of Truth: Datenpfade, Zeitzone, `hasRegionalData`-Flag, Default-Netzentgelte – neue Länder = ein Registry-Eintrag.
+  - **CountryContext + useCountry-Hook** mit Persistenz (unabhängig von der UI-Sprache).
+  - Für Länder ohne Regionaldaten (NL) wird die **PLZ-/Regional-Sektion ausgeblendet**.
+  - **NL-Datenpipeline** in `.github/workflows/fetch.yml`: holt `?country=nl` von Energy Charts (kein aWATTar), Output unter `public/data/nl/`.
+  - **History-Store länder-namespaced**: getrennte Storage-Keys + Server-Fallback-Pfade pro Land.
+
+### Fixed
+- **„Verlauf" zeigte im NL-Modus einen DE/NL-Mix** – die Verlauf-Ansicht liest jetzt aus dem länder-korrekten History-Store des aktiven Landes.
+
+---
+
 ## [1.5.3] - 2026-04-06
 
 ### Fixed

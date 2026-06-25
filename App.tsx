@@ -36,7 +36,7 @@ import {
 
 SplashScreenModule.preventAutoHideAsync().catch(() => {});
 
-const APP_VERSION = '1.7.0';
+const APP_VERSION = '1.8.0';
 
 function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
@@ -369,6 +369,7 @@ function AppContent() {
           onClose={() => setHistoryVisible(false)}
           liveData={energyData}
           gridFees={gridFees}
+          country={country}
         />
       </SafeAreaView>
       {showSplash && <SplashScreen onFinish={handleSplashFinish} version={APP_VERSION} />}
