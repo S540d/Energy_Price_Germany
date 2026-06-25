@@ -24,6 +24,8 @@ jobs:
           ref: main
           token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
 
+      # ─── Germany (DE) ─────────────────────────────────────────────────────────
+
       - name: Try fetching from Energy Charts API (preferred source)
         id: energy_charts
         continue-on-error: true
@@ -337,42 +339,353 @@ jobs:
             echo "🧹 Cleaned up temporary file (no new data)"
           fi
 
+      # ─── Netherlands (NL) – Energy Charts only, no aWATTar ───────────────────
+
+      - name: Try fetching NL data from Energy Charts API
+        id: energy_charts_nl
+        continue-on-error: true
+        run: |
+          mkdir -p public/data/nl
+
+          # Energy Charts: Renewable share forecast (15-min resolution)
+          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=nl" -o public/data/nl/renewable_raw.json || exit 1
+
+          # Energy Charts: Day-ahead prices (15-min resolution)
+          curl -fsSL "https://api.energy-charts.info/price?country=nl" -o public/data/nl/price_raw.json || exit 1
+
+          echo "success=true" >> $GITHUB_OUTPUT
+
+      - name: Process Energy Charts NL data
+        if: steps.energy_charts_nl.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          node -e '
+          const fs = require("fs");
+
+          try {
+            const renewable = JSON.parse(fs.readFileSync("public/data/nl/renewable_raw.json", "utf8"));
+            const price = JSON.parse(fs.readFileSync("public/data/nl/price_raw.json", "utf8"));
+
+            const priceMap = new Map();
+            const renewableMap = new Map();
+            const allTimestamps = new Set();
+
+            if (price.unix_seconds && price.price) {
+              price.unix_seconds.forEach((ts, i) => {
+                const timestamp_ms = ts * 1000;
+                priceMap.set(timestamp_ms, price.price[i]);
+                allTimestamps.add(timestamp_ms);
+              });
+            }
+
+            if (renewable.unix_seconds && renewable.ren_share) {
+              renewable.unix_seconds.forEach((ts, i) => {
+                const timestamp_ms = ts * 1000;
+                renewableMap.set(timestamp_ms, renewable.ren_share[i]);
+                allTimestamps.add(timestamp_ms);
+              });
+            }
+
+            const merged = Array.from(allTimestamps).map(timestamp_ms => ({
+              start_timestamp: timestamp_ms,
+              end_timestamp: timestamp_ms + 15 * 60 * 1000,
+              marketprice: priceMap.get(timestamp_ms) || null,
+              renewable_share: renewableMap.get(timestamp_ms) || null,
+              unit: "Eur/MWh",
+              interpolated: false
+            }));
+
+            merged.sort((a, b) => a.start_timestamp - b.start_timestamp);
+
+            console.log("Successfully processed Energy Charts NL data:");
+            console.log("- Price points: " + priceMap.size);
+            console.log("- Renewable points: " + renewableMap.size);
+            console.log("- Total merged points: " + merged.length);
+
+            const bothCount = merged.filter(p => p.marketprice !== null && p.renewable_share !== null).length;
+            const renewableOnlyCount = merged.filter(p => p.marketprice === null && p.renewable_share !== null).length;
+            console.log("- Points with both price+renewable: " + bothCount);
+            console.log("- Points with renewable only (for tomorrow): " + renewableOnlyCount);
+
+            fs.writeFileSync("public/data/nl/marketdata_new.json", JSON.stringify({
+              object: "list",
+              source: "energy-charts",
+              data: merged
+            }, null, 2));
+
+          } catch (error) {
+            console.error("Error processing Energy Charts NL data:", error);
+            process.exit(1);
+          }
+          '
+          rm -f public/data/nl/renewable_raw.json public/data/nl/price_raw.json
+
+      - name: Validate NL market data
+        if: steps.energy_charts_nl.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          if ! node -e '
+          const fs = require("fs");
+
+          const file = "public/data/nl/marketdata_new.json";
+          if (!fs.existsSync(file)) {
+            console.error("❌ nl/marketdata_new.json not found");
+            process.exit(1);
+          }
+
+          let parsed;
+          try {
+            parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+          } catch (e) {
+            console.error("❌ Invalid JSON in nl/marketdata_new.json:", e.message);
+            process.exit(1);
+          }
+
+          const errors = [];
+
+          if (parsed.object !== "list") errors.push("Missing or wrong \"object\" field");
+          if (!["energy-charts"].includes(parsed.source)) errors.push("Invalid source: " + parsed.source);
+          if (!Array.isArray(parsed.data)) errors.push("\"data\" is not an array");
+
+          if (errors.length > 0) {
+            errors.forEach(e => console.error("❌ " + e));
+            process.exit(1);
+          }
+
+          const data = parsed.data;
+
+          if (data.length < 96) {
+            console.error("❌ Too few data points: " + data.length + " (minimum 96)");
+            process.exit(1);
+          }
+
+          const priceCount = data.filter(d => typeof d.marketprice === "number" && isFinite(d.marketprice)).length;
+          if (priceCount === 0) {
+            console.error("❌ All marketprice values are null/invalid – no usable price data");
+            process.exit(1);
+          }
+
+          const now = Date.now();
+          const validTs = data.map(d => d.start_timestamp).filter(ts => typeof ts === "number" && isFinite(ts) && ts > 0);
+          if (validTs.length === 0) {
+            console.error("❌ No valid start_timestamp values found");
+            process.exit(1);
+          }
+          const maxTs = Math.max(...validTs);
+          const ageHours = (now - maxTs) / (1000 * 60 * 60);
+          if (ageHours > 36) {
+            console.error("❌ Newest data point is " + ageHours.toFixed(1) + "h old (max 36h)");
+            process.exit(1);
+          }
+
+          console.log("✅ NL quality check passed:");
+          console.log("   Data points : " + data.length);
+          console.log("   Price points: " + priceCount);
+          console.log("   Newest entry: " + new Date(maxTs).toISOString() + " (" + ageHours.toFixed(1) + "h ago)");
+          console.log("   Source      : " + parsed.source);
+          '; then
+            echo "⚠️ NL validation failed – removing temporary file"
+            rm -f public/data/nl/marketdata_new.json
+          fi
+
+      - name: Compare with previous NL data
+        id: compare_nl
+        run: |
+          if [ ! -f "public/data/nl/marketdata_new.json" ]; then
+            echo "new_data=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ NL market data not available – skipping NL update"
+            exit 0
+          fi
+
+          NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/nl/marketdata_new.json)
+
+          if [ -f public/data/nl/marketdata.json ]; then
+            OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/nl/marketdata.json)
+          else
+            OLD_TS=""
+          fi
+
+          echo "OLD_TS=$OLD_TS"
+          echo "NEW_TS=$NEW_TS"
+
+          if [ "$OLD_TS" != "$NEW_TS" ]; then
+            echo "new_data=true" >> $GITHUB_OUTPUT
+          else
+            echo "new_data=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update nl/marketdata.json and create archive
+        if: steps.compare_nl.outputs.new_data == 'true'
+        run: |
+          ARCHIVE_NAME="marketdata_$(date -u +"%Y-%m-%dT%H").json"
+          mkdir -p public/data/nl/archive
+          cp public/data/nl/marketdata_new.json "public/data/nl/archive/$ARCHIVE_NAME"
+          mv public/data/nl/marketdata_new.json public/data/nl/marketdata.json
+          echo "✓ Updated nl/marketdata.json"
+          echo "✓ Created NL archive: $ARCHIVE_NAME"
+
+      - name: Create daily NL history file
+        if: steps.compare_nl.outputs.new_data == 'true'
+        run: |
+          mkdir -p public/data/nl/history
+
+          node -e '
+          const fs = require("fs");
+          const data = JSON.parse(fs.readFileSync("public/data/nl/marketdata.json", "utf8"));
+
+          const now = new Date();
+          const yesterday = new Date(now);
+          yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+          const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+          const dayStart = new Date(yesterdayStr + "T00:00:00Z").getTime();
+          const dayEnd = new Date(yesterdayStr + "T23:59:59Z").getTime();
+
+          const yesterdayData = data.data.filter(item =>
+            item.start_timestamp >= dayStart && item.start_timestamp <= dayEnd
+          );
+
+          const historyFile = "public/data/nl/history/" + yesterdayStr + ".json";
+
+          if (yesterdayData.length >= 92) {
+            if (!fs.existsSync(historyFile)) {
+              fs.writeFileSync(historyFile, JSON.stringify({
+                date: yesterdayStr,
+                source: data.source,
+                data: yesterdayData
+              }, null, 2));
+              console.log("✓ Created NL history file: " + yesterdayStr + ".json (" + yesterdayData.length + " points)");
+            } else {
+              console.log("✓ NL history file already exists: " + yesterdayStr + ".json");
+            }
+          } else {
+            console.log("⚠️ Incomplete NL data for " + yesterdayStr + " (" + yesterdayData.length + "/96 points) - skipping");
+          }
+          '
+
+      - name: Cleanup old NL archives (keep 90 days)
+        if: steps.compare_nl.outputs.new_data == 'true'
+        run: |
+          ARCHIVE_DIR="public/data/nl/archive"
+          DAYS_TO_KEEP=90
+
+          CUTOFF_DATE=$(date -u -d "$DAYS_TO_KEEP days ago" +"%Y-%m-%d" 2>/dev/null || date -u -v-${DAYS_TO_KEEP}d +"%Y-%m-%d")
+
+          DELETED=0
+          for file in "$ARCHIVE_DIR"/marketdata_*.json; do
+            if [ -f "$file" ]; then
+              FILE_DATE=$(basename "$file" | sed 's/marketdata_\([0-9-]*\)T.*/\1/')
+              if [ "$FILE_DATE" \< "$CUTOFF_DATE" ]; then
+                rm "$file"
+                DELETED=$((DELETED + 1))
+              fi
+            fi
+          done
+
+          if [ $DELETED -gt 0 ]; then
+            echo "🧹 Cleaned up $DELETED old NL archives (> $DAYS_TO_KEEP days)"
+          else
+            echo "✓ No old NL archives to clean up"
+          fi
+
+      - name: Cleanup old NL history files (keep 90 days)
+        if: steps.compare_nl.outputs.new_data == 'true'
+        run: |
+          HISTORY_DIR="public/data/nl/history"
+          DAYS_TO_KEEP=90
+
+          if [ -d "$HISTORY_DIR" ]; then
+            CUTOFF_DATE=$(date -u -d "$DAYS_TO_KEEP days ago" +"%Y-%m-%d" 2>/dev/null || date -u -v-${DAYS_TO_KEEP}d +"%Y-%m-%d")
+
+            DELETED=0
+            for file in "$HISTORY_DIR"/*.json; do
+              if [ -f "$file" ]; then
+                FILE_DATE=$(basename "$file" .json)
+                if [ "$FILE_DATE" \< "$CUTOFF_DATE" ]; then
+                  rm "$file"
+                  DELETED=$((DELETED + 1))
+                fi
+              fi
+            done
+
+            if [ $DELETED -gt 0 ]; then
+              echo "🧹 Cleaned up $DELETED old NL history files (> $DAYS_TO_KEEP days)"
+            else
+              echo "✓ No old NL history files to clean up"
+            fi
+          fi
+
+      - name: Cleanup NL temporary file
+        if: steps.compare_nl.outputs.new_data == 'false'
+        run: |
+          if [ -f public/data/nl/marketdata_new.json ]; then
+            rm -f public/data/nl/marketdata_new.json
+            echo "🧹 Cleaned up NL temporary file (no new data)"
+          fi
+
+      # ─── Commit ───────────────────────────────────────────────────────────────
+
       - name: Commit changes
-        if: steps.compare.outputs.new_data == 'true'
+        if: steps.compare.outputs.new_data == 'true' || steps.compare_nl.outputs.new_data == 'true'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add public/data/marketdata.json
-          git add -A public/data/archive/
-          git add -A public/data/history/
 
-          # Get current date/time for commit message
+          # Stage DE files if updated
+          if [ "${{ steps.compare.outputs.new_data }}" = "true" ]; then
+            git add public/data/marketdata.json
+            git add -A public/data/archive/
+            git add -A public/data/history/
+          fi
+
+          # Stage NL files if updated
+          if [ "${{ steps.compare_nl.outputs.new_data }}" = "true" ]; then
+            git add public/data/nl/marketdata.json
+            git add -A public/data/nl/archive/
+            git add -A public/data/nl/history/
+          fi
+
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H UTC")
 
-          # Get source from marketdata.json
-          SOURCE=$(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).source)')
+          # Build commit message listing updated countries and their sources
+          PARTS=""
+          if [ "${{ steps.compare.outputs.new_data }}" = "true" ]; then
+            DE_SOURCE=$(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).source)')
+            PARTS="DE: $DE_SOURCE"
+          fi
+          if [ "${{ steps.compare_nl.outputs.new_data }}" = "true" ]; then
+            NL_SOURCE=$(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/nl/marketdata.json", "utf8")).source)')
+            PARTS="${PARTS:+$PARTS, }NL: $NL_SOURCE"
+          fi
 
-          git commit -m "Update marketdata.json (source: $SOURCE @ $TIMESTAMP)"
+          git commit -m "Update marketdata.json ($PARTS @ $TIMESTAMP)"
           git push
 
           echo "✅ Changes committed and pushed"
           echo "🚀 Deployment will be triggered automatically by push to main"
 
       - name: Summary (new data)
-        if: steps.compare.outputs.new_data == 'true'
+        if: steps.compare.outputs.new_data == 'true' || steps.compare_nl.outputs.new_data == 'true'
         run: |
           echo "✅ Market data updated successfully!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📊 **Source:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).source)')" >> $GITHUB_STEP_SUMMARY
-          echo "📈 **Data points:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).data.length)')" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.compare.outputs.new_data }}" = "true" ]; then
+            echo "🇩🇪 **DE Source:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).source)')" >> $GITHUB_STEP_SUMMARY
+            echo "📈 **DE Data points:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).data.length)')" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ steps.compare_nl.outputs.new_data }}" = "true" ]; then
+            echo "🇳🇱 **NL Source:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/nl/marketdata.json", "utf8")).source)')" >> $GITHUB_STEP_SUMMARY
+            echo "📈 **NL Data points:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/nl/marketdata.json", "utf8")).data.length)')" >> $GITHUB_STEP_SUMMARY
+          fi
           echo "⏰ **Updated at:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
           echo "🚀 **Deployment:** Automatically triggered by push to main" >> $GITHUB_STEP_SUMMARY
 
       - name: Summary (no new data)
-        if: steps.compare.outputs.new_data == 'false'
+        if: steps.compare.outputs.new_data == 'false' && steps.compare_nl.outputs.new_data == 'false'
         run: |
-          echo "ℹ️ No new data available – keeping existing marketdata.json" >> $GITHUB_STEP_SUMMARY
+          echo "ℹ️ No new data available – keeping existing marketdata files" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📊 **Current source:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).source)')" >> $GITHUB_STEP_SUMMARY
+          if [ -f public/data/marketdata.json ]; then
+            echo "📊 **DE source:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).source)')" >> $GITHUB_STEP_SUMMARY
+          fi
           echo "⏰ **Checked at:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
-

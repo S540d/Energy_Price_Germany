@@ -18,6 +18,7 @@ import { getThemeColors } from './utils/theme';
 import { useEnergyData } from './hooks/useEnergyData';
 import { useLanguageContext } from './context/LanguageContext';
 import { useSettingsContext } from './context/SettingsContext';
+import { useCountryContext } from './context/CountryContext';
 import { checkPriceAlert } from './utils/priceAlertUtils';
 import { usePriceAlertNotification } from './hooks/usePriceAlertNotification';
 import { ChartSkeleton } from './components/ui/ChartSkeleton';
@@ -87,7 +88,8 @@ function AppContent() {
     historyCacheLimitMb,
   } = useSettingsContext();
   const { language, t } = useLanguageContext();
-  const { energyData, loading } = useEnergyData(debouncedPostalCode);
+  const { country, countryConfig } = useCountryContext();
+  const { energyData, loading } = useEnergyData(debouncedPostalCode, country);
 
   // Nutzer-Limit für die persistente Historie an den Daten-Manager weitergeben (#307)
   useEffect(() => {
@@ -125,10 +127,11 @@ function AppContent() {
 
   const hasRegionalData = useMemo(
     () =>
+      countryConfig.hasRegionalData &&
       filteredEnergyData.some(
         item => item.renewableShareRegional !== null && item.renewableShareRegional !== undefined
       ),
-    [filteredEnergyData]
+    [filteredEnergyData, countryConfig.hasRegionalData]
   );
 
   const metrics = useMemo(() => calculateMetrics(filteredEnergyData), [filteredEnergyData]);
@@ -294,6 +297,7 @@ function AppContent() {
           livePulseStyle={livePulseStyle}
           alertLowLabel={t.priceAlertActiveLow}
           alertHighLabel={t.priceAlertActiveHigh}
+          countryName={t[countryConfig.translationKey]}
           onOpenCalculator={() => setCalculatorVisible(true)}
           onOpenSettings={() => setMenuVisible(true)}
         />
@@ -393,14 +397,17 @@ const styles = StyleSheet.create({
 
 import { SettingsProvider } from './context/SettingsContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { CountryProvider } from './context/CountryContext';
 
 export default function App() {
   return (
     <SafeAreaProvider style={{ flex: 1 }}>
       <LanguageProvider>
-        <SettingsProvider>
-          <AppContent />
-        </SettingsProvider>
+        <CountryProvider>
+          <SettingsProvider>
+            <AppContent />
+          </SettingsProvider>
+        </CountryProvider>
       </LanguageProvider>
     </SafeAreaProvider>
   );
