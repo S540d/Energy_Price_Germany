@@ -188,6 +188,33 @@ Validation rules enforced by Husky:
      `previousAvg == 0` the object is still returned and only `deltaPct` is `null`.
      i18n key `historyStatVsPrev` (must exist in BOTH `en`+`de`).
 
+6. **Multi-Country / Europäische Datenexpansion (`utils/countries.ts`) – Issue #356:**
+   - **Country Registry is the single source of truth.** `COUNTRIES: Record<CountryCode, CountryConfig>`
+     (currently `de` + `nl`) derives data paths, timezone, `hasRegionalData`, default grid fees.
+     Adding a country ideally = one registry entry + one pipeline matrix entry, no scattered
+     `if country === 'de'` checks. `DEFAULT_COUNTRY = 'de'`.
+   - **Active country** lives in `context/CountryContext.tsx` + `hooks/useCountry.ts`
+     (persisted under storage key `country`, validated via `isCountryCode`). Independent from
+     the UI language — a user may view NL data with the German UI. Selector UI:
+     `components/customize/CountrySection.tsx` (in `CustomizeModal`, above LanguageSection).
+   - **DE stays on legacy flat paths** (`data/marketdata.json`, `data/history/`) for backward
+     compat with deployed clients; new countries live under `data/<code>/` (NL: `data/nl/`).
+   - **Data load is country-aware** (`energyDataManager`): fetch path from
+     `COUNTRIES[country].marketDataPath`; cache keyed by `dataCountry` (switch invalidates);
+     regional/PLZ fetch only when `hasRegionalData` (NL hides PLZ UI entirely).
+   - **Pipeline** (`fetch.yml`): separate NL block fetches `?country=nl` from Energy Charts
+     (NO aWATTar — DE-only), `continue-on-error` so NL failures don't block the DE update;
+     commit step stages whichever country has new data.
+   - **History store is country-namespaced** (#356 Step 3): keys
+     `energy_history_v1_<country>:<date>` + `energy_history_index_v1_<country>`; server-fallback
+     URL from `historyPathPrefix`; `dayStringFromTimestamp(ts, timezone?)` uses the registry tz.
+     Use the factory `historicalDataStoreForCountry(country)`; the `historicalDataStore`
+     singleton is just the DE alias (used by `HistoryCacheSection`).
+   - **`HistoricalDataView` ("Verlauf") takes a `country` prop** and reads from
+     `historicalDataStoreForCountry(country)` — must NOT use the bare DE singleton, or the
+     live (active-country) data merges with the wrong country's history.
+   - i18n keys (EN+DE): `country`, `countryGermany`, `countryNetherlands`, `countryBeta`.
+
 ## Common Tasks
 
 ### Adding a New Feature
