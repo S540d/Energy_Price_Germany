@@ -4,7 +4,7 @@ import { isValidPostalCode } from '../utils/postalCodeUtils';
 import { validateMarketDataResponse, fetchWithTimeout } from '../utils/apiValidation';
 import { RegionalDataCache } from './regionalDataCache';
 import { mergeRegionalData } from './dataMerger';
-import { historicalDataStore } from './historicalDataStore';
+import { historicalDataStoreForCountry } from './historicalDataStore';
 import type { CountryCode } from '../utils/countries';
 import { COUNTRIES, DEFAULT_COUNTRY } from '../utils/countries';
 
@@ -225,14 +225,15 @@ export class EnergyDataManager {
       // Persistente Historie aktualisieren (fire-and-forget, nationale Daten) – #307.
       // Per Microtask verzögert, damit das Snapshotting nicht mit den
       // Storage-Lesezugriffen des Regional-Caches im selben Tick verschachtelt.
-      // Hinweis (#356): Der Historien-Store ist noch nicht länder-namespaced
-      // (Folge-Schritt), daher wird vorerst nur für das Default-Land (DE)
-      // ein Snapshot aufgezeichnet, um die DE-Historie nicht zu vermischen.
-      if (country === DEFAULT_COUNTRY) {
-        Promise.resolve()
-          .then(() => historicalDataStore.recordSnapshot(processedData, this.historyLimitBytes))
-          .catch(() => {});
-      }
+      // Länder-namespaced seit #356 Step 3: jedes Land schreibt in eigene Keys.
+      Promise.resolve()
+        .then(() =>
+          historicalDataStoreForCountry(country).recordSnapshot(
+            processedData,
+            this.historyLimitBytes
+          )
+        )
+        .catch(() => {});
 
       // If postal code is provided (regional countries only), fetch + merge regional data
       if (regionalEnabled && isValidPostalCode(postalCode) && postalCode) {
