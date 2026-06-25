@@ -202,6 +202,13 @@ Validation rules enforced by Husky:
    - **Data load is country-aware** (`energyDataManager`): fetch path from
      `COUNTRIES[country].marketDataPath`; cache keyed by `dataCountry` (switch invalidates);
      regional/PLZ fetch only when `hasRegionalData` (NL hides PLZ UI entirely).
+   - **In-flight de-dup is scoped to the request** (`loadingCountry`/`loadingPostalCode`).
+     A load only piggybacks on the running promise when **country AND postal code match**;
+     a request for a different country awaits the in-flight load, then starts fresh. Do NOT
+     revert to an unconditional `if (isLoading) return loadingPromise` — that caused the
+     start-up race where the default DE load (before the persisted country resolved) handed
+     German data to the NL request (header showed NL, data was DE). The `finally` only clears
+     load state when `loadingPromise` is still the current one (no clobber by a newer load).
    - **Pipeline** (`fetch.yml`): separate NL block fetches `?country=nl` from Energy Charts
      (NO aWATTar — DE-only), `continue-on-error` so NL failures don't block the DE update;
      commit step stages whichever country has new data.
