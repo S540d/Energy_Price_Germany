@@ -50,6 +50,11 @@ export class EnergyDataManager {
   private currentDataSource: DataSource = 'none';
   private isLoading: boolean = false;
   private loadingPromise: Promise<EnergyData[]> | null = null;
+  // Scope of the in-flight load – an identical request may de-dupe onto the
+  // running promise, but a request for a DIFFERENT country/postal code must not
+  // (otherwise the initial DE load would hand its data back to an NL request).
+  private loadingCountry: CountryCode | null = null;
+  private loadingPostalCode: string | undefined = undefined;
 
   // Regional data cache (delegated to dedicated module)
   private regionalCache = new RegionalDataCache();
@@ -175,9 +180,22 @@ export class EnergyDataManager {
     country: CountryCode = DEFAULT_COUNTRY,
     postalCode?: string
   ): Promise<EnergyData[]> {
-    // Wenn bereits ein Ladevorgang läuft, warte darauf
+    // Wenn bereits ein Ladevorgang läuft: nur dann darauf warten, wenn es
+    // exakt dieselbe Anfrage ist (gleiches Land + PLZ). Eine Anfrage für ein
+    // ANDERES Land darf nicht das laufende Promise zurückbekommen – sonst gibt
+    // der initiale DE-Ladevorgang (Default, solange das persistierte Land noch
+    // lädt) seine deutschen Daten an eine NL-Anfrage zurück.
     if (this.isLoading && this.loadingPromise) {
-      return this.loadingPromise;
+      if (this.loadingCountry === country && this.loadingPostalCode === postalCode) {
+        return this.loadingPromise;
+      }
+      // Anderer Ladevorgang in flight – erst abwarten (dessen Cache-Write
+      // abschließen lassen), dann einen frischen, korrekt zugeordneten starten.
+      try {
+        await this.loadingPromise;
+      } catch {
+        // egal – wir laden unten ohnehin neu
+      }
     }
 
     const regionalEnabled = COUNTRIES[country].hasRegionalData;
@@ -197,14 +215,22 @@ export class EnergyDataManager {
 
     // Starte Ladevorgang
     this.isLoading = true;
-    this.loadingPromise = this.performDataLoad(country, postalCode);
+    this.loadingCountry = country;
+    this.loadingPostalCode = postalCode;
+    const promise = this.performDataLoad(country, postalCode);
+    this.loadingPromise = promise;
 
     try {
-      const data = await this.loadingPromise;
-      return data;
+      return await promise;
     } finally {
-      this.isLoading = false;
-      this.loadingPromise = null;
+      // Nur aufräumen, wenn unser Promise noch das aktuelle ist (ein neuerer
+      // Ladevorgang könnte es bereits ersetzt haben).
+      if (this.loadingPromise === promise) {
+        this.isLoading = false;
+        this.loadingPromise = null;
+        this.loadingCountry = null;
+        this.loadingPostalCode = undefined;
+      }
     }
   }
 
