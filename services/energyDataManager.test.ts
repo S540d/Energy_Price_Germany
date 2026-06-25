@@ -441,5 +441,40 @@ describe('EnergyDataManager', () => {
       expect(data1).toEqual(data2);
       expect(data2).toEqual(data3);
     });
+
+    it('should NOT hand an in-flight country load to a different country request', async () => {
+      // Regression (#356): app starts on default DE while the persisted country
+      // (NL) is still loading; the NL request must not piggyback on the DE load.
+      const nlResponse = {
+        source: 'energy-charts',
+        data: mockMarketDataResponse.data.map(d => ({ ...d, marketprice: 999 })),
+      };
+
+      // First fetch (DE) is slow; resolve order is controlled via call index.
+      mockFetch.mockImplementation((url: string | URL | Request) => {
+        const href = String(url);
+        const isNl = href.includes('/nl/');
+        return new Promise(resolve =>
+          setTimeout(
+            () =>
+              resolve({
+                ok: true,
+                json: async () => (isNl ? nlResponse : mockMarketDataResponse),
+              } as Response),
+            50
+          )
+        );
+      });
+
+      const [deData, nlData] = await Promise.all([
+        manager.loadEnergyData('de'),
+        manager.loadEnergyData('nl'),
+      ]);
+
+      // Two distinct country loads → two fetches, each its own data.
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(deData[0].marketPrice).toBe(50.5);
+      expect(nlData[0].marketPrice).toBe(999);
+    });
   });
 });
