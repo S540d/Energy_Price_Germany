@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.1] - 2026-06-25
+
+### Fixed
+- **Falsche (deutsche) Daten bei den Niederlanden nach App-Neustart** – Race-Condition beim Start: der noch laufende Default-DE-Ladevorgang lieferte seine Daten an die NL-Anfrage zurück. Der In-flight-Dedup im Daten-Manager ist jetzt nach Land + PLZ gescoped.
+
 ## [1.8.0] - 2026-06-25
 
 ### Added
