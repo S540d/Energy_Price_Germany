@@ -369,6 +369,7 @@ function AppContent() {
           onClose={() => setHistoryVisible(false)}
           liveData={energyData}
           gridFees={gridFees}
+          country={country}
         />
       </SafeAreaView>
       {showSplash && <SplashScreen onFinish={handleSplashFinish} version={APP_VERSION} />}
