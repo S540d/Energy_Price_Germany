@@ -8,6 +8,7 @@ import { render, waitFor } from '@testing-library/react-native';
 import { CustomizeModal } from '../CustomizeModal';
 import { LanguageProvider } from '../../../context/LanguageContext';
 import { SettingsProvider } from '../../../context/SettingsContext';
+import { CountryProvider } from '../../../context/CountryContext';
 
 // Mock theme utilities
 jest.mock('../../../utils/theme', () => ({
@@ -33,9 +34,11 @@ jest.mock('../../settings/BetaModeSection', () => ({
 
 // Wrapper component with required contexts
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <SettingsProvider>
-    <LanguageProvider>{children}</LanguageProvider>
-  </SettingsProvider>
+  <CountryProvider>
+    <SettingsProvider>
+      <LanguageProvider>{children}</LanguageProvider>
+    </SettingsProvider>
+  </CountryProvider>
 );
 
 describe('CustomizeModal', () => {

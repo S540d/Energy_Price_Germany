@@ -2,6 +2,8 @@ import { Platform } from 'react-native';
 import { Storage } from '../utils/platform';
 import type { EnergyData } from '../utils/metrics';
 import { validateMarketDataResponse, fetchWithTimeout } from '../utils/apiValidation';
+import type { CountryCode } from '../utils/countries';
+import { COUNTRIES, DEFAULT_COUNTRY } from '../utils/countries';
 
 /**
  * Historical Data Store
@@ -10,16 +12,16 @@ import { validateMarketDataResponse, fetchWithTimeout } from '../utils/apiValida
  * damit historische Werte bei Bedarf wieder angezeigt werden können (Issue #307).
  *
  * Layout (versioniert wie energy_regional_cache_v1):
- *   energy_history_v1:<YYYY-MM-DD>  -> HistoryDayEntry (JSON)
- *   energy_history_index_v1         -> HistoryIndex (JSON)
+ *   energy_history_v1_<country>:<YYYY-MM-DD>  -> HistoryDayEntry (JSON)
+ *   energy_history_index_v1_<country>          -> HistoryIndex (JSON)
  *
  * Der Index hält Datum + Größe pro Tag vor, damit Bereichs- und
- * Speicher-Abfragen ohne Laden aller Tage funktionieren. Tag-Schlüssel sind
- * lokale Tage (Europe/Berlin), konsistent mit dem RegionalDataCache.
+ * Speicher-Abfragen ohne Laden aller Tage funktionieren. Tag-Schlüssel
+ * verwenden die Zeitzone des jeweiligen Landes (für DE+NL identisch CET/CEST).
  */
 
-const HISTORY_DAY_KEY_PREFIX = 'energy_history_v1:';
-const HISTORY_INDEX_KEY = 'energy_history_index_v1';
+const HISTORY_DAY_KEY_PREFIX = 'energy_history_v1_';
+const HISTORY_INDEX_KEY_PREFIX = 'energy_history_index_v1_';
 const HISTORY_INDEX_VERSION = 1;
 
 /** Default-Obergrenze, falls kein Nutzer-Limit übergeben wird (10 MB). */
@@ -57,31 +59,38 @@ export interface HistoryStorageInfo {
 }
 
 /**
- * Liefert YYYY-MM-DD im Europe/Berlin-Zeitraum für einen Timestamp (ms).
+ * Liefert YYYY-MM-DD in der angegebenen Zeitzone für einen Timestamp (ms).
  *
- * Wichtig: Alle Daten der App liegen in Europe/Berlin vor und die
- * serverseitigen History-Dateien (public/data/history/YYYY-MM-DD.json) sind
- * ebenfalls Berlin-datiert. Ohne feste Zeitzone würden Punkte um Mitternacht
- * auf Geräten in anderen Zeitzonen unter einem abweichenden Tag landen und
- * Cache/Range/Server-Fallback gegeneinander verschieben.
+ * Default: 'Europe/Berlin'. NL nutzt 'Europe/Amsterdam' = identisches
+ * CET/CEST, daher kein Verhaltensunterschied – aber sauber parametrisiert.
+ * Ohne feste Zeitzone würden Punkte um Mitternacht auf Geräten in anderen
+ * Zeitzonen unter einem abweichenden Tag landen und Cache/Range/Server-
+ * Fallback gegeneinander verschieben.
  */
-const berlinDayFormatter: Intl.DateTimeFormat | null = (() => {
+const formatterCache = new Map<string, Intl.DateTimeFormat | null>();
+
+function getFormatter(timezone: string): Intl.DateTimeFormat | null {
+  if (formatterCache.has(timezone)) return formatterCache.get(timezone) ?? null;
   try {
-    return new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Europe/Berlin',
+    const fmt = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
     });
+    formatterCache.set(timezone, fmt);
+    return fmt;
   } catch {
+    formatterCache.set(timezone, null);
     return null;
   }
-})();
+}
 
-export function dayStringFromTimestamp(ts: number): string {
-  if (berlinDayFormatter) {
+export function dayStringFromTimestamp(ts: number, timezone: string = 'Europe/Berlin'): string {
+  const formatter = getFormatter(timezone);
+  if (formatter) {
     try {
-      const parts = berlinDayFormatter.formatToParts(new Date(ts));
+      const parts = formatter.formatToParts(new Date(ts));
       const get = (type: string) => parts.find(p => p.type === type)?.value ?? '';
       const year = get('year');
       const month = get('month');
@@ -100,21 +109,33 @@ export function dayStringFromTimestamp(ts: number): string {
 }
 
 export class HistoricalDataStore {
-  // Tage, die in dieser Session bereits vom Server angefragt wurden
-  // (Erfolg oder 404) – verhindert wiederholte Fehlanfragen.
   private serverFetchAttempted = new Set<string>();
+  private readonly country: CountryCode;
+
+  constructor(country: CountryCode = DEFAULT_COUNTRY) {
+    this.country = country;
+  }
+
+  private get indexKey(): string {
+    return `${HISTORY_INDEX_KEY_PREFIX}${this.country}`;
+  }
 
   private dayKey(date: string): string {
-    return `${HISTORY_DAY_KEY_PREFIX}${date}`;
+    return `${HISTORY_DAY_KEY_PREFIX}${this.country}:${date}`;
   }
 
   /**
-   * URL der serverseitigen Tages-History (analog EnergyDataManager).
+   * URL der serverseitigen Tages-History – Pfad aus der Länder-Registry.
    */
   private historyDayUrl(date: string): string {
+    const prefix = COUNTRIES[this.country].historyPathPrefix;
     return Platform.OS === 'web'
-      ? `./data/history/${date}.json`
-      : `https://s540d.github.io/Energy_Price_Germany/data/history/${date}.json`;
+      ? `./${prefix}${date}.json`
+      : `https://s540d.github.io/Energy_Price_Germany/${prefix}${date}.json`;
+  }
+
+  private dayString(ts: number): string {
+    return dayStringFromTimestamp(ts, COUNTRIES[this.country].timezone);
   }
 
   /**
@@ -122,7 +143,7 @@ export class HistoricalDataStore {
    */
   private async loadIndex(): Promise<HistoryIndex> {
     try {
-      const raw = await Storage.getItem(HISTORY_INDEX_KEY);
+      const raw = await Storage.getItem(this.indexKey);
       if (!raw) return { version: HISTORY_INDEX_VERSION, days: [] };
       const parsed = JSON.parse(raw) as HistoryIndex;
       if (!parsed || !Array.isArray(parsed.days)) {
@@ -137,7 +158,7 @@ export class HistoricalDataStore {
   private async saveIndex(index: HistoryIndex): Promise<void> {
     // Index nach Datum aufsteigend halten – vereinfacht Range/Eviction.
     index.days.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-    await Storage.setItem(HISTORY_INDEX_KEY, JSON.stringify(index));
+    await Storage.setItem(this.indexKey, JSON.stringify(index));
   }
 
   /**
@@ -176,7 +197,7 @@ export class HistoricalDataStore {
       const byDay = new Map<string, EnergyData[]>();
       for (const point of data) {
         if (typeof point.timestamp !== 'number') continue;
-        const day = dayStringFromTimestamp(point.timestamp);
+        const day = this.dayString(point.timestamp);
         const list = byDay.get(day);
         if (list) {
           list.push(point);
@@ -301,9 +322,9 @@ export class HistoricalDataStore {
     try {
       if (fromTs > toTs) return [];
       let index = await this.loadIndex();
-      const fromDay = dayStringFromTimestamp(fromTs);
-      const toDay = dayStringFromTimestamp(toTs);
-      const today = dayStringFromTimestamp(Date.now());
+      const fromDay = this.dayString(fromTs);
+      const toDay = this.dayString(toTs);
+      const today = this.dayString(Date.now());
 
       // Fehlende vergangene Tage vom Server nachladen (nicht heute/Zukunft).
       if (allowServerFallback) {
@@ -391,12 +412,27 @@ export class HistoricalDataStore {
       for (const d of index.days) {
         await Storage.removeItem(this.dayKey(d.date));
       }
-      await Storage.removeItem(HISTORY_INDEX_KEY);
+      await Storage.removeItem(this.indexKey);
     } catch {
       // Non-blocking
     }
   }
 }
 
-// Singleton-Instanz
-export const historicalDataStore = new HistoricalDataStore();
+/**
+ * Gibt die HistoricalDataStore-Instanz für ein Land zurück (gecacht).
+ * Jede Instanz hat eigene Storage-Keys und eigene Session-Fallback-Marks.
+ */
+const storeCache = new Map<CountryCode, HistoricalDataStore>();
+
+export function historicalDataStoreForCountry(country: CountryCode): HistoricalDataStore {
+  let store = storeCache.get(country);
+  if (!store) {
+    store = new HistoricalDataStore(country);
+    storeCache.set(country, store);
+  }
+  return store;
+}
+
+/** DE-Singleton für Stellen, die den Ländercode nicht kennen (HistoryCacheSection, HistoricalDataView – MVP DE-only). */
+export const historicalDataStore = historicalDataStoreForCountry(DEFAULT_COUNTRY);

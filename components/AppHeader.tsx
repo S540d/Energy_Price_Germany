@@ -14,6 +14,7 @@ type Props = {
   livePulseStyle: AnimatedStyle;
   alertLowLabel: string;
   alertHighLabel: string;
+  countryName: string;
   onOpenCalculator: () => void;
   onOpenSettings: () => void;
 };
@@ -26,6 +27,7 @@ export function AppHeader({
   livePulseStyle,
   alertLowLabel,
   alertHighLabel,
+  countryName,
   onOpenCalculator,
   onOpenSettings,
 }: Props) {
@@ -59,7 +61,7 @@ export function AppHeader({
           </Text>
         </View>
         <Text style={[styles.titleLine1, { color: colors.text }]}>Energy Price</Text>
-        <Text style={[styles.titleLine2, { color: colors.accentGreen }]}>Germany</Text>
+        <Text style={[styles.titleLine2, { color: colors.accentGreen }]}>{countryName}</Text>
       </View>
 
       <View style={styles.buttons}>
