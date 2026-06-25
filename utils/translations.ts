@@ -11,6 +11,11 @@ export const translations = {
     language: 'LANGUAGE',
     english: 'English',
     german: 'German',
+    // Country Section (#356)
+    country: 'COUNTRY',
+    countryGermany: 'Germany',
+    countryNetherlands: 'Netherlands',
+    countryBeta: '(BETA)',
     // Region Section
     region: 'REGION (BETA)',
     postalCode: 'Postal Code',
@@ -164,6 +169,11 @@ export const translations = {
     language: 'SPRACHE',
     english: 'English',
     german: 'Deutsch',
+    // Country Section (#356)
+    country: 'LAND',
+    countryGermany: 'Deutschland',
+    countryNetherlands: 'Niederlande',
+    countryBeta: '(BETA)',
     // Region Section
     region: 'REGION (BETA)',
     postalCode: 'Postleitzahl',

@@ -171,7 +171,7 @@ describe('App', () => {
       renderWithProviders(<App />);
 
       await waitFor(() => {
-        expect(mockFetchEnergyData).toHaveBeenCalledWith(undefined);
+        expect(mockFetchEnergyData).toHaveBeenCalledWith('de', undefined);
       });
     });
 
@@ -593,7 +593,7 @@ describe('App', () => {
       renderWithProviders(<App />);
 
       await waitFor(() => {
-        expect(mockFetchEnergyData).toHaveBeenCalledWith(undefined);
+        expect(mockFetchEnergyData).toHaveBeenCalledWith('de', undefined);
       });
     });
   });

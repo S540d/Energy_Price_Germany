@@ -10,9 +10,11 @@ import {
   Dimensions,
 } from 'react-native';
 import { useLanguageContext } from '../../context/LanguageContext';
+import { useCountryContext } from '../../context/CountryContext';
 import { getThemeColors } from '../../utils/theme';
 import { useSettingsContext } from '../../context/SettingsContext';
 import { LanguageSection } from '../settings/LanguageSection';
+import { CountrySection } from './CountrySection';
 import { PostalCodeSection } from './PostalCodeSection';
 import { GridFeesSection } from './GridFeesSection';
 import { PriceDisplayModeSection } from './PriceDisplayModeSection';
@@ -30,9 +32,13 @@ interface CustomizeModalProps {
  */
 export function CustomizeModal({ visible, onClose }: CustomizeModalProps) {
   const { t } = useLanguageContext();
+  const { countryConfig } = useCountryContext();
   const { theme } = useSettingsContext();
   const systemTheme = useColorScheme();
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
+
+  // Postal-code / regional UI only applies to countries with regional data (DE).
+  const showRegionalInput = countryConfig.hasRegionalData;
 
   if (!visible) return null;
 
@@ -53,20 +59,29 @@ export function CustomizeModal({ visible, onClose }: CustomizeModalProps) {
 
         {/* Scrollable Content */}
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
+          {/* Country Section (#356) */}
+          <CountrySection />
+
+          <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
+
           {/* Language Section */}
           <LanguageSection />
 
           <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
-          {/* Postal Code + Grid Fees in one row */}
-          <View style={styles.inlineRow}>
-            <View style={styles.inlineItem}>
-              <PostalCodeSection />
+          {/* Postal Code + Grid Fees in one row (PLZ only for regional countries) */}
+          {showRegionalInput ? (
+            <View style={styles.inlineRow}>
+              <View style={styles.inlineItem}>
+                <PostalCodeSection />
+              </View>
+              <View style={styles.inlineItem}>
+                <GridFeesSection />
+              </View>
             </View>
-            <View style={styles.inlineItem}>
-              <GridFeesSection />
-            </View>
-          </View>
+          ) : (
+            <GridFeesSection />
+          )}
 
           <View style={[styles.separator, { backgroundColor: colors.gridLine }]} />
 
