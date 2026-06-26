@@ -13,7 +13,7 @@
  * clients; new countries live under `data/<code>/`.
  */
 
-export type CountryCode = 'de' | 'nl' | 'at' | 'ch';
+export type CountryCode = 'de' | 'nl' | 'at' | 'ch' | 'fr' | 'be' | 'dk';
 
 export interface CountryConfig {
   /** Internal country code (matches storage namespace + data folder). */
@@ -23,7 +23,14 @@ export interface CountryConfig {
   /** Flag emoji for compact UI display. */
   flag: string;
   /** translations key for the human-readable country name (must exist in EN+DE). */
-  translationKey: 'countryGermany' | 'countryNetherlands' | 'countryAustria' | 'countrySwitzerland';
+  translationKey:
+    | 'countryGermany'
+    | 'countryNetherlands'
+    | 'countryAustria'
+    | 'countrySwitzerland'
+    | 'countryFrance'
+    | 'countryBelgium'
+    | 'countryDenmark';
   /** Whether the country is still rolling out (shows a BETA badge). */
   beta: boolean;
   /** IANA timezone used for day boundaries in the historical store. */
@@ -97,6 +104,48 @@ export const COUNTRIES: Record<CountryCode, CountryConfig> = {
     hasRegionalData: false,
     marketDataPath: 'data/ch/marketdata.json',
     historyPathPrefix: 'data/ch/history/',
+    defaultGridFeesCentPerKwh: 20,
+  },
+  fr: {
+    code: 'fr',
+    energyChartsCountry: 'fr',
+    flag: '🇫🇷',
+    translationKey: 'countryFrance',
+    beta: true,
+    // Paris == Berlin (both CET/CEST) – day boundaries align with DE.
+    timezone: 'Europe/Paris',
+    currency: 'EUR',
+    hasRegionalData: false,
+    marketDataPath: 'data/fr/marketdata.json',
+    historyPathPrefix: 'data/fr/history/',
+    defaultGridFeesCentPerKwh: 20,
+  },
+  be: {
+    code: 'be',
+    energyChartsCountry: 'be',
+    flag: '🇧🇪',
+    translationKey: 'countryBelgium',
+    beta: true,
+    // Brussels == Berlin (both CET/CEST) – day boundaries align with DE.
+    timezone: 'Europe/Brussels',
+    currency: 'EUR',
+    hasRegionalData: false,
+    marketDataPath: 'data/be/marketdata.json',
+    historyPathPrefix: 'data/be/history/',
+    defaultGridFeesCentPerKwh: 20,
+  },
+  dk: {
+    code: 'dk',
+    energyChartsCountry: 'dk',
+    flag: '🇩🇰',
+    translationKey: 'countryDenmark',
+    beta: true,
+    // Copenhagen == Berlin (both CET/CEST) – day boundaries align with DE.
+    timezone: 'Europe/Copenhagen',
+    currency: 'EUR',
+    hasRegionalData: false,
+    marketDataPath: 'data/dk/marketdata.json',
+    historyPathPrefix: 'data/dk/history/',
     defaultGridFeesCentPerKwh: 20,
   },
 };
