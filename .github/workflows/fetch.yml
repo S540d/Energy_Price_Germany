@@ -1140,6 +1140,777 @@ jobs:
             echo "🧹 Cleaned up CH temporary file (no new data)"
           fi
 
+      # ─── France (FR) – Energy Charts only ────────────────────────
+
+      - name: Rate-limit guard before FR
+        run: sleep 5
+
+      - name: Try fetching FR data from Energy Charts API
+        id: energy_charts_fr
+        continue-on-error: true
+        run: |
+          mkdir -p public/data/fr
+
+          # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
+          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=fr" -o public/data/fr/renewable_raw.json || true
+
+          # Energy Charts: Day-ahead prices (15-min resolution) – required
+          curl -fsSL "https://api.energy-charts.info/price?country=fr" -o public/data/fr/price_raw.json || exit 1
+
+          echo "success=true" >> $GITHUB_OUTPUT
+
+      - name: Process Energy Charts FR data
+        if: steps.energy_charts_fr.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          node -e '
+          const fs = require("fs");
+
+          try {
+            const renewableRaw = fs.existsSync("public/data/fr/renewable_raw.json") ? fs.readFileSync("public/data/fr/renewable_raw.json", "utf8") : null;
+            const renewable = renewableRaw ? JSON.parse(renewableRaw) : {};
+            const price = JSON.parse(fs.readFileSync("public/data/fr/price_raw.json", "utf8"));
+
+            const priceMap = new Map();
+            const renewableMap = new Map();
+            const allTimestamps = new Set();
+
+            if (price.unix_seconds && price.price) {
+              price.unix_seconds.forEach((ts, i) => {
+                const timestamp_ms = ts * 1000;
+                priceMap.set(timestamp_ms, price.price[i]);
+                allTimestamps.add(timestamp_ms);
+              });
+            }
+
+            if (renewable.unix_seconds && renewable.ren_share) {
+              renewable.unix_seconds.forEach((ts, i) => {
+                const timestamp_ms = ts * 1000;
+                renewableMap.set(timestamp_ms, renewable.ren_share[i]);
+                allTimestamps.add(timestamp_ms);
+              });
+            }
+
+            const merged = Array.from(allTimestamps).map(timestamp_ms => ({
+              start_timestamp: timestamp_ms,
+              end_timestamp: timestamp_ms + 15 * 60 * 1000,
+              marketprice: priceMap.get(timestamp_ms) || null,
+              renewable_share: renewableMap.get(timestamp_ms) || null,
+              unit: "Eur/MWh",
+              interpolated: false
+            }));
+
+            merged.sort((a, b) => a.start_timestamp - b.start_timestamp);
+
+            console.log("Successfully processed Energy Charts FR data:");
+            console.log("- Price points: " + priceMap.size);
+            console.log("- Renewable points: " + renewableMap.size);
+            console.log("- Total merged points: " + merged.length);
+
+            fs.writeFileSync("public/data/fr/marketdata_new.json", JSON.stringify({
+              object: "list",
+              source: "energy-charts",
+              data: merged
+            }, null, 2));
+
+          } catch (error) {
+            console.error("Error processing Energy Charts FR data:", error);
+            process.exit(1);
+          }
+          '
+          rm -f public/data/fr/renewable_raw.json public/data/fr/price_raw.json
+
+      - name: Validate FR market data
+        if: steps.energy_charts_fr.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          if ! node -e '
+          const fs = require("fs");
+
+          const file = "public/data/fr/marketdata_new.json";
+          if (!fs.existsSync(file)) {
+            console.error("❌ fr/marketdata_new.json not found");
+            process.exit(1);
+          }
+
+          let parsed;
+          try {
+            parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+          } catch (e) {
+            console.error("❌ Invalid JSON in fr/marketdata_new.json:", e.message);
+            process.exit(1);
+          }
+
+          const errors = [];
+          if (parsed.object !== "list") errors.push("Missing or wrong \"object\" field");
+          if (!["energy-charts"].includes(parsed.source)) errors.push("Invalid source: " + parsed.source);
+          if (!Array.isArray(parsed.data)) errors.push("\"data\" is not an array");
+
+          if (errors.length > 0) {
+            errors.forEach(e => console.error("❌ " + e));
+            process.exit(1);
+          }
+
+          const data = parsed.data;
+          if (data.length < 96) {
+            console.error("❌ Too few data points: " + data.length + " (minimum 96)");
+            process.exit(1);
+          }
+
+          const priceCount = data.filter(d => typeof d.marketprice === "number" && isFinite(d.marketprice)).length;
+          if (priceCount === 0) {
+            console.error("❌ All marketprice values are null/invalid – no usable price data");
+            process.exit(1);
+          }
+
+          const now = Date.now();
+          const validTs = data.map(d => d.start_timestamp).filter(ts => typeof ts === "number" && isFinite(ts) && ts > 0);
+          const maxTs = Math.max(...validTs);
+          const ageHours = (now - maxTs) / (1000 * 60 * 60);
+          if (ageHours > 36) {
+            console.error("❌ Newest data point is " + ageHours.toFixed(1) + "h old (max 36h)");
+            process.exit(1);
+          }
+
+          console.log("✅ FR quality check passed:");
+          console.log("   Data points : " + data.length);
+          console.log("   Price points: " + priceCount);
+          console.log("   Newest entry: " + new Date(maxTs).toISOString() + " (" + ageHours.toFixed(1) + "h ago)");
+          console.log("   Source      : " + parsed.source);
+          '; then
+            echo "⚠️ FR validation failed – removing temporary file"
+            rm -f public/data/fr/marketdata_new.json
+          fi
+
+      - name: Compare with previous FR data
+        id: compare_fr
+        run: |
+          if [ ! -f "public/data/fr/marketdata_new.json" ]; then
+            echo "new_data=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ FR market data not available – skipping FR update"
+            exit 0
+          fi
+
+          NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/fr/marketdata_new.json)
+
+          if [ -f public/data/fr/marketdata.json ]; then
+            OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/fr/marketdata.json)
+          else
+            OLD_TS=""
+          fi
+
+          if [ "$OLD_TS" != "$NEW_TS" ]; then
+            echo "new_data=true" >> $GITHUB_OUTPUT
+          else
+            echo "new_data=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update fr/marketdata.json and create archive
+        if: steps.compare_fr.outputs.new_data == 'true'
+        run: |
+          ARCHIVE_NAME="marketdata_$(date -u +"%Y-%m-%dT%H").json"
+          mkdir -p public/data/fr/archive
+          cp public/data/fr/marketdata_new.json "public/data/fr/archive/$ARCHIVE_NAME"
+          mv public/data/fr/marketdata_new.json public/data/fr/marketdata.json
+          echo "✓ Updated fr/marketdata.json"
+          echo "✓ Created FR archive: $ARCHIVE_NAME"
+
+      - name: Create daily FR history file
+        if: steps.compare_fr.outputs.new_data == 'true'
+        run: |
+          mkdir -p public/data/fr/history
+
+          node -e '
+          const fs = require("fs");
+          const data = JSON.parse(fs.readFileSync("public/data/fr/marketdata.json", "utf8"));
+
+          const now = new Date();
+          const yesterday = new Date(now);
+          yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+          const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+          const dayStart = new Date(yesterdayStr + "T00:00:00Z").getTime();
+          const dayEnd = new Date(yesterdayStr + "T23:59:59Z").getTime();
+
+          const yesterdayData = data.data.filter(item =>
+            item.start_timestamp >= dayStart && item.start_timestamp <= dayEnd
+          );
+
+          const historyFile = "public/data/fr/history/" + yesterdayStr + ".json";
+
+          if (yesterdayData.length >= 92) {
+            if (!fs.existsSync(historyFile)) {
+              fs.writeFileSync(historyFile, JSON.stringify({
+                date: yesterdayStr,
+                source: data.source,
+                data: yesterdayData
+              }, null, 2));
+              console.log("✓ Created FR history file: " + yesterdayStr + ".json (" + yesterdayData.length + " points)");
+            } else {
+              console.log("✓ FR history file already exists: " + yesterdayStr + ".json");
+            }
+          } else {
+            console.log("⚠️ Incomplete FR data for " + yesterdayStr + " (" + yesterdayData.length + "/96 points) - skipping");
+          }
+          '
+
+      - name: Cleanup old FR archives (keep 90 days)
+        if: steps.compare_fr.outputs.new_data == 'true'
+        run: |
+          ARCHIVE_DIR="public/data/fr/archive"
+          DAYS_TO_KEEP=90
+          CUTOFF_DATE=$(date -u -d "$DAYS_TO_KEEP days ago" +"%Y-%m-%d" 2>/dev/null || date -u -v-${DAYS_TO_KEEP}d +"%Y-%m-%d")
+          DELETED=0
+          for file in "$ARCHIVE_DIR"/marketdata_*.json; do
+            if [ -f "$file" ]; then
+              FILE_DATE=$(basename "$file" | sed 's/marketdata_\([0-9-]*\)T.*/\1/')
+              if [ "$FILE_DATE" \< "$CUTOFF_DATE" ]; then
+                rm "$file"
+                DELETED=$((DELETED + 1))
+              fi
+            fi
+          done
+          [ $DELETED -gt 0 ] && echo "🧹 Cleaned up $DELETED old FR archives" || echo "✓ No old FR archives to clean up"
+
+      - name: Cleanup old FR history files (keep 90 days)
+        if: steps.compare_fr.outputs.new_data == 'true'
+        run: |
+          HISTORY_DIR="public/data/fr/history"
+          DAYS_TO_KEEP=90
+          if [ -d "$HISTORY_DIR" ]; then
+            CUTOFF_DATE=$(date -u -d "$DAYS_TO_KEEP days ago" +"%Y-%m-%d" 2>/dev/null || date -u -v-${DAYS_TO_KEEP}d +"%Y-%m-%d")
+            DELETED=0
+            for file in "$HISTORY_DIR"/*.json; do
+              if [ -f "$file" ]; then
+                FILE_DATE=$(basename "$file" .json)
+                [ "$FILE_DATE" \< "$CUTOFF_DATE" ] && rm "$file" && DELETED=$((DELETED + 1))
+              fi
+            done
+            [ $DELETED -gt 0 ] && echo "🧹 Cleaned up $DELETED old FR history files" || echo "✓ No old FR history files to clean up"
+          fi
+
+      - name: Cleanup FR temporary file
+        if: steps.compare_fr.outputs.new_data == 'false'
+        run: |
+          if [ -f public/data/fr/marketdata_new.json ]; then
+            rm -f public/data/fr/marketdata_new.json
+            echo "🧹 Cleaned up FR temporary file (no new data)"
+          fi
+
+      # ─── Belgium (BE) – Energy Charts only ────────────────────────
+
+      - name: Rate-limit guard before BE
+        run: sleep 5
+
+      - name: Try fetching BE data from Energy Charts API
+        id: energy_charts_be
+        continue-on-error: true
+        run: |
+          mkdir -p public/data/be
+
+          # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
+          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=be" -o public/data/be/renewable_raw.json || true
+
+          # Energy Charts: Day-ahead prices (15-min resolution) – required
+          curl -fsSL "https://api.energy-charts.info/price?country=be" -o public/data/be/price_raw.json || exit 1
+
+          echo "success=true" >> $GITHUB_OUTPUT
+
+      - name: Process Energy Charts BE data
+        if: steps.energy_charts_be.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          node -e '
+          const fs = require("fs");
+
+          try {
+            const renewableRaw = fs.existsSync("public/data/be/renewable_raw.json") ? fs.readFileSync("public/data/be/renewable_raw.json", "utf8") : null;
+            const renewable = renewableRaw ? JSON.parse(renewableRaw) : {};
+            const price = JSON.parse(fs.readFileSync("public/data/be/price_raw.json", "utf8"));
+
+            const priceMap = new Map();
+            const renewableMap = new Map();
+            const allTimestamps = new Set();
+
+            if (price.unix_seconds && price.price) {
+              price.unix_seconds.forEach((ts, i) => {
+                const timestamp_ms = ts * 1000;
+                priceMap.set(timestamp_ms, price.price[i]);
+                allTimestamps.add(timestamp_ms);
+              });
+            }
+
+            if (renewable.unix_seconds && renewable.ren_share) {
+              renewable.unix_seconds.forEach((ts, i) => {
+                const timestamp_ms = ts * 1000;
+                renewableMap.set(timestamp_ms, renewable.ren_share[i]);
+                allTimestamps.add(timestamp_ms);
+              });
+            }
+
+            const merged = Array.from(allTimestamps).map(timestamp_ms => ({
+              start_timestamp: timestamp_ms,
+              end_timestamp: timestamp_ms + 15 * 60 * 1000,
+              marketprice: priceMap.get(timestamp_ms) || null,
+              renewable_share: renewableMap.get(timestamp_ms) || null,
+              unit: "Eur/MWh",
+              interpolated: false
+            }));
+
+            merged.sort((a, b) => a.start_timestamp - b.start_timestamp);
+
+            console.log("Successfully processed Energy Charts BE data:");
+            console.log("- Price points: " + priceMap.size);
+            console.log("- Renewable points: " + renewableMap.size);
+            console.log("- Total merged points: " + merged.length);
+
+            fs.writeFileSync("public/data/be/marketdata_new.json", JSON.stringify({
+              object: "list",
+              source: "energy-charts",
+              data: merged
+            }, null, 2));
+
+          } catch (error) {
+            console.error("Error processing Energy Charts BE data:", error);
+            process.exit(1);
+          }
+          '
+          rm -f public/data/be/renewable_raw.json public/data/be/price_raw.json
+
+      - name: Validate BE market data
+        if: steps.energy_charts_be.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          if ! node -e '
+          const fs = require("fs");
+
+          const file = "public/data/be/marketdata_new.json";
+          if (!fs.existsSync(file)) {
+            console.error("❌ be/marketdata_new.json not found");
+            process.exit(1);
+          }
+
+          let parsed;
+          try {
+            parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+          } catch (e) {
+            console.error("❌ Invalid JSON in be/marketdata_new.json:", e.message);
+            process.exit(1);
+          }
+
+          const errors = [];
+          if (parsed.object !== "list") errors.push("Missing or wrong \"object\" field");
+          if (!["energy-charts"].includes(parsed.source)) errors.push("Invalid source: " + parsed.source);
+          if (!Array.isArray(parsed.data)) errors.push("\"data\" is not an array");
+
+          if (errors.length > 0) {
+            errors.forEach(e => console.error("❌ " + e));
+            process.exit(1);
+          }
+
+          const data = parsed.data;
+          if (data.length < 96) {
+            console.error("❌ Too few data points: " + data.length + " (minimum 96)");
+            process.exit(1);
+          }
+
+          const priceCount = data.filter(d => typeof d.marketprice === "number" && isFinite(d.marketprice)).length;
+          if (priceCount === 0) {
+            console.error("❌ All marketprice values are null/invalid – no usable price data");
+            process.exit(1);
+          }
+
+          const now = Date.now();
+          const validTs = data.map(d => d.start_timestamp).filter(ts => typeof ts === "number" && isFinite(ts) && ts > 0);
+          const maxTs = Math.max(...validTs);
+          const ageHours = (now - maxTs) / (1000 * 60 * 60);
+          if (ageHours > 36) {
+            console.error("❌ Newest data point is " + ageHours.toFixed(1) + "h old (max 36h)");
+            process.exit(1);
+          }
+
+          console.log("✅ BE quality check passed:");
+          console.log("   Data points : " + data.length);
+          console.log("   Price points: " + priceCount);
+          console.log("   Newest entry: " + new Date(maxTs).toISOString() + " (" + ageHours.toFixed(1) + "h ago)");
+          console.log("   Source      : " + parsed.source);
+          '; then
+            echo "⚠️ BE validation failed – removing temporary file"
+            rm -f public/data/be/marketdata_new.json
+          fi
+
+      - name: Compare with previous BE data
+        id: compare_be
+        run: |
+          if [ ! -f "public/data/be/marketdata_new.json" ]; then
+            echo "new_data=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ BE market data not available – skipping BE update"
+            exit 0
+          fi
+
+          NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/be/marketdata_new.json)
+
+          if [ -f public/data/be/marketdata.json ]; then
+            OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/be/marketdata.json)
+          else
+            OLD_TS=""
+          fi
+
+          if [ "$OLD_TS" != "$NEW_TS" ]; then
+            echo "new_data=true" >> $GITHUB_OUTPUT
+          else
+            echo "new_data=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update be/marketdata.json and create archive
+        if: steps.compare_be.outputs.new_data == 'true'
+        run: |
+          ARCHIVE_NAME="marketdata_$(date -u +"%Y-%m-%dT%H").json"
+          mkdir -p public/data/be/archive
+          cp public/data/be/marketdata_new.json "public/data/be/archive/$ARCHIVE_NAME"
+          mv public/data/be/marketdata_new.json public/data/be/marketdata.json
+          echo "✓ Updated be/marketdata.json"
+          echo "✓ Created BE archive: $ARCHIVE_NAME"
+
+      - name: Create daily BE history file
+        if: steps.compare_be.outputs.new_data == 'true'
+        run: |
+          mkdir -p public/data/be/history
+
+          node -e '
+          const fs = require("fs");
+          const data = JSON.parse(fs.readFileSync("public/data/be/marketdata.json", "utf8"));
+
+          const now = new Date();
+          const yesterday = new Date(now);
+          yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+          const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+          const dayStart = new Date(yesterdayStr + "T00:00:00Z").getTime();
+          const dayEnd = new Date(yesterdayStr + "T23:59:59Z").getTime();
+
+          const yesterdayData = data.data.filter(item =>
+            item.start_timestamp >= dayStart && item.start_timestamp <= dayEnd
+          );
+
+          const historyFile = "public/data/be/history/" + yesterdayStr + ".json";
+
+          if (yesterdayData.length >= 92) {
+            if (!fs.existsSync(historyFile)) {
+              fs.writeFileSync(historyFile, JSON.stringify({
+                date: yesterdayStr,
+                source: data.source,
+                data: yesterdayData
+              }, null, 2));
+              console.log("✓ Created BE history file: " + yesterdayStr + ".json (" + yesterdayData.length + " points)");
+            } else {
+              console.log("✓ BE history file already exists: " + yesterdayStr + ".json");
+            }
+          } else {
+            console.log("⚠️ Incomplete BE data for " + yesterdayStr + " (" + yesterdayData.length + "/96 points) - skipping");
+          }
+          '
+
+      - name: Cleanup old BE archives (keep 90 days)
+        if: steps.compare_be.outputs.new_data == 'true'
+        run: |
+          ARCHIVE_DIR="public/data/be/archive"
+          DAYS_TO_KEEP=90
+          CUTOFF_DATE=$(date -u -d "$DAYS_TO_KEEP days ago" +"%Y-%m-%d" 2>/dev/null || date -u -v-${DAYS_TO_KEEP}d +"%Y-%m-%d")
+          DELETED=0
+          for file in "$ARCHIVE_DIR"/marketdata_*.json; do
+            if [ -f "$file" ]; then
+              FILE_DATE=$(basename "$file" | sed 's/marketdata_\([0-9-]*\)T.*/\1/')
+              if [ "$FILE_DATE" \< "$CUTOFF_DATE" ]; then
+                rm "$file"
+                DELETED=$((DELETED + 1))
+              fi
+            fi
+          done
+          [ $DELETED -gt 0 ] && echo "🧹 Cleaned up $DELETED old BE archives" || echo "✓ No old BE archives to clean up"
+
+      - name: Cleanup old BE history files (keep 90 days)
+        if: steps.compare_be.outputs.new_data == 'true'
+        run: |
+          HISTORY_DIR="public/data/be/history"
+          DAYS_TO_KEEP=90
+          if [ -d "$HISTORY_DIR" ]; then
+            CUTOFF_DATE=$(date -u -d "$DAYS_TO_KEEP days ago" +"%Y-%m-%d" 2>/dev/null || date -u -v-${DAYS_TO_KEEP}d +"%Y-%m-%d")
+            DELETED=0
+            for file in "$HISTORY_DIR"/*.json; do
+              if [ -f "$file" ]; then
+                FILE_DATE=$(basename "$file" .json)
+                [ "$FILE_DATE" \< "$CUTOFF_DATE" ] && rm "$file" && DELETED=$((DELETED + 1))
+              fi
+            done
+            [ $DELETED -gt 0 ] && echo "🧹 Cleaned up $DELETED old BE history files" || echo "✓ No old BE history files to clean up"
+          fi
+
+      - name: Cleanup BE temporary file
+        if: steps.compare_be.outputs.new_data == 'false'
+        run: |
+          if [ -f public/data/be/marketdata_new.json ]; then
+            rm -f public/data/be/marketdata_new.json
+            echo "🧹 Cleaned up BE temporary file (no new data)"
+          fi
+
+      # ─── Denmark (DK) – Energy Charts only ────────────────────────
+
+      - name: Rate-limit guard before DK
+        run: sleep 5
+
+      - name: Try fetching DK data from Energy Charts API
+        id: energy_charts_dk
+        continue-on-error: true
+        run: |
+          mkdir -p public/data/dk
+
+          # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
+          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=dk" -o public/data/dk/renewable_raw.json || true
+
+          # Energy Charts: Day-ahead prices (15-min resolution) – required
+          curl -fsSL "https://api.energy-charts.info/price?country=dk" -o public/data/dk/price_raw.json || exit 1
+
+          echo "success=true" >> $GITHUB_OUTPUT
+
+      - name: Process Energy Charts DK data
+        if: steps.energy_charts_dk.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          node -e '
+          const fs = require("fs");
+
+          try {
+            const renewableRaw = fs.existsSync("public/data/dk/renewable_raw.json") ? fs.readFileSync("public/data/dk/renewable_raw.json", "utf8") : null;
+            const renewable = renewableRaw ? JSON.parse(renewableRaw) : {};
+            const price = JSON.parse(fs.readFileSync("public/data/dk/price_raw.json", "utf8"));
+
+            const priceMap = new Map();
+            const renewableMap = new Map();
+            const allTimestamps = new Set();
+
+            if (price.unix_seconds && price.price) {
+              price.unix_seconds.forEach((ts, i) => {
+                const timestamp_ms = ts * 1000;
+                priceMap.set(timestamp_ms, price.price[i]);
+                allTimestamps.add(timestamp_ms);
+              });
+            }
+
+            if (renewable.unix_seconds && renewable.ren_share) {
+              renewable.unix_seconds.forEach((ts, i) => {
+                const timestamp_ms = ts * 1000;
+                renewableMap.set(timestamp_ms, renewable.ren_share[i]);
+                allTimestamps.add(timestamp_ms);
+              });
+            }
+
+            const merged = Array.from(allTimestamps).map(timestamp_ms => ({
+              start_timestamp: timestamp_ms,
+              end_timestamp: timestamp_ms + 15 * 60 * 1000,
+              marketprice: priceMap.get(timestamp_ms) || null,
+              renewable_share: renewableMap.get(timestamp_ms) || null,
+              unit: "Eur/MWh",
+              interpolated: false
+            }));
+
+            merged.sort((a, b) => a.start_timestamp - b.start_timestamp);
+
+            console.log("Successfully processed Energy Charts DK data:");
+            console.log("- Price points: " + priceMap.size);
+            console.log("- Renewable points: " + renewableMap.size);
+            console.log("- Total merged points: " + merged.length);
+
+            fs.writeFileSync("public/data/dk/marketdata_new.json", JSON.stringify({
+              object: "list",
+              source: "energy-charts",
+              data: merged
+            }, null, 2));
+
+          } catch (error) {
+            console.error("Error processing Energy Charts DK data:", error);
+            process.exit(1);
+          }
+          '
+          rm -f public/data/dk/renewable_raw.json public/data/dk/price_raw.json
+
+      - name: Validate DK market data
+        if: steps.energy_charts_dk.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          if ! node -e '
+          const fs = require("fs");
+
+          const file = "public/data/dk/marketdata_new.json";
+          if (!fs.existsSync(file)) {
+            console.error("❌ dk/marketdata_new.json not found");
+            process.exit(1);
+          }
+
+          let parsed;
+          try {
+            parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+          } catch (e) {
+            console.error("❌ Invalid JSON in dk/marketdata_new.json:", e.message);
+            process.exit(1);
+          }
+
+          const errors = [];
+          if (parsed.object !== "list") errors.push("Missing or wrong \"object\" field");
+          if (!["energy-charts"].includes(parsed.source)) errors.push("Invalid source: " + parsed.source);
+          if (!Array.isArray(parsed.data)) errors.push("\"data\" is not an array");
+
+          if (errors.length > 0) {
+            errors.forEach(e => console.error("❌ " + e));
+            process.exit(1);
+          }
+
+          const data = parsed.data;
+          if (data.length < 96) {
+            console.error("❌ Too few data points: " + data.length + " (minimum 96)");
+            process.exit(1);
+          }
+
+          const priceCount = data.filter(d => typeof d.marketprice === "number" && isFinite(d.marketprice)).length;
+          if (priceCount === 0) {
+            console.error("❌ All marketprice values are null/invalid – no usable price data");
+            process.exit(1);
+          }
+
+          const now = Date.now();
+          const validTs = data.map(d => d.start_timestamp).filter(ts => typeof ts === "number" && isFinite(ts) && ts > 0);
+          const maxTs = Math.max(...validTs);
+          const ageHours = (now - maxTs) / (1000 * 60 * 60);
+          if (ageHours > 36) {
+            console.error("❌ Newest data point is " + ageHours.toFixed(1) + "h old (max 36h)");
+            process.exit(1);
+          }
+
+          console.log("✅ DK quality check passed:");
+          console.log("   Data points : " + data.length);
+          console.log("   Price points: " + priceCount);
+          console.log("   Newest entry: " + new Date(maxTs).toISOString() + " (" + ageHours.toFixed(1) + "h ago)");
+          console.log("   Source      : " + parsed.source);
+          '; then
+            echo "⚠️ DK validation failed – removing temporary file"
+            rm -f public/data/dk/marketdata_new.json
+          fi
+
+      - name: Compare with previous DK data
+        id: compare_dk
+        run: |
+          if [ ! -f "public/data/dk/marketdata_new.json" ]; then
+            echo "new_data=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ DK market data not available – skipping DK update"
+            exit 0
+          fi
+
+          NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/dk/marketdata_new.json)
+
+          if [ -f public/data/dk/marketdata.json ]; then
+            OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/dk/marketdata.json)
+          else
+            OLD_TS=""
+          fi
+
+          if [ "$OLD_TS" != "$NEW_TS" ]; then
+            echo "new_data=true" >> $GITHUB_OUTPUT
+          else
+            echo "new_data=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update dk/marketdata.json and create archive
+        if: steps.compare_dk.outputs.new_data == 'true'
+        run: |
+          ARCHIVE_NAME="marketdata_$(date -u +"%Y-%m-%dT%H").json"
+          mkdir -p public/data/dk/archive
+          cp public/data/dk/marketdata_new.json "public/data/dk/archive/$ARCHIVE_NAME"
+          mv public/data/dk/marketdata_new.json public/data/dk/marketdata.json
+          echo "✓ Updated dk/marketdata.json"
+          echo "✓ Created DK archive: $ARCHIVE_NAME"
+
+      - name: Create daily DK history file
+        if: steps.compare_dk.outputs.new_data == 'true'
+        run: |
+          mkdir -p public/data/dk/history
+
+          node -e '
+          const fs = require("fs");
+          const data = JSON.parse(fs.readFileSync("public/data/dk/marketdata.json", "utf8"));
+
+          const now = new Date();
+          const yesterday = new Date(now);
+          yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+          const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+          const dayStart = new Date(yesterdayStr + "T00:00:00Z").getTime();
+          const dayEnd = new Date(yesterdayStr + "T23:59:59Z").getTime();
+
+          const yesterdayData = data.data.filter(item =>
+            item.start_timestamp >= dayStart && item.start_timestamp <= dayEnd
+          );
+
+          const historyFile = "public/data/dk/history/" + yesterdayStr + ".json";
+
+          if (yesterdayData.length >= 92) {
+            if (!fs.existsSync(historyFile)) {
+              fs.writeFileSync(historyFile, JSON.stringify({
+                date: yesterdayStr,
+                source: data.source,
+                data: yesterdayData
+              }, null, 2));
+              console.log("✓ Created DK history file: " + yesterdayStr + ".json (" + yesterdayData.length + " points)");
+            } else {
+              console.log("✓ DK history file already exists: " + yesterdayStr + ".json");
+            }
+          } else {
+            console.log("⚠️ Incomplete DK data for " + yesterdayStr + " (" + yesterdayData.length + "/96 points) - skipping");
+          }
+          '
+
+      - name: Cleanup old DK archives (keep 90 days)
+        if: steps.compare_dk.outputs.new_data == 'true'
+        run: |
+          ARCHIVE_DIR="public/data/dk/archive"
+          DAYS_TO_KEEP=90
+          CUTOFF_DATE=$(date -u -d "$DAYS_TO_KEEP days ago" +"%Y-%m-%d" 2>/dev/null || date -u -v-${DAYS_TO_KEEP}d +"%Y-%m-%d")
+          DELETED=0
+          for file in "$ARCHIVE_DIR"/marketdata_*.json; do
+            if [ -f "$file" ]; then
+              FILE_DATE=$(basename "$file" | sed 's/marketdata_\([0-9-]*\)T.*/\1/')
+              if [ "$FILE_DATE" \< "$CUTOFF_DATE" ]; then
+                rm "$file"
+                DELETED=$((DELETED + 1))
+              fi
+            fi
+          done
+          [ $DELETED -gt 0 ] && echo "🧹 Cleaned up $DELETED old DK archives" || echo "✓ No old DK archives to clean up"
+
+      - name: Cleanup old DK history files (keep 90 days)
+        if: steps.compare_dk.outputs.new_data == 'true'
+        run: |
+          HISTORY_DIR="public/data/dk/history"
+          DAYS_TO_KEEP=90
+          if [ -d "$HISTORY_DIR" ]; then
+            CUTOFF_DATE=$(date -u -d "$DAYS_TO_KEEP days ago" +"%Y-%m-%d" 2>/dev/null || date -u -v-${DAYS_TO_KEEP}d +"%Y-%m-%d")
+            DELETED=0
+            for file in "$HISTORY_DIR"/*.json; do
+              if [ -f "$file" ]; then
+                FILE_DATE=$(basename "$file" .json)
+                [ "$FILE_DATE" \< "$CUTOFF_DATE" ] && rm "$file" && DELETED=$((DELETED + 1))
+              fi
+            done
+            [ $DELETED -gt 0 ] && echo "🧹 Cleaned up $DELETED old DK history files" || echo "✓ No old DK history files to clean up"
+          fi
+
+      - name: Cleanup DK temporary file
+        if: steps.compare_dk.outputs.new_data == 'false'
+        run: |
+          if [ -f public/data/dk/marketdata_new.json ]; then
+            rm -f public/data/dk/marketdata_new.json
+            echo "🧹 Cleaned up DK temporary file (no new data)"
+          fi
+
       # ─── Commit ───────────────────────────────────────────────────────────────
 
       - name: Commit changes
@@ -1147,7 +1918,10 @@ jobs:
           steps.compare.outputs.new_data == 'true' ||
           steps.compare_nl.outputs.new_data == 'true' ||
           steps.compare_at.outputs.new_data == 'true' ||
-          steps.compare_ch.outputs.new_data == 'true'
+          steps.compare_ch.outputs.new_data == 'true' ||
+          steps.compare_fr.outputs.new_data == 'true' ||
+          steps.compare_be.outputs.new_data == 'true' ||
+          steps.compare_dk.outputs.new_data == 'true'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
@@ -1180,6 +1954,27 @@ jobs:
             git add -A public/data/ch/history/
           fi
 
+          # Stage FR files if updated
+          if [ "${{ steps.compare_fr.outputs.new_data }}" = "true" ]; then
+            git add public/data/fr/marketdata.json
+            git add -A public/data/fr/archive/
+            git add -A public/data/fr/history/
+          fi
+
+          # Stage BE files if updated
+          if [ "${{ steps.compare_be.outputs.new_data }}" = "true" ]; then
+            git add public/data/be/marketdata.json
+            git add -A public/data/be/archive/
+            git add -A public/data/be/history/
+          fi
+
+          # Stage DK files if updated
+          if [ "${{ steps.compare_dk.outputs.new_data }}" = "true" ]; then
+            git add public/data/dk/marketdata.json
+            git add -A public/data/dk/archive/
+            git add -A public/data/dk/history/
+          fi
+
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H UTC")
 
           # Build commit message listing updated countries and their sources
@@ -1200,6 +1995,18 @@ jobs:
             CH_SOURCE=$(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/ch/marketdata.json", "utf8")).source)')
             PARTS="${PARTS:+$PARTS, }CH: $CH_SOURCE"
           fi
+          if [ "${{ steps.compare_fr.outputs.new_data }}" = "true" ]; then
+            FR_SOURCE=$(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/fr/marketdata.json", "utf8")).source)')
+            PARTS="${PARTS:+$PARTS, }FR: $FR_SOURCE"
+          fi
+          if [ "${{ steps.compare_be.outputs.new_data }}" = "true" ]; then
+            BE_SOURCE=$(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/be/marketdata.json", "utf8")).source)')
+            PARTS="${PARTS:+$PARTS, }BE: $BE_SOURCE"
+          fi
+          if [ "${{ steps.compare_dk.outputs.new_data }}" = "true" ]; then
+            DK_SOURCE=$(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/dk/marketdata.json", "utf8")).source)')
+            PARTS="${PARTS:+$PARTS, }DK: $DK_SOURCE"
+          fi
 
           git commit -m "Update marketdata.json ($PARTS @ $TIMESTAMP)"
           git push
@@ -1212,7 +2019,10 @@ jobs:
           steps.compare.outputs.new_data == 'true' ||
           steps.compare_nl.outputs.new_data == 'true' ||
           steps.compare_at.outputs.new_data == 'true' ||
-          steps.compare_ch.outputs.new_data == 'true'
+          steps.compare_ch.outputs.new_data == 'true' ||
+          steps.compare_fr.outputs.new_data == 'true' ||
+          steps.compare_be.outputs.new_data == 'true' ||
+          steps.compare_dk.outputs.new_data == 'true'
         run: |
           echo "✅ Market data updated successfully!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -1232,6 +2042,18 @@ jobs:
             echo "🇨🇭 **CH Source:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/ch/marketdata.json", "utf8")).source)')" >> $GITHUB_STEP_SUMMARY
             echo "📈 **CH Data points:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/ch/marketdata.json", "utf8")).data.length)')" >> $GITHUB_STEP_SUMMARY
           fi
+          if [ "${{ steps.compare_fr.outputs.new_data }}" = "true" ]; then
+            echo "🇫🇷 **FR Source:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/fr/marketdata.json", "utf8")).source)')" >> $GITHUB_STEP_SUMMARY
+            echo "📈 **FR Data points:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/fr/marketdata.json", "utf8")).data.length)')" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ steps.compare_be.outputs.new_data }}" = "true" ]; then
+            echo "🇧🇪 **BE Source:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/be/marketdata.json", "utf8")).source)')" >> $GITHUB_STEP_SUMMARY
+            echo "📈 **BE Data points:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/be/marketdata.json", "utf8")).data.length)')" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ steps.compare_dk.outputs.new_data }}" = "true" ]; then
+            echo "🇩🇰 **DK Source:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/dk/marketdata.json", "utf8")).source)')" >> $GITHUB_STEP_SUMMARY
+            echo "📈 **DK Data points:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/dk/marketdata.json", "utf8")).data.length)')" >> $GITHUB_STEP_SUMMARY
+          fi
           echo "⏰ **Updated at:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
           echo "🚀 **Deployment:** Automatically triggered by push to main" >> $GITHUB_STEP_SUMMARY
 
@@ -1240,7 +2062,10 @@ jobs:
           steps.compare.outputs.new_data == 'false' &&
           steps.compare_nl.outputs.new_data == 'false' &&
           steps.compare_at.outputs.new_data == 'false' &&
-          steps.compare_ch.outputs.new_data == 'false'
+          steps.compare_ch.outputs.new_data == 'false' &&
+          steps.compare_fr.outputs.new_data == 'false' &&
+          steps.compare_be.outputs.new_data == 'false' &&
+          steps.compare_dk.outputs.new_data == 'false'
         run: |
           echo "ℹ️ No new data available – keeping existing marketdata files" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
