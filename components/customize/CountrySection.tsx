@@ -8,8 +8,9 @@ import { COUNTRIES, COUNTRY_CODES } from '../../utils/countries';
 
 /**
  * Country selection section for the Customize menu.
+ * Renders a vertical list so any number of countries fits without overflow.
  * Switches the active country (national data only). Determines data
- * availability and whether the regional/PLZ UI is shown (Issue #356).
+ * availability and whether the regional/PLZ UI is shown (Issue #356, #368).
  */
 export function CountrySection() {
   const { t } = useLanguageContext();
@@ -21,32 +22,40 @@ export function CountrySection() {
   return (
     <View style={styles.menuSection}>
       <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.country}</Text>
-      <View style={styles.countryToggle}>
-        {COUNTRY_CODES.map(code => {
+      <View style={[styles.countryList, { borderColor: colors.gridLine }]}>
+        {COUNTRY_CODES.map((code, index) => {
           const config = COUNTRIES[code];
           const active = country === code;
+          const isLast = index === COUNTRY_CODES.length - 1;
           return (
             <TouchableOpacity
               key={code}
               style={[
-                styles.countryButton,
-                active && styles.countryButtonActive,
-                { backgroundColor: active ? colors.primary : colors.gridLine },
+                styles.countryRow,
+                !isLast && {
+                  borderBottomWidth: StyleSheet.hairlineWidth,
+                  borderBottomColor: colors.gridLine,
+                },
               ]}
               onPress={() => setCountry(code)}
-              accessibilityRole="button"
+              accessibilityRole="radio"
               accessibilityState={{ selected: active }}
             >
-              <Text
-                style={{
-                  color: active ? '#fff' : colors.text,
-                  fontSize: 12,
-                  fontWeight: '600',
-                }}
-              >
-                {config.flag} {t[config.translationKey]}
-                {config.beta ? ` ${t.countryBeta}` : ''}
+              <Text style={styles.flag}>{config.flag}</Text>
+              <Text style={[styles.countryName, { color: colors.text }]}>
+                {t[config.translationKey]}
+                {config.beta ? (
+                  <Text style={[styles.betaBadge, { color: colors.textSecondary }]}>
+                    {' '}
+                    {t.countryBeta}
+                  </Text>
+                ) : null}
               </Text>
+              {active && (
+                <View style={[styles.checkmark, { backgroundColor: colors.primary }]}>
+                  <Text style={styles.checkmarkText}>✓</Text>
+                </View>
+              )}
             </TouchableOpacity>
           );
         })}
@@ -65,23 +74,42 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  countryToggle: {
-    flexDirection: 'row',
-    gap: 8,
+  countryList: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 10,
+    overflow: 'hidden',
   },
-  countryButton: {
-    flex: 1,
+  countryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+  flag: {
+    fontSize: 20,
+    lineHeight: 24,
+  },
+  countryName: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  betaBadge: {
+    fontSize: 12,
+    fontWeight: '400',
+  },
+  checkmark: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  countryButtonActive: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+  checkmarkText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 16,
   },
 });
