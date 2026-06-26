@@ -15,6 +15,8 @@ export const translations = {
     country: 'COUNTRY',
     countryGermany: 'Germany',
     countryNetherlands: 'Netherlands',
+    countryAustria: 'Austria',
+    countrySwitzerland: 'Switzerland',
     countryBeta: '(BETA)',
     // Region Section
     region: 'REGION (BETA)',
@@ -173,6 +175,8 @@ export const translations = {
     country: 'LAND',
     countryGermany: 'Deutschland',
     countryNetherlands: 'Niederlande',
+    countryAustria: 'Österreich',
+    countrySwitzerland: 'Schweiz',
     countryBeta: '(BETA)',
     // Region Section
     region: 'REGION (BETA)',
