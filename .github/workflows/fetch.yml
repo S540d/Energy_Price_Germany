@@ -342,7 +342,7 @@ jobs:
       # ─── Netherlands (NL) – Energy Charts only, no aWATTar ───────────────────
 
       - name: Rate-limit guard before NL
-        run: sleep 2
+        run: sleep 5
 
       - name: Try fetching NL data from Energy Charts API
         id: energy_charts_nl
@@ -629,7 +629,7 @@ jobs:
       # ─── Austria (AT) – Energy Charts only ────────────────────────────────────
 
       - name: Rate-limit guard before AT
-        run: sleep 2
+        run: sleep 5
 
       - name: Try fetching AT data from Energy Charts API
         id: energy_charts_at
@@ -637,10 +637,10 @@ jobs:
         run: |
           mkdir -p public/data/at
 
-          # Energy Charts: Renewable share forecast (15-min resolution)
-          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=at" -o public/data/at/renewable_raw.json || exit 1
+          # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
+          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=at" -o public/data/at/renewable_raw.json || true
 
-          # Energy Charts: Day-ahead prices (15-min resolution)
+          # Energy Charts: Day-ahead prices (15-min resolution) – required
           curl -fsSL "https://api.energy-charts.info/price?country=at" -o public/data/at/price_raw.json || exit 1
 
           echo "success=true" >> $GITHUB_OUTPUT
@@ -653,7 +653,8 @@ jobs:
           const fs = require("fs");
 
           try {
-            const renewable = JSON.parse(fs.readFileSync("public/data/at/renewable_raw.json", "utf8"));
+            const renewableRaw = fs.existsSync("public/data/at/renewable_raw.json") ? fs.readFileSync("public/data/at/renewable_raw.json", "utf8") : null;
+            const renewable = renewableRaw ? JSON.parse(renewableRaw) : {};
             const price = JSON.parse(fs.readFileSync("public/data/at/price_raw.json", "utf8"));
 
             const priceMap = new Map();
@@ -885,7 +886,7 @@ jobs:
       # ─── Switzerland (CH) – Energy Charts only ────────────────────────────────
 
       - name: Rate-limit guard before CH
-        run: sleep 2
+        run: sleep 5
 
       - name: Try fetching CH data from Energy Charts API
         id: energy_charts_ch
@@ -893,10 +894,10 @@ jobs:
         run: |
           mkdir -p public/data/ch
 
-          # Energy Charts: Renewable share forecast (15-min resolution)
-          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=ch" -o public/data/ch/renewable_raw.json || exit 1
+          # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
+          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=ch" -o public/data/ch/renewable_raw.json || true
 
-          # Energy Charts: Day-ahead prices (15-min resolution)
+          # Energy Charts: Day-ahead prices (15-min resolution) – required
           curl -fsSL "https://api.energy-charts.info/price?country=ch" -o public/data/ch/price_raw.json || exit 1
 
           echo "success=true" >> $GITHUB_OUTPUT
@@ -909,7 +910,8 @@ jobs:
           const fs = require("fs");
 
           try {
-            const renewable = JSON.parse(fs.readFileSync("public/data/ch/renewable_raw.json", "utf8"));
+            const renewableRaw = fs.existsSync("public/data/ch/renewable_raw.json") ? fs.readFileSync("public/data/ch/renewable_raw.json", "utf8") : null;
+            const renewable = renewableRaw ? JSON.parse(renewableRaw) : {};
             const price = JSON.parse(fs.readFileSync("public/data/ch/price_raw.json", "utf8"));
 
             const priceMap = new Map();
