@@ -13,7 +13,7 @@
  * clients; new countries live under `data/<code>/`.
  */
 
-export type CountryCode = 'de' | 'nl';
+export type CountryCode = 'de' | 'nl' | 'at' | 'ch';
 
 export interface CountryConfig {
   /** Internal country code (matches storage namespace + data folder). */
@@ -23,7 +23,7 @@ export interface CountryConfig {
   /** Flag emoji for compact UI display. */
   flag: string;
   /** translations key for the human-readable country name (must exist in EN+DE). */
-  translationKey: 'countryGermany' | 'countryNetherlands';
+  translationKey: 'countryGermany' | 'countryNetherlands' | 'countryAustria' | 'countrySwitzerland';
   /** Whether the country is still rolling out (shows a BETA badge). */
   beta: boolean;
   /** IANA timezone used for day boundaries in the historical store. */
@@ -71,6 +71,32 @@ export const COUNTRIES: Record<CountryCode, CountryConfig> = {
     hasRegionalData: false,
     marketDataPath: 'data/nl/marketdata.json',
     historyPathPrefix: 'data/nl/history/',
+    defaultGridFeesCentPerKwh: 20,
+  },
+  at: {
+    code: 'at',
+    energyChartsCountry: 'at',
+    flag: '🇦🇹',
+    translationKey: 'countryAustria',
+    beta: true,
+    timezone: 'Europe/Vienna',
+    currency: 'EUR',
+    hasRegionalData: false,
+    marketDataPath: 'data/at/marketdata.json',
+    historyPathPrefix: 'data/at/history/',
+    defaultGridFeesCentPerKwh: 20,
+  },
+  ch: {
+    code: 'ch',
+    energyChartsCountry: 'ch',
+    flag: '🇨🇭',
+    translationKey: 'countrySwitzerland',
+    beta: true,
+    timezone: 'Europe/Zurich',
+    currency: 'EUR',
+    hasRegionalData: false,
+    marketDataPath: 'data/ch/marketdata.json',
+    historyPathPrefix: 'data/ch/history/',
     defaultGridFeesCentPerKwh: 20,
   },
 };
