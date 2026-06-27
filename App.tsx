@@ -36,7 +36,7 @@ import {
 
 SplashScreenModule.preventAutoHideAsync().catch(() => {});
 
-const APP_VERSION = '1.8.1';
+const APP_VERSION = '1.9.0';
 
 function AppContent() {
   const [showSplash, setShowSplash] = useState(true);

@@ -188,39 +188,39 @@ Validation rules enforced by Husky:
      `previousAvg == 0` the object is still returned and only `deltaPct` is `null`.
      i18n key `historyStatVsPrev` (must exist in BOTH `en`+`de`).
 
-6. **Multi-Country / Europäische Datenexpansion (`utils/countries.ts`) – Issue #356:**
+6. **Multi-Country / Europäische Datenexpansion (`utils/countries.ts`) – Issues #356/#368:**
    - **Country Registry is the single source of truth.** `COUNTRIES: Record<CountryCode, CountryConfig>`
-     (currently `de` + `nl`) derives data paths, timezone, `hasRegionalData`, default grid fees.
-     Adding a country ideally = one registry entry + one pipeline matrix entry, no scattered
-     `if country === 'de'` checks. `DEFAULT_COUNTRY = 'de'`.
+     (currently `de` | `nl` | `at` | `ch` | `fr` | `be` | `dk`) derives data paths, timezone,
+     `hasRegionalData`, default grid fees. Adding a country = one registry entry + one pipeline
+     block in `fetch.yml`, no scattered `if country === 'de'` checks. `DEFAULT_COUNTRY = 'de'`.
+   - **BETA countries** (NL, AT, CH, FR, BE, DK): `beta: true`, no regional/PLZ UI, no aWATTar,
+     data under `data/<code>/marketdata.json` + `data/<code>/history/`.
    - **Active country** lives in `context/CountryContext.tsx` + `hooks/useCountry.ts`
      (persisted under storage key `country`, validated via `isCountryCode`). Independent from
-     the UI language — a user may view NL data with the German UI. Selector UI:
-     `components/customize/CountrySection.tsx` (in `CustomizeModal`, above LanguageSection).
+     the UI language. Selector UI: `components/customize/CountrySection.tsx`.
    - **DE stays on legacy flat paths** (`data/marketdata.json`, `data/history/`) for backward
-     compat with deployed clients; new countries live under `data/<code>/` (NL: `data/nl/`).
+     compat with deployed clients; new countries live under `data/<code>/`.
    - **Data load is country-aware** (`energyDataManager`): fetch path from
      `COUNTRIES[country].marketDataPath`; cache keyed by `dataCountry` (switch invalidates);
-     regional/PLZ fetch only when `hasRegionalData` (NL hides PLZ UI entirely).
+     regional/PLZ fetch only when `hasRegionalData` (non-DE countries hide PLZ UI entirely).
    - **In-flight de-dup is scoped to the request** (`loadingCountry`/`loadingPostalCode`).
      A load only piggybacks on the running promise when **country AND postal code match**;
      a request for a different country awaits the in-flight load, then starts fresh. Do NOT
      revert to an unconditional `if (isLoading) return loadingPromise` — that caused the
-     start-up race where the default DE load (before the persisted country resolved) handed
-     German data to the NL request (header showed NL, data was DE). The `finally` only clears
-     load state when `loadingPromise` is still the current one (no clobber by a newer load).
-   - **Pipeline** (`fetch.yml`): separate NL block fetches `?country=nl` from Energy Charts
-     (NO aWATTar — DE-only), `continue-on-error` so NL failures don't block the DE update;
-     commit step stages whichever country has new data.
+     start-up race where the default DE load handed German data to the NL request. The `finally`
+     only clears load state when `loadingPromise` is still the current one.
+   - **Pipeline** (`fetch.yml`): each non-DE country has its own block (Fetch → Process →
+     Validate → Compare → Archive + History → Cleanup), `continue-on-error` so failures don't
+     block DE; `sleep 5` rate-limit guard; `ren_share_forecast` non-fatal (`|| true`).
    - **History store is country-namespaced** (#356 Step 3): keys
      `energy_history_v1_<country>:<date>` + `energy_history_index_v1_<country>`; server-fallback
      URL from `historyPathPrefix`; `dayStringFromTimestamp(ts, timezone?)` uses the registry tz.
      Use the factory `historicalDataStoreForCountry(country)`; the `historicalDataStore`
      singleton is just the DE alias (used by `HistoryCacheSection`).
    - **`HistoricalDataView` ("Verlauf") takes a `country` prop** and reads from
-     `historicalDataStoreForCountry(country)` — must NOT use the bare DE singleton, or the
-     live (active-country) data merges with the wrong country's history.
-   - i18n keys (EN+DE): `country`, `countryGermany`, `countryNetherlands`, `countryBeta`.
+     `historicalDataStoreForCountry(country)` — must NOT use the bare DE singleton.
+   - i18n keys (EN+DE): `country`, `countryGermany`, `countryNetherlands`, `countryAustria`,
+     `countrySwitzerland`, `countryFrance`, `countryBelgium`, `countryDenmark`, `countryBeta`.
 
 ## Common Tasks
 
