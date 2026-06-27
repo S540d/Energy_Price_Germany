@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [1.9.0] - 2026-06-27
+
+### Added
+- **Europäische Datenexpansion – Phase 1 (Issue #368):** Österreich 🇦🇹 und Schweiz 🇨🇭 als neue Länder (BETA) im Länder-Picker. Nationale Börsenpreise + Erneuerbaren-Anteile von Energy Charts.
+  - **Länder-Registry** (`utils/countries.ts`) um `at`/`ch` erweitert (eigene Zeitzone Vienna/Zurich, Datenpfade `data/<code>/`, kein Regional-/PLZ-UI, kein aWATTar).
+  - **i18n** (DE/EN): `countryAustria`, `countrySwitzerland`.
+  - **Datenpipeline** (`.github/workflows/fetch.yml`): AT-/CH-Blöcke (Fetch → Process → Validate → Compare → Archive + History → Cleanup), `sleep 5` als Rate-Limit-Schutz, `ren_share_forecast` non-fatal (429 → skip, Preis bleibt nutzbar).
+- **Europäische Datenexpansion – Phase 2 (Issue #368):** Frankreich 🇫🇷, Belgien 🇧🇪 und Dänemark 🇩🇰 als neue Länder (BETA) im Länder-Picker. Nationale Börsenpreise + Erneuerbaren-Anteile von Energy Charts.
+  - **Länder-Registry** (`utils/countries.ts`) um `fr`/`be`/`dk` erweitert (eigene Zeitzone Paris/Brüssel/Kopenhagen, Datenpfade `data/<code>/`, kein Regional-/PLZ-UI, kein aWATTar).
+  - **i18n** (DE/EN): `countryFrance`, `countryBelgium`, `countryDenmark`.
+  - **Datenpipeline** (`.github/workflows/fetch.yml`): FR-/BE-/DK-Blöcke nach dem AT/CH-Muster, Commit- und Summary-Schritte ergänzt.
+
 ## [1.8.1] - 2026-06-25
 
 ### Fixed

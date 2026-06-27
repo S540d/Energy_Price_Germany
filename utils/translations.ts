@@ -15,6 +15,11 @@ export const translations = {
     country: 'COUNTRY',
     countryGermany: 'Germany',
     countryNetherlands: 'Netherlands',
+    countryAustria: 'Austria',
+    countrySwitzerland: 'Switzerland',
+    countryFrance: 'France',
+    countryBelgium: 'Belgium',
+    countryDenmark: 'Denmark',
     countryBeta: '(BETA)',
     // Region Section
     region: 'REGION (BETA)',
@@ -173,6 +178,11 @@ export const translations = {
     country: 'LAND',
     countryGermany: 'Deutschland',
     countryNetherlands: 'Niederlande',
+    countryAustria: 'Österreich',
+    countrySwitzerland: 'Schweiz',
+    countryFrance: 'Frankreich',
+    countryBelgium: 'Belgien',
+    countryDenmark: 'Dänemark',
     countryBeta: '(BETA)',
     // Region Section
     region: 'REGION (BETA)',
