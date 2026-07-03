@@ -72,15 +72,15 @@ export function Button({
   // Extract sizing properties from style to pass to inner Animated.View,
   // so it fills the Pressable when flex/width/height are set by the caller.
   const flatStyle = StyleSheet.flatten(style) as Record<string, unknown> | undefined;
-  const innerSizingStyle: StyleProp<ViewStyle> = flatStyle
-    ? {
+  const innerSizingStyle: ViewStyle | undefined = flatStyle
+    ? ({
         ...(flatStyle.flex !== undefined && { flex: flatStyle.flex as number }),
         ...(flatStyle.flexGrow !== undefined && { flexGrow: flatStyle.flexGrow as number }),
         ...(flatStyle.width !== undefined && { width: flatStyle.width as number | string }),
         ...(flatStyle.height !== undefined && { height: flatStyle.height as number | string }),
         ...(flatStyle.minHeight !== undefined && { minHeight: flatStyle.minHeight as number }),
         ...(flatStyle.maxHeight !== undefined && { maxHeight: flatStyle.maxHeight as number }),
-      }
+      } as ViewStyle)
     : undefined;
 
   return (
