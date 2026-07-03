@@ -1,3 +1,5 @@
+import { arrayMin, arrayMax } from './mathUtils';
+
 export type EnergyData = {
   timestamp: number;
   marketPrice: number | null;
@@ -80,13 +82,9 @@ export function calculateMetrics(data: EnergyData[]): Metrics | null {
         todayValidPrice.length
       : 0;
   const todayMarketPriceMin =
-    todayValidPrice.length > 0
-      ? Math.min(...todayValidPrice.map(d => d.marketPrice ?? 0)) * 0.1
-      : 0;
+    todayValidPrice.length > 0 ? arrayMin(todayValidPrice.map(d => d.marketPrice ?? 0)) * 0.1 : 0;
   const todayMarketPriceMax =
-    todayValidPrice.length > 0
-      ? Math.max(...todayValidPrice.map(d => d.marketPrice ?? 0)) * 0.1
-      : 0;
+    todayValidPrice.length > 0 ? arrayMax(todayValidPrice.map(d => d.marketPrice ?? 0)) * 0.1 : 0;
 
   const todayMetrics =
     todayData.length > 0
@@ -104,11 +102,11 @@ export function calculateMetrics(data: EnergyData[]): Metrics | null {
                 : 0,
             min:
               todayValidRenewable.length > 0
-                ? Math.min(...todayValidRenewable.map(d => d.renewableShare ?? 0))
+                ? arrayMin(todayValidRenewable.map(d => d.renewableShare ?? 0))
                 : 0,
             max:
               todayValidRenewable.length > 0
-                ? Math.max(...todayValidRenewable.map(d => d.renewableShare ?? 0))
+                ? arrayMax(todayValidRenewable.map(d => d.renewableShare ?? 0))
                 : 0,
             current: currentHourData?.renewableShare ?? null,
           },
@@ -135,8 +133,8 @@ export function calculateMetrics(data: EnergyData[]): Metrics | null {
 
   return {
     timeRange: {
-      start: Math.min(...data.map(d => d.timestamp)),
-      end: Math.max(...data.map(d => d.timestamp)),
+      start: arrayMin(data.map(d => d.timestamp)),
+      end: arrayMax(data.map(d => d.timestamp)),
     },
     renewable: {
       avg:
@@ -146,11 +144,11 @@ export function calculateMetrics(data: EnergyData[]): Metrics | null {
           : 0,
       min:
         validRenewableData.length > 0
-          ? Math.min(...validRenewableData.map(d => d.renewableShare ?? 0))
+          ? arrayMin(validRenewableData.map(d => d.renewableShare ?? 0))
           : 0,
       max:
         validRenewableData.length > 0
-          ? Math.max(...validRenewableData.map(d => d.renewableShare ?? 0))
+          ? arrayMax(validRenewableData.map(d => d.renewableShare ?? 0))
           : 0,
     },
     marketPrice: {
@@ -160,13 +158,9 @@ export function calculateMetrics(data: EnergyData[]): Metrics | null {
             validPriceData.length
           : 0,
       min:
-        validPriceData.length > 0
-          ? Math.min(...validPriceData.map(d => d.marketPrice ?? 0)) * 0.1
-          : 0,
+        validPriceData.length > 0 ? arrayMin(validPriceData.map(d => d.marketPrice ?? 0)) * 0.1 : 0,
       max:
-        validPriceData.length > 0
-          ? Math.max(...validPriceData.map(d => d.marketPrice ?? 0)) * 0.1
-          : 0,
+        validPriceData.length > 0 ? arrayMax(validPriceData.map(d => d.marketPrice ?? 0)) * 0.1 : 0,
     },
     today: todayMetrics,
   };

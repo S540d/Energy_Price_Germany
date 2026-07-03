@@ -4,6 +4,7 @@ import Svg, { Rect, Line, Polyline } from 'react-native-svg';
 import type { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 import { useChartDimensions } from '../../utils/chartUtils';
+import { arrayMin, arrayMax } from '../../utils/mathUtils';
 import { ChartGrid, ChartCard, ChartTooltip, getTooltipLeft, NowMarkerLine } from './shared';
 
 // Performance: Move color helpers outside component for stable references
@@ -111,8 +112,8 @@ function RenewableBarChartComponent({
 
     if (timestamps.length === 0) return null;
 
-    const minTime = Math.min(...timestamps);
-    const maxTime = Math.max(...timestamps);
+    const minTime = arrayMin(timestamps);
+    const maxTime = arrayMax(timestamps);
     const timeRange = maxTime - minTime;
 
     if (timeRange === 0) return null;
