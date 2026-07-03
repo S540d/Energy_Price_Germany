@@ -5,6 +5,7 @@ import type { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle, getPriceColor } from '../../utils/chartHelpers';
 import { GRID_FEES_AND_TAXES } from '../../utils/metrics';
 import { useChartDimensions } from '../../utils/chartUtils';
+import { arrayMin, arrayMax } from '../../utils/mathUtils';
 import { useSettingsContext } from '../../context/SettingsContext';
 import { ChartGrid, ChartCard, ChartTooltip, getTooltipLeft, NowMarkerLine } from './shared';
 
@@ -85,15 +86,15 @@ function PriceBarChartComponent({
 
     if (timestamps.length === 0) return null;
 
-    const minTime = Math.min(...timestamps);
-    const maxTime = Math.max(...timestamps);
+    const minTime = arrayMin(timestamps);
+    const maxTime = arrayMax(timestamps);
     const timeRange = maxTime - minTime;
 
     const validData = data.filter(d => d.marketPrice !== null);
     if (validData.length === 0) return null;
 
     const pricesInCent = validData.map(d => (d.marketPrice ?? 0) * 0.1);
-    const maxPrice = Math.max(...pricesInCent);
+    const maxPrice = arrayMax(pricesInCent);
     const min = 0;
     const maxMarketPrice = Math.ceil(maxPrice / 5) * 5;
     const maxTotal = isMarketOnly ? maxMarketPrice : maxMarketPrice + gridFees;
