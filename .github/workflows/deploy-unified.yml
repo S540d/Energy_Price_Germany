@@ -18,14 +18,19 @@ permissions:
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment
+# Allow only one concurrent deployment across all refs — main and testing
+# share the same gh-pages branch/Pages deployment, so overlapping runs would
+# race on git push / Pages API deploys ("Deployment failed, try again later").
 concurrency:
-  group: "pages-${{ github.ref_name }}"
+  group: "pages"
   cancel-in-progress: false
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Determine environment and target folder
@@ -84,12 +89,8 @@ jobs:
           git clean -fd
           git checkout gh-pages
 
-      - name: Deploy to GitHub Pages
+      - name: Assemble Pages content
         run: |
-          # Configure git
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
           # Determine if deploying to root or subfolder
           if [ "${{ steps.env.outputs.TARGET_FOLDER }}" = "." ]; then
             echo "📦 Deploying to root (production)..."
@@ -153,7 +154,15 @@ jobs:
             fi
           done
 
-          # Add and commit all changes (deploy + cleanup) in ONE commit
+          echo "✅ Content assembled for Pages deployment"
+
+      # Mirror the assembled tree back to gh-pages so it stays a readable
+      # history/archive of deployments, but this push no longer drives the
+      # actual Pages deployment (see below) — it can't race with it anymore.
+      - name: Mirror to gh-pages branch (history only)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "chore: Deploy ${{ steps.env.outputs.EXPO_ENV }} build from ${{ github.sha }}
 
@@ -163,10 +172,16 @@ jobs:
           🧹 Sensitive files cleaned up
 
           🤖 Automated by GitHub Actions" || echo "No changes to commit"
-
-          # Push to gh-pages (only ONE push!)
           git push origin gh-pages
-          echo "✅ Deployment and cleanup completed"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
       - name: Summary
         run: |
