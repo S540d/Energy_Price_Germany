@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Dimensions } from 'react-native';
+import { arrayMin, arrayMax } from './mathUtils';
 
 export interface ChartDimensions {
   chartHeight: number;
@@ -103,8 +104,8 @@ export function useChartDimensions(): ChartDimensions {
  */
 export function getTimeRange(data: Array<{ timestamp: number }>) {
   const timestamps = data.map(d => d.timestamp);
-  const minTime = Math.min(...timestamps);
-  const maxTime = Math.max(...timestamps);
+  const minTime = arrayMin(timestamps);
+  const maxTime = arrayMax(timestamps);
   const timeRange = maxTime - minTime;
 
   return { minTime, maxTime, timeRange };
