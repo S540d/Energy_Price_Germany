@@ -4,6 +4,7 @@ import Svg, { Circle, Line } from 'react-native-svg';
 import type { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 import { useChartDimensions } from '../../utils/chartUtils';
+import { arrayMin, arrayMax } from '../../utils/mathUtils';
 import { ChartGrid, ChartCard, ChartTooltip, getTooltipLeft } from './shared';
 
 interface CorrelationScatterChartProps {
@@ -77,11 +78,11 @@ function CorrelationScatterChartComponent({
     const renewableValues = validData.map(d => d.renewableShare ?? 0);
 
     const minRenewable = 0;
-    const maxRenewable = Math.max(100, ...renewableValues);
+    const maxRenewable = Math.max(100, arrayMax(renewableValues));
     const renewableRange = maxRenewable - minRenewable;
 
-    const minPriceData = Math.min(...priceInCentValues);
-    const maxPriceData = Math.max(...priceInCentValues);
+    const minPriceData = arrayMin(priceInCentValues);
+    const maxPriceData = arrayMax(priceInCentValues);
     const pricePadding = (maxPriceData - minPriceData) * 0.05;
     const minPrice = Math.max(0, minPriceData - pricePadding);
     const maxPrice = maxPriceData + pricePadding;

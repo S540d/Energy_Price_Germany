@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Fixed
+- **Potenzielle App-Abstürze (Issue #376):** Zwei verifizierte Absturzquellen behoben, die zum "App ist im Mai zweimal abgestürzt"-Report im Play Store passen (kein Stacktrace verfügbar):
+  - **`Math.min(...array)`/`Math.max(...array)`-Spread** in `utils/metrics.ts`, `App.tsx`, `utils/chartUtils.ts` und den drei Chart-Komponenten (`PriceBarChart`, `RenewableBarChart`, `CorrelationScatterChart`) durch schleifenbasierte `arrayMin`/`arrayMax`-Helfer (`utils/mathUtils.ts`) ersetzt. Der Spread-Ansatz kann bei ungewöhnlich großen Arrays (z.B. durch einen Datenmerge-Bug oder lange Verlaufs-Zeiträume) einen `RangeError: Maximum call stack size exceeded` werfen – die neuen Helfer haben keine Obergrenze.
+  - **`react-native-worklets`-Versionskonflikt:** `package.json` pinnte `0.7.2`, während `expo-modules-core` (gebündelt mit Expo 55) `^0.7.4 || ^0.8.0` verlangt – npm löste dadurch zwei divergierende native Kopien der Bibliothek auf (root `0.7.2` vs. verschachtelt `0.8.1` unter `expo`). Auf `0.8.1` vereinheitlicht, sodass nur noch eine native Modul-Kopie existiert.
 ## [1.9.0] - 2026-06-27
 
 ### Added

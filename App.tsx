@@ -15,6 +15,7 @@ import { AppHeader } from './components/AppHeader';
 import { ChartSection } from './components/ChartSection';
 import { calculateMetrics } from './utils/metrics';
 import { getThemeColors } from './utils/theme';
+import { arrayMax } from './utils/mathUtils';
 import { useEnergyData } from './hooks/useEnergyData';
 import { useLanguageContext } from './context/LanguageContext';
 import { useSettingsContext } from './context/SettingsContext';
@@ -205,7 +206,7 @@ function AppContent() {
     const now = Date.now();
     const pastTimestamps = filteredEnergyData.map(d => d.timestamp).filter(ts => ts <= now);
     if (!pastTimestamps.length) return false;
-    return now - Math.max(...pastTimestamps) > 2 * 60 * 60 * 1000;
+    return now - arrayMax(pastTimestamps) > 2 * 60 * 60 * 1000;
   }, [filteredEnergyData]);
 
   useEffect(() => {
