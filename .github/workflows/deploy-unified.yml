@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment_retry.outputs.page_url }}
 
     steps:
       - name: Determine environment and target folder
@@ -179,8 +179,24 @@ jobs:
         with:
           path: .
 
+      # The Pages API frequently returns a transient "Deployment failed, try
+      # again later." when a previous deployment's server-side build is still
+      # settling (schedule + push runs land close together). The Actions-level
+      # concurrency group serialises the jobs, but not the async server-side
+      # build, so a closely following run can still collide. Retry once after a
+      # short wait instead of failing the whole workflow.
       - name: Deploy to GitHub Pages
         id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+
+      - name: Wait before deploy retry
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 30
+
+      - name: Deploy to GitHub Pages (retry)
+        id: deployment_retry
+        if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v4
 
       - name: Summary
