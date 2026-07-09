@@ -161,6 +161,17 @@ Validation rules enforced by Husky:
    - Performance-optimized with useMemo/useCallback/React.memo
    - Responsive design via `useChartDimensions()` hook
    - Touch/hover interactions (platform-aware)
+   - **Pinch/scroll zoom (Issue #355, PR #380):** all three charts (+ `ChartDetailView`) get zoom
+     via the shared `useChartZoom(viewportWidth)` hook (`components/charts/shared/useChartZoom.ts`).
+     `contentWidth` replaces `chartWidth` for all internal x-position math and is wrapped in a
+     horizontal `ScrollView`; Y-axis labels are deliberately rendered *outside* that ScrollView
+     (pinned overlay) so they don't scroll away. Web zooms via `onWheel`, native via a 2-touch
+     `PanResponder` (no `react-native-gesture-handler` dependency added). `ZoomResetBadge.tsx`
+     shows a ⟲ reset control when `isZoomed`. Tooltip `x` must go through `toViewportX()` before
+     `getTooltipLeft()` so it stays aligned with the current scroll offset.
+   - **Title overflow (Issue #355, PR #380):** title wrapper needs `flex: 1` + the `<Text>` needs
+     `numberOfLines={2}`/`ellipsizeMode="tail"` — otherwise long titles (e.g. regional renewable
+     title) clip on small screens instead of wrapping.
 
 5. **Historical Data (`services/historicalDataStore.ts`) – Issues #307/#1/#3 (PR #309):**
    - **Device cache is the primary source.** Every successful national fetch in
@@ -174,9 +185,17 @@ Validation rules enforced by Husky:
    - **MB-based eviction:** user sets `historyCacheLimitMb` (5/10/25/50; default 10) in the
      Customize modal (`HistoryCacheSection`); `App.tsx` forwards it via
      `energyDataManager.setHistoryLimitBytes`; `enforceLimit` drops oldest days over budget.
-   - **Server fallback:** `getRange(from, to, allowServerFallback=true)` loads missing *past*
-     days from `data/history/<date>.json` (validated via `apiValidation`) into the cache;
-     404/errors ignored; `serverFetchAttempted` avoids repeat misses per session.
+   - **Server fallback:** `getRange(from, to, allowServerFallback=true, resolution='raw')` loads
+     missing *past* days from `data/history/<date>.json` (validated via `apiValidation`) into the
+     cache; 404/errors ignored; `serverFetchAttempted` avoids repeat misses per session.
+   - **Hourly pre-aggregation (Issue #334, PR #380):** `resolution: 'hourly'` fetches the smaller
+     pre-aggregated `data/history/<date>-hourly.json` instead (~75% smaller, ~24 pts/day vs. 96),
+     generated per-day in `fetch.yml` (all countries) right after the raw history file. Falls back
+     to the raw file automatically if the hourly variant 404s (e.g. older dates predating this
+     feature). `HistoricalDataView` passes `'hourly'` only for the 30d range (already
+     daily-bucketed client-side via `dataAggregation.ts`); 24h/48h/7d stay `'raw'`. A day already
+     cached (e.g. from a live snapshot) is never re-fetched, so it keeps whatever resolution it
+     has — don't assume every cached day is full 15-min resolution when reasoning about stats.
    - **UI:** `HistoricalDataView` (Settings → "Verlauf") = range selector 24h/48h/7d/30d (#1),
      charts aggregated via `dataAggregation.ts` (15min/hourly/daily), stats via
      `historicalStats.ts` (#3). The live main screen is intentionally unchanged.
@@ -321,6 +340,8 @@ components/
 │       ├── ChartCard.tsx         # Card wrapper with shadow + fade-in animation
 │       ├── ChartTooltip.tsx      # Tooltip with boundary clamping + scale/fade animation
 │       ├── NowMarker.tsx         # "Jetzt" time marker (line + label)
+│       ├── useChartZoom.ts       # Pinch/scroll zoom hook (#355)
+│       ├── ZoomResetBadge.tsx    # ⟲ reset control shown while zoomed (#355)
 │       └── index.ts              # Barrel exports
 ├── settings/
 │   ├── AppearanceSection.tsx     # Theme pill selector with spring animation
