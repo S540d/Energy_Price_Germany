@@ -6,7 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+- **Chart-Zoom (Issue #355):** `PriceBarChart`, `RenewableBarChart` und `CorrelationScatterChart` (inkl. Detail-Modal `ChartDetailView`) unterstützen jetzt Pinch-to-Zoom (mobil) bzw. Scroll-to-Zoom (Web), um einzelne Stunden bei 48h-/7d-Ansichten besser erkennbar zu machen. Neuer gemeinsamer Hook `useChartZoom` (`components/charts/shared/`); die Y-Achsen-Beschriftung bleibt beim Scrollen fixiert, ein Reset-Badge erscheint bei aktivem Zoom.
+
 ### Fixed
+- **Titel-Überlauf bei „Anteil erneuerbare Energien..." (Issue #355):** Chart-Titel in `PriceBarChart`, `RenewableBarChart` und `CorrelationScatterChart` brechen jetzt bei Bedarf zweizeilig um (`numberOfLines={2}`, `flex: 1`) statt auf kleinen Bildschirmen abgeschnitten zu werden.
+
+### Performance
+- **Pre-Aggregierung für die 30-Tage-Ansicht (Issue #334):** Die tägliche History-Pipeline (`fetch.yml`, alle Länder) erzeugt jetzt zusätzlich eine stündlich vorab-aggregierte `<date>-hourly.json` Variante (~75% kleiner) pro Tag. `historicalDataStore.getRange()` lädt für die 30-Tage-Ansicht in `HistoricalDataView` bevorzugt diese Variante nach (mit automatischem Fallback auf die volle Auflösung, falls sie fehlt) – deutlich weniger Downloadvolumen, da diese Ansicht ohnehin clientseitig auf Tages-Buckets aggregiert dargestellt wird.
 - **Potenzielle App-Abstürze (Issue #376):** Zwei verifizierte Absturzquellen behoben, die zum "App ist im Mai zweimal abgestürzt"-Report im Play Store passen (kein Stacktrace verfügbar):
   - **`Math.min(...array)`/`Math.max(...array)`-Spread** in `utils/metrics.ts`, `App.tsx`, `utils/chartUtils.ts` und den drei Chart-Komponenten (`PriceBarChart`, `RenewableBarChart`, `CorrelationScatterChart`) durch schleifenbasierte `arrayMin`/`arrayMax`-Helfer (`utils/mathUtils.ts`) ersetzt. Der Spread-Ansatz kann bei ungewöhnlich großen Arrays (z.B. durch einen Datenmerge-Bug oder lange Verlaufs-Zeiträume) einen `RangeError: Maximum call stack size exceeded` werfen – die neuen Helfer haben keine Obergrenze.
   - **`react-native-worklets`-Versionskonflikt:** `package.json` pinnte `0.7.2`, während `expo-modules-core` (gebündelt mit Expo 55) `^0.7.4 || ^0.8.0` verlangt – npm löste dadurch zwei divergierende native Kopien der Bibliothek auf (root `0.7.2` vs. verschachtelt `0.8.1` unter `expo`). Auf `0.8.1` vereinheitlicht, sodass nur noch eine native Modul-Kopie existiert.
