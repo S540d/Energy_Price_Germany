@@ -137,6 +137,8 @@ export const translations = {
     shareChartDownload: 'Download Chart',
     // Common actions
     close: 'Close',
+    // Chart Zoom (#355)
+    resetZoom: 'Reset zoom',
     // KPI Row
     renewableNow: 'Renewables now',
     priceNow: 'Price now',
@@ -302,6 +304,8 @@ export const translations = {
     shareChartDownload: 'Diagramm herunterladen',
     // Common actions
     close: 'Schließen',
+    // Chart Zoom (#355)
+    resetZoom: 'Zoom zurücksetzen',
     // KPI Row
     renewableNow: 'Erneuerbare jetzt',
     priceNow: 'Börsenpreis jetzt',
