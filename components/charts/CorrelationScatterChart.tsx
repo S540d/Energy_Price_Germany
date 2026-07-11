@@ -1,11 +1,19 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, Platform } from 'react-native';
+import { View, Text, Platform, ScrollView } from 'react-native';
 import Svg, { Circle, Line } from 'react-native-svg';
 import type { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 import { useChartDimensions } from '../../utils/chartUtils';
 import { arrayMin, arrayMax } from '../../utils/mathUtils';
-import { ChartGrid, ChartCard, ChartTooltip, getTooltipLeft } from './shared';
+import { useLanguageContext } from '../../context/LanguageContext';
+import {
+  ChartGrid,
+  ChartCard,
+  ChartTooltip,
+  getTooltipLeft,
+  useChartZoom,
+  ZoomResetBadge,
+} from './shared';
 
 interface CorrelationScatterChartProps {
   title: string;
@@ -47,10 +55,11 @@ function CorrelationScatterChartComponent({
   accentColor,
 }: CorrelationScatterChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const { t } = useLanguageContext();
 
   // Use centralized chart dimensions hook
   const {
-    chartWidth,
+    chartWidth: viewportWidth,
     chartHeight,
     leftPadding,
     padding,
@@ -61,6 +70,18 @@ function CorrelationScatterChartComponent({
     isPhone,
     isLandscape,
   } = useChartDimensions();
+
+  // Pinch (mobile) / scroll (web) zoom (#355) — contentWidth replaces the static
+  // chartWidth for all internal x-position math below.
+  const {
+    contentWidth: chartWidth,
+    isZoomed,
+    resetZoom,
+    scrollRef,
+    scrollViewProps,
+    gestureContainerProps,
+    toViewportX,
+  } = useChartZoom(viewportWidth);
 
   // Performance: Memoize expensive data calculations (filtering, regression, ranges)
   const chartCalcs = useMemo(() => {
@@ -213,7 +234,7 @@ function CorrelationScatterChartComponent({
             leftPadding +
             (((item.renewableShare ?? 0) - minRenewable) / renewableRange) *
               (chartWidth - leftPadding - rightPadding);
-          const tooltipLeft = getTooltipLeft(x, 120, chartWidth);
+          const tooltipLeft = getTooltipLeft(toViewportX(x), 120, viewportWidth);
 
           return (
             <ChartTooltip
@@ -241,7 +262,7 @@ function CorrelationScatterChartComponent({
           marginBottom: 0,
         }}
       >
-        <View>
+        <View style={{ flex: 1, marginRight: 8 }}>
           <Text
             style={{
               fontSize: isPhone ? 16 : 18,
@@ -249,6 +270,8 @@ function CorrelationScatterChartComponent({
               marginBottom: 0,
               color: textColor,
             }}
+            numberOfLines={2}
+            ellipsizeMode="tail"
           >
             {title}
           </Text>
@@ -300,95 +323,143 @@ function CorrelationScatterChartComponent({
           </View>
         )}
       </View>
-      <View style={{ height: chartHeight, width: chartWidth }}>
-        <ChartGrid
-          chartWidth={chartWidth}
-          chartHeight={chartHeight}
-          leftPadding={leftPadding}
-          rightPadding={rightPadding}
-          padding={padding}
-          bottomPadding={bottomPadding}
-          gridColor={gridColor}
-          verticalLines={5}
-        />
+      <View
+        style={{ height: chartHeight, width: viewportWidth, position: 'relative' }}
+        {...gestureContainerProps}
+      >
+        <ScrollView
+          ref={scrollRef}
+          {...scrollViewProps}
+          style={{ width: viewportWidth, height: chartHeight }}
+          contentContainerStyle={{ width: chartWidth, height: chartHeight }}
+        >
+          <View style={{ height: chartHeight, width: chartWidth }}>
+            <ChartGrid
+              chartWidth={chartWidth}
+              chartHeight={chartHeight}
+              leftPadding={leftPadding}
+              rightPadding={rightPadding}
+              padding={padding}
+              bottomPadding={bottomPadding}
+              gridColor={gridColor}
+              verticalLines={5}
+            />
 
-        {/* Scatter Points */}
-        <Svg width={chartWidth} height={chartHeight}>
-          {/* Trendlinie */}
-          <Line
-            x1={
-              leftPadding +
-              ((trendStartX - minRenewable) / renewableRange) *
-                (chartWidth - leftPadding - rightPadding)
-            }
-            y1={
-              chartHeight -
-              bottomPadding -
-              ((trendStartY - minPrice) / priceRange) * (chartHeight - padding - bottomPadding)
-            }
-            x2={
-              leftPadding +
-              ((trendEndX - minRenewable) / renewableRange) *
-                (chartWidth - leftPadding - rightPadding)
-            }
-            y2={
-              chartHeight -
-              bottomPadding -
-              ((trendEndY - minPrice) / priceRange) * (chartHeight - padding - bottomPadding)
-            }
-            stroke={textColor}
-            strokeWidth="2"
-            strokeDasharray="8,4"
-            opacity={0.4}
-          />
-
-          {scatterPoints.map(point => {
-            const isSelected = selectedIndex === point.index;
-
-            return (
-              <Circle
-                key={point.index}
-                cx={point.x}
-                cy={point.y}
-                r={isSelected ? 6 : 4}
-                fill={point.color}
-                opacity={isSelected ? 1.0 : 0.7}
-                stroke={isSelected ? '#999999' : 'none'}
-                strokeWidth={isSelected ? 2 : 0}
+            {/* Scatter Points */}
+            <Svg width={chartWidth} height={chartHeight}>
+              {/* Trendlinie */}
+              <Line
+                x1={
+                  leftPadding +
+                  ((trendStartX - minRenewable) / renewableRange) *
+                    (chartWidth - leftPadding - rightPadding)
+                }
+                y1={
+                  chartHeight -
+                  bottomPadding -
+                  ((trendStartY - minPrice) / priceRange) * (chartHeight - padding - bottomPadding)
+                }
+                x2={
+                  leftPadding +
+                  ((trendEndX - minRenewable) / renewableRange) *
+                    (chartWidth - leftPadding - rightPadding)
+                }
+                y2={
+                  chartHeight -
+                  bottomPadding -
+                  ((trendEndY - minPrice) / priceRange) * (chartHeight - padding - bottomPadding)
+                }
+                stroke={textColor}
+                strokeWidth="2"
+                strokeDasharray="8,4"
+                opacity={0.4}
               />
-            );
-          })}
-        </Svg>
 
-        {/* Invisible touch/hover areas for points - Using pre-calculated positions */}
-        {scatterPoints.map(point => {
-          const touchSize = 24;
+              {scatterPoints.map(point => {
+                const isSelected = selectedIndex === point.index;
 
-          return (
-            <View
-              key={`touch-${point.index}`}
+                return (
+                  <Circle
+                    key={point.index}
+                    cx={point.x}
+                    cy={point.y}
+                    r={isSelected ? 6 : 4}
+                    fill={point.color}
+                    opacity={isSelected ? 1.0 : 0.7}
+                    stroke={isSelected ? '#999999' : 'none'}
+                    strokeWidth={isSelected ? 2 : 0}
+                  />
+                );
+              })}
+            </Svg>
+
+            {/* Invisible touch/hover areas for points - Using pre-calculated positions */}
+            {scatterPoints.map(point => {
+              const touchSize = 24;
+
+              return (
+                <View
+                  key={`touch-${point.index}`}
+                  style={{
+                    position: 'absolute',
+                    left: point.x - touchSize / 2,
+                    top: point.y - touchSize / 2,
+                    width: touchSize,
+                    height: touchSize,
+                    zIndex: 10,
+                    cursor: Platform.OS === 'web' ? 'pointer' : undefined,
+                  }}
+                  onStartShouldSetResponder={() => true}
+                  onResponderGrant={() =>
+                    setSelectedIndex(prev => (point.index === prev ? null : point.index))
+                  }
+                  {...(Platform.OS === 'web' && {
+                    onMouseEnter: () => setSelectedIndex(point.index),
+                    onMouseLeave: () => setSelectedIndex(null),
+                  })}
+                />
+              );
+            })}
+
+            {/* X-axis labels (Erneuerbare %) */}
+            {[0, 1, 2, 3, 4].map(i => {
+              const value = minRenewable + (i / 4) * renewableRange;
+              const x = leftPadding + (i / 4) * (chartWidth - leftPadding - rightPadding);
+              return (
+                <Text
+                  key={`xlabel-${i}`}
+                  style={{
+                    position: 'absolute',
+                    left: x - 15,
+                    top: chartHeight - (isPhone ? 25 : 30),
+                    fontSize: 12,
+                    color: textColor,
+                    opacity: 0.6,
+                  }}
+                >
+                  {value.toFixed(0)}%
+                </Text>
+              );
+            })}
+
+            {/* Axis Labels */}
+            <Text
               style={{
                 position: 'absolute',
-                left: point.x - touchSize / 2,
-                top: point.y - touchSize / 2,
-                width: touchSize,
-                height: touchSize,
-                zIndex: 10,
-                cursor: Platform.OS === 'web' ? 'pointer' : undefined,
+                left: chartWidth / 2 - 60,
+                bottom: isPhone ? 0 : 3,
+                fontSize: 12,
+                color: textColor,
+                opacity: 0.6,
+                fontWeight: '600',
               }}
-              onStartShouldSetResponder={() => true}
-              onResponderGrant={() =>
-                setSelectedIndex(prev => (point.index === prev ? null : point.index))
-              }
-              {...(Platform.OS === 'web' && {
-                onMouseEnter: () => setSelectedIndex(point.index),
-                onMouseLeave: () => setSelectedIndex(null),
-              })}
-            />
-          );
-        })}
+            >
+              {labels.xAxisRenewables}
+            </Text>
+          </View>
+        </ScrollView>
 
-        {/* Y-axis labels (Preis) */}
+        {/* Y-axis labels - pinned outside the zoomable/scrollable content */}
         {[0, 1, 2, 3, 4].map(i => {
           const value = maxPrice - (i / 4) * priceRange;
           const y = padding + (i / 4) * (chartHeight - padding - bottomPadding);
@@ -411,44 +482,13 @@ function CorrelationScatterChartComponent({
           );
         })}
 
-        {/* X-axis labels (Erneuerbare %) */}
-        {[0, 1, 2, 3, 4].map(i => {
-          const value = minRenewable + (i / 4) * renewableRange;
-          const x = leftPadding + (i / 4) * (chartWidth - leftPadding - rightPadding);
-          return (
-            <Text
-              key={`xlabel-${i}`}
-              style={{
-                position: 'absolute',
-                left: x - 15,
-                top: chartHeight - (isPhone ? 25 : 30),
-                fontSize: 12,
-                color: textColor,
-                opacity: 0.6,
-              }}
-            >
-              {value.toFixed(0)}%
-            </Text>
-          );
-        })}
-
-        {/* Axis Labels */}
-        <Text
-          style={{
-            position: 'absolute',
-            left: chartWidth / 2 - 60,
-            bottom: isPhone ? 0 : 3,
-            fontSize: 12,
-            color: textColor,
-            opacity: 0.6,
-            fontWeight: '600',
-          }}
-        >
-          {labels.xAxisRenewables}
-        </Text>
         <Text style={getYAxisLabelStyle(chartHeight, -15, textColor, isPhone)}>
           {labels.yAxisPrice}
         </Text>
+
+        {isZoomed && (
+          <ZoomResetBadge onPress={resetZoom} colors={colors} accessibilityLabel={t.resetZoom} />
+        )}
       </View>
       {insightText && (
         <View

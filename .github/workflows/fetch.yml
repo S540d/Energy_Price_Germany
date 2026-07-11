@@ -259,6 +259,34 @@ jobs:
             } else {
               console.log("✓ History file already exists: " + yesterdayStr + ".json");
             }
+
+            // Pre-aggregated hourly variant (~75% smaller) for long-range views (#334)
+            const hourlyFile = "public/data/history/" + yesterdayStr + "-hourly.json";
+            if (!fs.existsSync(hourlyFile)) {
+              const avg = values => values.length ? values.reduce((s, v) => s + v, 0) / values.length : null;
+              const buckets = new Map();
+              for (const item of yesterdayData) {
+                const bucketTs = Math.floor(item.start_timestamp / 3600000) * 3600000;
+                (buckets.get(bucketTs) || buckets.set(bucketTs, []).get(bucketTs)).push(item);
+              }
+              const hourlyData = Array.from(buckets.entries())
+                .sort(([a], [b]) => a - b)
+                .map(([bucketTs, items]) => ({
+                  start_timestamp: bucketTs,
+                  end_timestamp: bucketTs + 3600000,
+                  marketprice: avg(items.filter(i => i.marketprice != null).map(i => i.marketprice)),
+                  renewable_share: avg(items.filter(i => i.renewable_share != null).map(i => i.renewable_share)),
+                  unit: items[0].unit,
+                  interpolated: items.some(i => i.interpolated),
+                }));
+              fs.writeFileSync(hourlyFile, JSON.stringify({
+                date: yesterdayStr,
+                source: data.source,
+                resolution: "hourly",
+                data: hourlyData
+              }, null, 2));
+              console.log("✓ Created hourly history file: " + yesterdayStr + "-hourly.json (" + hourlyData.length + " points)");
+            }
           } else {
             console.log("⚠️ Incomplete data for " + yesterdayStr + " (" + yesterdayData.length + "/96 points) - skipping");
           }
@@ -561,6 +589,34 @@ jobs:
             } else {
               console.log("✓ NL history file already exists: " + yesterdayStr + ".json");
             }
+
+            // Pre-aggregated hourly variant (~75% smaller) for long-range views (#334)
+            const hourlyFile = "public/data/nl/history/" + yesterdayStr + "-hourly.json";
+            if (!fs.existsSync(hourlyFile)) {
+              const avg = values => values.length ? values.reduce((s, v) => s + v, 0) / values.length : null;
+              const buckets = new Map();
+              for (const item of yesterdayData) {
+                const bucketTs = Math.floor(item.start_timestamp / 3600000) * 3600000;
+                (buckets.get(bucketTs) || buckets.set(bucketTs, []).get(bucketTs)).push(item);
+              }
+              const hourlyData = Array.from(buckets.entries())
+                .sort(([a], [b]) => a - b)
+                .map(([bucketTs, items]) => ({
+                  start_timestamp: bucketTs,
+                  end_timestamp: bucketTs + 3600000,
+                  marketprice: avg(items.filter(i => i.marketprice != null).map(i => i.marketprice)),
+                  renewable_share: avg(items.filter(i => i.renewable_share != null).map(i => i.renewable_share)),
+                  unit: items[0].unit,
+                  interpolated: items.some(i => i.interpolated),
+                }));
+              fs.writeFileSync(hourlyFile, JSON.stringify({
+                date: yesterdayStr,
+                source: data.source,
+                resolution: "hourly",
+                data: hourlyData
+              }, null, 2));
+              console.log("✓ Created NL hourly history file: " + yesterdayStr + "-hourly.json (" + hourlyData.length + " points)");
+            }
           } else {
             console.log("⚠️ Incomplete NL data for " + yesterdayStr + " (" + yesterdayData.length + "/96 points) - skipping");
           }
@@ -835,6 +891,34 @@ jobs:
             } else {
               console.log("✓ AT history file already exists: " + yesterdayStr + ".json");
             }
+
+            // Pre-aggregated hourly variant (~75% smaller) for long-range views (#334)
+            const hourlyFile = "public/data/at/history/" + yesterdayStr + "-hourly.json";
+            if (!fs.existsSync(hourlyFile)) {
+              const avg = values => values.length ? values.reduce((s, v) => s + v, 0) / values.length : null;
+              const buckets = new Map();
+              for (const item of yesterdayData) {
+                const bucketTs = Math.floor(item.start_timestamp / 3600000) * 3600000;
+                (buckets.get(bucketTs) || buckets.set(bucketTs, []).get(bucketTs)).push(item);
+              }
+              const hourlyData = Array.from(buckets.entries())
+                .sort(([a], [b]) => a - b)
+                .map(([bucketTs, items]) => ({
+                  start_timestamp: bucketTs,
+                  end_timestamp: bucketTs + 3600000,
+                  marketprice: avg(items.filter(i => i.marketprice != null).map(i => i.marketprice)),
+                  renewable_share: avg(items.filter(i => i.renewable_share != null).map(i => i.renewable_share)),
+                  unit: items[0].unit,
+                  interpolated: items.some(i => i.interpolated),
+                }));
+              fs.writeFileSync(hourlyFile, JSON.stringify({
+                date: yesterdayStr,
+                source: data.source,
+                resolution: "hourly",
+                data: hourlyData
+              }, null, 2));
+              console.log("✓ Created AT hourly history file: " + yesterdayStr + "-hourly.json (" + hourlyData.length + " points)");
+            }
           } else {
             console.log("⚠️ Incomplete AT data for " + yesterdayStr + " (" + yesterdayData.length + "/96 points) - skipping");
           }
@@ -1091,6 +1175,34 @@ jobs:
               console.log("✓ Created CH history file: " + yesterdayStr + ".json (" + yesterdayData.length + " points)");
             } else {
               console.log("✓ CH history file already exists: " + yesterdayStr + ".json");
+            }
+
+            // Pre-aggregated hourly variant (~75% smaller) for long-range views (#334)
+            const hourlyFile = "public/data/ch/history/" + yesterdayStr + "-hourly.json";
+            if (!fs.existsSync(hourlyFile)) {
+              const avg = values => values.length ? values.reduce((s, v) => s + v, 0) / values.length : null;
+              const buckets = new Map();
+              for (const item of yesterdayData) {
+                const bucketTs = Math.floor(item.start_timestamp / 3600000) * 3600000;
+                (buckets.get(bucketTs) || buckets.set(bucketTs, []).get(bucketTs)).push(item);
+              }
+              const hourlyData = Array.from(buckets.entries())
+                .sort(([a], [b]) => a - b)
+                .map(([bucketTs, items]) => ({
+                  start_timestamp: bucketTs,
+                  end_timestamp: bucketTs + 3600000,
+                  marketprice: avg(items.filter(i => i.marketprice != null).map(i => i.marketprice)),
+                  renewable_share: avg(items.filter(i => i.renewable_share != null).map(i => i.renewable_share)),
+                  unit: items[0].unit,
+                  interpolated: items.some(i => i.interpolated),
+                }));
+              fs.writeFileSync(hourlyFile, JSON.stringify({
+                date: yesterdayStr,
+                source: data.source,
+                resolution: "hourly",
+                data: hourlyData
+              }, null, 2));
+              console.log("✓ Created CH hourly history file: " + yesterdayStr + "-hourly.json (" + hourlyData.length + " points)");
             }
           } else {
             console.log("⚠️ Incomplete CH data for " + yesterdayStr + " (" + yesterdayData.length + "/96 points) - skipping");
@@ -1349,6 +1461,34 @@ jobs:
             } else {
               console.log("✓ FR history file already exists: " + yesterdayStr + ".json");
             }
+
+            // Pre-aggregated hourly variant (~75% smaller) for long-range views (#334)
+            const hourlyFile = "public/data/fr/history/" + yesterdayStr + "-hourly.json";
+            if (!fs.existsSync(hourlyFile)) {
+              const avg = values => values.length ? values.reduce((s, v) => s + v, 0) / values.length : null;
+              const buckets = new Map();
+              for (const item of yesterdayData) {
+                const bucketTs = Math.floor(item.start_timestamp / 3600000) * 3600000;
+                (buckets.get(bucketTs) || buckets.set(bucketTs, []).get(bucketTs)).push(item);
+              }
+              const hourlyData = Array.from(buckets.entries())
+                .sort(([a], [b]) => a - b)
+                .map(([bucketTs, items]) => ({
+                  start_timestamp: bucketTs,
+                  end_timestamp: bucketTs + 3600000,
+                  marketprice: avg(items.filter(i => i.marketprice != null).map(i => i.marketprice)),
+                  renewable_share: avg(items.filter(i => i.renewable_share != null).map(i => i.renewable_share)),
+                  unit: items[0].unit,
+                  interpolated: items.some(i => i.interpolated),
+                }));
+              fs.writeFileSync(hourlyFile, JSON.stringify({
+                date: yesterdayStr,
+                source: data.source,
+                resolution: "hourly",
+                data: hourlyData
+              }, null, 2));
+              console.log("✓ Created FR hourly history file: " + yesterdayStr + "-hourly.json (" + hourlyData.length + " points)");
+            }
           } else {
             console.log("⚠️ Incomplete FR data for " + yesterdayStr + " (" + yesterdayData.length + "/96 points) - skipping");
           }
@@ -1606,6 +1746,34 @@ jobs:
             } else {
               console.log("✓ BE history file already exists: " + yesterdayStr + ".json");
             }
+
+            // Pre-aggregated hourly variant (~75% smaller) for long-range views (#334)
+            const hourlyFile = "public/data/be/history/" + yesterdayStr + "-hourly.json";
+            if (!fs.existsSync(hourlyFile)) {
+              const avg = values => values.length ? values.reduce((s, v) => s + v, 0) / values.length : null;
+              const buckets = new Map();
+              for (const item of yesterdayData) {
+                const bucketTs = Math.floor(item.start_timestamp / 3600000) * 3600000;
+                (buckets.get(bucketTs) || buckets.set(bucketTs, []).get(bucketTs)).push(item);
+              }
+              const hourlyData = Array.from(buckets.entries())
+                .sort(([a], [b]) => a - b)
+                .map(([bucketTs, items]) => ({
+                  start_timestamp: bucketTs,
+                  end_timestamp: bucketTs + 3600000,
+                  marketprice: avg(items.filter(i => i.marketprice != null).map(i => i.marketprice)),
+                  renewable_share: avg(items.filter(i => i.renewable_share != null).map(i => i.renewable_share)),
+                  unit: items[0].unit,
+                  interpolated: items.some(i => i.interpolated),
+                }));
+              fs.writeFileSync(hourlyFile, JSON.stringify({
+                date: yesterdayStr,
+                source: data.source,
+                resolution: "hourly",
+                data: hourlyData
+              }, null, 2));
+              console.log("✓ Created BE hourly history file: " + yesterdayStr + "-hourly.json (" + hourlyData.length + " points)");
+            }
           } else {
             console.log("⚠️ Incomplete BE data for " + yesterdayStr + " (" + yesterdayData.length + "/96 points) - skipping");
           }
@@ -1862,6 +2030,34 @@ jobs:
               console.log("✓ Created DK history file: " + yesterdayStr + ".json (" + yesterdayData.length + " points)");
             } else {
               console.log("✓ DK history file already exists: " + yesterdayStr + ".json");
+            }
+
+            // Pre-aggregated hourly variant (~75% smaller) for long-range views (#334)
+            const hourlyFile = "public/data/dk/history/" + yesterdayStr + "-hourly.json";
+            if (!fs.existsSync(hourlyFile)) {
+              const avg = values => values.length ? values.reduce((s, v) => s + v, 0) / values.length : null;
+              const buckets = new Map();
+              for (const item of yesterdayData) {
+                const bucketTs = Math.floor(item.start_timestamp / 3600000) * 3600000;
+                (buckets.get(bucketTs) || buckets.set(bucketTs, []).get(bucketTs)).push(item);
+              }
+              const hourlyData = Array.from(buckets.entries())
+                .sort(([a], [b]) => a - b)
+                .map(([bucketTs, items]) => ({
+                  start_timestamp: bucketTs,
+                  end_timestamp: bucketTs + 3600000,
+                  marketprice: avg(items.filter(i => i.marketprice != null).map(i => i.marketprice)),
+                  renewable_share: avg(items.filter(i => i.renewable_share != null).map(i => i.renewable_share)),
+                  unit: items[0].unit,
+                  interpolated: items.some(i => i.interpolated),
+                }));
+              fs.writeFileSync(hourlyFile, JSON.stringify({
+                date: yesterdayStr,
+                source: data.source,
+                resolution: "hourly",
+                data: hourlyData
+              }, null, 2));
+              console.log("✓ Created DK hourly history file: " + yesterdayStr + "-hourly.json (" + hourlyData.length + " points)");
             }
           } else {
             console.log("⚠️ Incomplete DK data for " + yesterdayStr + " (" + yesterdayData.length + "/96 points) - skipping");
