@@ -23,7 +23,7 @@ module.exports = {
     name: 'Energy Prices Germany',
     slug: 'Energy_Price_Germany',
     version: version,
-    orientation: 'portrait',
+    orientation: 'default',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
     primaryColor: '#4CAF50',
@@ -89,6 +89,7 @@ module.exports = {
     },
     runtimeVersion: {
       policy: 'appVersion'
-    }
+    },
+    plugins: ['./plugins/withAndroidResizeableActivity.js']
   }
 };

@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Chart-Zoom (Issue #355):** `PriceBarChart`, `RenewableBarChart` und `CorrelationScatterChart` (inkl. Detail-Modal `ChartDetailView`) unterstützen jetzt Pinch-to-Zoom (mobil) bzw. Scroll-to-Zoom (Web), um einzelne Stunden bei 48h-/7d-Ansichten besser erkennbar zu machen. Neuer gemeinsamer Hook `useChartZoom` (`components/charts/shared/`); die Y-Achsen-Beschriftung bleibt beim Scrollen fixiert, ein Reset-Badge erscheint bei aktivem Zoom.
 
 ### Fixed
+- **Play Store: Large-Screen-Kompatibilität (Issue #381):** `orientation` in `app.config.js` (der eigentlich aktiven Config-Quelle, `app.json` wurde bereits ignoriert) von `portrait` auf `default` korrigiert. Neuer Config-Plugin `plugins/withAndroidResizeableActivity.js` setzt `android:resizeableActivity="true"` auf die MainActivity beim `expo prebuild` (das generierte, gitignorete `AndroidManifest.xml` kann nicht direkt gepatcht werden).
 - **Titel-Überlauf bei „Anteil erneuerbare Energien..." (Issue #355):** Chart-Titel in `PriceBarChart`, `RenewableBarChart` und `CorrelationScatterChart` brechen jetzt bei Bedarf zweizeilig um (`numberOfLines={2}`, `flex: 1`) statt auf kleinen Bildschirmen abgeschnitten zu werden.
 
 ### Performance
