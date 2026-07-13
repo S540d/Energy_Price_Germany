@@ -7,7 +7,7 @@ Energy Price Germany - A visualization app for German electricity market prices 
 - React Native with Expo 55
 - TypeScript
 - react-native-svg (custom chart rendering)
-- react-native-reanimated 3.x (upgrade to 4.x pending – Issue #247; needed for Android build)
+- react-native-reanimated 4.x (upgraded from 3.x – Issue #247, closed)
 - expo-linear-gradient (shimmer effects in SkeletonLoader)
 - AsyncStorage (data persistence)
 - Cloudflare Worker (CORS proxy for regional data)
@@ -32,6 +32,7 @@ Energy Price Germany - A visualization app for German electricity market prices 
    - `testing` ≥ `staging` (same commit or newer)
    - `testing` ≥ `main` (same commit or newer)
    - If outdated, merge staging and main into testing first
+4. **Claude Code Remote-Sessions:** Die vom System vorgegebene Arbeits-Branch wird standardmäßig von `main` abgezweigt, nicht von `testing`. `main` und `testing` können erheblich divergieren (bis hin zu gemeinsamen Vorfahren, die nicht mehr existieren, falls die History mal umgeschrieben wurde). **Vor dem ersten Commit** in einer solchen Session immer `git fetch origin testing && git checkout -B <branch> origin/testing` ausführen, sonst entsteht ein riesiger, irreführender PR-Diff gegen `testing` (inkl. bereits dort gemergter fremder Änderungen) und Fixes, die auf `testing` schon vorhanden sind, werden unnötig dupliziert/überschrieben.
 
 **Workflow:**
 ```
@@ -301,14 +302,11 @@ cd android && ./gradlew bundleRelease --no-daemon --console=plain \
 - **After each `expo prebuild --clean`**: manually add `signingConfigs.release` block to `android/app/build.gradle` and change the release buildType to use `signingConfigs.release` (not `debug`)
 - `keystore/` directory is gitignored (Issue #276) – Signing-Docs lokal halten, nie committen
 - **OPEN:** `keystore/keystores.md` ist noch in der Git-History → Issue für `git filter-repo`-Bereinigung erstellt
+- **Large-Screen-Kompatibilität (Issue #381):** Da `AndroidManifest.xml` generiert/gitignored ist, werden Manifest-Attribute ohne eigenes Expo-Config-Schema-Feld (z.B. `android:resizeableActivity`) über Config-Plugins in `plugins/` gesetzt (siehe `withAndroidResizeableActivity.js`, registriert in `app.config.js` → `plugins`). Gleiches Muster für künftige Manifest-Anpassungen verwenden statt `/android` manuell zu patchen.
 
-### Reanimated Android Build Blocker (Issue #247)
-- Expo SDK 55 requires `react-native-reanimated@4.2.1` (currently on 3.x)
-- Reanimated 4 also requires `react-native-worklets >= 0.7.0` as peer dep
-- RN 0.83 (bundled with Expo 55) removed `UIManagerModuleListener` and `Systrace.TRACE_TAG_REACT_JAVA_BRIDGE` → breaks Reanimated 3.x Android build
-- `newArchEnabled=false` does NOT fix the issue
-- **Android builds are currently broken** until Issue #247 is resolved
-- Reanimated 4 has breaking changes: `useAnimatedStyle` no longer accepts dependency array → `AppearanceSection.tsx` will need updates
+### Reanimated 4 Upgrade (Issue #247, resolved)
+- Upgraded from `react-native-reanimated@3.x` to `4.2.1`+ (`react-native-worklets@0.8.1` as peer dep) for Expo SDK 55 / RN 0.83 compatibility.
+- Only code change needed was `AppearanceSection.tsx` (`useAnimatedStyle` dependency array removed, not supported in v4).
 
 ### API Rate Limits
 - Energy Charts: No official limit, be reasonable
