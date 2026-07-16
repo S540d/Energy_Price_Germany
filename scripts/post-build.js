@@ -5,6 +5,10 @@ require('dotenv').config({ path: path.resolve(__dirname, `../.env.${process.env.
 // Get baseUrl from environment variables (this is set by the build script via EXPO_ENV)
 const baseUrl = process.env.EXPO_PUBLIC_BASE_URL || '/Energy_Price_Germany';
 
+// Only the production deployment (main branch, canonical root URL) should be indexed.
+// The testing deployment lives under a subpath and would otherwise be duplicate content.
+const isProduction = (process.env.EXPO_ENV || 'production') === 'production';
+
 // Copy PWA files to dist folder (but NOT index.html - Expo generates that)
 const filesToCopy = [
   { src: 'public/.nojekyll', dest: 'dist/.nojekyll' },
@@ -14,7 +18,12 @@ const filesToCopy = [
   { src: 'public/icon-192.png', dest: 'dist/icon-192.png' },
   { src: 'public/icon-512.png', dest: 'dist/icon-512.png' },
   { src: 'public/data/marketdata.json', dest: 'dist/data/marketdata.json' },
-  { src: 'public/.well-known/assetlinks.json', dest: 'dist/.well-known/assetlinks.json' }
+  { src: 'public/.well-known/assetlinks.json', dest: 'dist/.well-known/assetlinks.json' },
+  // robots.txt / sitemap.xml only apply to the canonical production deployment
+  ...(isProduction ? [
+    { src: 'public/robots.txt', dest: 'dist/robots.txt' },
+    { src: 'public/sitemap.xml', dest: 'dist/sitemap.xml' }
+  ] : [])
   // NOTE: index.html is NOT copied - we use the Expo-generated one with script tags
 ];
 
@@ -46,7 +55,33 @@ if (fs.existsSync(indexPath)) {
 
   // Fix title and meta tags
   html = html.replace(/<title>.*?<\/title>/, '<title>Energy Prices Germany</title>');
-  
+
+  // SEO meta tags (description, robots, Open Graph) already ship in public/index.html,
+  // which Metro's web export uses as its template (Issue S540d/project-templates#95).
+  // The testing deployment lives under a subpath and is not the canonical URL, so it
+  // must not be indexed even though the template defaults to "index, follow".
+  if (!isProduction) {
+    html = html.replace(
+      /<meta name="robots" content="[^"]*" \/>/,
+      '<meta name="robots" content="noindex, nofollow" />'
+    );
+  }
+
+  // Fallback: add description/robots if the template somehow lacks them
+  if (!html.includes('name="description"')) {
+    const seoDescription = 'Visualisierung von Energiepreisen und erneuerbaren Energien in Deutschland';
+    const canonicalUrl = 'https://s540d.github.io/Energy_Price_Germany/';
+    const robotsContent = isProduction ? 'index, follow' : 'noindex, nofollow';
+    html = html.replace('</head>', `    <meta name="description" content="${seoDescription}" />
+    <meta name="robots" content="${robotsContent}" />
+    <meta property="og:title" content="Energy Prices Germany" />
+    <meta property="og:description" content="${seoDescription}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="${canonicalUrl}" />
+    <meta property="og:image" content="${canonicalUrl}icon-512.png" />
+  </head>`);
+  }
+
   // Add PWA meta tags if not present
   if (!html.includes('apple-mobile-web-app-title')) {
     html = html.replace('</head>', `    <meta name="apple-mobile-web-app-capable" content="yes" />
