@@ -245,7 +245,8 @@
         </ul>
         <p>
           <strong>Android-App:</strong>
-          <a href="https://play.google.com/store/apps/details?id=com.sven4321.energypricegermany"
+          <a
+            href="https://play.google.com/store/apps/details?id=com.sven4321.energypricegermany&amp;referrer=utm_source%3Dweb_app%26utm_medium%3Dnoscript%26utm_campaign%3Dwebapp"
             >bei Google Play herunterladen</a
           >
         </p>
@@ -286,8 +287,13 @@
       // that a Play Store version exists. Shown once per browser, dismissible, and never
       // inside the installed PWA or the WebView-free native app.
       (function () {
+        // Campaign attribution requires the UTM string inside a single URL-encoded
+        // `referrer` parameter; bare utm_* query params are ignored by Google Play.
+        // Mirrors playStoreUrlWithCampaign() in utils/appLinks.ts (no imports here).
         var PLAY_URL =
-          'https://play.google.com/store/apps/details?id=com.sven4321.energypricegermany&utm_source=web_app&utm_medium=banner';
+          'https://play.google.com/store/apps/details?id=com.sven4321.energypricegermany' +
+          '&referrer=' +
+          encodeURIComponent('utm_source=web_app&utm_medium=banner&utm_campaign=webapp');
         var STORAGE_KEY = 'playStoreBannerDismissed';
 
         function isDismissed() {
@@ -416,6 +422,6 @@
         }, 100);
       }
     </script>
-  <script src="/Energy_Price_Germany/testing/_expo/static/js/web/__expo-metro-runtime-1f8f5d3ca6b7f58204d51e14506d73fb.js?v=1785270419460" defer></script><script src="/Energy_Price_Germany/testing/_expo/static/js/web/__common-3f9ea683bca4690ae9cdb83fe7ceafbc.js?v=1785270419460" defer></script><script src="/Energy_Price_Germany/testing/_expo/static/js/web/index-57be8ec2c1980fb77ac8947baf944162.js?v=1785270419460" defer></script>
+  <script src="/Energy_Price_Germany/testing/_expo/static/js/web/__expo-metro-runtime-1f8f5d3ca6b7f58204d51e14506d73fb.js?v=1785271226678" defer></script><script src="/Energy_Price_Germany/testing/_expo/static/js/web/__common-3f9ea683bca4690ae9cdb83fe7ceafbc.js?v=1785271226678" defer></script><script src="/Energy_Price_Germany/testing/_expo/static/js/web/index-1288c9307012f15ae68dfa39214e4630.js?v=1785271226678" defer></script>
 </body>
 </html>
