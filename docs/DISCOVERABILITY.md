@@ -50,6 +50,45 @@ direkt auf GitHub Pages. `scripts/post-build.js` darf den Title deshalb nicht ü
 4. **Backlinks:** Erwähnungen in einschlägigen Communities (Foren zu dynamischen Stromtarifen,
    PV/Speicher, Wallbox) sind für eine Projektseite der wirksamste Rankingfaktor.
 
+## Messen, ob der Trichter wirkt (Play-Console-Attribution)
+
+Alle Web→Store-Links tragen eine Kampagnen-Kennung, damit in der Play Console sichtbar wird,
+wie viele Installationen tatsächlich über die Web-App kommen.
+
+**Format ist entscheidend:** Google Play wertet die UTM-Werte **nur** aus, wenn sie in einem
+einzigen, URL-kodierten `referrer`-Parameter stehen. Direkt angehängte `utm_source=`/`utm_medium=`
+sind für Play bedeutungslose Query-Parameter und tauchen in keinem Report auf:
+
+```
+# wirkungslos
+…/details?id=<pkg>&utm_source=web_app&utm_medium=banner
+
+# korrekt
+…/details?id=<pkg>&referrer=utm_source%3Dweb_app%26utm_medium%3Dbanner%26utm_campaign%3Dwebapp
+```
+
+Die Kampagne erscheint danach in der Play Console unter **Nutzergewinnung** (Acquisition
+reports). Dafür ist **keine** Install-Referrer-API im App-Code nötig — die braucht man nur,
+wenn die App den Wert selbst lesen soll.
+
+| Einstiegspunkt | `utm_medium` |
+| --- | --- |
+| Android-Banner auf der Web-App | `banner` |
+| `<noscript>`-Block | `noscript` |
+| "Über"-Dialog der Web-App | `about` |
+| README auf GitHub (`utm_source=github`) | `readme` |
+
+Gemeinsame `utm_campaign=webapp`, damit alle Einstiegspunkte in einer Report-Zeile aggregieren
+und trotzdem nach `utm_medium` aufschlüsselbar bleiben. Gebaut wird die URL in
+`utils/appLinks.ts` (`playStoreUrlWithCampaign`); `public/index.html` muss dieselben Werte
+hartkodieren, weil das Web-Template nichts importieren kann.
+
+Bewusst **ohne** Kampagnen-Parameter:
+- **JSON-LD `installUrl`/`downloadUrl`/`sameAs`** — Structured Data soll auf die kanonische
+  Listing-URL zeigen.
+- **Der "Im Play Store bewerten"-Link in der Android-App** — dort ist die App bereits installiert,
+  es gibt nichts zu attribuieren.
+
 ## Bekannte Grenzen von GitHub Pages (Projektseite)
 
 - **`robots.txt` wird nur unter `https://s540d.github.io/robots.txt` gelesen** — also im Repository
