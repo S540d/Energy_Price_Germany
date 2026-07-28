@@ -10,7 +10,7 @@ import {
   Linking,
 } from 'react-native';
 import type { ThemeColors } from '../utils/theme';
-import { GITHUB_REPO_URL, PLAY_STORE_URL } from '../utils/appLinks';
+import { GITHUB_REPO_URL, PLAY_STORE_URL, playStoreUrlWithCampaign } from '../utils/appLinks';
 
 interface AboutViewProps {
   visible: boolean;
@@ -195,7 +195,8 @@ export function AboutView({
             {Platform.OS === 'web' && (
               <TouchableOpacity
                 onPress={() => {
-                  window.open(PLAY_STORE_URL, '_blank'); // platform-safe
+                  // Campaign-tagged: these are the installs the web app actually generates
+                  window.open(playStoreUrlWithCampaign('web_app', 'about'), '_blank'); // platform-safe
                 }}
                 style={[
                   styles.supportButton,

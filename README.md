@@ -12,7 +12,7 @@ Batteriespeicher.*
 
 | Platform | Link |
 | -------- | ---- |
-| Android  | [Google Play](https://play.google.com/store/apps/details?id=com.sven4321.energypricegermany) |
+| Android  | [Google Play](https://play.google.com/store/apps/details?id=com.sven4321.energypricegermany&referrer=utm_source%3Dgithub%26utm_medium%3Dreadme%26utm_campaign%3Dwebapp) |
 | Web / PWA | [s540d.github.io/Energy_Price_Germany](https://s540d.github.io/Energy_Price_Germany/) |
 
 The web version is installable as a PWA; on Android the Play Store build is recommended.
