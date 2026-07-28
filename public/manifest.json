@@ -1,7 +1,11 @@
 {
+  "id": "/Energy_Price_Germany/",
   "short_name": "Energy Prices",
-  "name": "Energy Prices Germany",
-  "description": "Visualisierung von Energiepreisen und erneuerbaren Energien in Deutschland",
+  "name": "Energy Prices Germany – Strompreis & Ökostrom",
+  "description": "Aktuelle Börsenstrompreise (Day-Ahead) und Ökostrom-Anteil in Deutschland – kostenlos, ohne Werbung und ohne Tracking.",
+  "lang": "de",
+  "dir": "ltr",
+  "categories": ["utilities", "news", "productivity"],
   "icons": [
     {
       "src": "/Energy_Price_Germany/icon-180.png",
@@ -28,6 +32,14 @@
   "theme_color": "#6200EE",
   "background_color": "#ffffff",
   "orientation": "portrait",
+  "related_applications": [
+    {
+      "platform": "play",
+      "id": "com.sven4321.energypricegermany",
+      "url": "https://play.google.com/store/apps/details?id=com.sven4321.energypricegermany"
+    }
+  ],
+  "prefer_related_applications": false,
   "version": "1.6.0",
   "build_date": "2026-06-02"
 }

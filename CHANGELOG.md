@@ -8,16 +8,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 - **Chart-Zoom (Issue #355):** `PriceBarChart`, `RenewableBarChart` und `CorrelationScatterChart` (inkl. Detail-Modal `ChartDetailView`) unterstützen jetzt Pinch-to-Zoom (mobil) bzw. Scroll-to-Zoom (Web), um einzelne Stunden bei 48h-/7d-Ansichten besser erkennbar zu machen. Neuer gemeinsamer Hook `useChartZoom` (`components/charts/shared/`); die Y-Achsen-Beschriftung bleibt beim Scrollen fixiert, ein Reset-Badge erscheint bei aktivem Zoom.
+- **Auffindbarkeit außerhalb des Play Stores:** Die GitHub-Pages-Seite ist die naheliegendste Direktquelle für Interessenten, hat aber weder den Play Store verlinkt noch für Suchmaschinen verwertbaren Inhalt geliefert – Besucher wurden zu PWA-Nutzern statt zu Play-Store-Installationen.
+  - **SEO-Meta in `public/index.html`:** deutschsprachiger Title und Description mit relevanten Suchbegriffen (Strompreis heute, Börsenstrompreis, Day-Ahead, dynamischer Stromtarif, Ökostrom-Anteil), `keywords`, `canonical`, erweiterte Open-Graph- und neue Twitter-Card-Tags für Link-Vorschauen in Messengern/Social Media.
+  - **Structured Data (JSON-LD `SoftwareApplication`)** mit `installUrl`/`downloadUrl` auf den Play Store, damit Google Seite und App-Listing verknüpfen kann.
+  - **Indexierbarer `<noscript>`-Inhalt:** Die App rendert komplett per JavaScript – Crawler ohne JS-Ausführung sahen bisher nur "You need to enable JavaScript". Jetzt gibt es eine deutschsprachige Kurzbeschreibung inkl. Feature-Liste und Play-Store-Link.
+  - **Play-Store-Hinweis für Android-Besucher:** dezentes, wegklickbares Banner am unteren Rand (nur Android-Browser, nicht in der installierten PWA; Dismiss wird gemerkt).
+  - **`related_applications`** im Web-App-Manifest (plus `id`, `lang`, `categories`, deutschsprachige Description); `prefer_related_applications` bleibt auf `false` – auf `true` gesetzt würde Chrome auf Android die Play-Store-App statt der PWA-Installation anbieten.
+  - **Web-App verlinkt den Play Store** in "Über" (`AboutView`); bisher war der Eintrag Android-only.
+  - **`public/sitemap.xml`** um die Datenschutzerklärung ergänzt, Play-Store-Link in der README, neue Übersicht `docs/DISCOVERABILITY.md` (inkl. der manuellen Schritte in Search Console / GitHub-Repo-Metadaten).
 
 ### Fixed
+- **Toter Play-Store-Link in der App:** Der "Im Play Store bewerten"-Button verwies auf die Paket-ID `de.svenstroh.energypricegermany` statt auf `com.sven4321.energypricegermany`. Alle App-Links liegen jetzt zentral in `utils/appLinks.ts`.
+- **`scripts/post-build.js` überschrieb den SEO-Title** der Produktions-Seite mit dem generischen `Energy Prices Germany`; der Title aus `public/index.html` bleibt jetzt erhalten (Fallback nur, wenn gar kein Title vorhanden ist).
 - **Play Store: Large-Screen-Kompatibilität (Issue #381):** `orientation` in `app.config.js` (der eigentlich aktiven Config-Quelle, `app.json` wurde bereits ignoriert) von `portrait` auf `default` korrigiert. Neuer Config-Plugin `plugins/withAndroidResizeableActivity.js` setzt `android:resizeableActivity="true"` auf die MainActivity beim `expo prebuild` (das generierte, gitignorete `AndroidManifest.xml` kann nicht direkt gepatcht werden).
 - **Titel-Überlauf bei „Anteil erneuerbare Energien..." (Issue #355):** Chart-Titel in `PriceBarChart`, `RenewableBarChart` und `CorrelationScatterChart` brechen jetzt bei Bedarf zweizeilig um (`numberOfLines={2}`, `flex: 1`) statt auf kleinen Bildschirmen abgeschnitten zu werden.
-
-### Performance
-- **Pre-Aggregierung für die 30-Tage-Ansicht (Issue #334):** Die tägliche History-Pipeline (`fetch.yml`, alle Länder) erzeugt jetzt zusätzlich eine stündlich vorab-aggregierte `<date>-hourly.json` Variante (~75% kleiner) pro Tag. `historicalDataStore.getRange()` lädt für die 30-Tage-Ansicht in `HistoricalDataView` bevorzugt diese Variante nach (mit automatischem Fallback auf die volle Auflösung, falls sie fehlt) – deutlich weniger Downloadvolumen, da diese Ansicht ohnehin clientseitig auf Tages-Buckets aggregiert dargestellt wird.
 - **Potenzielle App-Abstürze (Issue #376):** Zwei verifizierte Absturzquellen behoben, die zum "App ist im Mai zweimal abgestürzt"-Report im Play Store passen (kein Stacktrace verfügbar):
   - **`Math.min(...array)`/`Math.max(...array)`-Spread** in `utils/metrics.ts`, `App.tsx`, `utils/chartUtils.ts` und den drei Chart-Komponenten (`PriceBarChart`, `RenewableBarChart`, `CorrelationScatterChart`) durch schleifenbasierte `arrayMin`/`arrayMax`-Helfer (`utils/mathUtils.ts`) ersetzt. Der Spread-Ansatz kann bei ungewöhnlich großen Arrays (z.B. durch einen Datenmerge-Bug oder lange Verlaufs-Zeiträume) einen `RangeError: Maximum call stack size exceeded` werfen – die neuen Helfer haben keine Obergrenze.
   - **`react-native-worklets`-Versionskonflikt:** `package.json` pinnte `0.7.2`, während `expo-modules-core` (gebündelt mit Expo 55) `^0.7.4 || ^0.8.0` verlangt – npm löste dadurch zwei divergierende native Kopien der Bibliothek auf (root `0.7.2` vs. verschachtelt `0.8.1` unter `expo`). Auf `0.8.1` vereinheitlicht, sodass nur noch eine native Modul-Kopie existiert.
+
+### Performance
+- **Pre-Aggregierung für die 30-Tage-Ansicht (Issue #334):** Die tägliche History-Pipeline (`fetch.yml`, alle Länder) erzeugt jetzt zusätzlich eine stündlich vorab-aggregierte `<date>-hourly.json` Variante (~75% kleiner) pro Tag. `historicalDataStore.getRange()` lädt für die 30-Tage-Ansicht in `HistoricalDataView` bevorzugt diese Variante nach (mit automatischem Fallback auf die volle Auflösung, falls sie fehlt) – deutlich weniger Downloadvolumen, da diese Ansicht ohnehin clientseitig auf Tages-Buckets aggregiert dargestellt wird.
+
 ## [1.9.0] - 2026-06-27
 
 ### Added
