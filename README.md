@@ -1,10 +1,21 @@
 # Energy Price Germany
 
-Real-time visualization of electricity market prices and renewable energy share in Germany.
+Real-time visualization of electricity market prices (day-ahead / EPEX Spot) and renewable energy
+share in Germany — free, ad-free and without tracking.
 
-## Live
+*Aktuelle Börsenstrompreise und Ökostrom-Anteil in Deutschland: Day-Ahead-Preise, erneuerbare
+Energien im Netz, regionale Daten per Postleitzahl und Verlaufsstatistiken — kostenlos, werbefrei
+und ohne Tracking. Nützlich mit dynamischem Stromtarif, Wallbox, Wärmepumpe, PV-Anlage oder
+Batteriespeicher.*
 
-[https://s540d.github.io/Energy_Price_Germany/](https://s540d.github.io/Energy_Price_Germany/)
+## Get the app
+
+| Platform | Link |
+| -------- | ---- |
+| Android  | [Google Play](https://play.google.com/store/apps/details?id=com.sven4321.energypricegermany) |
+| Web / PWA | [s540d.github.io/Energy_Price_Germany](https://s540d.github.io/Energy_Price_Germany/) |
+
+The web version is installable as a PWA; on Android the Play Store build is recommended.
 
 ## Tech Stack
 
@@ -28,6 +39,7 @@ Real-time visualization of electricity market prices and renewable energy share 
 - **Dark/Light theme** — automatic system detection with manual override
 - **Offline-capable** — PWA, previously loaded data cached
 - **Bilingual** — German and English with automatic language detection
+- **More countries (BETA)** — Netherlands, Austria, Switzerland, France, Belgium, Denmark
 
 ## Data Sources
 

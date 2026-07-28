@@ -10,6 +10,7 @@ import {
   Linking,
 } from 'react-native';
 import type { ThemeColors } from '../utils/theme';
+import { GITHUB_REPO_URL, PLAY_STORE_URL } from '../utils/appLinks';
 
 interface AboutViewProps {
   visible: boolean;
@@ -25,6 +26,7 @@ interface AboutViewProps {
     supportSection: string;
     supportProject: string;
     rateApp: string;
+    getAndroidApp: string;
     reportBug: string;
     noCommercialUse: string;
   };
@@ -141,7 +143,7 @@ export function AboutView({
             </Text>
             <TouchableOpacity
               onPress={() => {
-                const url = 'https://github.com/S540d/Energy_Price_Germany';
+                const url = GITHUB_REPO_URL;
                 if (Platform.OS === 'web') {
                   window.open(url, '_blank'); // platform-safe
                 } else {
@@ -178,9 +180,7 @@ export function AboutView({
             {Platform.OS === 'android' && (
               <TouchableOpacity
                 onPress={() => {
-                  const url =
-                    'https://play.google.com/store/apps/details?id=de.svenstroh.energypricegermany';
-                  Linking.openURL(url);
+                  Linking.openURL(PLAY_STORE_URL);
                 }}
                 style={[
                   styles.supportButton,
@@ -188,6 +188,21 @@ export function AboutView({
                 ]}
               >
                 <Text style={[styles.linkText, { color: colors.primary }]}>{t.rateApp}</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Web visitors otherwise never learn that a Play Store app exists */}
+            {Platform.OS === 'web' && (
+              <TouchableOpacity
+                onPress={() => {
+                  window.open(PLAY_STORE_URL, '_blank'); // platform-safe
+                }}
+                style={[
+                  styles.supportButton,
+                  { backgroundColor: colors.surface, borderColor: colors.gridLine },
+                ]}
+              >
+                <Text style={[styles.linkText, { color: colors.primary }]}>{t.getAndroidApp}</Text>
               </TouchableOpacity>
             )}
 
