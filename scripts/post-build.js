@@ -53,8 +53,11 @@ if (fs.existsSync(indexPath)) {
   html = html.replace(/href="\/(?!\/)/g, `href="${baseUrl}/`);
   html = html.replace(/src="\/(?!\/)/g, `src="${baseUrl}/`);
 
-  // Fix title and meta tags
-  html = html.replace(/<title>.*?<\/title>/, '<title>Energy Prices Germany</title>');
+  // Keep the SEO title from public/index.html — overwriting it here would drop the
+  // German keywords. Only add a fallback title if the generated file has none.
+  if (!/<title>[^<]+<\/title>/.test(html)) {
+    html = html.replace('</head>', '    <title>Energy Prices Germany</title>\n  </head>');
+  }
 
   // SEO meta tags (description, robots, Open Graph) already ship in public/index.html,
   // which Metro's web export uses as its template (Issue S540d/project-templates#95).
@@ -69,7 +72,8 @@ if (fs.existsSync(indexPath)) {
 
   // Fallback: add description/robots if the template somehow lacks them
   if (!html.includes('name="description"')) {
-    const seoDescription = 'Visualisierung von Energiepreisen und erneuerbaren Energien in Deutschland';
+    const seoDescription =
+      'Aktuelle Börsenstrompreise (Day-Ahead) und Ökostrom-Anteil in Deutschland – kostenlos, ohne Werbung und ohne Tracking.';
     const canonicalUrl = 'https://s540d.github.io/Energy_Price_Germany/';
     const robotsContent = isProduction ? 'index, follow' : 'noindex, nofollow';
     html = html.replace('</head>', `    <meta name="description" content="${seoDescription}" />
