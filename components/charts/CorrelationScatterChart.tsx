@@ -14,6 +14,7 @@ import {
   useChartZoom,
   ZoomResetBadge,
 } from './shared';
+import { scaleToX, scaleToY } from './shared/chartScale';
 
 interface CorrelationScatterChartProps {
   title: string;
@@ -183,13 +184,20 @@ function CorrelationScatterChartComponent({
     } = chartCalcs;
     return vd.map((d, index) => {
       const priceInCent = (d.marketPrice ?? 0) * 0.1;
-      const x =
-        leftPadding +
-        (((d.renewableShare ?? 0) - minR) / rRange) * (chartWidth - leftPadding - rightPadding);
-      const y =
-        chartHeight -
-        bottomPadding -
-        ((priceInCent - minP) / pRange) * (chartHeight - padding - bottomPadding);
+      const x = scaleToX(d.renewableShare ?? 0, {
+        domainMin: minR,
+        domainRange: rRange,
+        chartWidth,
+        leftPadding,
+        rightPadding,
+      });
+      const y = scaleToY(priceInCent, {
+        domainMin: minP,
+        domainRange: pRange,
+        chartHeight,
+        padding,
+        bottomPadding,
+      });
       const hour = new Date(d.timestamp).getHours();
       const color =
         hour >= 22 || hour < 6
@@ -218,6 +226,21 @@ function CorrelationScatterChartComponent({
     trendEndY,
   } = chartCalcs;
 
+  const trendXScale = {
+    domainMin: minRenewable,
+    domainRange: renewableRange,
+    chartWidth,
+    leftPadding,
+    rightPadding,
+  };
+  const trendYScale = {
+    domainMin: minPrice,
+    domainRange: priceRange,
+    chartHeight,
+    padding,
+    bottomPadding,
+  };
+
   return (
     <ChartCard
       backgroundColor={backgroundColor}
@@ -230,10 +253,13 @@ function CorrelationScatterChartComponent({
         (() => {
           const item = validData[selectedIndex];
 
-          const x =
-            leftPadding +
-            (((item.renewableShare ?? 0) - minRenewable) / renewableRange) *
-              (chartWidth - leftPadding - rightPadding);
+          const x = scaleToX(item.renewableShare ?? 0, {
+            domainMin: minRenewable,
+            domainRange: renewableRange,
+            chartWidth,
+            leftPadding,
+            rightPadding,
+          });
           const tooltipLeft = getTooltipLeft(toViewportX(x), 120, viewportWidth);
 
           return (
@@ -349,26 +375,10 @@ function CorrelationScatterChartComponent({
             <Svg width={chartWidth} height={chartHeight}>
               {/* Trendlinie */}
               <Line
-                x1={
-                  leftPadding +
-                  ((trendStartX - minRenewable) / renewableRange) *
-                    (chartWidth - leftPadding - rightPadding)
-                }
-                y1={
-                  chartHeight -
-                  bottomPadding -
-                  ((trendStartY - minPrice) / priceRange) * (chartHeight - padding - bottomPadding)
-                }
-                x2={
-                  leftPadding +
-                  ((trendEndX - minRenewable) / renewableRange) *
-                    (chartWidth - leftPadding - rightPadding)
-                }
-                y2={
-                  chartHeight -
-                  bottomPadding -
-                  ((trendEndY - minPrice) / priceRange) * (chartHeight - padding - bottomPadding)
-                }
+                x1={scaleToX(trendStartX, trendXScale)}
+                y1={scaleToY(trendStartY, trendYScale)}
+                x2={scaleToX(trendEndX, trendXScale)}
+                y2={scaleToY(trendEndY, trendYScale)}
                 stroke={textColor}
                 strokeWidth="2"
                 strokeDasharray="8,4"

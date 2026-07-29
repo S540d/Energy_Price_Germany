@@ -340,6 +340,7 @@ components/
 │       ├── NowMarker.tsx         # "Jetzt" time marker (line + label)
 │       ├── useChartZoom.ts       # Pinch/scroll zoom hook (#355)
 │       ├── ZoomResetBadge.tsx    # ⟲ reset control shown while zoomed (#355)
+│       ├── chartScale.ts         # Shared coordinate math (scaleToX/scaleToY/getBarWidth/getBarHeight)
 │       └── index.ts              # Barrel exports
 ├── settings/
 │   ├── AppearanceSection.tsx     # Theme pill selector with spring animation
