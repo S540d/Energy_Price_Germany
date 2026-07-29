@@ -84,7 +84,9 @@ export default [
 
       // ── Best Practices ──────────────────────────────────────────────
       'dot-notation': 'warn',
-      'eqeqeq': ['error', 'always'],
+      // `x != null` is the idiomatic "neither null nor undefined" check and is
+      // used deliberately (e.g. ChartSection); everything else must be strict.
+      'eqeqeq': ['error', 'always', { null: 'ignore' }],
       'no-alert': 'warn',
       'no-caller': 'warn',
       'no-div-regex': 'warn',

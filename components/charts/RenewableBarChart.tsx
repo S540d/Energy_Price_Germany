@@ -15,6 +15,7 @@ import {
   useChartZoom,
   ZoomResetBadge,
 } from './shared';
+import { scaleToX, scaleToY, getBarWidth, getBarHeight, getPlotHeight } from './shared/chartScale';
 
 // Performance: Move color helpers outside component for stable references
 const interpolateColor = (color1: number[], color2: number[], factor: number) => {
@@ -160,10 +161,14 @@ function RenewableBarChartComponent({
     const { minTime: cMinTime, timeRange: cTimeRange, min: cMin, range: cRange } = chartCalcs;
     return data.map((d, index) => {
       const value = d[dataKey];
-      const x =
-        leftPadding +
-        ((d.timestamp - cMinTime) / cTimeRange) * (chartWidth - leftPadding - rightPadding);
-      const barWidth = ((chartWidth - leftPadding - rightPadding) / data.length) * 0.8;
+      const x = scaleToX(d.timestamp, {
+        domainMin: cMinTime,
+        domainRange: cTimeRange,
+        chartWidth,
+        leftPadding,
+        rightPadding,
+      });
+      const barWidth = getBarWidth(chartWidth, leftPadding, rightPadding, data.length, 0.8);
       const timestamp = d.timestamp;
 
       if (value === null || value === undefined) {
@@ -178,15 +183,22 @@ function RenewableBarChartComponent({
       }
 
       const color = getRenewableColor(value);
-      const barHeight = ((value - cMin) / cRange) * (chartHeight - padding - bottomPadding);
+      const yScale = {
+        domainMin: cMin,
+        domainRange: cRange,
+        chartHeight,
+        padding,
+        bottomPadding,
+      };
+      const barHeight = getBarHeight(value, yScale);
       const y = chartHeight - bottomPadding - barHeight;
       const isInterpolated = d.isRenewableShareInterpolated || false;
 
       // Pre-calculate >100% split bar dimensions
       let baseHeight, overHeight, baseY, overY, baseColor;
       if (value > 100) {
-        baseHeight = ((100 - cMin) / cRange) * (chartHeight - padding - bottomPadding);
-        overHeight = ((value - 100) / cRange) * (chartHeight - padding - bottomPadding);
+        baseHeight = getBarHeight(100, yScale);
+        overHeight = ((value - 100) / cRange) * getPlotHeight(chartHeight, padding, bottomPadding);
         baseY = chartHeight - bottomPadding - baseHeight;
         overY = baseY - overHeight;
         baseColor = getRenewableColor(100);
@@ -240,8 +252,13 @@ function RenewableBarChartComponent({
           const item = data[selectedIndex];
           const renewablePercent = item[dataKey] ?? 0;
 
-          const x =
-            leftPadding + ((item.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
+          const x = scaleToX(item.timestamp, {
+            domainMin: minTime,
+            domainRange: timeRange,
+            chartWidth,
+            leftPadding,
+            rightPadding,
+          });
           const tooltipLeft = getTooltipLeft(toViewportX(x), 80, viewportWidth);
 
           return (
@@ -469,16 +486,22 @@ function RenewableBarChartComponent({
                 (() => {
                   const regionalPoints = data
                     .map((d, _index) => ({
-                      x:
-                        leftPadding +
-                        ((d.timestamp - minTime) / timeRange) *
-                          (chartWidth - leftPadding - rightPadding),
+                      x: scaleToX(d.timestamp, {
+                        domainMin: minTime,
+                        domainRange: timeRange,
+                        chartWidth,
+                        leftPadding,
+                        rightPadding,
+                      }),
                       y:
                         d.renewableShareRegional !== null && d.renewableShareRegional !== undefined
-                          ? chartHeight -
-                            bottomPadding -
-                            ((d.renewableShareRegional - min) / range) *
-                              (chartHeight - padding - bottomPadding)
+                          ? scaleToY(d.renewableShareRegional, {
+                              domainMin: min,
+                              domainRange: range,
+                              chartHeight,
+                              padding,
+                              bottomPadding,
+                            })
                           : null,
                       value: d.renewableShareRegional,
                     }))
@@ -598,9 +621,13 @@ function RenewableBarChartComponent({
 
               while (current <= endDate) {
                 const timestamp = current.getTime();
-                const x =
-                  leftPadding +
-                  ((timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
+                const x = scaleToX(timestamp, {
+                  domainMin: minTime,
+                  domainRange: timeRange,
+                  chartWidth,
+                  leftPadding,
+                  rightPadding,
+                });
                 const hour = current.getHours();
 
                 xAxisLabels.push(

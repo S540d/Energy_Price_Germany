@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text } from 'react-native';
 import { Line } from 'react-native-svg';
+import { scaleToX } from './chartScale';
 
 interface NowMarkerLineProps {
   now: number;
@@ -26,7 +27,13 @@ export function NowMarkerLine({
   padding,
   bottomPadding,
 }: NowMarkerLineProps) {
-  const x = leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
+  const x = scaleToX(now, {
+    domainMin: minTime,
+    domainRange: timeRange,
+    chartWidth,
+    leftPadding,
+    rightPadding,
+  });
   return (
     <Line
       x1={x}
@@ -64,7 +71,13 @@ export function NowMarkerLabel({
   bottomPadding,
   label,
 }: NowMarkerLabelProps) {
-  const x = leftPadding + ((now - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
+  const x = scaleToX(now, {
+    domainMin: minTime,
+    domainRange: timeRange,
+    chartWidth,
+    leftPadding,
+    rightPadding,
+  });
   return (
     <Text
       style={{

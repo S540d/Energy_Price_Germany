@@ -17,6 +17,7 @@ import {
   useChartZoom,
   ZoomResetBadge,
 } from './shared';
+import { scaleToX, getBarWidth, getBarHeight, getPlotHeight } from './shared/chartScale';
 
 interface PriceBarChartProps {
   title: string;
@@ -138,10 +139,14 @@ function PriceBarChartComponent({
     const { minTime: cMinTime, timeRange: cTimeRange, min: cMin, range: cRange } = chartCalcs;
     return data.map((d, index) => {
       const marketPrice = d.marketPrice !== null ? d.marketPrice * 0.1 : null;
-      const x =
-        leftPadding +
-        ((d.timestamp - cMinTime) / cTimeRange) * (chartWidth - leftPadding - rightPadding);
-      const barWidth = ((chartWidth - leftPadding - rightPadding) / data.length) * 0.95;
+      const x = scaleToX(d.timestamp, {
+        domainMin: cMinTime,
+        domainRange: cTimeRange,
+        chartWidth,
+        leftPadding,
+        rightPadding,
+      });
+      const barWidth = getBarWidth(chartWidth, leftPadding, rightPadding, data.length, 0.95);
 
       if (marketPrice === null) {
         return {
@@ -156,10 +161,17 @@ function PriceBarChartComponent({
       const totalPrice = isMarketOnly ? marketPrice : marketPrice + gridFees;
       const color = getPriceColor(totalPrice);
       const clampedMarketPrice = Math.max(0, marketPrice);
-      const marketBarHeight =
-        ((clampedMarketPrice - cMin) / cRange) * (chartHeight - padding - bottomPadding);
+      const yScale = {
+        domainMin: cMin,
+        domainRange: cRange,
+        chartHeight,
+        padding,
+        bottomPadding,
+      };
+      const marketBarHeight = getBarHeight(clampedMarketPrice, yScale);
       const marketY = chartHeight - bottomPadding - marketBarHeight;
-      const gridBarHeight = (gridFees / cRange) * (chartHeight - padding - bottomPadding);
+      const gridBarHeight =
+        (gridFees / cRange) * getPlotHeight(chartHeight, padding, bottomPadding);
       const gridY = marketY - gridBarHeight;
       const isInterpolated = d.isMarketPriceInterpolated || false;
 
@@ -210,8 +222,13 @@ function PriceBarChartComponent({
           const marketPriceCent = item.marketPrice * 0.1;
           const totalPrice = marketPriceCent + gridFees;
 
-          const x =
-            leftPadding + ((item.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
+          const x = scaleToX(item.timestamp, {
+            domainMin: minTime,
+            domainRange: timeRange,
+            chartWidth,
+            leftPadding,
+            rightPadding,
+          });
           const tooltipLeft = getTooltipLeft(toViewportX(x), 100, viewportWidth);
 
           return (
@@ -533,9 +550,13 @@ function PriceBarChartComponent({
 
               while (current <= endDate) {
                 const timestamp = current.getTime();
-                const x =
-                  leftPadding +
-                  ((timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
+                const x = scaleToX(timestamp, {
+                  domainMin: minTime,
+                  domainRange: timeRange,
+                  chartWidth,
+                  leftPadding,
+                  rightPadding,
+                });
                 const hour = current.getHours();
 
                 xAxisLabels.push(
