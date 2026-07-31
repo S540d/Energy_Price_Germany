@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback } from 'react';
-import { View, Text, Platform } from 'react-native';
+import { View, Text, Platform, StyleSheet } from 'react-native';
 import Svg, { Path, Circle, Line, G, Text as SvgText } from 'react-native-svg';
 import type { ThemeColors } from '../../utils/theme';
 import { getPriceColor } from '../../utils/chartHelpers';
@@ -148,50 +148,54 @@ function ClockChartComponent({
   return (
     <ChartCard backgroundColor={backgroundColor} margin={margin} cardPadding={cardPadding}>
       {/* Center info */}
-      <View style={{ alignItems: 'center', marginBottom: 8 }}>
+      <View style={styles.centerInfo}>
         {selectedSegment && selectedSegment.totalPrice !== null ? (
           <>
-            <Text style={{ color: textColor, fontSize: isPhone ? 13 : 15, fontWeight: '700' }}>
+            <Text
+              style={[
+                isPhone ? styles.rangeLabelPhone : styles.rangeLabelDefault,
+                { color: textColor },
+              ]}
+            >
               {selectedHour}:00 – {((selectedHour ?? 0) + 1) % 24}:00
             </Text>
             <Text
-              style={{
-                color: selectedSegment.color,
-                fontSize: isPhone ? 20 : 24,
-                fontWeight: '800',
-              }}
+              style={[
+                isPhone ? styles.priceValuePhone : styles.priceValueDefault,
+                { color: selectedSegment.color },
+              ]}
             >
               {selectedSegment.totalPrice.toFixed(2)} ¢
             </Text>
-            <Text style={{ color: textColor, fontSize: 11, opacity: 0.6 }}>
-              {labels.pricePerKwh}
-            </Text>
+            <Text style={[styles.priceUnit, { color: textColor }]}>{labels.pricePerKwh}</Text>
           </>
         ) : currentSegment.totalPrice !== null ? (
           <>
-            <Text style={{ color: textColor, fontSize: isPhone ? 11 : 13, opacity: 0.7 }}>
+            <Text
+              style={[
+                isPhone ? styles.nowLabelPhone : styles.nowLabelDefault,
+                { color: textColor },
+              ]}
+            >
               {labels.now}
             </Text>
             <Text
-              style={{
-                color: currentSegment.color,
-                fontSize: isPhone ? 20 : 24,
-                fontWeight: '800',
-              }}
+              style={[
+                isPhone ? styles.priceValuePhone : styles.priceValueDefault,
+                { color: currentSegment.color },
+              ]}
             >
               {currentSegment.totalPrice.toFixed(2)} ¢
             </Text>
-            <Text style={{ color: textColor, fontSize: 11, opacity: 0.6 }}>
-              {labels.pricePerKwh}
-            </Text>
+            <Text style={[styles.priceUnit, { color: textColor }]}>{labels.pricePerKwh}</Text>
           </>
         ) : (
-          <Text style={{ color: textColor, fontSize: 13, opacity: 0.5 }}>{labels.noData}</Text>
+          <Text style={[styles.noDataLabel, { color: textColor }]}>{labels.noData}</Text>
         )}
       </View>
 
       {/* Clock SVG */}
-      <View style={{ alignItems: 'center' }}>
+      <View style={styles.svgWrapper}>
         <Svg width={svgSize} height={svgSize}>
           {/* Background circle */}
           <Circle cx={cx} cy={cy} r={outerR + 4} fill={colors.gridLine} opacity={0.1} />
@@ -276,3 +280,16 @@ function ClockChartComponent({
 }
 
 export const ClockChart = React.memo(ClockChartComponent);
+
+const styles = StyleSheet.create({
+  centerInfo: { alignItems: 'center', marginBottom: 8 },
+  rangeLabelPhone: { fontSize: 13, fontWeight: '700' },
+  rangeLabelDefault: { fontSize: 15, fontWeight: '700' },
+  priceValuePhone: { fontSize: 20, fontWeight: '800' },
+  priceValueDefault: { fontSize: 24, fontWeight: '800' },
+  priceUnit: { fontSize: 11, opacity: 0.6 },
+  nowLabelPhone: { fontSize: 11, opacity: 0.7 },
+  nowLabelDefault: { fontSize: 13, opacity: 0.7 },
+  noDataLabel: { fontSize: 13, opacity: 0.5 },
+  svgWrapper: { alignItems: 'center' },
+});

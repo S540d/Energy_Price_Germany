@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, Platform, ScrollView } from 'react-native';
+import { View, Text, Platform, ScrollView, StyleSheet } from 'react-native';
 import Svg, { Rect, Line, Polyline } from 'react-native-svg';
 import type { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
@@ -268,41 +268,25 @@ function RenewableBarChartComponent({
               backgroundColor={backgroundColor}
               colors={colors}
             >
-              <Text style={{ color: colors.text, fontSize: 14, fontWeight: 'bold' }}>
+              <Text style={[styles.tooltipValue, { color: colors.text }]}>
                 {renewablePercent.toFixed(1)}%
               </Text>
             </ChartTooltip>
           );
         })()}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: 0,
-        }}
-      >
-        <View style={{ flex: 1, marginRight: 8 }}>
+      <View style={styles.headerRow}>
+        <View style={styles.titleColumn}>
           <Text
-            style={{
-              fontSize: isPhone ? 16 : 18,
-              fontWeight: 'bold',
-              marginBottom: 0,
-              color: textColor,
-            }}
+            style={[isPhone ? styles.titlePhone : styles.titleDefault, { color: textColor }]}
             numberOfLines={2}
             ellipsizeMode="tail"
           >
             {title}
           </Text>
-          {subtitle && (
-            <Text style={{ fontSize: 12, color: textColor, opacity: 0.7, marginBottom: 2 }}>
-              {subtitle}
-            </Text>
-          )}
+          {subtitle && <Text style={[styles.subtitle, { color: textColor }]}>{subtitle}</Text>}
           {interactionHint && (
             <Text
-              style={{ fontSize: 12, fontStyle: 'italic', opacity: 0.5, color: textColor }}
+              style={[styles.hint, { color: textColor }]}
               accessibilityRole="text"
               accessibilityLabel={interactionHint}
             >
@@ -312,45 +296,22 @@ function RenewableBarChartComponent({
         </View>
         {/* Legend - hidden when showLegend is false or on small devices in portrait mode */}
         {showLegend && !(isPhone && !isLandscape) && (
-          <View
-            style={{
-              flexDirection: 'row',
-              gap: 12,
-              paddingRight: 10,
-              paddingTop: 0,
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View
-                style={{
-                  width: 12,
-                  height: 2,
-                  backgroundColor: textColor,
-                  opacity: 0.5,
-                }}
-              />
-              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.average}</Text>
+          <View style={styles.legendRow}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendLine, { backgroundColor: textColor }]} />
+              <Text style={[styles.legendLabel, { color: textColor }]}>{labels.average}</Text>
             </View>
             {showRegionalLine && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <View
-                  style={{
-                    width: 12,
-                    height: 2,
-                    backgroundColor: '#FF9800',
-                    opacity: 0.8,
-                  }}
-                />
-                <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>
-                  {labels.regional}
-                </Text>
+              <View style={styles.legendItem}>
+                <View style={styles.legendLineRegional} />
+                <Text style={[styles.legendLabel, { color: textColor }]}>{labels.regional}</Text>
               </View>
             )}
           </View>
         )}
       </View>
       <View
-        style={{ height: chartHeight, width: viewportWidth, position: 'relative' }}
+        style={[styles.relative, { height: chartHeight, width: viewportWidth }]}
         {...gestureContainerProps}
       >
         <ScrollView
@@ -359,7 +320,7 @@ function RenewableBarChartComponent({
           style={{ width: viewportWidth, height: chartHeight }}
           contentContainerStyle={{ width: chartWidth, height: chartHeight }}
         >
-          <View style={{ height: chartHeight, width: chartWidth, position: 'relative' }}>
+          <View style={[styles.relative, { height: chartHeight, width: chartWidth }]}>
             <ChartGrid
               chartWidth={chartWidth}
               chartHeight={chartHeight}
@@ -526,20 +487,18 @@ function RenewableBarChartComponent({
                       />
                       {labels.regional && (
                         <Text
-                          style={{
-                            position: 'absolute',
-                            right: rightPadding + 4,
-                            top:
-                              chartHeight -
-                              bottomPadding -
-                              ((regionalAvg - min) / range) *
-                                (chartHeight - padding - bottomPadding) +
-                              12,
-                            fontSize: 12,
-                            color: '#FF9800',
-                            fontWeight: '600',
-                            opacity: 0.9,
-                          }}
+                          style={[
+                            styles.regionalLabel,
+                            {
+                              right: rightPadding + 4,
+                              top:
+                                chartHeight -
+                                bottomPadding -
+                                ((regionalAvg - min) / range) *
+                                  (chartHeight - padding - bottomPadding) +
+                                12,
+                            },
+                          ]}
                         >
                           {labels.regional} {regionalAvg.toFixed(1)}%
                         </Text>
@@ -571,15 +530,15 @@ function RenewableBarChartComponent({
               return (
                 <View
                   key={`touch-${bar.index}`}
-                  style={{
-                    position: 'absolute',
-                    left: bar.x - bar.barWidth / 2,
-                    top: bar.y,
-                    width: bar.barWidth,
-                    height: bar.barHeight,
-                    zIndex: 10,
-                    cursor: Platform.OS === 'web' ? 'pointer' : undefined,
-                  }}
+                  style={[
+                    Platform.OS === 'web' ? styles.touchAreaWeb : styles.touchArea,
+                    {
+                      left: bar.x - bar.barWidth / 2,
+                      top: bar.y,
+                      width: bar.barWidth,
+                      height: bar.barHeight,
+                    },
+                  ]}
                   onStartShouldSetResponder={() => true}
                   onResponderGrant={() => handleBarInteraction(bar.index)}
                   {...(Platform.OS === 'web' && {
@@ -592,19 +551,18 @@ function RenewableBarChartComponent({
 
             {/* Durchschnittslinie Label */}
             <Text
-              style={{
-                position: 'absolute',
-                right: rightPadding + 4,
-                top:
-                  chartHeight -
-                  bottomPadding -
-                  ((avgValue - min) / range) * (chartHeight - padding - bottomPadding) -
-                  12,
-                fontSize: 12,
-                color: textColor,
-                fontWeight: '600',
-                opacity: 0.7,
-              }}
+              style={[
+                styles.averageLabel,
+                {
+                  right: rightPadding + 4,
+                  top:
+                    chartHeight -
+                    bottomPadding -
+                    ((avgValue - min) / range) * (chartHeight - padding - bottomPadding) -
+                    12,
+                  color: textColor,
+                },
+              ]}
             >
               {labels.average} {avgValue.toFixed(1)}%
             </Text>
@@ -633,14 +591,10 @@ function RenewableBarChartComponent({
                 xAxisLabels.push(
                   <Text
                     key={`xlabel-${timestamp}`}
-                    style={{
-                      position: 'absolute',
-                      left: x - 10,
-                      top: chartHeight - bottomPadding + 5,
-                      fontSize: 12,
-                      color: textColor,
-                      opacity: 0.6,
-                    }}
+                    style={[
+                      styles.xAxisLabel,
+                      { left: x - 10, top: chartHeight - bottomPadding + 5, color: textColor },
+                    ]}
                   >
                     {hour}h
                   </Text>
@@ -661,16 +615,10 @@ function RenewableBarChartComponent({
           return (
             <Text
               key={`ylabel-${i}`}
-              style={{
-                position: 'absolute',
-                left: 10,
-                top: y - 8,
-                fontSize: 12,
-                color: textColor,
-                opacity: 0.6,
-                textAlign: 'right',
-                width: isPhone ? 25 : 30,
-              }}
+              style={[
+                isPhone ? styles.yAxisLabelPhone : styles.yAxisLabelDefault,
+                { top: y - 8, color: textColor },
+              ]}
             >
               {value.toFixed(0)}
             </Text>
@@ -689,13 +637,7 @@ function RenewableBarChartComponent({
           accessible={true}
           accessibilityRole="text"
           accessibilityLabel={interactionHint}
-          style={{
-            fontSize: 12,
-            color: textColor,
-            opacity: 0.5,
-            fontStyle: 'italic',
-            marginTop: 8,
-          }}
+          style={[styles.interactionHintText, { color: textColor }]}
         >
           {interactionHint}
         </Text>
@@ -707,3 +649,57 @@ function RenewableBarChartComponent({
 // Performance: Wrap with React.memo to prevent unnecessary re-renders
 // Only re-renders if props actually change
 export const RenewableBarChart = React.memo(RenewableBarChartComponent);
+
+const styles = StyleSheet.create({
+  tooltipValue: { fontSize: 14, fontWeight: 'bold' },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 0,
+  },
+  titleColumn: { flex: 1, marginRight: 8 },
+  titlePhone: { fontSize: 16, fontWeight: 'bold', marginBottom: 0 },
+  titleDefault: { fontSize: 18, fontWeight: 'bold', marginBottom: 0 },
+  subtitle: { fontSize: 12, opacity: 0.7, marginBottom: 2 },
+  hint: { fontSize: 12, fontStyle: 'italic', opacity: 0.5 },
+  legendRow: { flexDirection: 'row', gap: 12, paddingRight: 10, paddingTop: 0 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendLine: { width: 12, height: 2, opacity: 0.5 },
+  legendLineRegional: { width: 12, height: 2, backgroundColor: '#FF9800', opacity: 0.8 },
+  legendLabel: { fontSize: 12, opacity: 0.7 },
+  relative: { position: 'relative' },
+  regionalLabel: {
+    position: 'absolute',
+    fontSize: 12,
+    color: '#FF9800',
+    fontWeight: '600',
+    opacity: 0.9,
+  },
+  touchArea: { position: 'absolute', zIndex: 10 },
+  touchAreaWeb: { position: 'absolute', zIndex: 10, cursor: 'pointer' },
+  averageLabel: { position: 'absolute', fontSize: 12, fontWeight: '600', opacity: 0.7 },
+  xAxisLabel: { position: 'absolute', fontSize: 12, opacity: 0.6 },
+  yAxisLabelPhone: {
+    position: 'absolute',
+    left: 10,
+    fontSize: 12,
+    opacity: 0.6,
+    textAlign: 'right',
+    width: 25,
+  },
+  yAxisLabelDefault: {
+    position: 'absolute',
+    left: 10,
+    fontSize: 12,
+    opacity: 0.6,
+    textAlign: 'right',
+    width: 30,
+  },
+  interactionHintText: {
+    fontSize: 12,
+    opacity: 0.5,
+    fontStyle: 'italic',
+    marginTop: 8,
+  },
+});

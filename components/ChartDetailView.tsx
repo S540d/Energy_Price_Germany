@@ -103,18 +103,15 @@ export function ChartDetailView({
           <Text style={[styles.metricsTitle, { color: colors.text }]}>{metrics.label}</Text>
 
           {sections.map(({ data, accentColor: sectionAccentColor, label }) => (
-            <View key={label} style={{ marginTop: 12 }}>
+            <View key={label} style={styles.sectionMarginTop}>
               <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>{label}</Text>
 
               {data.current !== null && data.current !== undefined && (
                 <View
                   style={[
                     styles.currentValueContainer,
-                    {
-                      backgroundColor: colors.surface,
-                      borderLeftWidth: 3,
-                      borderLeftColor: sectionAccentColor,
-                    },
+                    styles.currentValueBorder,
+                    { backgroundColor: colors.surface, borderLeftColor: sectionAccentColor },
                   ]}
                 >
                   <Text style={[styles.currentLabel, { color: colors.text }]}>
@@ -164,11 +161,8 @@ export function ChartDetailView({
           <View
             style={[
               styles.currentValueContainer,
-              {
-                backgroundColor: colors.surface,
-                borderLeftWidth: 3,
-                borderLeftColor: accentColor ?? colors.primary,
-              },
+              styles.currentValueBorder,
+              { backgroundColor: colors.surface, borderLeftColor: accentColor ?? colors.primary },
             ]}
           >
             <Text style={[styles.currentLabel, { color: colors.text }]}>{t.metricCurrent}</Text>
@@ -206,7 +200,7 @@ export function ChartDetailView({
   };
 
   const renderContent = () => (
-    <View style={{ flex: 1 }}>
+    <View style={styles.flexOne}>
       {/* Chart always shown – use detailChildren override when available */}
       <View ref={chartCaptureRef} style={styles.chartContainer} collapsable={false}>
         {detailChildren ?? children}
@@ -262,11 +256,11 @@ export function ChartDetailView({
             ]}
           >
             <Text style={[styles.modalTitle, { color: colors.text }]}>{title}</Text>
-            {viewToggle && <View style={{ marginTop: 8 }}>{viewToggle}</View>}
+            {viewToggle && <View style={styles.viewToggleMarginTop}>{viewToggle}</View>}
           </View>
 
           {/* Content */}
-          <ScrollView style={{ flex: 1 }}>{renderContent()}</ScrollView>
+          <ScrollView style={styles.flexOne}>{renderContent()}</ScrollView>
 
           {/* Footer: Share + Close buttons */}
           <View
@@ -344,6 +338,18 @@ const styles = StyleSheet.create({
   footerButton: {
     flex: 1,
     minHeight: 48,
+  },
+  flexOne: {
+    flex: 1,
+  },
+  sectionMarginTop: {
+    marginTop: 12,
+  },
+  currentValueBorder: {
+    borderLeftWidth: 3,
+  },
+  viewToggleMarginTop: {
+    marginTop: 8,
   },
   metricsContainer: {
     margin: 16,

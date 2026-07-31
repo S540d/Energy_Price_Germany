@@ -262,6 +262,11 @@ describe('platform', () => {
       });
       const callback = jest.fn();
       addSystemThemeChangeListener(callback);
+      expect(capturedHandler).not.toBeNull();
+      // capturedHandler is set inside the addEventListener mock's closure above;
+      // TS can't narrow across that closure boundary (it would type this `never`
+      // after a guard), so the assertion above is the real non-null check.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       capturedHandler!({ matches: true } as MediaQueryListEvent);
       expect(callback).toHaveBeenCalledWith(true);
     });

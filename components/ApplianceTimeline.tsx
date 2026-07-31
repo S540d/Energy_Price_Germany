@@ -282,10 +282,9 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
                         key={`gap-${col.hours[0]}`}
                         style={[
                           styles.gapCell,
+                          anyInWindow && styles.windowBorder,
                           anyInWindow && {
                             backgroundColor: `${colors.success}30`,
-                            borderTopWidth: 2,
-                            borderBottomWidth: 2,
                             borderColor: colors.success,
                           },
                         ]}
@@ -319,22 +318,13 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
                       key={`h-${col.slot.hour}-${ci}`}
                       style={[
                         styles.hourCell,
+                        inWindow && styles.windowBorder,
                         inWindow && {
                           backgroundColor: `${colors.success}30`,
-                          borderTopWidth: 2,
-                          borderBottomWidth: 2,
                           borderColor: colors.success,
                         },
-                        roundLeft && {
-                          borderLeftWidth: 2,
-                          borderTopLeftRadius: 6,
-                          borderBottomLeftRadius: 6,
-                        },
-                        roundRight && {
-                          borderRightWidth: 2,
-                          borderTopRightRadius: 6,
-                          borderBottomRightRadius: 6,
-                        },
+                        roundLeft && styles.windowRoundLeft,
+                        roundRight && styles.windowRoundRight,
                       ]}
                     />
                   );
@@ -359,11 +349,7 @@ function ApplianceTimelineComponent({ appliances, priceData, gridFees }: Applian
             <View
               style={[
                 styles.legendDot,
-                {
-                  backgroundColor: `${colors.success}30`,
-                  borderColor: colors.success,
-                  borderWidth: 1.5,
-                },
+                { backgroundColor: `${colors.success}30`, borderColor: colors.success },
               ]}
             />
             <Text style={[styles.legendText, { color: colors.textSecondary }]}>
@@ -427,6 +413,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  windowBorder: {
+    borderTopWidth: 2,
+    borderBottomWidth: 2,
+  },
+  windowRoundLeft: {
+    borderLeftWidth: 2,
+    borderTopLeftRadius: 6,
+    borderBottomLeftRadius: 6,
+  },
+  windowRoundRight: {
+    borderRightWidth: 2,
+    borderTopRightRadius: 6,
+    borderBottomRightRadius: 6,
+  },
   hourLabel: {
     fontSize: 11,
     fontWeight: '500',
@@ -446,6 +446,7 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 3,
+    borderWidth: 1.5,
   },
   legendText: {
     fontSize: 13,

@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { Platform } from 'react-native';
+import React, { useEffect, useMemo } from 'react';
+import { Platform, StyleSheet } from 'react-native';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -49,10 +49,10 @@ function ChartTooltipComponent({
     transform: [{ scale: scale.value }],
   }));
 
-  return (
-    <Animated.View
-      style={[
-        {
+  const tooltipStyle = useMemo(
+    () =>
+      StyleSheet.create({
+        tooltip: {
           paddingVertical: 6,
           paddingHorizontal: 12,
           backgroundColor: tooltipBgColor,
@@ -73,12 +73,11 @@ function ChartTooltipComponent({
             backdropFilter: 'blur(10px)',
           }),
         },
-        animatedStyle,
-      ]}
-    >
-      {children}
-    </Animated.View>
+      }).tooltip,
+    [tooltipBgColor, colors.gridLine, cardPadding, tooltipLeft, minWidth]
   );
+
+  return <Animated.View style={[tooltipStyle, animatedStyle]}>{children}</Animated.View>;
 }
 
 export const ChartTooltip = React.memo(ChartTooltipComponent);

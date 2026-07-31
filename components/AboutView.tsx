@@ -105,9 +105,7 @@ export function AboutView({
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
               License: CC BY 4.0
             </Text>
-            <Text
-              style={[styles.infoText, { color: colors.textSecondary, fontSize: 12, marginTop: 4 }]}
-            >
+            <Text style={[styles.infoTextSmall, { color: colors.textSecondary }]}>
               Regional renewable energy share based on postal code (PLZ).
             </Text>
             <TouchableOpacity
@@ -133,12 +131,7 @@ export function AboutView({
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
               Open Source • MIT License
             </Text>
-            <Text
-              style={[
-                styles.infoText,
-                { color: colors.textSecondary, fontSize: 12, fontStyle: 'italic', marginTop: 4 },
-              ]}
-            >
+            <Text style={[styles.infoTextSmallItalic, { color: colors.textSecondary }]}>
               {t.noCommercialUse}
             </Text>
             <TouchableOpacity
@@ -227,7 +220,7 @@ export function AboutView({
           </View>
 
           {/* Credits */}
-          <View style={[styles.section, { paddingBottom: 40 }]} />
+          <View style={styles.footerSpacer} />
         </ScrollView>
       </View>
     </Modal>
@@ -264,6 +257,10 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 24,
   },
+  footerSpacer: {
+    marginBottom: 24,
+    paddingBottom: 40,
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
@@ -273,6 +270,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 4,
+  },
+  infoTextSmall: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  infoTextSmallItalic: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginTop: 4,
   },
   link: {
     marginTop: 8,
