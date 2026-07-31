@@ -28,6 +28,8 @@ import { RenewableBarChart } from './charts/RenewableBarChart';
 
 type TimeRange = '24h' | '48h' | '7d' | '30d';
 
+const ACTIVE_RANGE_TEXT_COLOR = '#fff';
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -202,7 +204,10 @@ export function HistoricalDataView({
               accessibilityRole="button"
             >
               <Text
-                style={[styles.rangeButtonText, { color: timeRange === r ? '#fff' : colors.text }]}
+                style={[
+                  styles.rangeButtonText,
+                  { color: timeRange === r ? ACTIVE_RANGE_TEXT_COLOR : colors.text },
+                ]}
               >
                 {rangeLabel[r]}
               </Text>

@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 
 type Props = {
   label: string;
@@ -12,6 +12,36 @@ type Props = {
   surfaceColor: string;
   labelColor: string;
 };
+
+function createStyles(bg: string, border: string, labelColor: string, accentColor: string) {
+  return StyleSheet.create({
+    card: {
+      flex: 1,
+      backgroundColor: bg,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: border,
+      padding: 14,
+    },
+    label: {
+      fontSize: 10,
+      fontWeight: '600',
+      color: labelColor,
+      textTransform: 'uppercase',
+      letterSpacing: 0.8,
+      marginBottom: 6,
+    },
+    value: {
+      fontFamily: 'monospace',
+      fontSize: 28,
+      fontWeight: '700',
+      color: accentColor,
+      lineHeight: 32,
+      marginBottom: 4,
+    },
+    avg: { fontSize: 11, color: labelColor },
+  });
+}
 
 export function KpiCard({
   label,
@@ -29,43 +59,17 @@ export function KpiCard({
   const bg = isDark ? 'rgba(255,255,255,0.04)' : surfaceColor;
   const border = accentColor.startsWith('#') ? accentColor + '33' : 'transparent';
 
+  const styles = useMemo(
+    () => createStyles(bg, border, labelColor, accentColor),
+    [bg, border, labelColor, accentColor]
+  );
+
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: bg,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: border,
-        padding: 14,
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 10,
-          fontWeight: '600',
-          color: labelColor,
-          textTransform: 'uppercase',
-          letterSpacing: 0.8,
-          marginBottom: 6,
-        }}
-      >
-        {label}
-      </Text>
-      <Text
-        style={{
-          fontFamily: 'monospace',
-          fontSize: 28,
-          fontWeight: '700',
-          color: accentColor,
-          lineHeight: 32,
-          marginBottom: 4,
-        }}
-      >
-        {displayValue}
-      </Text>
+    <View style={styles.card}>
+      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.value}>{displayValue}</Text>
       {displayAvg && (
-        <Text style={{ fontSize: 11, color: labelColor }}>
+        <Text style={styles.avg}>
           {avgLabel} {displayAvg}
         </Text>
       )}

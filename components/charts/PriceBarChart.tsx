@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, Platform, ScrollView } from 'react-native';
+import { View, Text, Platform, ScrollView, StyleSheet } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
 import type { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle, getPriceColor } from '../../utils/chartHelpers';
@@ -240,15 +240,9 @@ function PriceBarChartComponent({
               minWidth={180}
             >
               {/* Market Price */}
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  marginBottom: isMarketOnly ? 0 : 4,
-                }}
-              >
-                <Text style={{ color: '#4CAF50', fontSize: 11 }}>{labels.tooltipMarketPrice}</Text>
-                <Text style={{ color: colors.text, fontSize: 11, fontWeight: '600' }}>
+              <View style={isMarketOnly ? styles.tooltipRow : styles.tooltipRowMarginBottom4}>
+                <Text style={styles.tooltipMarketLabel}>{labels.tooltipMarketPrice}</Text>
+                <Text style={[styles.tooltipValueSmallBold, { color: colors.text }]}>
                   {marketPriceCent.toFixed(2)} ¢
                 </Text>
               </View>
@@ -257,37 +251,24 @@ function PriceBarChartComponent({
               {!isMarketOnly && (
                 <>
                   {/* Grid Fees */}
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      marginBottom: 6,
-                    }}
-                  >
-                    <Text style={{ color: colors.textSecondary, fontSize: 11 }}>
+                  <View style={styles.tooltipRowMarginBottom6}>
+                    <Text style={[styles.tooltipLabelSmall, { color: colors.textSecondary }]}>
                       {labels.tooltipGridFees}
                     </Text>
-                    <Text style={{ color: colors.text, fontSize: 11, fontWeight: '600' }}>
+                    <Text style={[styles.tooltipValueSmallBold, { color: colors.text }]}>
                       {gridFees.toFixed(2)} ¢
                     </Text>
                   </View>
 
                   {/* Divider */}
-                  <View
-                    style={{
-                      height: 1,
-                      backgroundColor: colors.gridLine,
-                      marginVertical: 6,
-                      opacity: 0.5,
-                    }}
-                  />
+                  <View style={[styles.tooltipDivider, { backgroundColor: colors.gridLine }]} />
 
                   {/* Total Price */}
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Text style={{ color: colors.text, fontSize: 12, fontWeight: '600' }}>
+                  <View style={styles.tooltipRow}>
+                    <Text style={[styles.tooltipTotalLabel, { color: colors.text }]}>
                       {labels.tooltipEndCustomer}
                     </Text>
-                    <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>
+                    <Text style={[styles.tooltipTotalValue, { color: colors.primary }]}>
                       {totalPrice.toFixed(2)} ¢
                     </Text>
                   </View>
@@ -296,43 +277,19 @@ function PriceBarChartComponent({
             </ChartTooltip>
           );
         })()}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 0,
-        }}
-      >
-        <View style={{ flex: 1, marginRight: 8 }}>
+      <View style={styles.headerRow}>
+        <View style={styles.titleColumn}>
           <Text
-            style={{
-              fontSize: isPhone ? 17 : 20,
-              fontWeight: '800',
-              marginBottom: 0,
-              color: textColor,
-            }}
+            style={[isPhone ? styles.titlePhone : styles.titleDefault, { color: textColor }]}
             numberOfLines={2}
             ellipsizeMode="tail"
           >
             {title}
           </Text>
-          {subtitle && (
-            <Text
-              style={{
-                fontSize: 11,
-                color: textColor,
-                opacity: 0.7,
-                marginBottom: 2,
-                fontWeight: '600',
-              }}
-            >
-              {subtitle}
-            </Text>
-          )}
+          {subtitle && <Text style={[styles.subtitle, { color: textColor }]}>{subtitle}</Text>}
           {interactionHint && (
             <Text
-              style={{ fontSize: 11, fontStyle: 'italic', opacity: 0.5, color: textColor }}
+              style={[styles.hint, { color: textColor }]}
               accessibilityRole="text"
               accessibilityLabel={interactionHint}
             >
@@ -342,39 +299,28 @@ function PriceBarChartComponent({
         </View>
         {/* Legend - hidden when showLegend is false or on small devices in portrait mode */}
         {showLegend && !(isPhone && !isLandscape) && (
-          <View
-            style={{
-              flexDirection: 'row',
-              gap: 12,
-              paddingRight: 10,
-              paddingTop: 0,
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={{ width: 10, height: 10, backgroundColor: '#4CAF50' }} />
-              <Text style={{ fontSize: 11, color: textColor, opacity: 0.7 }}>
-                {labels.marketPrice}
-              </Text>
+          <View style={styles.legendRow}>
+            <View style={styles.legendItem}>
+              <View style={styles.legendDotMarket} />
+              <Text style={[styles.legendLabel, { color: textColor }]}>{labels.marketPrice}</Text>
             </View>
             {!isMarketOnly && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <View style={{ width: 10, height: 10, backgroundColor: '#757575' }} />
-                <Text style={{ fontSize: 11, color: textColor, opacity: 0.7 }}>
+              <View style={styles.legendItem}>
+                <View style={styles.legendDotGrid} />
+                <Text style={[styles.legendLabel, { color: textColor }]}>
                   {labels.gridFeesAndTaxes} ({gridFees} ¢/kWh)
                 </Text>
               </View>
             )}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={{ width: 10, height: 10, backgroundColor: '#4CAF50', opacity: 0.4 }} />
-              <Text style={{ fontSize: 11, color: textColor, opacity: 0.7 }}>
-                {labels.interpolated}
-              </Text>
+            <View style={styles.legendItem}>
+              <View style={styles.legendDotInterpolated} />
+              <Text style={[styles.legendLabel, { color: textColor }]}>{labels.interpolated}</Text>
             </View>
           </View>
         )}
       </View>
       <View
-        style={{ height: chartHeight, width: viewportWidth, position: 'relative' }}
+        style={[styles.relative, { height: chartHeight, width: viewportWidth }]}
         {...gestureContainerProps}
       >
         <ScrollView
@@ -383,7 +329,7 @@ function PriceBarChartComponent({
           style={{ width: viewportWidth, height: chartHeight }}
           contentContainerStyle={{ width: chartWidth, height: chartHeight }}
         >
-          <View style={{ height: chartHeight, width: chartWidth, position: 'relative' }}>
+          <View style={[styles.relative, { height: chartHeight, width: chartWidth }]}>
             <ChartGrid
               chartWidth={chartWidth}
               chartHeight={chartHeight}
@@ -498,17 +444,17 @@ function PriceBarChartComponent({
               return (
                 <View
                   key={`touch-${bar.index}`}
-                  style={{
-                    position: 'absolute',
-                    left: bar.x - bar.barWidth / 2,
-                    top: isMarketOnly ? bar.marketY : bar.gridY,
-                    width: bar.barWidth,
-                    height: isMarketOnly
-                      ? bar.marketBarHeight
-                      : bar.marketBarHeight + bar.gridBarHeight,
-                    zIndex: 10,
-                    cursor: Platform.OS === 'web' ? 'pointer' : undefined,
-                  }}
+                  style={[
+                    Platform.OS === 'web' ? styles.touchAreaWeb : styles.touchArea,
+                    {
+                      left: bar.x - bar.barWidth / 2,
+                      top: isMarketOnly ? bar.marketY : bar.gridY,
+                      width: bar.barWidth,
+                      height: isMarketOnly
+                        ? bar.marketBarHeight
+                        : bar.marketBarHeight + bar.gridBarHeight,
+                    },
+                  ]}
                   onStartShouldSetResponder={() => true}
                   onResponderGrant={() => handleBarInteraction(bar.index)}
                   {...(Platform.OS === 'web' && {
@@ -521,19 +467,18 @@ function PriceBarChartComponent({
 
             {/* Durchschnittslinie Label */}
             <Text
-              style={{
-                position: 'absolute',
-                right: rightPadding + 4,
-                top:
-                  chartHeight -
-                  bottomPadding -
-                  ((avgMarketPrice - min) / range) * (chartHeight - padding - bottomPadding) -
-                  11,
-                fontSize: 11,
-                color: textColor,
-                fontWeight: '700',
-                opacity: 0.7,
-              }}
+              style={[
+                styles.averageLabel,
+                {
+                  right: rightPadding + 4,
+                  top:
+                    chartHeight -
+                    bottomPadding -
+                    ((avgMarketPrice - min) / range) * (chartHeight - padding - bottomPadding) -
+                    11,
+                  color: textColor,
+                },
+              ]}
             >
               {labels.average} {avgMarketPrice.toFixed(2)} ¢
             </Text>
@@ -562,15 +507,10 @@ function PriceBarChartComponent({
                 xAxisLabels.push(
                   <Text
                     key={`xlabel-${timestamp}`}
-                    style={{
-                      position: 'absolute',
-                      left: x - 10,
-                      top: chartHeight - bottomPadding + 5,
-                      fontSize: 11,
-                      color: textColor,
-                      opacity: 0.6,
-                      fontWeight: '600',
-                    }}
+                    style={[
+                      styles.xAxisLabel,
+                      { left: x - 10, top: chartHeight - bottomPadding + 5, color: textColor },
+                    ]}
                   >
                     {hour}h
                   </Text>
@@ -583,19 +523,7 @@ function PriceBarChartComponent({
             })()}
 
             {/* End-of-chart label */}
-            <Text
-              style={{
-                position: 'absolute',
-                right: 2,
-                bottom: bottomPadding + 4,
-                fontSize: 10,
-                color: textColor,
-                opacity: 0.35,
-                fontWeight: '700',
-                textTransform: 'uppercase',
-                letterSpacing: 0.6,
-              }}
-            >
+            <Text style={[styles.endOfChartLabel, { bottom: bottomPadding + 4, color: textColor }]}>
               EPEX
             </Text>
           </View>
@@ -608,16 +536,10 @@ function PriceBarChartComponent({
           return (
             <Text
               key={`ylabel-${i}`}
-              style={{
-                position: 'absolute',
-                left: 10,
-                top: y - 8,
-                fontSize: 11,
-                color: textColor,
-                opacity: 0.6,
-                textAlign: 'right',
-                width: isPhone ? 25 : 30,
-              }}
+              style={[
+                isPhone ? styles.yAxisLabelPhone : styles.yAxisLabelDefault,
+                { top: y - 8, color: textColor },
+              ]}
             >
               {value.toFixed(0)}
             </Text>
@@ -636,13 +558,7 @@ function PriceBarChartComponent({
           accessible={true}
           accessibilityRole="text"
           accessibilityLabel={interactionHint}
-          style={{
-            fontSize: 11,
-            color: textColor,
-            opacity: 0.5,
-            fontStyle: 'italic',
-            marginTop: 6,
-          }}
+          style={[styles.interactionHintText, { color: textColor }]}
         >
           {interactionHint}
         </Text>
@@ -654,3 +570,76 @@ function PriceBarChartComponent({
 // Performance: Wrap with React.memo to prevent unnecessary re-renders
 // Only re-renders if props actually change
 export const PriceBarChart = React.memo(PriceBarChartComponent);
+
+const styles = StyleSheet.create({
+  tooltipRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  tooltipRowMarginBottom4: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  tooltipRowMarginBottom6: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  tooltipMarketLabel: { color: '#4CAF50', fontSize: 11 },
+  tooltipLabelSmall: { fontSize: 11 },
+  tooltipValueSmallBold: { fontSize: 11, fontWeight: '600' },
+  tooltipDivider: { height: 1, marginVertical: 6, opacity: 0.5 },
+  tooltipTotalLabel: { fontSize: 12, fontWeight: '600' },
+  tooltipTotalValue: { fontSize: 12, fontWeight: '700' },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 0,
+  },
+  titleColumn: { flex: 1, marginRight: 8 },
+  titlePhone: { fontSize: 17, fontWeight: '800', marginBottom: 0 },
+  titleDefault: { fontSize: 20, fontWeight: '800', marginBottom: 0 },
+  subtitle: { fontSize: 11, opacity: 0.7, marginBottom: 2, fontWeight: '600' },
+  hint: { fontSize: 11, fontStyle: 'italic', opacity: 0.5 },
+  legendRow: { flexDirection: 'row', gap: 12, paddingRight: 10, paddingTop: 0 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDotMarket: { width: 10, height: 10, backgroundColor: '#4CAF50' },
+  legendDotGrid: { width: 10, height: 10, backgroundColor: '#757575' },
+  legendDotInterpolated: { width: 10, height: 10, backgroundColor: '#4CAF50', opacity: 0.4 },
+  legendLabel: { fontSize: 11, opacity: 0.7 },
+  relative: { position: 'relative' },
+  touchArea: { position: 'absolute', zIndex: 10 },
+  touchAreaWeb: { position: 'absolute', zIndex: 10, cursor: 'pointer' },
+  averageLabel: { position: 'absolute', fontSize: 11, fontWeight: '700', opacity: 0.7 },
+  xAxisLabel: { position: 'absolute', fontSize: 11, opacity: 0.6, fontWeight: '600' },
+  endOfChartLabel: {
+    position: 'absolute',
+    right: 2,
+    fontSize: 10,
+    opacity: 0.35,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  yAxisLabelPhone: {
+    position: 'absolute',
+    left: 10,
+    fontSize: 11,
+    opacity: 0.6,
+    textAlign: 'right',
+    width: 25,
+  },
+  yAxisLabelDefault: {
+    position: 'absolute',
+    left: 10,
+    fontSize: 11,
+    opacity: 0.6,
+    textAlign: 'right',
+    width: 30,
+  },
+  interactionHintText: {
+    fontSize: 11,
+    opacity: 0.5,
+    fontStyle: 'italic',
+    marginTop: 6,
+  },
+});

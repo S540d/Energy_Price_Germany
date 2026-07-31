@@ -31,36 +31,36 @@ describe('metrics.ts', () => {
 
       it('should calculate correct average for renewable share', () => {
         const result = calculateMetrics(sampleData);
-        expect(result).not.toBeNull();
-        expect(result!.renewable.avg).toBeCloseTo(55, 1); // (50+60+55)/3 = 55
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
+        expect(result.renewable.avg).toBeCloseTo(55, 1); // (50+60+55)/3 = 55
       });
 
       it('should calculate correct min/max for renewable share', () => {
         const result = calculateMetrics(sampleData);
-        expect(result).not.toBeNull();
-        expect(result!.renewable.min).toBe(50);
-        expect(result!.renewable.max).toBe(60);
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
+        expect(result.renewable.min).toBe(50);
+        expect(result.renewable.max).toBe(60);
       });
 
       it('should calculate correct average for market price (with 0.1 conversion)', () => {
         const result = calculateMetrics(sampleData);
-        expect(result).not.toBeNull();
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
         // (100*0.1 + 200*0.1 + 150*0.1) / 3 = 15
-        expect(result!.marketPrice.avg).toBeCloseTo(15, 1);
+        expect(result.marketPrice.avg).toBeCloseTo(15, 1);
       });
 
       it('should calculate correct min/max for market price (with 0.1 conversion)', () => {
         const result = calculateMetrics(sampleData);
-        expect(result).not.toBeNull();
-        expect(result!.marketPrice.min).toBeCloseTo(10, 1); // 100 * 0.1
-        expect(result!.marketPrice.max).toBeCloseTo(20, 1); // 200 * 0.1
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
+        expect(result.marketPrice.min).toBeCloseTo(10, 1); // 100 * 0.1
+        expect(result.marketPrice.max).toBeCloseTo(20, 1); // 200 * 0.1
       });
 
       it('should calculate correct time range', () => {
         const result = calculateMetrics(sampleData);
-        expect(result).not.toBeNull();
-        expect(result!.timeRange.start).toBe(Math.min(...sampleData.map(d => d.timestamp)));
-        expect(result!.timeRange.end).toBe(Math.max(...sampleData.map(d => d.timestamp)));
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
+        expect(result.timeRange.start).toBe(Math.min(...sampleData.map(d => d.timestamp)));
+        expect(result.timeRange.end).toBe(Math.max(...sampleData.map(d => d.timestamp)));
       });
     });
 
@@ -73,8 +73,8 @@ describe('metrics.ts', () => {
         ];
 
         const result = calculateMetrics(dataWithNulls);
-        expect(result).not.toBeNull();
-        expect(result!.renewable.avg).toBeCloseTo(55, 1); // (50+60)/2 = 55
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
+        expect(result.renewable.avg).toBeCloseTo(55, 1); // (50+60)/2 = 55
       });
 
       it('should ignore null market price values', () => {
@@ -85,8 +85,8 @@ describe('metrics.ts', () => {
         ];
 
         const result = calculateMetrics(dataWithNulls);
-        expect(result).not.toBeNull();
-        expect(result!.marketPrice.avg).toBeCloseTo(15, 1); // (100*0.1 + 200*0.1)/2 = 15
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
+        expect(result.marketPrice.avg).toBeCloseTo(15, 1); // (100*0.1 + 200*0.1)/2 = 15
       });
 
       it('should return 0 for avg/min/max when all renewable values are null', () => {
@@ -96,10 +96,10 @@ describe('metrics.ts', () => {
         ];
 
         const result = calculateMetrics(dataAllNull);
-        expect(result).not.toBeNull();
-        expect(result!.renewable.avg).toBe(0);
-        expect(result!.renewable.min).toBe(0);
-        expect(result!.renewable.max).toBe(0);
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
+        expect(result.renewable.avg).toBe(0);
+        expect(result.renewable.min).toBe(0);
+        expect(result.renewable.max).toBe(0);
       });
 
       it('should return 0 for avg/min/max when all market price values are null', () => {
@@ -109,10 +109,10 @@ describe('metrics.ts', () => {
         ];
 
         const result = calculateMetrics(dataAllNull);
-        expect(result).not.toBeNull();
-        expect(result!.marketPrice.avg).toBe(0);
-        expect(result!.marketPrice.min).toBe(0);
-        expect(result!.marketPrice.max).toBe(0);
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
+        expect(result.marketPrice.avg).toBe(0);
+        expect(result.marketPrice.min).toBe(0);
+        expect(result.marketPrice.max).toBe(0);
       });
     });
 
@@ -127,9 +127,10 @@ describe('metrics.ts', () => {
         ];
 
         const result = calculateMetrics(todayData);
-        expect(result).not.toBeNull();
-        expect(result!.today).toBeDefined();
-        expect(result!.today?.date).toBe(
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
+        expect(result.today).toBeDefined();
+        if (!result.today) throw new Error('expected today metrics to be defined');
+        expect(result.today?.date).toBe(
           now.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
         );
       });
@@ -141,8 +142,8 @@ describe('metrics.ts', () => {
         ];
 
         const result = calculateMetrics(yesterdayData);
-        expect(result).not.toBeNull();
-        expect(result!.today).toBeUndefined();
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
+        expect(result.today).toBeUndefined();
       });
 
       it('should calculate end customer price correctly (market price + grid fees)', () => {
@@ -155,14 +156,15 @@ describe('metrics.ts', () => {
         ];
 
         const result = calculateMetrics(todayData);
-        expect(result).not.toBeNull();
-        expect(result!.today).toBeDefined();
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
+        expect(result.today).toBeDefined();
+        if (!result.today) throw new Error('expected today metrics to be defined');
 
         // Market price avg: (10+20)/2 = 15
         // End customer price avg: 15 + 20 = 35
-        expect(result!.today!.endCustomerPrice.avg).toBeCloseTo(15 + GRID_FEES_AND_TAXES, 1);
-        expect(result!.today!.endCustomerPrice.min).toBeCloseTo(10 + GRID_FEES_AND_TAXES, 1);
-        expect(result!.today!.endCustomerPrice.max).toBeCloseTo(20 + GRID_FEES_AND_TAXES, 1);
+        expect(result.today.endCustomerPrice.avg).toBeCloseTo(15 + GRID_FEES_AND_TAXES, 1);
+        expect(result.today.endCustomerPrice.min).toBeCloseTo(10 + GRID_FEES_AND_TAXES, 1);
+        expect(result.today.endCustomerPrice.max).toBeCloseTo(20 + GRID_FEES_AND_TAXES, 1);
       });
 
       it('should find current hour data within tolerance', () => {
@@ -173,10 +175,11 @@ describe('metrics.ts', () => {
         ];
 
         const result = calculateMetrics(currentData);
-        expect(result).not.toBeNull();
-        expect(result!.today).toBeDefined();
-        expect(result!.today!.renewable.current).toBe(55); // Should pick the closest one within tolerance
-        expect(result!.today!.marketPrice.current).toBeCloseTo(15, 1); // 150 * 0.1
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
+        expect(result.today).toBeDefined();
+        if (!result.today) throw new Error('expected today metrics to be defined');
+        expect(result.today.renewable.current).toBe(55); // Should pick the closest one within tolerance
+        expect(result.today.marketPrice.current).toBeCloseTo(15, 1); // 150 * 0.1
       });
 
       it('should return null for current values when no data within tolerance', () => {
@@ -189,11 +192,12 @@ describe('metrics.ts', () => {
         ];
 
         const result = calculateMetrics(oldData);
-        expect(result).not.toBeNull();
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
         // Data is from today, but outside 30-min tolerance for "current"
-        expect(result!.today).toBeDefined();
-        expect(result!.today!.renewable.current).toBeNull();
-        expect(result!.today!.marketPrice.current).toBeNull();
+        expect(result.today).toBeDefined();
+        if (!result.today) throw new Error('expected today metrics to be defined');
+        expect(result.today.renewable.current).toBeNull();
+        expect(result.today.marketPrice.current).toBeNull();
       });
     });
 
@@ -204,13 +208,13 @@ describe('metrics.ts', () => {
         ];
 
         const result = calculateMetrics(singleData);
-        expect(result).not.toBeNull();
-        expect(result!.renewable.avg).toBe(50);
-        expect(result!.renewable.min).toBe(50);
-        expect(result!.renewable.max).toBe(50);
-        expect(result!.marketPrice.avg).toBeCloseTo(10, 1);
-        expect(result!.marketPrice.min).toBeCloseTo(10, 1);
-        expect(result!.marketPrice.max).toBeCloseTo(10, 1);
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
+        expect(result.renewable.avg).toBe(50);
+        expect(result.renewable.min).toBe(50);
+        expect(result.renewable.max).toBe(50);
+        expect(result.marketPrice.avg).toBeCloseTo(10, 1);
+        expect(result.marketPrice.min).toBeCloseTo(10, 1);
+        expect(result.marketPrice.max).toBeCloseTo(10, 1);
       });
 
       it('should handle extreme values', () => {
@@ -220,13 +224,13 @@ describe('metrics.ts', () => {
         ];
 
         const result = calculateMetrics(extremeData);
-        expect(result).not.toBeNull();
-        expect(result!.renewable.avg).toBe(50);
-        expect(result!.renewable.min).toBe(0);
-        expect(result!.renewable.max).toBe(100);
-        expect(result!.marketPrice.avg).toBeCloseTo(50, 1); // (0+100)/2
-        expect(result!.marketPrice.min).toBe(0);
-        expect(result!.marketPrice.max).toBeCloseTo(100, 1);
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
+        expect(result.renewable.avg).toBe(50);
+        expect(result.renewable.min).toBe(0);
+        expect(result.renewable.max).toBe(100);
+        expect(result.marketPrice.avg).toBeCloseTo(50, 1); // (0+100)/2
+        expect(result.marketPrice.min).toBe(0);
+        expect(result.marketPrice.max).toBeCloseTo(100, 1);
       });
 
       it('should handle negative market prices (possible in energy markets)', () => {
@@ -236,10 +240,10 @@ describe('metrics.ts', () => {
         ];
 
         const result = calculateMetrics(negativeData);
-        expect(result).not.toBeNull();
-        expect(result!.marketPrice.avg).toBeCloseTo(0, 1); // (-10+10)/2
-        expect(result!.marketPrice.min).toBeCloseTo(-10, 1);
-        expect(result!.marketPrice.max).toBeCloseTo(10, 1);
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
+        expect(result.marketPrice.avg).toBeCloseTo(0, 1); // (-10+10)/2
+        expect(result.marketPrice.min).toBeCloseTo(-10, 1);
+        expect(result.marketPrice.max).toBeCloseTo(10, 1);
       });
 
       it('should handle data with regional renewable share', () => {
@@ -253,9 +257,9 @@ describe('metrics.ts', () => {
         ];
 
         const result = calculateMetrics(regionalData);
-        expect(result).not.toBeNull();
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
         // Should still use renewableShare for metrics (not regional)
-        expect(result!.renewable.avg).toBe(50);
+        expect(result.renewable.avg).toBe(50);
       });
 
       it('should handle data with interpolation flags', () => {
@@ -270,10 +274,10 @@ describe('metrics.ts', () => {
         ];
 
         const result = calculateMetrics(interpolatedData);
-        expect(result).not.toBeNull();
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
         // Interpolation flags should not affect metrics calculation
-        expect(result!.marketPrice.avg).toBeCloseTo(10, 1);
-        expect(result!.renewable.avg).toBe(50);
+        expect(result.marketPrice.avg).toBeCloseTo(10, 1);
+        expect(result.renewable.avg).toBe(50);
       });
     });
 

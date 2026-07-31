@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, Platform, ScrollView } from 'react-native';
+import { View, Text, Platform, ScrollView, StyleSheet } from 'react-native';
 import Svg, { Circle, Line } from 'react-native-svg';
 import type { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
@@ -269,7 +269,7 @@ function CorrelationScatterChartComponent({
               backgroundColor={backgroundColor}
               colors={colors}
             >
-              <Text style={{ color: colors.text, fontSize: 14, fontWeight: 'bold' }}>
+              <Text style={[styles.tooltipValue, { color: colors.text }]}>
                 {new Date(item.timestamp).toLocaleString('de-DE', {
                   day: '2-digit',
                   month: '2-digit',
@@ -280,35 +280,19 @@ function CorrelationScatterChartComponent({
             </ChartTooltip>
           );
         })()}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 0,
-        }}
-      >
-        <View style={{ flex: 1, marginRight: 8 }}>
+      <View style={styles.headerRow}>
+        <View style={styles.titleColumn}>
           <Text
-            style={{
-              fontSize: isPhone ? 16 : 18,
-              fontWeight: 'bold',
-              marginBottom: 0,
-              color: textColor,
-            }}
+            style={[isPhone ? styles.titlePhone : styles.titleDefault, { color: textColor }]}
             numberOfLines={2}
             ellipsizeMode="tail"
           >
             {title}
           </Text>
-          {subtitle && (
-            <Text style={{ fontSize: 12, color: textColor, opacity: 0.7, marginBottom: 2 }}>
-              {subtitle}
-            </Text>
-          )}
+          {subtitle && <Text style={[styles.subtitle, { color: textColor }]}>{subtitle}</Text>}
           {interactionHint && (
             <Text
-              style={{ fontSize: 12, fontStyle: 'italic', opacity: 0.5, color: textColor }}
+              style={[styles.hint, { color: textColor }]}
               accessibilityRole="text"
               accessibilityLabel={interactionHint}
             >
@@ -318,39 +302,26 @@ function CorrelationScatterChartComponent({
         </View>
         {/* Legend - hidden on small devices in portrait mode */}
         {!(isPhone && !isLandscape) && (
-          <View
-            style={{
-              flexDirection: 'row',
-              gap: 12,
-              paddingRight: 10,
-              paddingTop: 0,
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View
-                style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#2196F3' }}
-              />
-              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.night}</Text>
+          <View style={styles.legendRow}>
+            <View style={styles.legendItem}>
+              <View style={styles.legendDotNight} />
+              <Text style={[styles.legendLabel, { color: textColor }]}>{labels.night}</Text>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View
-                style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#FF9800' }}
-              />
-              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>
+            <View style={styles.legendItem}>
+              <View style={styles.legendDotMorningEvening} />
+              <Text style={[styles.legendLabel, { color: textColor }]}>
                 {labels.morningEvening}
               </Text>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View
-                style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#FFEB3B' }}
-              />
-              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.day}</Text>
+            <View style={styles.legendItem}>
+              <View style={styles.legendDotDay} />
+              <Text style={[styles.legendLabel, { color: textColor }]}>{labels.day}</Text>
             </View>
           </View>
         )}
       </View>
       <View
-        style={{ height: chartHeight, width: viewportWidth, position: 'relative' }}
+        style={[styles.relative, { height: chartHeight, width: viewportWidth }]}
         {...gestureContainerProps}
       >
         <ScrollView
@@ -410,15 +381,15 @@ function CorrelationScatterChartComponent({
               return (
                 <View
                   key={`touch-${point.index}`}
-                  style={{
-                    position: 'absolute',
-                    left: point.x - touchSize / 2,
-                    top: point.y - touchSize / 2,
-                    width: touchSize,
-                    height: touchSize,
-                    zIndex: 10,
-                    cursor: Platform.OS === 'web' ? 'pointer' : undefined,
-                  }}
+                  style={[
+                    Platform.OS === 'web' ? styles.touchAreaWeb : styles.touchArea,
+                    {
+                      left: point.x - touchSize / 2,
+                      top: point.y - touchSize / 2,
+                      width: touchSize,
+                      height: touchSize,
+                    },
+                  ]}
                   onStartShouldSetResponder={() => true}
                   onResponderGrant={() =>
                     setSelectedIndex(prev => (point.index === prev ? null : point.index))
@@ -438,14 +409,10 @@ function CorrelationScatterChartComponent({
               return (
                 <Text
                   key={`xlabel-${i}`}
-                  style={{
-                    position: 'absolute',
-                    left: x - 15,
-                    top: chartHeight - (isPhone ? 25 : 30),
-                    fontSize: 12,
-                    color: textColor,
-                    opacity: 0.6,
-                  }}
+                  style={[
+                    styles.xAxisLabel,
+                    { left: x - 15, top: chartHeight - (isPhone ? 25 : 30), color: textColor },
+                  ]}
                 >
                   {value.toFixed(0)}%
                 </Text>
@@ -454,15 +421,10 @@ function CorrelationScatterChartComponent({
 
             {/* Axis Labels */}
             <Text
-              style={{
-                position: 'absolute',
-                left: chartWidth / 2 - 60,
-                bottom: isPhone ? 0 : 3,
-                fontSize: 12,
-                color: textColor,
-                opacity: 0.6,
-                fontWeight: '600',
-              }}
+              style={[
+                isPhone ? styles.xAxisTitlePhone : styles.xAxisTitleDefault,
+                { left: chartWidth / 2 - 60, color: textColor },
+              ]}
             >
               {labels.xAxisRenewables}
             </Text>
@@ -476,16 +438,10 @@ function CorrelationScatterChartComponent({
           return (
             <Text
               key={`ylabel-${i}`}
-              style={{
-                position: 'absolute',
-                left: 10,
-                top: y - 8,
-                fontSize: 12,
-                color: textColor,
-                opacity: 0.6,
-                textAlign: 'right',
-                width: isPhone ? 25 : 30,
-              }}
+              style={[
+                isPhone ? styles.yAxisLabelPhone : styles.yAxisLabelDefault,
+                { top: y - 8, color: textColor },
+              ]}
             >
               {value.toFixed(0)}
             </Text>
@@ -501,25 +457,8 @@ function CorrelationScatterChartComponent({
         )}
       </View>
       {insightText && (
-        <View
-          style={{
-            marginTop: 10,
-            paddingHorizontal: 12,
-            paddingVertical: 8,
-            borderRadius: 10,
-            borderWidth: 1.5,
-            borderColor: colors.gridLine,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 12,
-              color: textColor,
-              opacity: 0.7,
-            }}
-          >
-            {insightText}
-          </Text>
+        <View style={[styles.insightBox, { borderColor: colors.gridLine }]}>
+          <Text style={[styles.insightText, { color: textColor }]}>{insightText}</Text>
         </View>
       )}
       {interactionHint && (
@@ -527,13 +466,7 @@ function CorrelationScatterChartComponent({
           accessible={true}
           accessibilityRole="text"
           accessibilityLabel={interactionHint}
-          style={{
-            fontSize: 12,
-            color: textColor,
-            opacity: 0.5,
-            fontStyle: 'italic',
-            marginTop: 8,
-          }}
+          style={[styles.interactionHintText, { color: textColor }]}
         >
           {interactionHint}
         </Text>
@@ -545,3 +478,72 @@ function CorrelationScatterChartComponent({
 // Performance: Wrap with React.memo to prevent unnecessary re-renders
 // Only re-renders if props actually change
 export const CorrelationScatterChart = React.memo(CorrelationScatterChartComponent);
+
+const styles = StyleSheet.create({
+  tooltipValue: { fontSize: 14, fontWeight: 'bold' },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 0,
+  },
+  titleColumn: { flex: 1, marginRight: 8 },
+  titlePhone: { fontSize: 16, fontWeight: 'bold', marginBottom: 0 },
+  titleDefault: { fontSize: 18, fontWeight: 'bold', marginBottom: 0 },
+  subtitle: { fontSize: 12, opacity: 0.7, marginBottom: 2 },
+  hint: { fontSize: 12, fontStyle: 'italic', opacity: 0.5 },
+  legendRow: { flexDirection: 'row', gap: 12, paddingRight: 10, paddingTop: 0 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDotNight: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#2196F3' },
+  legendDotMorningEvening: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#FF9800' },
+  legendDotDay: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#FFEB3B' },
+  legendLabel: { fontSize: 12, opacity: 0.7 },
+  relative: { position: 'relative' },
+  touchArea: { position: 'absolute', zIndex: 10 },
+  touchAreaWeb: { position: 'absolute', zIndex: 10, cursor: 'pointer' },
+  xAxisLabel: { position: 'absolute', fontSize: 12, opacity: 0.6 },
+  xAxisTitlePhone: {
+    position: 'absolute',
+    fontSize: 12,
+    opacity: 0.6,
+    fontWeight: '600',
+    bottom: 0,
+  },
+  xAxisTitleDefault: {
+    position: 'absolute',
+    fontSize: 12,
+    opacity: 0.6,
+    fontWeight: '600',
+    bottom: 3,
+  },
+  yAxisLabelPhone: {
+    position: 'absolute',
+    left: 10,
+    fontSize: 12,
+    opacity: 0.6,
+    textAlign: 'right',
+    width: 25,
+  },
+  yAxisLabelDefault: {
+    position: 'absolute',
+    left: 10,
+    fontSize: 12,
+    opacity: 0.6,
+    textAlign: 'right',
+    width: 30,
+  },
+  insightBox: {
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1.5,
+  },
+  insightText: { fontSize: 12, opacity: 0.7 },
+  interactionHintText: {
+    fontSize: 12,
+    opacity: 0.5,
+    fontStyle: 'italic',
+    marginTop: 8,
+  },
+});

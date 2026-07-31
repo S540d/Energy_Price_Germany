@@ -6,6 +6,8 @@ import { useSettingsContext } from '../../context/SettingsContext';
 import { HISTORY_CACHE_LIMIT_OPTIONS_MB } from '../../hooks/useSettings';
 import { historicalDataStore, type HistoryStorageInfo } from '../../services/historicalDataStore';
 
+const ACTIVE_TOGGLE_TEXT_COLOR = '#fff';
+
 /**
  * Cache-Einstellung für historische Daten (Issue #307).
  * Nutzer wählt die Speicher-Obergrenze (MB), sieht den belegten Speicher
@@ -61,11 +63,10 @@ export function HistoryCacheSection() {
             onPress={() => setHistoryCacheLimitMb(mb)}
           >
             <Text
-              style={{
-                color: historyCacheLimitMb === mb ? '#fff' : colors.text,
-                fontSize: 12,
-                fontWeight: '600',
-              }}
+              style={[
+                styles.toggleButtonLabel,
+                { color: historyCacheLimitMb === mb ? ACTIVE_TOGGLE_TEXT_COLOR : colors.text },
+              ]}
             >
               {mb} MB
             </Text>
@@ -126,6 +127,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   clearButton: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  toggleButtonLabel: {
     fontSize: 12,
     fontWeight: '600',
   },

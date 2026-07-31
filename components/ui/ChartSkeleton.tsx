@@ -58,7 +58,7 @@ function ChartSkeletonCard({ title = true }: ChartSkeletonCardProps) {
       {/* X-axis labels */}
       <View style={styles.xAxis}>
         {Array.from({ length: 4 }).map((_, i) => (
-          <SkeletonText key={i} width={30} style={{ height: 10 }} />
+          <SkeletonText key={i} width={30} style={styles.skeletonSmall} />
         ))}
       </View>
     </View>

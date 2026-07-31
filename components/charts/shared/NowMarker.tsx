@@ -1,5 +1,5 @@
-import React from 'react';
-import { Text } from 'react-native';
+import React, { useMemo } from 'react';
+import { StyleSheet, Text } from 'react-native';
 import { Line } from 'react-native-svg';
 import { scaleToX } from './chartScale';
 
@@ -78,18 +78,19 @@ export function NowMarkerLabel({
     leftPadding,
     rightPadding,
   });
-  return (
-    <Text
-      style={{
-        position: 'absolute',
-        left: x - 15,
-        top: chartHeight - bottomPadding + 20,
-        fontSize: 12,
-        color: 'red',
-        fontWeight: 'bold',
-      }}
-    >
-      {label}
-    </Text>
+  const style = useMemo(
+    () =>
+      StyleSheet.create({
+        label: {
+          position: 'absolute',
+          left: x - 15,
+          top: chartHeight - bottomPadding + 20,
+          fontSize: 12,
+          color: 'red',
+          fontWeight: 'bold',
+        },
+      }).label,
+    [x, chartHeight, bottomPadding]
   );
+  return <Text style={style}>{label}</Text>;
 }
