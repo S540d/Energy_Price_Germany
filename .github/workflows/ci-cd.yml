@@ -3,6 +3,13 @@ name: CI/CD - Automated Quality Checks
 on:
   push:
     branches: [main]
+    # Reine Daten-Commits von fetch.yml (3x täglich) ändern keinen Code —
+    # Lint/Type-Check/Tests darauf laufen zu lassen bringt keinen Erkenntnis-
+    # gewinn und war der zweitgrößte CI-Zeitverbraucher (Issue #394).
+    # Bewusst NUR beim push-Trigger: bei pull_request bleibt der Check als
+    # required Gate uneingeschränkt bestehen.
+    paths-ignore:
+      - 'public/data/**'
   pull_request:
     branches: [main]
 
