@@ -10,8 +10,11 @@ on:
     # required Gate uneingeschränkt bestehen.
     paths-ignore:
       - 'public/data/**'
+  # Auch gegen testing, sonst kann der im Ruleset "protect-main" als required
+  # eingetragene Check "🔍 Code Quality & Linting" bei PRs feature → testing
+  # nie starten und blockiert den Merge dauerhaft.
   pull_request:
-    branches: [main]
+    branches: [main, testing]
 
 # Security: Explicitly set minimal permissions
 permissions:
