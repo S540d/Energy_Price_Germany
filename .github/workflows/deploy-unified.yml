@@ -4,9 +4,12 @@ on:
   # Automatic trigger on push to main, testing
   push:
     branches: [ main, testing ]
-  # Fallback: Scheduled deployment every 6 hours for main branch
+  # Fallback: einmal täglich als Sicherheitsnetz, falls ein push-getriggerter
+  # Deploy fehlgeschlagen ist. Vorher 5x täglich (0 4,11,16,18,21) — das war
+  # weitgehend redundant, weil jeder Fetch-Commit auf main ohnehin deployt
+  # (Issue #394). 03:30 UTC liegt kurz nach dem Fetch um 03:00 UTC.
   schedule:
-    - cron: '0 4,11,16,18,21 * * *'
+    - cron: '30 3 * * *'
   # Allow manual trigger
   workflow_dispatch:
   # Allow other workflows to call this workflow
