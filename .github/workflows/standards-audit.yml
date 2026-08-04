@@ -11,7 +11,7 @@ name: Standards Audit
 
 on:
   pull_request:
-    branches: [main, testing]
+    branches: [main]
   repository_dispatch:
     types: [weekly-self-audit]
   workflow_dispatch: {}

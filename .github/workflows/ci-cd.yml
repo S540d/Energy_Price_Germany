@@ -10,11 +10,11 @@ on:
     # required Gate uneingeschränkt bestehen.
     paths-ignore:
       - 'public/data/**'
-  # Auch gegen testing, sonst kann der im Ruleset "protect-main" als required
-  # eingetragene Check "🔍 Code Quality & Linting" bei PRs feature → testing
-  # nie starten und blockiert den Merge dauerhaft.
+  # Bewusst nur gegen main: auf testing sind die CI-Checks seit der Ruleset-
+  # Umstellung (protect-testing) nicht mehr required, dort also reine
+  # Ressourcenverschwendung. Das Gate greift beim PR testing → main.
   pull_request:
-    branches: [main, testing]
+    branches: [main]
 
 # Security: Explicitly set minimal permissions
 permissions:
