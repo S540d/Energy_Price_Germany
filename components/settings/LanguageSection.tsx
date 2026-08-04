@@ -4,6 +4,8 @@ import { useLanguageContext } from '../../context/LanguageContext';
 import { getThemeColors } from '../../utils/theme';
 import { useSettingsContext } from '../../context/SettingsContext';
 
+const ACTIVE_LANGUAGE_TEXT_COLOR = '#fff';
+
 /**
  * Language selection section for Settings and Customize menus
  * Allows switching between English and German
@@ -27,11 +29,10 @@ export function LanguageSection() {
           onPress={() => setLanguage('en')}
         >
           <Text
-            style={{
-              color: language === 'en' ? '#fff' : colors.text,
-              fontSize: 12,
-              fontWeight: '600',
-            }}
+            style={[
+              styles.languageButtonLabel,
+              { color: language === 'en' ? ACTIVE_LANGUAGE_TEXT_COLOR : colors.text },
+            ]}
           >
             {t.english}
           </Text>
@@ -45,11 +46,10 @@ export function LanguageSection() {
           onPress={() => setLanguage('de')}
         >
           <Text
-            style={{
-              color: language === 'de' ? '#fff' : colors.text,
-              fontSize: 12,
-              fontWeight: '600',
-            }}
+            style={[
+              styles.languageButtonLabel,
+              { color: language === 'de' ? ACTIVE_LANGUAGE_TEXT_COLOR : colors.text },
+            ]}
           >
             {t.german}
           </Text>
@@ -87,5 +87,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+  },
+  languageButtonLabel: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

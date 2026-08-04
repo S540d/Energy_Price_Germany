@@ -73,6 +73,7 @@ export const translations = {
     feedback: 'Send Feedback',
     supportProject: 'Support me',
     rateApp: 'Rate on Play Store',
+    getAndroidApp: 'Get the Android app on Google Play',
     reportBug: 'Report a Bug',
     // Beta Mode Section
     betaMode: 'BETA MODE',
@@ -137,6 +138,8 @@ export const translations = {
     shareChartDownload: 'Download Chart',
     // Common actions
     close: 'Close',
+    // Chart Zoom (#355)
+    resetZoom: 'Reset zoom',
     // KPI Row
     renewableNow: 'Renewables now',
     priceNow: 'Price now',
@@ -237,6 +240,7 @@ export const translations = {
     feedback: 'Feedback senden',
     supportProject: 'Support me',
     rateApp: 'Im Play Store bewerten',
+    getAndroidApp: 'Android-App bei Google Play laden',
     reportBug: 'Fehler melden',
     // Beta Mode Section
     betaMode: 'BETA-MODUS',
@@ -302,6 +306,8 @@ export const translations = {
     shareChartDownload: 'Diagramm herunterladen',
     // Common actions
     close: 'Schließen',
+    // Chart Zoom (#355)
+    resetZoom: 'Zoom zurücksetzen',
     // KPI Row
     renewableNow: 'Erneuerbare jetzt',
     priceNow: 'Börsenpreis jetzt',

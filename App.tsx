@@ -38,6 +38,7 @@ import {
 SplashScreenModule.preventAutoHideAsync().catch(() => {});
 
 const APP_VERSION = '1.9.0';
+const TRANSPARENT = 'transparent';
 
 function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
@@ -284,7 +285,7 @@ function AppContent() {
           <LinearGradient
             colors={['#0a0f1e', '#0d1a2e', '#0a1628']}
             locations={[0, 0.5, 1]}
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+            style={StyleSheet.absoluteFill}
             pointerEvents="none"
           />
         )}
@@ -314,15 +315,11 @@ function AppContent() {
         <CustomizeModal visible={customizeVisible} onClose={() => setCustomizeVisible(false)} />
 
         <ScrollView
-          style={[
-            styles.scrollView,
-            { backgroundColor: isDark ? 'transparent' : colors.background },
+          style={[styles.scrollView, { backgroundColor: isDark ? TRANSPARENT : colors.background }]}
+          contentContainerStyle={[
+            styles.scrollContentBase,
+            { backgroundColor: isDark ? TRANSPARENT : colors.background },
           ]}
-          contentContainerStyle={{
-            flexGrow: 1,
-            backgroundColor: isDark ? 'transparent' : colors.background,
-            paddingBottom: 20,
-          }}
           bounces={false}
         >
           <ChartSection
@@ -382,6 +379,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContentBase: {
+    flexGrow: 1,
+    paddingBottom: 20,
+  },
+  safeAreaProvider: {
+    flex: 1,
+  },
   skeletonScroll: {
     flexGrow: 1,
   },
@@ -403,7 +407,7 @@ import { CountryProvider } from './context/CountryContext';
 
 export default function App() {
   return (
-    <SafeAreaProvider style={{ flex: 1 }}>
+    <SafeAreaProvider style={styles.safeAreaProvider}>
       <LanguageProvider>
         <CountryProvider>
           <SettingsProvider>

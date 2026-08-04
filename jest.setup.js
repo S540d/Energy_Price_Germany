@@ -77,6 +77,9 @@ jest.mock('react-native', () => ({
     getPixelSizeForLayoutSize: jest.fn((size) => size * 2),
     roundToNearestPixel: jest.fn((size) => size),
   },
+  PanResponder: {
+    create: jest.fn(() => ({ panHandlers: {} })),
+  },
 }));
 
 // Mock AsyncStorage

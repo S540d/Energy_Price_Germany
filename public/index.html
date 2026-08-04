@@ -7,8 +7,39 @@
       name="viewport"
       content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1.00001, viewport-fit=cover"
     />
-    <title>Energy Prices Germany</title>
-    <meta name="description" content="Visualisierung von Energiepreisen und erneuerbaren Energien in Deutschland" />
+    <title>Strompreis heute & Ökostrom-Anteil – Energy Prices Germany</title>
+    <meta
+      name="description"
+      content="Aktuelle Börsenstrompreise (Day-Ahead) und Ökostrom-Anteil in Deutschland – laufend aktualisiert, kostenlos, ohne Werbung und ohne Tracking. Als Web-App und als Android-App bei Google Play."
+    />
+    <meta
+      name="keywords"
+      content="Strompreis heute, Börsenstrompreis, Day-Ahead Preis, dynamischer Stromtarif, Strompreis App, Ökostrom Anteil, erneuerbare Energien, EPEX Spot, Netzentgelte, Energiewende, electricity price Germany, renewable share"
+    />
+    <meta name="author" content="devsven" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://s540d.github.io/Energy_Price_Germany/" />
+
+    <!-- Social/link previews (Open Graph + Twitter) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Energy Prices Germany" />
+    <meta property="og:locale" content="de_DE" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:title" content="Strompreis heute & Ökostrom-Anteil – Energy Prices Germany" />
+    <meta
+      property="og:description"
+      content="Aktuelle Börsenstrompreise (Day-Ahead) und Ökostrom-Anteil in Deutschland – kostenlos, ohne Werbung und ohne Tracking. Auch als Android-App bei Google Play."
+    />
+    <meta property="og:url" content="https://s540d.github.io/Energy_Price_Germany/" />
+    <meta property="og:image" content="https://s540d.github.io/Energy_Price_Germany/icon-512.png" />
+    <meta property="og:image:alt" content="Energy Prices Germany App-Icon" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Strompreis heute & Ökostrom-Anteil – Energy Prices Germany" />
+    <meta
+      name="twitter:description"
+      content="Aktuelle Börsenstrompreise und Ökostrom-Anteil in Deutschland – kostenlos, ohne Werbung. Auch als Android-App."
+    />
+    <meta name="twitter:image" content="https://s540d.github.io/Energy_Price_Germany/icon-512.png" />
 
     <!-- Content Security Policy: Prevent XSS and injection attacks -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://s540d.github.io https://energypricegermany.sven4321.workers.dev https://energy-charts.info https://www.awattar.de; manifest-src 'self';" />
@@ -105,10 +136,129 @@
           opacity: 1;
         }
       }
+
+      /* Play Store hint for Android browser visitors (see script below) */
+      .store-banner {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background: #1A1A1A;
+        border-top: 1px solid #2E2E2E;
+        font-size: 14px;
+        color: #E8E8E8;
+      }
+
+      .store-banner__text {
+        flex: 1;
+        line-height: 1.35;
+      }
+
+      .store-banner__cta {
+        flex-shrink: 0;
+        padding: 8px 14px;
+        border-radius: 8px;
+        background: #6200EE;
+        color: #FFFFFF;
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      .store-banner__close {
+        flex-shrink: 0;
+        background: transparent;
+        border: 0;
+        color: #9E9E9E;
+        font-size: 20px;
+        line-height: 1;
+        padding: 4px 8px;
+        cursor: pointer;
+      }
+
+      /* Content for crawlers and JS-less visitors */
+      .no-js-content {
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 32px 20px;
+        line-height: 1.5;
+      }
+
+      .no-js-content a {
+        color: #90CAF9;
+      }
     </style>
+
+    <!-- Structured data: lets Google understand this is a free app with a Play Store listing -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Energy Prices Germany",
+        "alternateName": "Strompreis & Ökostrom-Anteil Deutschland",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Android, Web",
+        "inLanguage": ["de", "en"],
+        "description": "Aktuelle Börsenstrompreise (Day-Ahead) und Ökostrom-Anteil in Deutschland – kostenlos, ohne Werbung und ohne Tracking.",
+        "url": "https://s540d.github.io/Energy_Price_Germany/",
+        "installUrl": "https://play.google.com/store/apps/details?id=com.sven4321.energypricegermany",
+        "downloadUrl": "https://play.google.com/store/apps/details?id=com.sven4321.energypricegermany",
+        "image": "https://s540d.github.io/Energy_Price_Germany/icon-512.png",
+        "license": "https://opensource.org/licenses/MIT",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "EUR"
+        },
+        "author": {
+          "@type": "Person",
+          "name": "devsven"
+        },
+        "sameAs": [
+          "https://github.com/S540d/Energy_Price_Germany",
+          "https://play.google.com/store/apps/details?id=com.sven4321.energypricegermany"
+        ]
+      }
+    </script>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>
+      <div class="no-js-content">
+        <h1>Strompreis heute &amp; Ökostrom-Anteil in Deutschland</h1>
+        <p>
+          Energy Prices Germany zeigt die aktuellen Börsenstrompreise (Day-Ahead, EPEX Spot) und den
+          Anteil erneuerbarer Energien im deutschen Stromnetz – laufend aktualisiert, kostenlos, ohne
+          Werbung und ohne Tracking. Nützlich für alle mit dynamischem Stromtarif, Wallbox,
+          Wärmepumpe, PV-Anlage oder Batteriespeicher.
+        </p>
+        <ul>
+          <li>Day-Ahead-Strompreise für die nächsten Stunden (ct/kWh und EUR/MWh)</li>
+          <li>Ökostrom-Anteil im Netz, optional regional per Postleitzahl</li>
+          <li>Korrelation von Preis und erneuerbarer Erzeugung</li>
+          <li>Verlauf der letzten 24 h bis 30 Tage inkl. Statistiken</li>
+          <li>Weitere Länder (BETA): Niederlande, Österreich, Schweiz, Frankreich, Belgien, Dänemark</li>
+        </ul>
+        <p>
+          <strong>Android-App:</strong>
+          <a
+            href="https://play.google.com/store/apps/details?id=com.sven4321.energypricegermany&amp;referrer=utm_source%3Dweb_app%26utm_medium%3Dnoscript%26utm_campaign%3Dwebapp"
+            >bei Google Play herunterladen</a
+          >
+        </p>
+        <p>
+          Diese Web-App benötigt JavaScript. Quellcode und Dokumentation:
+          <a href="https://github.com/S540d/Energy_Price_Germany">github.com/S540d/Energy_Price_Germany</a>
+        </p>
+        <p>
+          Datenquelle: Energy Charts (Fraunhofer ISE), lizenziert unter CC BY 4.0.
+        </p>
+      </div>
+    </noscript>
     <div id="initial-loading" class="initial-loading">
       <div class="spinner"></div>
       <div class="loading-text">Lade Energiedaten...</div>
@@ -131,6 +281,78 @@
           initialLoading.classList.add('fade-out');
         }
       }, 5000);
+    </script>
+    <script>
+      // Android visitors arrive here via search/links and would otherwise never learn
+      // that a Play Store version exists. Shown once per browser, dismissible, and never
+      // inside the installed PWA or the WebView-free native app.
+      (function () {
+        // Campaign attribution requires the UTM string inside a single URL-encoded
+        // `referrer` parameter; bare utm_* query params are ignored by Google Play.
+        // Mirrors playStoreUrlWithCampaign() in utils/appLinks.ts (no imports here).
+        var PLAY_URL =
+          'https://play.google.com/store/apps/details?id=com.sven4321.energypricegermany' +
+          '&referrer=' +
+          encodeURIComponent('utm_source=web_app&utm_medium=banner&utm_campaign=webapp');
+        var STORAGE_KEY = 'playStoreBannerDismissed';
+
+        function isDismissed() {
+          try {
+            return window.localStorage.getItem(STORAGE_KEY) === '1';
+          } catch (e) {
+            return false;
+          }
+        }
+
+        function remember() {
+          try {
+            window.localStorage.setItem(STORAGE_KEY, '1');
+          } catch (e) {
+            /* private mode: banner may reappear next visit */
+          }
+        }
+
+        var isAndroid = /Android/i.test(navigator.userAgent);
+        var isStandalone =
+          (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+          window.navigator.standalone === true;
+
+        if (!isAndroid || isStandalone || isDismissed()) return;
+
+        var isGerman = (navigator.language || 'de').toLowerCase().indexOf('de') === 0;
+
+        window.addEventListener('load', function () {
+          var banner = document.createElement('div');
+          banner.className = 'store-banner';
+
+          var text = document.createElement('div');
+          text.className = 'store-banner__text';
+          text.textContent = isGerman
+            ? 'Gibt es auch als Android-App bei Google Play.'
+            : 'Also available as an Android app on Google Play.';
+
+          var cta = document.createElement('a');
+          cta.className = 'store-banner__cta';
+          cta.href = PLAY_URL;
+          cta.rel = 'noopener';
+          cta.textContent = isGerman ? 'Installieren' : 'Install';
+
+          var close = document.createElement('button');
+          close.className = 'store-banner__close';
+          close.type = 'button';
+          close.setAttribute('aria-label', isGerman ? 'Hinweis schließen' : 'Dismiss');
+          close.textContent = '×';
+          close.addEventListener('click', function () {
+            remember();
+            banner.remove();
+          });
+
+          banner.appendChild(text);
+          banner.appendChild(cta);
+          banner.appendChild(close);
+          document.body.appendChild(banner);
+        });
+      })();
     </script>
     <script>
       // Only register service worker in production (GitHub Pages)

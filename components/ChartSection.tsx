@@ -15,6 +15,8 @@ import type { calculateMetrics } from '../utils/metrics';
 
 type Metrics = ReturnType<typeof calculateMetrics>;
 
+const ACTIVE_VIEW_TOGGLE_TEXT_COLOR = '#fff';
+
 type Props = {
   filteredEnergyData: EnergyData[];
   hourlyEnergyData: EnergyData[];
@@ -90,7 +92,7 @@ export function ChartSection({
   return (
     <>
       {/* KPI Row */}
-      <View style={{ flexDirection: 'row', marginHorizontal: 12, marginTop: 12, gap: 8 }}>
+      <View style={styles.kpiRow}>
         <KpiCard
           label={t.renewableNow}
           value={metrics?.today?.renewable.current}
@@ -136,15 +138,13 @@ export function ChartSection({
         }
         legend={
           showRegional ? (
-            <View style={{ gap: 8 }}>
-              <Text style={{ color: colors.text, fontSize: 13, fontWeight: '600' }}>
-                {t.legend}
-              </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <View
-                  style={{ width: 16, height: 3, backgroundColor: '#FF9800', borderRadius: 1.5 }}
-                />
-                <Text style={{ color: colors.text, fontSize: 12 }}>{t.regionalDataLabel}</Text>
+            <View style={styles.legendContainer}>
+              <Text style={[styles.legendTitle, { color: colors.text }]}>{t.legend}</Text>
+              <View style={styles.legendRow}>
+                <View style={styles.legendLineRegional} />
+                <Text style={[styles.legendLabel, { color: colors.text }]}>
+                  {t.regionalDataLabel}
+                </Text>
               </View>
             </View>
           ) : undefined
@@ -213,45 +213,39 @@ export function ChartSection({
             : undefined
         }
         viewToggle={
-          <View style={{ flexDirection: 'row', gap: 6 }}>
+          <View style={styles.viewToggleRow}>
             <TouchableOpacity
               onPress={() => handlePriceClockViewChange(false)}
-              style={{
-                paddingHorizontal: 10,
-                paddingVertical: 4,
-                borderRadius: 8,
-                backgroundColor: !priceClockView ? colors.primary : colors.gridLine,
-              }}
+              style={[
+                styles.viewToggleButton,
+                { backgroundColor: !priceClockView ? colors.primary : colors.gridLine },
+              ]}
               accessibilityLabel={t.viewBar}
               accessibilityRole="button"
             >
               <Text
-                style={{
-                  color: !priceClockView ? '#fff' : colors.text,
-                  fontSize: 12,
-                  fontWeight: '600',
-                }}
+                style={[
+                  styles.viewToggleLabel,
+                  { color: !priceClockView ? ACTIVE_VIEW_TOGGLE_TEXT_COLOR : colors.text },
+                ]}
               >
                 {t.viewBar}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => handlePriceClockViewChange(true)}
-              style={{
-                paddingHorizontal: 10,
-                paddingVertical: 4,
-                borderRadius: 8,
-                backgroundColor: priceClockView ? colors.primary : colors.gridLine,
-              }}
+              style={[
+                styles.viewToggleButton,
+                { backgroundColor: priceClockView ? colors.primary : colors.gridLine },
+              ]}
               accessibilityLabel={t.viewClock}
               accessibilityRole="button"
             >
               <Text
-                style={{
-                  color: priceClockView ? '#fff' : colors.text,
-                  fontSize: 12,
-                  fontWeight: '600',
-                }}
+                style={[
+                  styles.viewToggleLabel,
+                  { color: priceClockView ? ACTIVE_VIEW_TOGGLE_TEXT_COLOR : colors.text },
+                ]}
               >
                 {t.viewClock}
               </Text>
@@ -259,21 +253,19 @@ export function ChartSection({
           </View>
         }
         legend={
-          <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.text, fontSize: 13, fontWeight: '600' }}>{t.legend}</Text>
-            <View style={{ gap: 6 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <View
-                  style={{ width: 16, height: 16, backgroundColor: '#4CAF50', borderRadius: 2 }}
-                />
-                <Text style={{ color: colors.text, fontSize: 12 }}>{t.marketPriceLabel}</Text>
+          <View style={styles.legendContainer}>
+            <Text style={[styles.legendTitle, { color: colors.text }]}>{t.legend}</Text>
+            <View style={styles.legendGroup}>
+              <View style={styles.legendRow}>
+                <View style={styles.legendSquareGreen} />
+                <Text style={[styles.legendLabel, { color: colors.text }]}>
+                  {t.marketPriceLabel}
+                </Text>
               </View>
               {priceDisplayMode === 'withGridFees' && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <View
-                    style={{ width: 16, height: 16, backgroundColor: '#757575', borderRadius: 2 }}
-                  />
-                  <Text style={{ color: colors.text, fontSize: 12 }}>
+                <View style={styles.legendRow}>
+                  <View style={styles.legendSquareGray} />
+                  <Text style={[styles.legendLabel, { color: colors.text }]}>
                     {t.gridFeesLabel} ({gridFees} ¢/kWh)
                   </Text>
                 </View>
@@ -282,20 +274,18 @@ export function ChartSection({
           </View>
         }
         detailLegend={
-          <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.text, fontSize: 13, fontWeight: '600' }}>{t.legend}</Text>
-            <View style={{ gap: 6 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <View
-                  style={{ width: 16, height: 16, backgroundColor: '#4CAF50', borderRadius: 2 }}
-                />
-                <Text style={{ color: colors.text, fontSize: 12 }}>{t.marketPriceLabel}</Text>
+          <View style={styles.legendContainer}>
+            <Text style={[styles.legendTitle, { color: colors.text }]}>{t.legend}</Text>
+            <View style={styles.legendGroup}>
+              <View style={styles.legendRow}>
+                <View style={styles.legendSquareGreen} />
+                <Text style={[styles.legendLabel, { color: colors.text }]}>
+                  {t.marketPriceLabel}
+                </Text>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <View
-                  style={{ width: 16, height: 16, backgroundColor: '#757575', borderRadius: 2 }}
-                />
-                <Text style={{ color: colors.text, fontSize: 12 }}>
+              <View style={styles.legendRow}>
+                <View style={styles.legendSquareGray} />
+                <Text style={[styles.legendLabel, { color: colors.text }]}>
                   {t.gridFeesLabel} ({gridFees} ¢/kWh)
                 </Text>
               </View>
@@ -406,6 +396,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 4,
   },
+  kpiRow: { flexDirection: 'row', marginHorizontal: 12, marginTop: 12, gap: 8 },
+  legendContainer: { gap: 8 },
+  legendTitle: { fontSize: 13, fontWeight: '600' },
+  legendGroup: { gap: 6 },
+  legendRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  legendLineRegional: { width: 16, height: 3, backgroundColor: '#FF9800', borderRadius: 1.5 },
+  legendSquareGreen: { width: 16, height: 16, backgroundColor: '#4CAF50', borderRadius: 2 },
+  legendSquareGray: { width: 16, height: 16, backgroundColor: '#757575', borderRadius: 2 },
+  legendLabel: { fontSize: 12 },
+  viewToggleRow: { flexDirection: 'row', gap: 6 },
+  viewToggleButton: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  viewToggleLabel: { fontSize: 12, fontWeight: '600' },
   infoText: {
     fontSize: 14,
     textAlign: 'center',

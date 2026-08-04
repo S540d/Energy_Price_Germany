@@ -49,13 +49,8 @@ function SkeletonBase({ width = '100%', height, style }: SkeletonProps) {
     <View
       onLayout={handleLayout}
       style={[
-        {
-          width,
-          height,
-          backgroundColor: colors.border,
-          borderRadius: borderRadius.md,
-          overflow: 'hidden',
-        },
+        styles.base,
+        { width, height, backgroundColor: colors.border, borderRadius: borderRadius.md },
         style,
       ]}
     >
@@ -65,7 +60,7 @@ function SkeletonBase({ width = '100%', height, style }: SkeletonProps) {
             colors={shimmerColors}
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.5 }}
-            style={{ width: containerWidth, height: '100%' }}
+            style={[styles.gradientFill, { width: containerWidth }]}
           />
         </Animated.View>
       )}
@@ -117,5 +112,11 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderWidth: 1,
     overflow: 'hidden',
+  },
+  base: {
+    overflow: 'hidden',
+  },
+  gradientFill: {
+    height: '100%',
   },
 });

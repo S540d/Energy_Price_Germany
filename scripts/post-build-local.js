@@ -38,7 +38,14 @@ if (fs.existsSync(indexPath)) {
 
   // Fix title and meta tags
   html = html.replace(/<title>.*?<\/title>/, '<title>Energy Prices Germany (LOCAL)</title>');
-  
+
+  // Add SEO meta tags (local builds are never publicly indexed) (Issue S540d/project-templates#95)
+  if (!html.includes('name="description"')) {
+    html = html.replace('</head>', `    <meta name="description" content="Visualisierung von Energiepreisen und erneuerbaren Energien in Deutschland" />
+    <meta name="robots" content="noindex, nofollow" />
+  </head>`);
+  }
+
   // Add PWA meta tags if not present
   if (!html.includes('apple-mobile-web-app-title')) {
     html = html.replace('</head>', `    <meta name="apple-mobile-web-app-capable" content="yes" />
