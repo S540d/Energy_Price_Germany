@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, Platform } from 'react-native';
+import { View, Text, Platform, ScrollView, StyleSheet } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
 import type { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle, getPriceColor } from '../../utils/chartHelpers';
@@ -7,7 +7,17 @@ import { GRID_FEES_AND_TAXES } from '../../utils/metrics';
 import { useChartDimensions } from '../../utils/chartUtils';
 import { arrayMin, arrayMax } from '../../utils/mathUtils';
 import { useSettingsContext } from '../../context/SettingsContext';
-import { ChartGrid, ChartCard, ChartTooltip, getTooltipLeft, NowMarkerLine } from './shared';
+import { useLanguageContext } from '../../context/LanguageContext';
+import {
+  ChartGrid,
+  ChartCard,
+  ChartTooltip,
+  getTooltipLeft,
+  NowMarkerLine,
+  useChartZoom,
+  ZoomResetBadge,
+} from './shared';
+import { scaleToX, getBarWidth, getBarHeight, getPlotHeight } from './shared/chartScale';
 
 interface PriceBarChartProps {
   title: string;
@@ -57,6 +67,7 @@ function PriceBarChartComponent({
 }: PriceBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const { priceDisplayMode } = useSettingsContext();
+  const { t } = useLanguageContext();
   const isMarketOnly = !forceStacked && priceDisplayMode === 'marketOnly';
 
   const handleBarInteraction = useCallback((index: number) => {
@@ -65,7 +76,7 @@ function PriceBarChartComponent({
 
   // Use centralized chart dimensions hook
   const {
-    chartWidth,
+    chartWidth: viewportWidth,
     chartHeight,
     leftPadding,
     padding,
@@ -76,6 +87,18 @@ function PriceBarChartComponent({
     isPhone,
     isLandscape,
   } = useChartDimensions();
+
+  // Pinch (mobile) / scroll (web) zoom (#355) — contentWidth replaces the static
+  // chartWidth for all internal x-position math below.
+  const {
+    contentWidth: chartWidth,
+    isZoomed,
+    resetZoom,
+    scrollRef,
+    scrollViewProps,
+    gestureContainerProps,
+    toViewportX,
+  } = useChartZoom(viewportWidth);
 
   // now must be outside useMemo so the "Jetzt" marker updates on every render
   const now = Date.now();
@@ -116,10 +139,14 @@ function PriceBarChartComponent({
     const { minTime: cMinTime, timeRange: cTimeRange, min: cMin, range: cRange } = chartCalcs;
     return data.map((d, index) => {
       const marketPrice = d.marketPrice !== null ? d.marketPrice * 0.1 : null;
-      const x =
-        leftPadding +
-        ((d.timestamp - cMinTime) / cTimeRange) * (chartWidth - leftPadding - rightPadding);
-      const barWidth = ((chartWidth - leftPadding - rightPadding) / data.length) * 0.95;
+      const x = scaleToX(d.timestamp, {
+        domainMin: cMinTime,
+        domainRange: cTimeRange,
+        chartWidth,
+        leftPadding,
+        rightPadding,
+      });
+      const barWidth = getBarWidth(chartWidth, leftPadding, rightPadding, data.length, 0.95);
 
       if (marketPrice === null) {
         return {
@@ -134,10 +161,17 @@ function PriceBarChartComponent({
       const totalPrice = isMarketOnly ? marketPrice : marketPrice + gridFees;
       const color = getPriceColor(totalPrice);
       const clampedMarketPrice = Math.max(0, marketPrice);
-      const marketBarHeight =
-        ((clampedMarketPrice - cMin) / cRange) * (chartHeight - padding - bottomPadding);
+      const yScale = {
+        domainMin: cMin,
+        domainRange: cRange,
+        chartHeight,
+        padding,
+        bottomPadding,
+      };
+      const marketBarHeight = getBarHeight(clampedMarketPrice, yScale);
       const marketY = chartHeight - bottomPadding - marketBarHeight;
-      const gridBarHeight = (gridFees / cRange) * (chartHeight - padding - bottomPadding);
+      const gridBarHeight =
+        (gridFees / cRange) * getPlotHeight(chartHeight, padding, bottomPadding);
       const gridY = marketY - gridBarHeight;
       const isInterpolated = d.isMarketPriceInterpolated || false;
 
@@ -188,9 +222,14 @@ function PriceBarChartComponent({
           const marketPriceCent = item.marketPrice * 0.1;
           const totalPrice = marketPriceCent + gridFees;
 
-          const x =
-            leftPadding + ((item.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
-          const tooltipLeft = getTooltipLeft(x, 100, chartWidth);
+          const x = scaleToX(item.timestamp, {
+            domainMin: minTime,
+            domainRange: timeRange,
+            chartWidth,
+            leftPadding,
+            rightPadding,
+          });
+          const tooltipLeft = getTooltipLeft(toViewportX(x), 100, viewportWidth);
 
           return (
             <ChartTooltip
@@ -201,15 +240,9 @@ function PriceBarChartComponent({
               minWidth={180}
             >
               {/* Market Price */}
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  marginBottom: isMarketOnly ? 0 : 4,
-                }}
-              >
-                <Text style={{ color: '#4CAF50', fontSize: 11 }}>{labels.tooltipMarketPrice}</Text>
-                <Text style={{ color: colors.text, fontSize: 11, fontWeight: '600' }}>
+              <View style={isMarketOnly ? styles.tooltipRow : styles.tooltipRowMarginBottom4}>
+                <Text style={styles.tooltipMarketLabel}>{labels.tooltipMarketPrice}</Text>
+                <Text style={[styles.tooltipValueSmallBold, { color: colors.text }]}>
                   {marketPriceCent.toFixed(2)} ¢
                 </Text>
               </View>
@@ -218,37 +251,24 @@ function PriceBarChartComponent({
               {!isMarketOnly && (
                 <>
                   {/* Grid Fees */}
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      marginBottom: 6,
-                    }}
-                  >
-                    <Text style={{ color: colors.textSecondary, fontSize: 11 }}>
+                  <View style={styles.tooltipRowMarginBottom6}>
+                    <Text style={[styles.tooltipLabelSmall, { color: colors.textSecondary }]}>
                       {labels.tooltipGridFees}
                     </Text>
-                    <Text style={{ color: colors.text, fontSize: 11, fontWeight: '600' }}>
+                    <Text style={[styles.tooltipValueSmallBold, { color: colors.text }]}>
                       {gridFees.toFixed(2)} ¢
                     </Text>
                   </View>
 
                   {/* Divider */}
-                  <View
-                    style={{
-                      height: 1,
-                      backgroundColor: colors.gridLine,
-                      marginVertical: 6,
-                      opacity: 0.5,
-                    }}
-                  />
+                  <View style={[styles.tooltipDivider, { backgroundColor: colors.gridLine }]} />
 
                   {/* Total Price */}
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Text style={{ color: colors.text, fontSize: 12, fontWeight: '600' }}>
+                  <View style={styles.tooltipRow}>
+                    <Text style={[styles.tooltipTotalLabel, { color: colors.text }]}>
                       {labels.tooltipEndCustomer}
                     </Text>
-                    <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>
+                    <Text style={[styles.tooltipTotalValue, { color: colors.primary }]}>
                       {totalPrice.toFixed(2)} ¢
                     </Text>
                   </View>
@@ -257,41 +277,19 @@ function PriceBarChartComponent({
             </ChartTooltip>
           );
         })()}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 0,
-        }}
-      >
-        <View>
+      <View style={styles.headerRow}>
+        <View style={styles.titleColumn}>
           <Text
-            style={{
-              fontSize: isPhone ? 17 : 20,
-              fontWeight: '800',
-              marginBottom: 0,
-              color: textColor,
-            }}
+            style={[isPhone ? styles.titlePhone : styles.titleDefault, { color: textColor }]}
+            numberOfLines={2}
+            ellipsizeMode="tail"
           >
             {title}
           </Text>
-          {subtitle && (
-            <Text
-              style={{
-                fontSize: 11,
-                color: textColor,
-                opacity: 0.7,
-                marginBottom: 2,
-                fontWeight: '600',
-              }}
-            >
-              {subtitle}
-            </Text>
-          )}
+          {subtitle && <Text style={[styles.subtitle, { color: textColor }]}>{subtitle}</Text>}
           {interactionHint && (
             <Text
-              style={{ fontSize: 11, fontStyle: 'italic', opacity: 0.5, color: textColor }}
+              style={[styles.hint, { color: textColor }]}
               accessibilityRole="text"
               accessibilityLabel={interactionHint}
             >
@@ -301,281 +299,266 @@ function PriceBarChartComponent({
         </View>
         {/* Legend - hidden when showLegend is false or on small devices in portrait mode */}
         {showLegend && !(isPhone && !isLandscape) && (
-          <View
-            style={{
-              flexDirection: 'row',
-              gap: 12,
-              paddingRight: 10,
-              paddingTop: 0,
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={{ width: 10, height: 10, backgroundColor: '#4CAF50' }} />
-              <Text style={{ fontSize: 11, color: textColor, opacity: 0.7 }}>
-                {labels.marketPrice}
-              </Text>
+          <View style={styles.legendRow}>
+            <View style={styles.legendItem}>
+              <View style={styles.legendDotMarket} />
+              <Text style={[styles.legendLabel, { color: textColor }]}>{labels.marketPrice}</Text>
             </View>
             {!isMarketOnly && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <View style={{ width: 10, height: 10, backgroundColor: '#757575' }} />
-                <Text style={{ fontSize: 11, color: textColor, opacity: 0.7 }}>
+              <View style={styles.legendItem}>
+                <View style={styles.legendDotGrid} />
+                <Text style={[styles.legendLabel, { color: textColor }]}>
                   {labels.gridFeesAndTaxes} ({gridFees} ¢/kWh)
                 </Text>
               </View>
             )}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={{ width: 10, height: 10, backgroundColor: '#4CAF50', opacity: 0.4 }} />
-              <Text style={{ fontSize: 11, color: textColor, opacity: 0.7 }}>
-                {labels.interpolated}
-              </Text>
+            <View style={styles.legendItem}>
+              <View style={styles.legendDotInterpolated} />
+              <Text style={[styles.legendLabel, { color: textColor }]}>{labels.interpolated}</Text>
             </View>
           </View>
         )}
       </View>
-      <View style={{ height: chartHeight, width: chartWidth, position: 'relative' }}>
-        <ChartGrid
-          chartWidth={chartWidth}
-          chartHeight={chartHeight}
-          leftPadding={leftPadding}
-          rightPadding={rightPadding}
-          padding={padding}
-          bottomPadding={bottomPadding}
-          gridColor={gridColor}
-        />
-
-        {/* Bars (SVG) - Using pre-calculated bar data for performance */}
-        <Svg width={chartWidth} height={chartHeight}>
-          {barData.map(bar => {
-            // Render dashed placeholder for missing data
-            if (bar.marketPrice === null) {
-              return (
-                <Rect
-                  key={bar.index}
-                  x={bar.x - bar.barWidth / 2}
-                  y={padding}
-                  width={bar.barWidth}
-                  height={chartHeight - padding - bottomPadding}
-                  fill="none"
-                  stroke={gridColor}
-                  strokeWidth="1"
-                  strokeDasharray="4,4"
-                  opacity={0.3}
-                />
-              );
-            }
-
-            const isSelected = selectedIndex === bar.index;
-            const baseOpacity = bar.isInterpolated ? 0.4 : 0.9;
-            const selectedOpacity = bar.isInterpolated ? 0.6 : 1.0;
-
-            return (
-              <React.Fragment key={bar.index}>
-                <Rect
-                  x={bar.x - bar.barWidth / 2}
-                  y={bar.marketY}
-                  width={bar.barWidth}
-                  height={bar.marketBarHeight}
-                  fill={bar.color}
-                  opacity={isSelected ? selectedOpacity : baseOpacity}
-                  stroke={isSelected ? '#999999' : 'none'}
-                  strokeWidth={isSelected ? 2 : 0}
-                />
-                {!isMarketOnly && (
-                  <Rect
-                    x={bar.x - bar.barWidth / 2}
-                    y={bar.gridY}
-                    width={bar.barWidth}
-                    height={bar.gridBarHeight}
-                    fill="#757575"
-                    opacity={
-                      isSelected ? (bar.isInterpolated ? 0.5 : 0.8) : bar.isInterpolated ? 0.3 : 0.6
-                    }
-                    stroke={isSelected ? '#999999' : 'none'}
-                    strokeWidth={isSelected ? 2 : 0}
-                  />
-                )}
-              </React.Fragment>
-            );
-          })}
-
-          {/* Durchschnittslinie */}
-          <Line
-            x1={leftPadding}
-            y1={
-              chartHeight -
-              bottomPadding -
-              ((avgMarketPrice - min) / range) * (chartHeight - padding - bottomPadding)
-            }
-            x2={chartWidth - rightPadding}
-            y2={
-              chartHeight -
-              bottomPadding -
-              ((avgMarketPrice - min) / range) * (chartHeight - padding - bottomPadding)
-            }
-            stroke={textColor}
-            strokeWidth="2"
-            strokeDasharray="8,4"
-            opacity={0.5}
-          />
-
-          {/* "Jetzt" Markierung */}
-          {now >= minTime && now <= maxTime && (
-            <NowMarkerLine
-              now={now}
-              minTime={minTime}
-              timeRange={timeRange}
+      <View
+        style={[styles.relative, { height: chartHeight, width: viewportWidth }]}
+        {...gestureContainerProps}
+      >
+        <ScrollView
+          ref={scrollRef}
+          {...scrollViewProps}
+          style={{ width: viewportWidth, height: chartHeight }}
+          contentContainerStyle={{ width: chartWidth, height: chartHeight }}
+        >
+          <View style={[styles.relative, { height: chartHeight, width: chartWidth }]}>
+            <ChartGrid
               chartWidth={chartWidth}
               chartHeight={chartHeight}
               leftPadding={leftPadding}
               rightPadding={rightPadding}
               padding={padding}
               bottomPadding={bottomPadding}
+              gridColor={gridColor}
             />
-          )}
-        </Svg>
 
-        {/* Invisible touch/hover areas for bars - Using pre-calculated positions */}
-        {barData.map(bar => {
-          if (bar.marketPrice === null) return null;
+            {/* Bars (SVG) - Using pre-calculated bar data for performance */}
+            <Svg width={chartWidth} height={chartHeight}>
+              {barData.map(bar => {
+                // Render dashed placeholder for missing data
+                if (bar.marketPrice === null) {
+                  return (
+                    <Rect
+                      key={bar.index}
+                      x={bar.x - bar.barWidth / 2}
+                      y={padding}
+                      width={bar.barWidth}
+                      height={chartHeight - padding - bottomPadding}
+                      fill="none"
+                      stroke={gridColor}
+                      strokeWidth="1"
+                      strokeDasharray="4,4"
+                      opacity={0.3}
+                    />
+                  );
+                }
 
-          return (
-            <View
-              key={`touch-${bar.index}`}
-              style={{
-                position: 'absolute',
-                left: bar.x - bar.barWidth / 2,
-                top: isMarketOnly ? bar.marketY : bar.gridY,
-                width: bar.barWidth,
-                height: isMarketOnly
-                  ? bar.marketBarHeight
-                  : bar.marketBarHeight + bar.gridBarHeight,
-                zIndex: 10,
-                cursor: Platform.OS === 'web' ? 'pointer' : undefined,
-              }}
-              onStartShouldSetResponder={() => true}
-              onResponderGrant={() => handleBarInteraction(bar.index)}
-              {...(Platform.OS === 'web' && {
-                onMouseEnter: () => setSelectedIndex(bar.index),
-                onMouseLeave: () => setSelectedIndex(null),
+                const isSelected = selectedIndex === bar.index;
+                const baseOpacity = bar.isInterpolated ? 0.4 : 0.9;
+                const selectedOpacity = bar.isInterpolated ? 0.6 : 1.0;
+
+                return (
+                  <React.Fragment key={bar.index}>
+                    <Rect
+                      x={bar.x - bar.barWidth / 2}
+                      y={bar.marketY}
+                      width={bar.barWidth}
+                      height={bar.marketBarHeight}
+                      fill={bar.color}
+                      opacity={isSelected ? selectedOpacity : baseOpacity}
+                      stroke={isSelected ? '#999999' : 'none'}
+                      strokeWidth={isSelected ? 2 : 0}
+                    />
+                    {!isMarketOnly && (
+                      <Rect
+                        x={bar.x - bar.barWidth / 2}
+                        y={bar.gridY}
+                        width={bar.barWidth}
+                        height={bar.gridBarHeight}
+                        fill="#757575"
+                        opacity={
+                          isSelected
+                            ? bar.isInterpolated
+                              ? 0.5
+                              : 0.8
+                            : bar.isInterpolated
+                              ? 0.3
+                              : 0.6
+                        }
+                        stroke={isSelected ? '#999999' : 'none'}
+                        strokeWidth={isSelected ? 2 : 0}
+                      />
+                    )}
+                  </React.Fragment>
+                );
               })}
-            />
-          );
-        })}
 
-        {/* Durchschnittslinie Label */}
-        <Text
-          style={{
-            position: 'absolute',
-            right: rightPadding + 4,
-            top:
-              chartHeight -
-              bottomPadding -
-              ((avgMarketPrice - min) / range) * (chartHeight - padding - bottomPadding) -
-              11,
-            fontSize: 11,
-            color: textColor,
-            fontWeight: '700',
-            opacity: 0.7,
-          }}
-        >
-          {labels.average} {avgMarketPrice.toFixed(2)} ¢
-        </Text>
+              {/* Durchschnittslinie */}
+              <Line
+                x1={leftPadding}
+                y1={
+                  chartHeight -
+                  bottomPadding -
+                  ((avgMarketPrice - min) / range) * (chartHeight - padding - bottomPadding)
+                }
+                x2={chartWidth - rightPadding}
+                y2={
+                  chartHeight -
+                  bottomPadding -
+                  ((avgMarketPrice - min) / range) * (chartHeight - padding - bottomPadding)
+                }
+                stroke={textColor}
+                strokeWidth="2"
+                strokeDasharray="8,4"
+                opacity={0.5}
+              />
 
-        {/* Y-axis labels */}
+              {/* "Jetzt" Markierung */}
+              {now >= minTime && now <= maxTime && (
+                <NowMarkerLine
+                  now={now}
+                  minTime={minTime}
+                  timeRange={timeRange}
+                  chartWidth={chartWidth}
+                  chartHeight={chartHeight}
+                  leftPadding={leftPadding}
+                  rightPadding={rightPadding}
+                  padding={padding}
+                  bottomPadding={bottomPadding}
+                />
+              )}
+            </Svg>
+
+            {/* Invisible touch/hover areas for bars - Using pre-calculated positions */}
+            {barData.map(bar => {
+              if (bar.marketPrice === null) return null;
+
+              return (
+                <View
+                  key={`touch-${bar.index}`}
+                  style={[
+                    Platform.OS === 'web' ? styles.touchAreaWeb : styles.touchArea,
+                    {
+                      left: bar.x - bar.barWidth / 2,
+                      top: isMarketOnly ? bar.marketY : bar.gridY,
+                      width: bar.barWidth,
+                      height: isMarketOnly
+                        ? bar.marketBarHeight
+                        : bar.marketBarHeight + bar.gridBarHeight,
+                    },
+                  ]}
+                  onStartShouldSetResponder={() => true}
+                  onResponderGrant={() => handleBarInteraction(bar.index)}
+                  {...(Platform.OS === 'web' && {
+                    onMouseEnter: () => setSelectedIndex(bar.index),
+                    onMouseLeave: () => setSelectedIndex(null),
+                  })}
+                />
+              );
+            })}
+
+            {/* Durchschnittslinie Label */}
+            <Text
+              style={[
+                styles.averageLabel,
+                {
+                  right: rightPadding + 4,
+                  top:
+                    chartHeight -
+                    bottomPadding -
+                    ((avgMarketPrice - min) / range) * (chartHeight - padding - bottomPadding) -
+                    11,
+                  color: textColor,
+                },
+              ]}
+            >
+              {labels.average} {avgMarketPrice.toFixed(2)} ¢
+            </Text>
+
+            {/* X-axis labels (every 6 hours) */}
+            {(() => {
+              const xAxisLabels = [];
+              const startDate = new Date(minTime);
+              const endDate = new Date(maxTime);
+
+              const startHour = Math.ceil(startDate.getHours() / 6) * 6;
+              const current = new Date(startDate);
+              current.setHours(startHour, 0, 0, 0);
+
+              while (current <= endDate) {
+                const timestamp = current.getTime();
+                const x = scaleToX(timestamp, {
+                  domainMin: minTime,
+                  domainRange: timeRange,
+                  chartWidth,
+                  leftPadding,
+                  rightPadding,
+                });
+                const hour = current.getHours();
+
+                xAxisLabels.push(
+                  <Text
+                    key={`xlabel-${timestamp}`}
+                    style={[
+                      styles.xAxisLabel,
+                      { left: x - 10, top: chartHeight - bottomPadding + 5, color: textColor },
+                    ]}
+                  >
+                    {hour}h
+                  </Text>
+                );
+
+                current.setHours(current.getHours() + 6);
+              }
+
+              return xAxisLabels;
+            })()}
+
+            {/* End-of-chart label */}
+            <Text style={[styles.endOfChartLabel, { bottom: bottomPadding + 4, color: textColor }]}>
+              EPEX
+            </Text>
+          </View>
+        </ScrollView>
+
+        {/* Y-axis labels - pinned outside the zoomable/scrollable content */}
         {[0, 1, 2, 3, 4].map(i => {
           const value = maxTotal - (i / 4) * range;
           const y = padding + (i / 4) * (chartHeight - padding - bottomPadding);
           return (
             <Text
               key={`ylabel-${i}`}
-              style={{
-                position: 'absolute',
-                left: 10,
-                top: y - 8,
-                fontSize: 11,
-                color: textColor,
-                opacity: 0.6,
-                textAlign: 'right',
-                width: isPhone ? 25 : 30,
-              }}
+              style={[
+                isPhone ? styles.yAxisLabelPhone : styles.yAxisLabelDefault,
+                { top: y - 8, color: textColor },
+              ]}
             >
               {value.toFixed(0)}
             </Text>
           );
         })}
 
-        {/* X-axis labels (every 6 hours) */}
-        {(() => {
-          const xAxisLabels = [];
-          const startDate = new Date(minTime);
-          const endDate = new Date(maxTime);
-
-          const startHour = Math.ceil(startDate.getHours() / 6) * 6;
-          const current = new Date(startDate);
-          current.setHours(startHour, 0, 0, 0);
-
-          while (current <= endDate) {
-            const timestamp = current.getTime();
-            const x =
-              leftPadding +
-              ((timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
-            const hour = current.getHours();
-
-            xAxisLabels.push(
-              <Text
-                key={`xlabel-${timestamp}`}
-                style={{
-                  position: 'absolute',
-                  left: x - 10,
-                  top: chartHeight - bottomPadding + 5,
-                  fontSize: 11,
-                  color: textColor,
-                  opacity: 0.6,
-                  fontWeight: '600',
-                }}
-              >
-                {hour}h
-              </Text>
-            );
-
-            current.setHours(current.getHours() + 6);
-          }
-
-          return xAxisLabels;
-        })()}
-
-        {/* End-of-chart label */}
-        <Text
-          style={{
-            position: 'absolute',
-            right: 2,
-            bottom: bottomPadding + 4,
-            fontSize: 10,
-            color: textColor,
-            opacity: 0.35,
-            fontWeight: '700',
-            textTransform: 'uppercase',
-            letterSpacing: 0.6,
-          }}
-        >
-          EPEX
-        </Text>
-
         {/* Y-Achsen-Label */}
         <Text style={getYAxisLabelStyle(chartHeight, -15, textColor, isPhone)}>{labels.yAxis}</Text>
+
+        {isZoomed && (
+          <ZoomResetBadge onPress={resetZoom} colors={colors} accessibilityLabel={t.resetZoom} />
+        )}
       </View>
       {interactionHint && (
         <Text
           accessible={true}
           accessibilityRole="text"
           accessibilityLabel={interactionHint}
-          style={{
-            fontSize: 11,
-            color: textColor,
-            opacity: 0.5,
-            fontStyle: 'italic',
-            marginTop: 6,
-          }}
+          style={[styles.interactionHintText, { color: textColor }]}
         >
           {interactionHint}
         </Text>
@@ -587,3 +570,76 @@ function PriceBarChartComponent({
 // Performance: Wrap with React.memo to prevent unnecessary re-renders
 // Only re-renders if props actually change
 export const PriceBarChart = React.memo(PriceBarChartComponent);
+
+const styles = StyleSheet.create({
+  tooltipRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  tooltipRowMarginBottom4: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  tooltipRowMarginBottom6: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  tooltipMarketLabel: { color: '#4CAF50', fontSize: 11 },
+  tooltipLabelSmall: { fontSize: 11 },
+  tooltipValueSmallBold: { fontSize: 11, fontWeight: '600' },
+  tooltipDivider: { height: 1, marginVertical: 6, opacity: 0.5 },
+  tooltipTotalLabel: { fontSize: 12, fontWeight: '600' },
+  tooltipTotalValue: { fontSize: 12, fontWeight: '700' },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 0,
+  },
+  titleColumn: { flex: 1, marginRight: 8 },
+  titlePhone: { fontSize: 17, fontWeight: '800', marginBottom: 0 },
+  titleDefault: { fontSize: 20, fontWeight: '800', marginBottom: 0 },
+  subtitle: { fontSize: 11, opacity: 0.7, marginBottom: 2, fontWeight: '600' },
+  hint: { fontSize: 11, fontStyle: 'italic', opacity: 0.5 },
+  legendRow: { flexDirection: 'row', gap: 12, paddingRight: 10, paddingTop: 0 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDotMarket: { width: 10, height: 10, backgroundColor: '#4CAF50' },
+  legendDotGrid: { width: 10, height: 10, backgroundColor: '#757575' },
+  legendDotInterpolated: { width: 10, height: 10, backgroundColor: '#4CAF50', opacity: 0.4 },
+  legendLabel: { fontSize: 11, opacity: 0.7 },
+  relative: { position: 'relative' },
+  touchArea: { position: 'absolute', zIndex: 10 },
+  touchAreaWeb: { position: 'absolute', zIndex: 10, cursor: 'pointer' },
+  averageLabel: { position: 'absolute', fontSize: 11, fontWeight: '700', opacity: 0.7 },
+  xAxisLabel: { position: 'absolute', fontSize: 11, opacity: 0.6, fontWeight: '600' },
+  endOfChartLabel: {
+    position: 'absolute',
+    right: 2,
+    fontSize: 10,
+    opacity: 0.35,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  yAxisLabelPhone: {
+    position: 'absolute',
+    left: 10,
+    fontSize: 11,
+    opacity: 0.6,
+    textAlign: 'right',
+    width: 25,
+  },
+  yAxisLabelDefault: {
+    position: 'absolute',
+    left: 10,
+    fontSize: 11,
+    opacity: 0.6,
+    textAlign: 'right',
+    width: 30,
+  },
+  interactionHintText: {
+    fontSize: 11,
+    opacity: 0.5,
+    fontStyle: 'italic',
+    marginTop: 6,
+  },
+});

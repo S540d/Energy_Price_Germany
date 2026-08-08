@@ -10,6 +10,7 @@ import {
   Linking,
 } from 'react-native';
 import type { ThemeColors } from '../utils/theme';
+import { GITHUB_REPO_URL, PLAY_STORE_URL, playStoreUrlWithCampaign } from '../utils/appLinks';
 
 interface AboutViewProps {
   visible: boolean;
@@ -25,6 +26,7 @@ interface AboutViewProps {
     supportSection: string;
     supportProject: string;
     rateApp: string;
+    getAndroidApp: string;
     reportBug: string;
     noCommercialUse: string;
   };
@@ -103,9 +105,7 @@ export function AboutView({
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
               License: CC BY 4.0
             </Text>
-            <Text
-              style={[styles.infoText, { color: colors.textSecondary, fontSize: 12, marginTop: 4 }]}
-            >
+            <Text style={[styles.infoTextSmall, { color: colors.textSecondary }]}>
               Regional renewable energy share based on postal code (PLZ).
             </Text>
             <TouchableOpacity
@@ -131,17 +131,12 @@ export function AboutView({
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
               Open Source • MIT License
             </Text>
-            <Text
-              style={[
-                styles.infoText,
-                { color: colors.textSecondary, fontSize: 12, fontStyle: 'italic', marginTop: 4 },
-              ]}
-            >
+            <Text style={[styles.infoTextSmallItalic, { color: colors.textSecondary }]}>
               {t.noCommercialUse}
             </Text>
             <TouchableOpacity
               onPress={() => {
-                const url = 'https://github.com/S540d/Energy_Price_Germany';
+                const url = GITHUB_REPO_URL;
                 if (Platform.OS === 'web') {
                   window.open(url, '_blank'); // platform-safe
                 } else {
@@ -178,9 +173,7 @@ export function AboutView({
             {Platform.OS === 'android' && (
               <TouchableOpacity
                 onPress={() => {
-                  const url =
-                    'https://play.google.com/store/apps/details?id=de.svenstroh.energypricegermany';
-                  Linking.openURL(url);
+                  Linking.openURL(PLAY_STORE_URL);
                 }}
                 style={[
                   styles.supportButton,
@@ -188,6 +181,22 @@ export function AboutView({
                 ]}
               >
                 <Text style={[styles.linkText, { color: colors.primary }]}>{t.rateApp}</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Web visitors otherwise never learn that a Play Store app exists */}
+            {Platform.OS === 'web' && (
+              <TouchableOpacity
+                onPress={() => {
+                  // Campaign-tagged: these are the installs the web app actually generates
+                  window.open(playStoreUrlWithCampaign('web_app', 'about'), '_blank'); // platform-safe
+                }}
+                style={[
+                  styles.supportButton,
+                  { backgroundColor: colors.surface, borderColor: colors.gridLine },
+                ]}
+              >
+                <Text style={[styles.linkText, { color: colors.primary }]}>{t.getAndroidApp}</Text>
               </TouchableOpacity>
             )}
 
@@ -211,7 +220,7 @@ export function AboutView({
           </View>
 
           {/* Credits */}
-          <View style={[styles.section, { paddingBottom: 40 }]} />
+          <View style={styles.footerSpacer} />
         </ScrollView>
       </View>
     </Modal>
@@ -248,6 +257,10 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 24,
   },
+  footerSpacer: {
+    marginBottom: 24,
+    paddingBottom: 40,
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
@@ -257,6 +270,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 4,
+  },
+  infoTextSmall: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  infoTextSmallItalic: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginTop: 4,
   },
   link: {
     marginTop: 8,

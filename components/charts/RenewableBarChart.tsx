@@ -1,11 +1,21 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, Platform } from 'react-native';
+import { View, Text, Platform, ScrollView, StyleSheet } from 'react-native';
 import Svg, { Rect, Line, Polyline } from 'react-native-svg';
 import type { ThemeColors } from '../../utils/theme';
 import { getYAxisLabelStyle } from '../../utils/chartHelpers';
 import { useChartDimensions } from '../../utils/chartUtils';
 import { arrayMin, arrayMax } from '../../utils/mathUtils';
-import { ChartGrid, ChartCard, ChartTooltip, getTooltipLeft, NowMarkerLine } from './shared';
+import { useLanguageContext } from '../../context/LanguageContext';
+import {
+  ChartGrid,
+  ChartCard,
+  ChartTooltip,
+  getTooltipLeft,
+  NowMarkerLine,
+  useChartZoom,
+  ZoomResetBadge,
+} from './shared';
+import { scaleToX, scaleToY, getBarWidth, getBarHeight, getPlotHeight } from './shared/chartScale';
 
 // Performance: Move color helpers outside component for stable references
 const interpolateColor = (color1: number[], color2: number[], factor: number) => {
@@ -84,6 +94,7 @@ function RenewableBarChartComponent({
   accentColor,
 }: RenewableBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const { t } = useLanguageContext();
 
   const handleBarInteraction = useCallback((index: number) => {
     setSelectedIndex(prev => (index === prev ? null : index));
@@ -91,7 +102,7 @@ function RenewableBarChartComponent({
 
   // Use centralized chart dimensions hook
   const {
-    chartWidth,
+    chartWidth: viewportWidth,
     chartHeight,
     leftPadding,
     padding,
@@ -102,6 +113,18 @@ function RenewableBarChartComponent({
     isPhone,
     isLandscape,
   } = useChartDimensions();
+
+  // Pinch (mobile) / scroll (web) zoom (#355) — contentWidth replaces the static
+  // chartWidth for all internal x-position math below.
+  const {
+    contentWidth: chartWidth,
+    isZoomed,
+    resetZoom,
+    scrollRef,
+    scrollViewProps,
+    gestureContainerProps,
+    toViewportX,
+  } = useChartZoom(viewportWidth);
 
   // now must be outside useMemo so the "Jetzt" marker updates on every render
   const now = Date.now();
@@ -138,10 +161,14 @@ function RenewableBarChartComponent({
     const { minTime: cMinTime, timeRange: cTimeRange, min: cMin, range: cRange } = chartCalcs;
     return data.map((d, index) => {
       const value = d[dataKey];
-      const x =
-        leftPadding +
-        ((d.timestamp - cMinTime) / cTimeRange) * (chartWidth - leftPadding - rightPadding);
-      const barWidth = ((chartWidth - leftPadding - rightPadding) / data.length) * 0.8;
+      const x = scaleToX(d.timestamp, {
+        domainMin: cMinTime,
+        domainRange: cTimeRange,
+        chartWidth,
+        leftPadding,
+        rightPadding,
+      });
+      const barWidth = getBarWidth(chartWidth, leftPadding, rightPadding, data.length, 0.8);
       const timestamp = d.timestamp;
 
       if (value === null || value === undefined) {
@@ -156,15 +183,22 @@ function RenewableBarChartComponent({
       }
 
       const color = getRenewableColor(value);
-      const barHeight = ((value - cMin) / cRange) * (chartHeight - padding - bottomPadding);
+      const yScale = {
+        domainMin: cMin,
+        domainRange: cRange,
+        chartHeight,
+        padding,
+        bottomPadding,
+      };
+      const barHeight = getBarHeight(value, yScale);
       const y = chartHeight - bottomPadding - barHeight;
       const isInterpolated = d.isRenewableShareInterpolated || false;
 
       // Pre-calculate >100% split bar dimensions
       let baseHeight, overHeight, baseY, overY, baseColor;
       if (value > 100) {
-        baseHeight = ((100 - cMin) / cRange) * (chartHeight - padding - bottomPadding);
-        overHeight = ((value - 100) / cRange) * (chartHeight - padding - bottomPadding);
+        baseHeight = getBarHeight(100, yScale);
+        overHeight = ((value - 100) / cRange) * getPlotHeight(chartHeight, padding, bottomPadding);
         baseY = chartHeight - bottomPadding - baseHeight;
         overY = baseY - overHeight;
         baseColor = getRenewableColor(100);
@@ -218,9 +252,14 @@ function RenewableBarChartComponent({
           const item = data[selectedIndex];
           const renewablePercent = item[dataKey] ?? 0;
 
-          const x =
-            leftPadding + ((item.timestamp - minTime) / timeRange) * (chartWidth - leftPadding);
-          const tooltipLeft = getTooltipLeft(x, 80, chartWidth);
+          const x = scaleToX(item.timestamp, {
+            domainMin: minTime,
+            domainRange: timeRange,
+            chartWidth,
+            leftPadding,
+            rightPadding,
+          });
+          const tooltipLeft = getTooltipLeft(toViewportX(x), 80, viewportWidth);
 
           return (
             <ChartTooltip
@@ -229,39 +268,25 @@ function RenewableBarChartComponent({
               backgroundColor={backgroundColor}
               colors={colors}
             >
-              <Text style={{ color: colors.text, fontSize: 14, fontWeight: 'bold' }}>
+              <Text style={[styles.tooltipValue, { color: colors.text }]}>
                 {renewablePercent.toFixed(1)}%
               </Text>
             </ChartTooltip>
           );
         })()}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: 0,
-        }}
-      >
-        <View>
+      <View style={styles.headerRow}>
+        <View style={styles.titleColumn}>
           <Text
-            style={{
-              fontSize: isPhone ? 16 : 18,
-              fontWeight: 'bold',
-              marginBottom: 0,
-              color: textColor,
-            }}
+            style={[isPhone ? styles.titlePhone : styles.titleDefault, { color: textColor }]}
+            numberOfLines={2}
+            ellipsizeMode="tail"
           >
             {title}
           </Text>
-          {subtitle && (
-            <Text style={{ fontSize: 12, color: textColor, opacity: 0.7, marginBottom: 2 }}>
-              {subtitle}
-            </Text>
-          )}
+          {subtitle && <Text style={[styles.subtitle, { color: textColor }]}>{subtitle}</Text>}
           {interactionHint && (
             <Text
-              style={{ fontSize: 12, fontStyle: 'italic', opacity: 0.5, color: textColor }}
+              style={[styles.hint, { color: textColor }]}
               accessibilityRole="text"
               accessibilityLabel={interactionHint}
             >
@@ -271,362 +296,348 @@ function RenewableBarChartComponent({
         </View>
         {/* Legend - hidden when showLegend is false or on small devices in portrait mode */}
         {showLegend && !(isPhone && !isLandscape) && (
-          <View
-            style={{
-              flexDirection: 'row',
-              gap: 12,
-              paddingRight: 10,
-              paddingTop: 0,
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View
-                style={{
-                  width: 12,
-                  height: 2,
-                  backgroundColor: textColor,
-                  opacity: 0.5,
-                }}
-              />
-              <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>{labels.average}</Text>
+          <View style={styles.legendRow}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendLine, { backgroundColor: textColor }]} />
+              <Text style={[styles.legendLabel, { color: textColor }]}>{labels.average}</Text>
             </View>
             {showRegionalLine && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <View
-                  style={{
-                    width: 12,
-                    height: 2,
-                    backgroundColor: '#FF9800',
-                    opacity: 0.8,
-                  }}
-                />
-                <Text style={{ fontSize: 12, color: textColor, opacity: 0.7 }}>
-                  {labels.regional}
-                </Text>
+              <View style={styles.legendItem}>
+                <View style={styles.legendLineRegional} />
+                <Text style={[styles.legendLabel, { color: textColor }]}>{labels.regional}</Text>
               </View>
             )}
           </View>
         )}
       </View>
-      <View style={{ height: chartHeight, width: chartWidth, position: 'relative' }}>
-        <ChartGrid
-          chartWidth={chartWidth}
-          chartHeight={chartHeight}
-          leftPadding={leftPadding}
-          rightPadding={rightPadding}
-          padding={padding}
-          bottomPadding={bottomPadding}
-          gridColor={gridColor}
-        />
-
-        {/* Bars (SVG) - Using pre-calculated bar data for performance */}
-        <Svg width={chartWidth} height={chartHeight}>
-          {barData.map(bar => {
-            // Render gray fading bar for missing data
-            if (bar.value === null) {
-              // Seeded random for consistent but varied heights
-              const seed = data[bar.index].timestamp % 1000;
-              const random = Math.sin(seed) * 10000;
-              const randomFactor = (random - Math.floor(random)) * 0.3 + 0.9; // Range: 0.9 to 1.2
-
-              // Calculate fade-out height: based on last valid value (not average)
-              const fadeMaxValue = lastValidValue * randomFactor;
-              const clampedFadeMax = Math.min(Math.max(fadeMaxValue, min), max);
-              const fadeHeight =
-                ((clampedFadeMax - min) / range) * (chartHeight - padding - bottomPadding);
-              const fadeY = chartHeight - bottomPadding - fadeHeight;
-
-              // Create fading effect with multiple segments
-              const segments = 5;
-              const segmentHeight = fadeHeight / segments;
-
-              return (
-                <React.Fragment key={bar.index}>
-                  {Array.from({ length: segments }).map((_, segIndex) => {
-                    const segY = fadeY + segIndex * segmentHeight;
-                    // Opacity increases as we go down (from 0.0 at top to 0.25 at bottom)
-                    const opacity = 0.25 * (segIndex / (segments - 1));
-
-                    return (
-                      <Rect
-                        key={`${bar.index}-seg-${segIndex}`}
-                        x={bar.x - bar.barWidth / 2}
-                        y={segY}
-                        width={bar.barWidth}
-                        height={segmentHeight}
-                        fill={gridColor}
-                        opacity={opacity}
-                      />
-                    );
-                  })}
-                </React.Fragment>
-              );
-            }
-
-            const isSelected = selectedIndex === bar.index;
-            const baseOpacity = bar.isInterpolated ? 0.4 : 0.9;
-            const selectedOpacity = bar.isInterpolated ? 0.6 : 1.0;
-
-            // Wenn Wert über 100%, Balken zweiteilen (use pre-calculated values)
-            if (bar.value > 100) {
-              return (
-                <React.Fragment key={bar.index}>
-                  <Rect
-                    x={bar.x - bar.barWidth / 2}
-                    y={bar.baseY}
-                    width={bar.barWidth}
-                    height={bar.baseHeight}
-                    fill={bar.baseColor}
-                    opacity={isSelected ? selectedOpacity : baseOpacity}
-                    stroke={isSelected ? '#999999' : 'none'}
-                    strokeWidth={isSelected ? 2 : 0}
-                  />
-                  <Rect
-                    x={bar.x - bar.barWidth / 2}
-                    y={bar.overY}
-                    width={bar.barWidth}
-                    height={bar.overHeight}
-                    fill="#90A4AE"
-                    opacity={isSelected ? selectedOpacity : baseOpacity}
-                    stroke={isSelected ? '#999999' : 'none'}
-                    strokeWidth={isSelected ? 2 : 0}
-                  />
-                </React.Fragment>
-              );
-            }
-
-            return (
-              <Rect
-                key={bar.index}
-                x={bar.x - bar.barWidth / 2}
-                y={bar.y}
-                width={bar.barWidth}
-                height={bar.barHeight}
-                fill={bar.color}
-                opacity={isSelected ? selectedOpacity : baseOpacity}
-                stroke={isSelected ? '#999999' : 'none'}
-                strokeWidth={isSelected ? 2 : 0}
-              />
-            );
-          })}
-
-          {/* Durchschnittslinie */}
-          <Line
-            x1={leftPadding}
-            y1={
-              chartHeight -
-              bottomPadding -
-              ((avgValue - min) / range) * (chartHeight - padding - bottomPadding)
-            }
-            x2={chartWidth - rightPadding}
-            y2={
-              chartHeight -
-              bottomPadding -
-              ((avgValue - min) / range) * (chartHeight - padding - bottomPadding)
-            }
-            stroke={textColor}
-            strokeWidth="2"
-            strokeDasharray="8,4"
-            opacity={0.5}
-          />
-
-          {/* Regionale Datenlinie - gestrichelt */}
-          {showRegionalLine &&
-            (() => {
-              const regionalPoints = data
-                .map((d, _index) => ({
-                  x:
-                    leftPadding +
-                    ((d.timestamp - minTime) / timeRange) *
-                      (chartWidth - leftPadding - rightPadding),
-                  y:
-                    d.renewableShareRegional !== null && d.renewableShareRegional !== undefined
-                      ? chartHeight -
-                        bottomPadding -
-                        ((d.renewableShareRegional - min) / range) *
-                          (chartHeight - padding - bottomPadding)
-                      : null,
-                  value: d.renewableShareRegional,
-                }))
-                .filter(p => p.y !== null);
-
-              if (regionalPoints.length === 0) return null;
-
-              const pointsString = regionalPoints.map(p => `${p.x},${p.y}`).join(' ');
-              const regionalAvg =
-                regionalPoints.reduce((sum, p) => sum + (p.value || 0), 0) / regionalPoints.length;
-
-              return (
-                <>
-                  <Polyline
-                    points={pointsString}
-                    stroke="#FF9800"
-                    strokeWidth="3"
-                    strokeDasharray="6,6"
-                    fill="none"
-                    opacity={0.8}
-                  />
-                  {labels.regional && (
-                    <Text
-                      style={{
-                        position: 'absolute',
-                        right: rightPadding + 4,
-                        top:
-                          chartHeight -
-                          bottomPadding -
-                          ((regionalAvg - min) / range) * (chartHeight - padding - bottomPadding) +
-                          12,
-                        fontSize: 12,
-                        color: '#FF9800',
-                        fontWeight: '600',
-                        opacity: 0.9,
-                      }}
-                    >
-                      {labels.regional} {regionalAvg.toFixed(1)}%
-                    </Text>
-                  )}
-                </>
-              );
-            })()}
-
-          {/* "Jetzt" Markierung */}
-          {now >= minTime && now <= maxTime && (
-            <NowMarkerLine
-              now={now}
-              minTime={minTime}
-              timeRange={timeRange}
+      <View
+        style={[styles.relative, { height: chartHeight, width: viewportWidth }]}
+        {...gestureContainerProps}
+      >
+        <ScrollView
+          ref={scrollRef}
+          {...scrollViewProps}
+          style={{ width: viewportWidth, height: chartHeight }}
+          contentContainerStyle={{ width: chartWidth, height: chartHeight }}
+        >
+          <View style={[styles.relative, { height: chartHeight, width: chartWidth }]}>
+            <ChartGrid
               chartWidth={chartWidth}
               chartHeight={chartHeight}
               leftPadding={leftPadding}
               rightPadding={rightPadding}
               padding={padding}
               bottomPadding={bottomPadding}
+              gridColor={gridColor}
             />
-          )}
-        </Svg>
 
-        {/* Invisible touch/hover areas for bars - Using pre-calculated positions */}
-        {barData.map(bar => {
-          if (bar.value === null) return null;
+            {/* Bars (SVG) - Using pre-calculated bar data for performance */}
+            <Svg width={chartWidth} height={chartHeight}>
+              {barData.map(bar => {
+                // Render gray fading bar for missing data
+                if (bar.value === null) {
+                  // Seeded random for consistent but varied heights
+                  const seed = data[bar.index].timestamp % 1000;
+                  const random = Math.sin(seed) * 10000;
+                  const randomFactor = (random - Math.floor(random)) * 0.3 + 0.9; // Range: 0.9 to 1.2
 
-          return (
-            <View
-              key={`touch-${bar.index}`}
-              style={{
-                position: 'absolute',
-                left: bar.x - bar.barWidth / 2,
-                top: bar.y,
-                width: bar.barWidth,
-                height: bar.barHeight,
-                zIndex: 10,
-                cursor: Platform.OS === 'web' ? 'pointer' : undefined,
-              }}
-              onStartShouldSetResponder={() => true}
-              onResponderGrant={() => handleBarInteraction(bar.index)}
-              {...(Platform.OS === 'web' && {
-                onMouseEnter: () => setSelectedIndex(bar.index),
-                onMouseLeave: () => setSelectedIndex(null),
+                  // Calculate fade-out height: based on last valid value (not average)
+                  const fadeMaxValue = lastValidValue * randomFactor;
+                  const clampedFadeMax = Math.min(Math.max(fadeMaxValue, min), max);
+                  const fadeHeight =
+                    ((clampedFadeMax - min) / range) * (chartHeight - padding - bottomPadding);
+                  const fadeY = chartHeight - bottomPadding - fadeHeight;
+
+                  // Create fading effect with multiple segments
+                  const segments = 5;
+                  const segmentHeight = fadeHeight / segments;
+
+                  return (
+                    <React.Fragment key={bar.index}>
+                      {Array.from({ length: segments }).map((_, segIndex) => {
+                        const segY = fadeY + segIndex * segmentHeight;
+                        // Opacity increases as we go down (from 0.0 at top to 0.25 at bottom)
+                        const opacity = 0.25 * (segIndex / (segments - 1));
+
+                        return (
+                          <Rect
+                            key={`${bar.index}-seg-${segIndex}`}
+                            x={bar.x - bar.barWidth / 2}
+                            y={segY}
+                            width={bar.barWidth}
+                            height={segmentHeight}
+                            fill={gridColor}
+                            opacity={opacity}
+                          />
+                        );
+                      })}
+                    </React.Fragment>
+                  );
+                }
+
+                const isSelected = selectedIndex === bar.index;
+                const baseOpacity = bar.isInterpolated ? 0.4 : 0.9;
+                const selectedOpacity = bar.isInterpolated ? 0.6 : 1.0;
+
+                // Wenn Wert über 100%, Balken zweiteilen (use pre-calculated values)
+                if (bar.value > 100) {
+                  return (
+                    <React.Fragment key={bar.index}>
+                      <Rect
+                        x={bar.x - bar.barWidth / 2}
+                        y={bar.baseY}
+                        width={bar.barWidth}
+                        height={bar.baseHeight}
+                        fill={bar.baseColor}
+                        opacity={isSelected ? selectedOpacity : baseOpacity}
+                        stroke={isSelected ? '#999999' : 'none'}
+                        strokeWidth={isSelected ? 2 : 0}
+                      />
+                      <Rect
+                        x={bar.x - bar.barWidth / 2}
+                        y={bar.overY}
+                        width={bar.barWidth}
+                        height={bar.overHeight}
+                        fill="#90A4AE"
+                        opacity={isSelected ? selectedOpacity : baseOpacity}
+                        stroke={isSelected ? '#999999' : 'none'}
+                        strokeWidth={isSelected ? 2 : 0}
+                      />
+                    </React.Fragment>
+                  );
+                }
+
+                return (
+                  <Rect
+                    key={bar.index}
+                    x={bar.x - bar.barWidth / 2}
+                    y={bar.y}
+                    width={bar.barWidth}
+                    height={bar.barHeight}
+                    fill={bar.color}
+                    opacity={isSelected ? selectedOpacity : baseOpacity}
+                    stroke={isSelected ? '#999999' : 'none'}
+                    strokeWidth={isSelected ? 2 : 0}
+                  />
+                );
               })}
-            />
-          );
-        })}
 
-        {/* Durchschnittslinie Label */}
-        <Text
-          style={{
-            position: 'absolute',
-            right: rightPadding + 4,
-            top:
-              chartHeight -
-              bottomPadding -
-              ((avgValue - min) / range) * (chartHeight - padding - bottomPadding) -
-              12,
-            fontSize: 12,
-            color: textColor,
-            fontWeight: '600',
-            opacity: 0.7,
-          }}
-        >
-          {labels.average} {avgValue.toFixed(1)}%
-        </Text>
+              {/* Durchschnittslinie */}
+              <Line
+                x1={leftPadding}
+                y1={
+                  chartHeight -
+                  bottomPadding -
+                  ((avgValue - min) / range) * (chartHeight - padding - bottomPadding)
+                }
+                x2={chartWidth - rightPadding}
+                y2={
+                  chartHeight -
+                  bottomPadding -
+                  ((avgValue - min) / range) * (chartHeight - padding - bottomPadding)
+                }
+                stroke={textColor}
+                strokeWidth="2"
+                strokeDasharray="8,4"
+                opacity={0.5}
+              />
 
-        {/* Y-axis labels */}
+              {/* Regionale Datenlinie - gestrichelt */}
+              {showRegionalLine &&
+                (() => {
+                  const regionalPoints = data
+                    .map((d, _index) => ({
+                      x: scaleToX(d.timestamp, {
+                        domainMin: minTime,
+                        domainRange: timeRange,
+                        chartWidth,
+                        leftPadding,
+                        rightPadding,
+                      }),
+                      y:
+                        d.renewableShareRegional !== null && d.renewableShareRegional !== undefined
+                          ? scaleToY(d.renewableShareRegional, {
+                              domainMin: min,
+                              domainRange: range,
+                              chartHeight,
+                              padding,
+                              bottomPadding,
+                            })
+                          : null,
+                      value: d.renewableShareRegional,
+                    }))
+                    .filter(p => p.y !== null);
+
+                  if (regionalPoints.length === 0) return null;
+
+                  const pointsString = regionalPoints.map(p => `${p.x},${p.y}`).join(' ');
+                  const regionalAvg =
+                    regionalPoints.reduce((sum, p) => sum + (p.value || 0), 0) /
+                    regionalPoints.length;
+
+                  return (
+                    <>
+                      <Polyline
+                        points={pointsString}
+                        stroke="#FF9800"
+                        strokeWidth="3"
+                        strokeDasharray="6,6"
+                        fill="none"
+                        opacity={0.8}
+                      />
+                      {labels.regional && (
+                        <Text
+                          style={[
+                            styles.regionalLabel,
+                            {
+                              right: rightPadding + 4,
+                              top:
+                                chartHeight -
+                                bottomPadding -
+                                ((regionalAvg - min) / range) *
+                                  (chartHeight - padding - bottomPadding) +
+                                12,
+                            },
+                          ]}
+                        >
+                          {labels.regional} {regionalAvg.toFixed(1)}%
+                        </Text>
+                      )}
+                    </>
+                  );
+                })()}
+
+              {/* "Jetzt" Markierung */}
+              {now >= minTime && now <= maxTime && (
+                <NowMarkerLine
+                  now={now}
+                  minTime={minTime}
+                  timeRange={timeRange}
+                  chartWidth={chartWidth}
+                  chartHeight={chartHeight}
+                  leftPadding={leftPadding}
+                  rightPadding={rightPadding}
+                  padding={padding}
+                  bottomPadding={bottomPadding}
+                />
+              )}
+            </Svg>
+
+            {/* Invisible touch/hover areas for bars - Using pre-calculated positions */}
+            {barData.map(bar => {
+              if (bar.value === null) return null;
+
+              return (
+                <View
+                  key={`touch-${bar.index}`}
+                  style={[
+                    Platform.OS === 'web' ? styles.touchAreaWeb : styles.touchArea,
+                    {
+                      left: bar.x - bar.barWidth / 2,
+                      top: bar.y,
+                      width: bar.barWidth,
+                      height: bar.barHeight,
+                    },
+                  ]}
+                  onStartShouldSetResponder={() => true}
+                  onResponderGrant={() => handleBarInteraction(bar.index)}
+                  {...(Platform.OS === 'web' && {
+                    onMouseEnter: () => setSelectedIndex(bar.index),
+                    onMouseLeave: () => setSelectedIndex(null),
+                  })}
+                />
+              );
+            })}
+
+            {/* Durchschnittslinie Label */}
+            <Text
+              style={[
+                styles.averageLabel,
+                {
+                  right: rightPadding + 4,
+                  top:
+                    chartHeight -
+                    bottomPadding -
+                    ((avgValue - min) / range) * (chartHeight - padding - bottomPadding) -
+                    12,
+                  color: textColor,
+                },
+              ]}
+            >
+              {labels.average} {avgValue.toFixed(1)}%
+            </Text>
+
+            {/* X-axis labels (every 6 hours) */}
+            {(() => {
+              const xAxisLabels = [];
+              const startDate = new Date(minTime);
+              const endDate = new Date(maxTime);
+
+              const startHour = Math.ceil(startDate.getHours() / 6) * 6;
+              const current = new Date(startDate);
+              current.setHours(startHour, 0, 0, 0);
+
+              while (current <= endDate) {
+                const timestamp = current.getTime();
+                const x = scaleToX(timestamp, {
+                  domainMin: minTime,
+                  domainRange: timeRange,
+                  chartWidth,
+                  leftPadding,
+                  rightPadding,
+                });
+                const hour = current.getHours();
+
+                xAxisLabels.push(
+                  <Text
+                    key={`xlabel-${timestamp}`}
+                    style={[
+                      styles.xAxisLabel,
+                      { left: x - 10, top: chartHeight - bottomPadding + 5, color: textColor },
+                    ]}
+                  >
+                    {hour}h
+                  </Text>
+                );
+
+                current.setHours(current.getHours() + 6);
+              }
+
+              return xAxisLabels;
+            })()}
+          </View>
+        </ScrollView>
+
+        {/* Y-axis labels - pinned outside the zoomable/scrollable content */}
         {[0, 1, 2, 3, 4].map(i => {
           const value = max - (i / 4) * range;
           const y = padding + (i / 4) * (chartHeight - padding - bottomPadding);
           return (
             <Text
               key={`ylabel-${i}`}
-              style={{
-                position: 'absolute',
-                left: 10,
-                top: y - 8,
-                fontSize: 12,
-                color: textColor,
-                opacity: 0.6,
-                textAlign: 'right',
-                width: isPhone ? 25 : 30,
-              }}
+              style={[
+                isPhone ? styles.yAxisLabelPhone : styles.yAxisLabelDefault,
+                { top: y - 8, color: textColor },
+              ]}
             >
               {value.toFixed(0)}
             </Text>
           );
         })}
 
-        {/* X-axis labels (every 6 hours) */}
-        {(() => {
-          const xAxisLabels = [];
-          const startDate = new Date(minTime);
-          const endDate = new Date(maxTime);
-
-          const startHour = Math.ceil(startDate.getHours() / 6) * 6;
-          const current = new Date(startDate);
-          current.setHours(startHour, 0, 0, 0);
-
-          while (current <= endDate) {
-            const timestamp = current.getTime();
-            const x =
-              leftPadding +
-              ((timestamp - minTime) / timeRange) * (chartWidth - leftPadding - rightPadding);
-            const hour = current.getHours();
-
-            xAxisLabels.push(
-              <Text
-                key={`xlabel-${timestamp}`}
-                style={{
-                  position: 'absolute',
-                  left: x - 10,
-                  top: chartHeight - bottomPadding + 5,
-                  fontSize: 12,
-                  color: textColor,
-                  opacity: 0.6,
-                }}
-              >
-                {hour}h
-              </Text>
-            );
-
-            current.setHours(current.getHours() + 6);
-          }
-
-          return xAxisLabels;
-        })()}
-
         {/* Y-Achsen-Label */}
         <Text style={getYAxisLabelStyle(chartHeight, -15, textColor, isPhone)}>{labels.yAxis}</Text>
+
+        {isZoomed && (
+          <ZoomResetBadge onPress={resetZoom} colors={colors} accessibilityLabel={t.resetZoom} />
+        )}
       </View>
       {interactionHint && (
         <Text
           accessible={true}
           accessibilityRole="text"
           accessibilityLabel={interactionHint}
-          style={{
-            fontSize: 12,
-            color: textColor,
-            opacity: 0.5,
-            fontStyle: 'italic',
-            marginTop: 8,
-          }}
+          style={[styles.interactionHintText, { color: textColor }]}
         >
           {interactionHint}
         </Text>
@@ -638,3 +649,57 @@ function RenewableBarChartComponent({
 // Performance: Wrap with React.memo to prevent unnecessary re-renders
 // Only re-renders if props actually change
 export const RenewableBarChart = React.memo(RenewableBarChartComponent);
+
+const styles = StyleSheet.create({
+  tooltipValue: { fontSize: 14, fontWeight: 'bold' },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 0,
+  },
+  titleColumn: { flex: 1, marginRight: 8 },
+  titlePhone: { fontSize: 16, fontWeight: 'bold', marginBottom: 0 },
+  titleDefault: { fontSize: 18, fontWeight: 'bold', marginBottom: 0 },
+  subtitle: { fontSize: 12, opacity: 0.7, marginBottom: 2 },
+  hint: { fontSize: 12, fontStyle: 'italic', opacity: 0.5 },
+  legendRow: { flexDirection: 'row', gap: 12, paddingRight: 10, paddingTop: 0 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendLine: { width: 12, height: 2, opacity: 0.5 },
+  legendLineRegional: { width: 12, height: 2, backgroundColor: '#FF9800', opacity: 0.8 },
+  legendLabel: { fontSize: 12, opacity: 0.7 },
+  relative: { position: 'relative' },
+  regionalLabel: {
+    position: 'absolute',
+    fontSize: 12,
+    color: '#FF9800',
+    fontWeight: '600',
+    opacity: 0.9,
+  },
+  touchArea: { position: 'absolute', zIndex: 10 },
+  touchAreaWeb: { position: 'absolute', zIndex: 10, cursor: 'pointer' },
+  averageLabel: { position: 'absolute', fontSize: 12, fontWeight: '600', opacity: 0.7 },
+  xAxisLabel: { position: 'absolute', fontSize: 12, opacity: 0.6 },
+  yAxisLabelPhone: {
+    position: 'absolute',
+    left: 10,
+    fontSize: 12,
+    opacity: 0.6,
+    textAlign: 'right',
+    width: 25,
+  },
+  yAxisLabelDefault: {
+    position: 'absolute',
+    left: 10,
+    fontSize: 12,
+    opacity: 0.6,
+    textAlign: 'right',
+    width: 30,
+  },
+  interactionHintText: {
+    fontSize: 12,
+    opacity: 0.5,
+    fontStyle: 'italic',
+    marginTop: 8,
+  },
+});

@@ -15,32 +15,21 @@ for repo in Eisenhauer 1x1_Trainer DrawFromMemory EnergyPriceGermany Pflanzkalen
     ab=$(git rev-list --left-right --count origin/main...origin/testing 2>/dev/null)
     main_ahead=$(echo $ab | awk '{print $1}')
     test_ahead=$(echo $ab | awk '{print $2}')
-    # Phantom-Divergenz ausblenden: nur Nicht-Auto-Commits auf main zählen.
-    # Auto-Commits = extern gezogene Marktdaten o.ä. (marketdata.json, energy-charts,
-    # plant data, "[skip ci]", "chore(data)"). Diese landen per Workflow direkt auf main
-    # und erzeugen sonst Dauer-Divergenz, obwohl inhaltlich nichts auseinanderläuft.
-    real_main_ahead=$(git log --oneline origin/testing..origin/main 2>/dev/null \
-      | grep -vicE 'update marketdata|energy-charts|chore\(data\)|\[skip ci\]|auto-update' )
-    echo "$repo | testing +$test_ahead | main +$main_ahead (echt: $real_main_ahead)"
+    echo "$repo | testing +$test_ahead | main +$main_ahead"
   fi
 done
 ```
 
 Zeige das Ergebnis als Markdown-Tabelle:
 
-| Projekt | testing ahead | main ahead (echt) | Status |
+| Projekt | testing ahead | main ahead | Status |
 |---|---|---|---|
-| ... | ... | ... | ✅ OK / 🔴 Sync-PR nötig |
+| ... | ... | ... | ✅ OK / ⚠️ Divergiert / 🔴 main voraus |
 
-**Statusregeln (auf `real_main_ahead` basieren, NICHT auf `main_ahead`):**
-- ✅ OK — `real_main_ahead = 0` (egal wie viele Auto-Marktdaten-Commits auf main liegen —
-  diese sind erwartet und kein Grund für einen Sync-PR)
-- 🔴 Sync-PR nötig — `real_main_ahead > 0` (echte, nicht-automatische Commits liegen nur auf
-  main und fehlen in testing → `sync: main → testing` PR erstellen)
-
-> **Warum:** Workflows committen extern gezogene Daten (z.B. `marketdata.json`) direkt auf
-> `main`. Ohne Filter meldet der Check Dauer-Divergenz, obwohl nichts Echtes auseinanderläuft.
-> Maßgeblich ist deshalb `real_main_ahead`.
+**Statusregeln:**
+- ✅ OK — main_ahead = 0 (testing enthält main vollständig)
+- ⚠️ Leicht divergiert — main_ahead ≤ 3 und nur Auto-Commits (z.B. marketdata)
+- 🔴 main voraus — main_ahead > 0 mit echten Commits → Sync-PR nötig
 
 ## 1. Repository Status prüfen
 - Prüfe `git status` für uncommitted changes

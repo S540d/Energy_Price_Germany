@@ -28,6 +28,8 @@ import { RenewableBarChart } from './charts/RenewableBarChart';
 
 type TimeRange = '24h' | '48h' | '7d' | '30d';
 
+const ACTIVE_RANGE_TEXT_COLOR = '#fff';
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -91,10 +93,14 @@ export function HistoricalDataView({
 
       // Aktuelle Periode (Cache + Server-Fallback) und Vorperiode parallel laden,
       // aus dem länder-namespaced Store des aktiven Landes.
+      // 30d nutzt die vorab-aggregierte stündliche Server-Variante für neu
+      // nachgeladene Tage, da dieser Bereich ohnehin auf Tages-Buckets
+      // aggregiert dargestellt wird (#334) – spart Downloadvolumen.
+      const resolution = timeRange === '30d' ? 'hourly' : 'raw';
       const store = historicalDataStoreForCountry(country);
       const [historical, previousHistorical] = await Promise.all([
-        store.getRange(from, now),
-        store.getRange(prevFrom, from),
+        store.getRange(from, now, true, resolution),
+        store.getRange(prevFrom, from, true, resolution),
       ]);
       if (cancelled) return;
 
@@ -198,7 +204,10 @@ export function HistoricalDataView({
               accessibilityRole="button"
             >
               <Text
-                style={[styles.rangeButtonText, { color: timeRange === r ? '#fff' : colors.text }]}
+                style={[
+                  styles.rangeButtonText,
+                  { color: timeRange === r ? ACTIVE_RANGE_TEXT_COLOR : colors.text },
+                ]}
               >
                 {rangeLabel[r]}
               </Text>

@@ -59,6 +59,15 @@ export interface HistoryStorageInfo {
 }
 
 /**
+ * Auflösung für den Server-Fallback-Download eines Tages (Issue #334).
+ * 'hourly' lädt die vorab-aggregierte, deutlich kleinere `<date>-hourly.json`
+ * Variante (falls für den Tag/Land vorhanden) statt der vollen 15-Min-Auflösung –
+ * relevant für lange Zeiträume (z.B. 30-Tage-Ansicht), wo die App die Daten
+ * ohnehin clientseitig weiter aggregiert (siehe dataAggregation.ts).
+ */
+export type HistoryResolution = 'raw' | 'hourly';
+
+/**
  * Liefert YYYY-MM-DD in der angegebenen Zeitzone für einen Timestamp (ms).
  *
  * Default: 'Europe/Berlin'. NL nutzt 'Europe/Amsterdam' = identisches
@@ -126,12 +135,14 @@ export class HistoricalDataStore {
 
   /**
    * URL der serverseitigen Tages-History – Pfad aus der Länder-Registry.
+   * `resolution: 'hourly'` zeigt auf die kleinere, vorab-aggregierte Variante (#334).
    */
-  private historyDayUrl(date: string): string {
+  private historyDayUrl(date: string, resolution: HistoryResolution = 'raw'): string {
     const prefix = COUNTRIES[this.country].historyPathPrefix;
+    const suffix = resolution === 'hourly' ? `${date}-hourly.json` : `${date}.json`;
     return Platform.OS === 'web'
-      ? `./${prefix}${date}.json`
-      : `https://s540d.github.io/Energy_Price_Germany/${prefix}${date}.json`;
+      ? `./${prefix}${suffix}`
+      : `https://s540d.github.io/Energy_Price_Germany/${prefix}${suffix}`;
   }
 
   private dayString(ts: number): string {
@@ -278,12 +289,30 @@ export class HistoricalDataStore {
   /**
    * Lädt eine serverseitige Tages-History und schreibt sie in den Store.
    * 404/Fehler werden still ignoriert. Markiert den Tag als angefragt.
+   *
+   * Bei `resolution: 'hourly'` wird zunächst die kleinere `-hourly.json`
+   * Variante versucht; existiert sie (noch) nicht für diesen Tag/Land, wird
+   * transparent auf die volle Auflösung zurückgefallen (#334).
    */
-  private async loadServerDayIntoStore(date: string, index: HistoryIndex): Promise<void> {
+  private async loadServerDayIntoStore(
+    date: string,
+    index: HistoryIndex,
+    resolution: HistoryResolution = 'raw'
+  ): Promise<void> {
     this.serverFetchAttempted.add(date);
     try {
-      const url = `${this.historyDayUrl(date)}?v=${Date.now()}`;
-      const response = await fetchWithTimeout(url, {}, 10000);
+      let response = await fetchWithTimeout(
+        `${this.historyDayUrl(date, resolution)}?v=${Date.now()}`,
+        {},
+        10000
+      );
+      if (!response.ok && resolution === 'hourly') {
+        response = await fetchWithTimeout(
+          `${this.historyDayUrl(date, 'raw')}?v=${Date.now()}`,
+          {},
+          10000
+        );
+      }
       if (!response.ok) return;
 
       const json = await response.json();
@@ -313,11 +342,17 @@ export class HistoricalDataStore {
    * (Issue #307 – Gerätecache primär, Server als Fallback).
    *
    * @param allowServerFallback Server-Fallback deaktivieren (z.B. offline-only)
+   * @param resolution Auflösung für neu nachgeladene Tage; 'hourly' reduziert das
+   *   Downloadvolumen für lange Zeiträume (z.B. 30-Tage-Ansicht) deutlich, da die
+   *   App solche Bereiche ohnehin clientseitig weiter aggregiert (#334). Bereits
+   *   gecachte Tage (z.B. aus Live-Snapshots) werden nicht erneut nachgeladen und
+   *   behalten ihre vorhandene Auflösung.
    */
   async getRange(
     fromTs: number,
     toTs: number,
-    allowServerFallback: boolean = true
+    allowServerFallback: boolean = true,
+    resolution: HistoryResolution = 'raw'
   ): Promise<EnergyData[]> {
     try {
       if (fromTs > toTs) return [];
@@ -334,7 +369,7 @@ export class HistoricalDataStore {
         );
         if (missing.length) {
           for (const d of missing) {
-            await this.loadServerDayIntoStore(d, index);
+            await this.loadServerDayIntoStore(d, index, resolution);
           }
           await this.saveIndex(index);
           index = await this.loadIndex();

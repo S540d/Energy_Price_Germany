@@ -4,9 +4,12 @@ on:
   # Automatic trigger on push to main, testing
   push:
     branches: [ main, testing ]
-  # Fallback: Scheduled deployment every 6 hours for main branch
+  # Fallback: einmal täglich als Sicherheitsnetz, falls ein push-getriggerter
+  # Deploy fehlgeschlagen ist. Vorher 5x täglich (0 4,11,16,18,21) — das war
+  # weitgehend redundant, weil jeder Fetch-Commit auf main ohnehin deployt
+  # (Issue #394). 03:30 UTC liegt kurz nach dem Fetch um 03:00 UTC.
   schedule:
-    - cron: '0 4,11,16,18,21 * * *'
+    - cron: '30 3 * * *'
   # Allow manual trigger
   workflow_dispatch:
   # Allow other workflows to call this workflow
@@ -215,9 +218,15 @@ jobs:
 
   # After a successful deploy to main, trigger a fresh data fetch
   # so marketdata.json is always up-to-date after releases/merges
+  # Skipped when the triggering push was itself a fetch.yml data commit — the
+  # data is already fresh, so re-dispatching fetch.yml here just adds a
+  # redundant run (Issue #394: this loop was a large share of fetch.yml's
+  # "manual" workflow_dispatch runs).
   refresh-data:
     needs: build-and-deploy
-    if: github.ref == 'refs/heads/main'
+    if: |
+      github.ref == 'refs/heads/main' &&
+      (github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'Update marketdata.json'))
     runs-on: ubuntu-latest
     steps:
       - name: Trigger fetch workflow

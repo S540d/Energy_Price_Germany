@@ -21,6 +21,8 @@ import { getThemeColors } from '../../utils/theme';
 import { useSettingsContext } from '../../context/SettingsContext';
 import { AppearanceSection } from './AppearanceSection';
 
+const CUSTOMIZE_BUTTON_TEXT_COLOR = '#fff';
+
 interface SettingsMenuProps {
   visible: boolean;
   onClose: () => void;
@@ -107,7 +109,9 @@ export function SettingsMenu({
               onClose();
             }}
           >
-            <Text style={[styles.customizeButtonText, { color: '#fff' }]}>{t.customize}</Text>
+            <Text style={[styles.customizeButtonText, { color: CUSTOMIZE_BUTTON_TEXT_COLOR }]}>
+              {t.customize}
+            </Text>
           </TouchableOpacity>
 
           {/* History (#1, #3) */}

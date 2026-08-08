@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import type { ViewStyle } from 'react-native';
+import React, { useEffect, useMemo } from 'react';
+import { StyleSheet, type ViewStyle } from 'react-native';
 import { borderRadius } from '../../../utils/designSystem';
 import Animated, {
   cancelAnimation,
@@ -49,10 +49,10 @@ function ChartCardComponent({
     transform: [{ translateY: translateY.value }],
   }));
 
-  return (
-    <Animated.View
-      style={[
-        {
+  const cardStyle = useMemo(
+    () =>
+      StyleSheet.create({
+        card: {
           backgroundColor,
           margin,
           padding: cardPadding,
@@ -66,14 +66,12 @@ function ChartCardComponent({
           ...(accentColor?.startsWith('#')
             ? { borderWidth: 1, borderColor: accentColor + '33' }
             : {}),
-          ...style,
         },
-        animatedStyle,
-      ]}
-    >
-      {children}
-    </Animated.View>
+      }).card,
+    [backgroundColor, margin, cardPadding, accentColor]
   );
+
+  return <Animated.View style={[cardStyle, style, animatedStyle]}>{children}</Animated.View>;
 }
 
 export const ChartCard = React.memo(ChartCardComponent);

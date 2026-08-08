@@ -1,5 +1,10 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
+
+const styles = StyleSheet.create({
+  svg: { position: 'absolute' },
+});
 
 interface ChartGridProps {
   chartWidth: number;
@@ -27,7 +32,7 @@ function ChartGridComponent({
   verticalLines = 0,
 }: ChartGridProps) {
   return (
-    <Svg width={chartWidth} height={chartHeight} style={{ position: 'absolute' }}>
+    <Svg width={chartWidth} height={chartHeight} style={styles.svg}>
       {Array.from({ length: horizontalLines }, (_, i) => {
         const y = padding + (i / (horizontalLines - 1)) * (chartHeight - padding - bottomPadding);
         return (

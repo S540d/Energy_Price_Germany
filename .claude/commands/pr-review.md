@@ -52,21 +52,27 @@ Einen Pull Request gründlich prüfen, Code-Review-Suggestions umsetzen und für
 - Falls neue Features/Breaking Changes: Schlage CHANGELOG-Eintrag vor
 - Prüfe ob README/Docs aktualisiert werden müssen
 
-### 6. Merge-Gate (review-gate) – automatischer Claude-Review + Autofix
+### 6. Merge-Gate (review-gate) + KI-Review
 
-Der Workflow `reusable-pr-review.yml` korrigiert den PR automatisch und reviewt
-den End-Stand, dann setzt er den required Status-Check **`review-gate`** und ein Label:
+**Kostenloses Gate (automatisch, keine API-Kosten):** Der Workflow
+`reusable-mergeability.yml` läuft bei jedem PR, postet einen Sticky-Kommentar
+(Zielbranch, Konflikt-Status, CI-Übersicht, Checkliste) und setzt den required
+Status-Check **`review-gate`**:
+- **kein Merge-Konflikt → grün** → Merge möglich (sofern auch CI grün ist).
+- **Merge-Konflikt → rot** → Branch aktualisieren.
 
-1. **Autofix:** Ein Claude-Agent fixt alle umsetzbaren Findings selbst (Commit `[auto]` + Push).
-2. **Review:** bewertet den korrigierten Stand:
-   - **Keine offenen Findings → grün** + Label `ready to merge` → Merge frei.
-   - **Findings übrig → rot** + Inline-Kommentare + Label `needs human review`.
+**Tiefer KI-Review (primärer Weg, abo-basiert, ohne Pay-per-Token):** Führe das
+Slash-Command `/review` (bzw. `/code-review --comment`) aus Claude Code aus —
+lokal am PC **oder** in einer Web-Session vom Telefon. Das ist durch dein
+Pro/Max-Abo gedeckt und kostet keine metered API-Token. Mit `--comment` werden die
+Findings als PR-Kommentare gepostet, mit `--fix` direkt im Working-Tree umgesetzt.
 
-Bei `needs human review`: Findings lesen, klären/umsetzen, pushen → frischer Lauf.
+**Optionaler API-Fallback (kostet metered API):** Setze das Label **`ai-review`**
+am PR → `pr-review.yml` postet einen beratenden Claude-Review (Haiku). Dieser
+blockiert den Merge **nicht** — er ergänzt nur das kostenlose Gate.
 
-> ⚠️ Es gibt **kein** manuelles Quittierungs-Label mehr. Den roten Gate öffnet nur
-> ein sauberer Review (alle Findings gelöst). Solange `needs human review` gesetzt
-> ist: **nicht mergen**, bis die offenen Punkte geklärt sind.
+> ℹ️ Der KI-Review ist beratend; verbindlich für den Merge sind die kostenlosen,
+> deterministischen Checks (CI grün + `review-gate` grün + keine Konflikte).
 
 ### 7. Merge vorbereiten
 - Prüfe ob alle Checks grün sind (inkl. `review-gate`)
@@ -129,7 +135,7 @@ Bei `needs human review`: Findings lesen, klären/umsetzen, pushen → frischer 
 **KRITISCH - NIEMALS automatisch mergen wenn:**
 - ❌ CI/CD Tests fehlgeschlagen
 - ❌ Merge Conflicts vorhanden
-- ❌ `review-gate` ist rot bzw. Label `needs human review` gesetzt (offene Findings erst klären)
+- ❌ `review-gate` ist rot (Merge-Konflikt – erst Branch aktualisieren)
 - ❌ Target-Branch ist `main` oder `production` (extra Vorsicht, nur mit Freigabe + `--admin`)
 
 **Immer fragen vor:**

@@ -4,6 +4,8 @@ import { useLanguageContext } from '../../context/LanguageContext';
 import { getThemeColors } from '../../utils/theme';
 import { useSettingsContext } from '../../context/SettingsContext';
 
+const ACTIVE_TOGGLE_TEXT_COLOR = '#fff';
+
 /**
  * Price display mode section in Customize modal.
  * Switches between market price only and end-customer price (market + grid fees) display.
@@ -30,11 +32,10 @@ export function PriceDisplayModeSection() {
             onPress={() => setPriceDisplayMode(mode)}
           >
             <Text
-              style={{
-                color: priceDisplayMode === mode ? '#fff' : colors.text,
-                fontSize: 12,
-                fontWeight: '600',
-              }}
+              style={[
+                styles.toggleButtonLabel,
+                { color: priceDisplayMode === mode ? ACTIVE_TOGGLE_TEXT_COLOR : colors.text },
+              ]}
             >
               {mode === 'marketOnly' ? t.priceDisplayMarketOnly : t.priceDisplayWithFees}
             </Text>
@@ -65,5 +66,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: 'center',
+  },
+  toggleButtonLabel: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
