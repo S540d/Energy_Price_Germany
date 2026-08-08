@@ -92,6 +92,32 @@ SHA ermitteln: `git rev-parse origin/<branch>:<path>`
 - KI-gesteuerte direkte Pushes auf `main`/`testing` unterliegen denselben Risiken wie manuelle Force-Pushes. Im Zweifelsfall lieber PR-Workflow nutzen.
 - Nach jeder MCP-Push-Sitzung: **Audit-Log in GitHub prüfen** (Settings → Audit log), um unbeabsichtigte Änderungen zu erkennen.
 
+### CI-Laufzeit: Daten-Commits sind vom App-Build entkoppelt (Issues #394, #400)
+
+`fetch.yml` committet 3x täglich reine Daten nach `public/data/**` auf `main`. Ohne Gegenmaßnahmen löst jeder dieser Commits einen vollständigen App-Build, Quality-Check und Security-Scan aus. Drei Vorkehrungen verhindern das — **alle drei lassen sich versehentlich leicht wieder aushebeln:**
+
+**1. `ci-cd.yml`: `paths-ignore: ['public/data/**']` — nur am `push`-Trigger.**
+Der `pull_request`-Trigger hat bewusst **kein** `paths-ignore`, damit der required Status-Check `🔍 Code Quality & Linting` (Ruleset `protect-main`) weiterhin jeden PR gated. Ergänzt man es dort „der Symmetrie halber", fällt der Merge-Gate aus.
+
+**2. `deploy-unified.yml`: der Job `refresh-data` überspringt Daten-Commits.**
+```yaml
+if: github.ref == 'refs/heads/main' &&
+    (github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'Update marketdata.json'))
+```
+Ohne diesen Guard entsteht eine Rückkopplung: Daten-Commit → Deploy → `refresh-data` dispatcht `fetch.yml` → neue Daten → Commit → Deploy → … Gemessen waren das **~10 statt ~3 Fetch-Runs/Tag**.
+> ⚠️ Die Bedingung hängt an der **exakten Commit-Message** aus `fetch.yml` (`git commit -m "Update marketdata.json (…)"`). Wer diese Message ändert, reaktiviert die Schleife **still** — kein Fehler, kein Hinweis, nur wieder ~3x so viele Runs.
+
+**3. `deploy-unified.yml`: Cron 1x täglich (`30 3 * * *`), nicht 5x.**
+Push-getriggerte Deploys decken den Normalfall ab; der Cron ist nur Sicherheitsnetz kurz nach dem Fetch um 03:00 UTC.
+
+**❌ Kein `paths-ignore` in `deploy-unified.yml`!** Naheliegend, würde aber die Datenauslieferung brechen: `public/data/**` gelangt ausschließlich über den Deploy ins Pages-Artefakt. Ohne Deploy lägen neue Preise im Repo, aber nie auf der ausgelieferten Seite. Der geplante schlanke Daten-Deploy steht in #396.
+
+**Nicht abgedeckt:** CodeQL läuft im *Default Setup* und ist über **keine** Datei in `.github/workflows/` steuerbar — `paths-ignore` wirkt dort nicht (#400).
+
+**Wirkung immer messen statt schätzen** (GitHub Actions API, `list_workflow_runs` + `jq` nach `created_at`/`event` gruppieren). Erwartungswerte nach den Maßnahmen: `fetch.yml` ~3–4 Runs/Tag, `ci-cd.yml` **keine** `Update marketdata.json`-Runs mehr.
+
+> **Hinweis Workflow-Trigger-Semantik:** Der `push`-Trigger wird aus der Workflow-Datei **des gepushten Branches** gelesen, `schedule` immer aus dem **Default-Branch**. Änderungen an Triggern wirken deshalb erst, wenn sie auf `main` liegen — auf `testing` gemergt sind sie für `main`-Pushes noch wirkungslos.
+
 ---
 
 ## Development Guidelines
