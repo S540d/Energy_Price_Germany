@@ -218,9 +218,15 @@ jobs:
 
   # After a successful deploy to main, trigger a fresh data fetch
   # so marketdata.json is always up-to-date after releases/merges
+  # Skipped when the triggering push was itself a fetch.yml data commit — the
+  # data is already fresh, so re-dispatching fetch.yml here just adds a
+  # redundant run (Issue #394: this loop was a large share of fetch.yml's
+  # "manual" workflow_dispatch runs).
   refresh-data:
     needs: build-and-deploy
-    if: github.ref == 'refs/heads/main'
+    if: |
+      github.ref == 'refs/heads/main' &&
+      (github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'Update marketdata.json'))
     runs-on: ubuntu-latest
     steps:
       - name: Trigger fetch workflow
