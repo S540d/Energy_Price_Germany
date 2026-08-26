@@ -3,7 +3,7 @@ name: "CodeQL"
 on:
   push:
     branches: [main]
-    # Reine Daten-Commits von fetch.yml (3x täglich) ändern keinen Code — ein
+    # Reine Daten-Commits von fetch.yml (bis zu 3x täglich, Issue #406) ändern keinen Code — ein
     # Security-Scan auf unverändertem Code liefert keinen Erkenntnisgewinn
     # (Issue #400). Bewusst NUR am push-Trigger, analog zu ci-cd.yml (#395):
     # bei pull_request bleibt der Check als Merge-Gate für jeden Code-PR aktiv.
