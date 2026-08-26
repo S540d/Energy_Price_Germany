@@ -99,7 +99,7 @@ SHA ermitteln: `git rev-parse origin/<branch>:<path>`
 
 ### CI-Laufzeit: Daten-Commits sind vom App-Build entkoppelt (Issues #394, #400)
 
-`fetch.yml` committet 3x täglich reine Daten nach `public/data/**` auf `main`. Ohne Gegenmaßnahmen löst jeder dieser Commits einen vollständigen App-Build, Quality-Check und Security-Scan aus. Drei Vorkehrungen verhindern das — **alle drei lassen sich versehentlich leicht wieder aushebeln:**
+`fetch.yml` committet bis zu 3x täglich reine Daten nach `public/data/**` auf `main` (seit Issue #406: der dritte, späte Lauf ist ein bedingter Fallback und läuft nur, wenn der Nachmittagslauf keine neuen Daten gebracht hat — an den meisten Tagen also nur 2 Commits). Ohne Gegenmaßnahmen löst jeder dieser Commits einen vollständigen App-Build, Quality-Check und Security-Scan aus. Drei Vorkehrungen verhindern das — **alle drei lassen sich versehentlich leicht wieder aushebeln:**
 
 **1. `ci-cd.yml`: `paths-ignore: ['public/data/**']` — nur am `push`-Trigger.**
 Der `pull_request`-Trigger hat bewusst **kein** `paths-ignore`, damit der required Status-Check `🔍 Code Quality & Linting` (Ruleset `protect-main`) weiterhin jeden PR gated. Ergänzt man es dort „der Symmetrie halber", fällt der Merge-Gate aus.
