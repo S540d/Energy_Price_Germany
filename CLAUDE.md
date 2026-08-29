@@ -483,6 +483,10 @@ cd android && ./gradlew bundleRelease --no-daemon
 - `keystore/keystores.md` in Git-History: **kein `filter-repo`-Rewrite** – enthielt nie echte Credentials, nur Platzhalter + öffentlichen Signing-Fingerprint (siehe Android Signing oben). Rewrite-Impact (alle SHAs/Tags/Referenzen brechen) steht in keinem Verhältnis zum Risiko.
 - `keystore/KEYSTORE_BACKUP_GUIDE.md` (nur Platzhalter-Werte) aus dem Tracking entfernt.
 
+### npm audit fix: Vorsicht bei `--force` (Issue #352, PR #409)
+`npm audit fix --force` kann bei transitiven Findings unter Expo (z.B. `uuid` via `xcode`/`@expo/config-plugins`) einen **Downgrade von `expo` auf eine uralte Version** (z.B. `46.x`) vorschlagen – ein Resolver-Artefakt, kein echter Fix-Pfad. Stattdessen gezielt per `overrides` in `package.json` auf die gepatchte Version pinnen und danach `npm install` + Build + Tests verifizieren.
+> **`image-size` (high, DoS via Endlosschleife), transitiv über `metro`:** Stand Aug 2026 listet `npm audit` **alle** veröffentlichten Versionen (inkl. `2.0.2`) als vulnerabel – es gibt noch keinen Fix stromaufwärts. Ein `overrides`-Pin bringt nichts, solange keine gepatchte Version existiert. Betrifft nur den lokalen Metro-Build-Prozess, nicht den ausgelieferten Code. Tracking in #265.
+
 ## Questions?
 Refer to documentation in root directory or check GitHub issues:
 - [GitHub Issues](https://github.com/S540d/Energy_Price_Germany/issues)
