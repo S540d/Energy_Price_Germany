@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Security
+- **npm audit (Issue #352):** `brace-expansion` (high, ReDoS) via `npm audit fix` behoben; `uuid` (moderate, fehlende Buffer-Bounds-Prüfung, transitiv über `xcode`/`@expo/config-plugins`) per `overrides` auf `^11.1.1` gepinnt, ohne Expo zu downgraden (`npm audit fix --force` hätte fälschlich `expo@46` vorgeschlagen). Verbleibend: `image-size` (high, DoS via Endlosschleife beim Parsen), transitiv über `metro`/`@react-native/community-cli-plugin` – laut `npm audit` sind aktuell **alle** veröffentlichten `image-size`-Versionen (inkl. `2.0.2`) betroffen, es existiert noch kein Fix stromaufwärts; betrifft nur den lokalen Build-Prozess (Metro-Bundler), nicht den ausgelieferten Code. Insgesamt 15 → 4 Vulnerabilities (10 moderate, 5 high → 4 high).
+
 ### Added
 - **Chart-Zoom (Issue #355):** `PriceBarChart`, `RenewableBarChart` und `CorrelationScatterChart` (inkl. Detail-Modal `ChartDetailView`) unterstützen jetzt Pinch-to-Zoom (mobil) bzw. Scroll-to-Zoom (Web), um einzelne Stunden bei 48h-/7d-Ansichten besser erkennbar zu machen. Neuer gemeinsamer Hook `useChartZoom` (`components/charts/shared/`); die Y-Achsen-Beschriftung bleibt beim Scrollen fixiert, ein Reset-Badge erscheint bei aktivem Zoom.
 - **Auffindbarkeit außerhalb des Play Stores:** Die GitHub-Pages-Seite ist die naheliegendste Direktquelle für Interessenten, hat aber weder den Play Store verlinkt noch für Suchmaschinen verwertbaren Inhalt geliefert – Besucher wurden zu PWA-Nutzern statt zu Play-Store-Installationen.
