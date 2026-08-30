@@ -78,6 +78,11 @@ Merge: `gh pr merge <nr> --squash --admin` (kein `--delete-branch` für langlebi
 
 > Nur mit expliziter schriftlicher Freigabe — dies ist der bewusste manuelle Release-Schritt, nicht mit dem `review-gate` zu verwechseln.
 
+> ⚠️ **Falle „Automatically delete head branches" + Release-PR:** Ist diese Repo-Einstellung aktiv (Settings → General → Pull Requests), löscht GitHub nach dem Merge automatisch den **Head**-Branch des PRs. Bei einem Release-PR `testing → main` ist `testing` selbst der Head-Branch — der Merge löscht also `testing` mit, nicht nur einen Feature-Branch (passiert am 2026-08-12 bei PR #404). Nach jedem Release-Merge prüfen, ob `testing` noch existiert (`git ls-remote --heads origin | grep testing`); falls nicht, sofort neu anlegen (`mcp__github__create_branch`, `from_branch: main` — Inhalt ist nach einem sauberen Merge identisch). Dauerhafte Abhilfe: Branch-Protection-Ruleset für `testing` mit **„Restrict deletions"**.
+
+### Branches löschen aus Remote-Execution-Environment
+`git push origin --delete <branch>` schlägt mit **HTTP 403** fehl (gleiche Ursache wie normaler Push, siehe unten) — **aber mit irreführendem Output:** Exit-Code ist trotzdem `0`, letzte Zeile lautet „Everything up-to-date". Nicht als Erfolg werten. Es gibt außerdem **kein** GitHub-MCP-Tool zum Löschen einer Branch-Ref (nur `create_branch`, kein `delete_branch`/`delete_ref`). Branch-Löschung ist aus dieser Umgebung technisch nicht möglich — stattdessen den fertigen `git push origin --delete ...`-Befehl für die lokale Ausführung ausgeben. Vor dem Vorschlagen prüfen, ob ein Branch wirklich gemergt ist: **nicht** über `git merge-base --is-ancestor` (liefert bei Squash-Merges falsch-negativ), sondern über die PR-Historie und dort das Feld `merged_at` (nicht `merged` — das steht in MCP-Antworten öfter fälschlich auf `false`, siehe project-templates#101).
+
 ### Git Push aus Remote-Execution-Environment
 Direktes `git push` auf `testing`/`main` schlägt mit **403** fehl (kein SSH-Key / eingeschränkte Rechte). Stattdessen GitHub MCP API nutzen:
 ```
@@ -94,7 +99,7 @@ SHA ermitteln: `git rev-parse origin/<branch>:<path>`
 
 ### CI-Laufzeit: Daten-Commits sind vom App-Build entkoppelt (Issues #394, #400)
 
-`fetch.yml` committet 3x täglich reine Daten nach `public/data/**` auf `main`. Ohne Gegenmaßnahmen löst jeder dieser Commits einen vollständigen App-Build, Quality-Check und Security-Scan aus. Drei Vorkehrungen verhindern das — **alle drei lassen sich versehentlich leicht wieder aushebeln:**
+`fetch.yml` committet bis zu 3x täglich reine Daten nach `public/data/**` auf `main` (seit Issue #406: der dritte, späte Lauf ist ein bedingter Fallback und läuft nur, wenn der Nachmittagslauf keine neuen Daten gebracht hat — an den meisten Tagen also nur 2 Commits). Ohne Gegenmaßnahmen löst jeder dieser Commits einen vollständigen App-Build, Quality-Check und Security-Scan aus. Drei Vorkehrungen verhindern das — **alle drei lassen sich versehentlich leicht wieder aushebeln:**
 
 **1. `ci-cd.yml`: `paths-ignore: ['public/data/**']` — nur am `push`-Trigger.**
 Der `pull_request`-Trigger hat bewusst **kein** `paths-ignore`, damit der required Status-Check `🔍 Code Quality & Linting` (Ruleset `protect-main`) weiterhin jeden PR gated. Ergänzt man es dort „der Symmetrie halber", fällt der Merge-Gate aus.
@@ -112,11 +117,16 @@ Push-getriggerte Deploys decken den Normalfall ab; der Cron ist nur Sicherheitsn
 
 **❌ Kein `paths-ignore` in `deploy-unified.yml`!** Naheliegend, würde aber die Datenauslieferung brechen: `public/data/**` gelangt ausschließlich über den Deploy ins Pages-Artefakt. Ohne Deploy lägen neue Preise im Repo, aber nie auf der ausgelieferten Seite. Der geplante schlanke Daten-Deploy steht in #396.
 
-**Nicht abgedeckt:** CodeQL läuft im *Default Setup* und ist über **keine** Datei in `.github/workflows/` steuerbar — `paths-ignore` wirkt dort nicht (#400).
+**4. CodeQL: `.github/workflows/codeql.yml` (Advanced Setup, seit #400/#402 erledigt).**
+War zunächst im GitHub-verwalteten *Default Setup* — dadurch über **keine** Datei in `.github/workflows/` steuerbar, `paths-ignore` wirkte nicht. Gelöst durch Wechsel auf *Advanced Setup* (Settings → Code security → Code scanning) mit eigener `codeql.yml`, `paths-ignore` analog zu `ci-cd.yml` nur am `push`-Trigger.
+> ⚠️ Der Wechsel Default→Advanced erzeugt in der GitHub-UI automatisch einen **eigenen Boilerplate-PR** (unveränderte Starter-Datei, direkt gegen `main`, ignoriert die `testing`-Konvention). Kollidiert mit einem selbst erstellten `codeql.yml`-PR auf derselben Datei — den Boilerplate-PR als Duplikat schließen, nicht beide mergen. Außerdem: Default Setup **vor** dem Merge der eigenen `codeql.yml` deaktivieren (oder direkt danach), sonst laufen beide parallel und es entstehen doppelte Runs.
 
-**Wirkung immer messen statt schätzen** (GitHub Actions API, `list_workflow_runs` + `jq` nach `created_at`/`event` gruppieren). Erwartungswerte nach den Maßnahmen: `fetch.yml` ~3–4 Runs/Tag, `ci-cd.yml` **keine** `Update marketdata.json`-Runs mehr.
+**Wirkung immer messen statt schätzen** (GitHub Actions API, `list_workflow_runs` + `jq` nach `created_at`/`event` gruppieren). Gemessen nach allen vier Maßnahmen (3 Tage, 09.–11.08.): **~59,5 → ~18,6 min/Tag (≈ −69 %)**. `fetch.yml` fiel auf ~3,9 Runs/Tag, `ci-cd.yml` hatte **keinen einzigen** `Update marketdata.json`-Run mehr.
 
 > **Hinweis Workflow-Trigger-Semantik:** Der `push`-Trigger wird aus der Workflow-Datei **des gepushten Branches** gelesen, `schedule` immer aus dem **Default-Branch**. Änderungen an Triggern wirken deshalb erst, wenn sie auf `main` liegen — auf `testing` gemergt sind sie für `main`-Pushes noch wirkungslos.
+
+### Deploy (Unified): transienter TLS-Fehler in `actions/deploy-pages@v4`
+Vereinzelt schlägt `Creating Pages deployment` mit `HttpError: self-signed certificate` fehl — **auf beiden** Versuchen (Erstversuch + der eingebaute Retry aus PR #378), da beide denselben Infra-Hänger auf GitHubs Seite treffen. Kein Code-/Config-Fehler im Repo: Build-Schritte (Checkout bis Artifact-Upload) laufen sauber durch, nur der `deploy-pages`-API-Call selbst scheitert. Beobachtet am 2026-08-12 bei einem Push auf `testing`, während zeitgleich derselbe Commit auf `main` erfolgreich deployte — bestätigt den Infra-Charakter. Abhilfe: manuellen `workflow_dispatch`-Lauf anstoßen (GitHub-UI → Run workflow); `rerun_failed_jobs` über die API schlägt mit **403 „Resource not accessible by integration"** fehl (Token-Scope reicht dafür nicht, siehe `mcp__github__actions_run_trigger`). Ein manueller Dispatch ist ein **neuer** Run, kein Rerun des fehlgeschlagenen — der rote Eintrag bleibt in der Historie stehen, das ist kein weiteres Problem.
 
 ---
 
@@ -472,6 +482,10 @@ cd android && ./gradlew bundleRelease --no-daemon
 ### Geklärt (Security-Audit, Aug 2026)
 - `keystore/keystores.md` in Git-History: **kein `filter-repo`-Rewrite** – enthielt nie echte Credentials, nur Platzhalter + öffentlichen Signing-Fingerprint (siehe Android Signing oben). Rewrite-Impact (alle SHAs/Tags/Referenzen brechen) steht in keinem Verhältnis zum Risiko.
 - `keystore/KEYSTORE_BACKUP_GUIDE.md` (nur Platzhalter-Werte) aus dem Tracking entfernt.
+
+### npm audit fix: Vorsicht bei `--force` (Issue #352, PR #409)
+`npm audit fix --force` kann bei transitiven Findings unter Expo (z.B. `uuid` via `xcode`/`@expo/config-plugins`) einen **Downgrade von `expo` auf eine uralte Version** (z.B. `46.x`) vorschlagen – ein Resolver-Artefakt, kein echter Fix-Pfad. Stattdessen gezielt per `overrides` in `package.json` auf die gepatchte Version pinnen und danach `npm install` + Build + Tests verifizieren.
+> **`image-size` (high, DoS via Endlosschleife), transitiv über `metro`:** Stand Aug 2026 listet `npm audit` **alle** veröffentlichten Versionen (inkl. `2.0.2`) als vulnerabel – es gibt noch keinen Fix stromaufwärts. Ein `overrides`-Pin bringt nichts, solange keine gepatchte Version existiert. Betrifft nur den lokalen Metro-Build-Prozess, nicht den ausgelieferten Code. Tracking in #265.
 
 ## Questions?
 Refer to documentation in root directory or check GitHub issues:
