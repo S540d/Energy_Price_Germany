@@ -261,18 +261,39 @@ jobs:
         id: compare
         run: |
           NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/marketdata_new.json)
+          NEW_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/marketdata_new.json)
 
           if [ -f public/data/marketdata.json ]; then
             OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/marketdata.json)
+            OLD_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/marketdata.json)
           else
             OLD_TS=""
+            OLD_REN=0
           fi
 
           echo "OLD_TS=$OLD_TS"
           echo "NEW_TS=$NEW_TS"
+          echo "OLD_REN=$OLD_REN"
+          echo "NEW_REN=$NEW_REN"
 
-          # Commit if newer data available
-          if [ "$OLD_TS" != "$NEW_TS" ]; then
+          # Commit, wenn neuere Daten ODER mehr Erneuerbaren-Werte vorliegen.
+          #
+          # Der reine Zeitstempel-Vergleich reichte nicht: Nach einem aWATTar-
+          # Fallback (liefert renewable_share durchgaengig null) reicht der
+          # Datensatz bereits bis zum Ende des Folgetages. Ein spaeterer,
+          # erfolgreicher Energy-Charts-Lauf liefert dann denselben
+          # max(start_timestamp) – OLD_TS == NEW_TS – und wurde samt seiner
+          # frisch geholten Erneuerbaren-Werte verworfen. Beobachtet in Run
+          # 33332831834: 96 Renewable-Punkte geholt, "Final dataset: 739 points,
+          # source: energy-charts", danach new_data=false und kein Commit.
+          #
+          # Bewusst nur bei ZUNAHME (-gt), nicht bei blosser Aenderung: ein
+          # Rueckgang bedeutet einen Fallback ohne Erneuerbaren-Daten, der die
+          # bereits vorhandenen Werte bei ueberlappenden Zeitstempeln
+          # ueberschreiben wuerde. Aus demselben Grund ist ein Wechsel von
+          # `source` allein kein Ausloeser – energy-charts -> awattar waere eine
+          # Verschlechterung.
+          if [ "$OLD_TS" != "$NEW_TS" ] || [ "$NEW_REN" -gt "$OLD_REN" ]; then
             echo "new_data=true" >> $GITHUB_OUTPUT
           else
             echo "new_data=false" >> $GITHUB_OUTPUT
@@ -603,17 +624,23 @@ jobs:
           fi
 
           NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/nl/marketdata_new.json)
+          NEW_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/nl/marketdata_new.json)
 
           if [ -f public/data/nl/marketdata.json ]; then
             OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/nl/marketdata.json)
+            OLD_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/nl/marketdata.json)
           else
             OLD_TS=""
+            OLD_REN=0
           fi
 
           echo "OLD_TS=$OLD_TS"
           echo "NEW_TS=$NEW_TS"
+          echo "OLD_REN=$OLD_REN"
+          echo "NEW_REN=$NEW_REN"
 
-          if [ "$OLD_TS" != "$NEW_TS" ]; then
+          # Auch committen, wenn mehr Erneuerbaren-Werte vorliegen (siehe DE-Block).
+          if [ "$OLD_TS" != "$NEW_TS" ] || [ "$NEW_REN" -gt "$OLD_REN" ]; then
             echo "new_data=true" >> $GITHUB_OUTPUT
           else
             echo "new_data=false" >> $GITHUB_OUTPUT
@@ -908,14 +935,18 @@ jobs:
           fi
 
           NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/at/marketdata_new.json)
+          NEW_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/at/marketdata_new.json)
 
           if [ -f public/data/at/marketdata.json ]; then
             OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/at/marketdata.json)
+            OLD_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/at/marketdata.json)
           else
             OLD_TS=""
+            OLD_REN=0
           fi
 
-          if [ "$OLD_TS" != "$NEW_TS" ]; then
+          # Auch committen, wenn mehr Erneuerbaren-Werte vorliegen (siehe DE-Block).
+          if [ "$OLD_TS" != "$NEW_TS" ] || [ "$NEW_REN" -gt "$OLD_REN" ]; then
             echo "new_data=true" >> $GITHUB_OUTPUT
           else
             echo "new_data=false" >> $GITHUB_OUTPUT
@@ -1193,14 +1224,18 @@ jobs:
           fi
 
           NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/ch/marketdata_new.json)
+          NEW_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/ch/marketdata_new.json)
 
           if [ -f public/data/ch/marketdata.json ]; then
             OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/ch/marketdata.json)
+            OLD_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/ch/marketdata.json)
           else
             OLD_TS=""
+            OLD_REN=0
           fi
 
-          if [ "$OLD_TS" != "$NEW_TS" ]; then
+          # Auch committen, wenn mehr Erneuerbaren-Werte vorliegen (siehe DE-Block).
+          if [ "$OLD_TS" != "$NEW_TS" ] || [ "$NEW_REN" -gt "$OLD_REN" ]; then
             echo "new_data=true" >> $GITHUB_OUTPUT
           else
             echo "new_data=false" >> $GITHUB_OUTPUT
@@ -1478,14 +1513,18 @@ jobs:
           fi
 
           NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/fr/marketdata_new.json)
+          NEW_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/fr/marketdata_new.json)
 
           if [ -f public/data/fr/marketdata.json ]; then
             OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/fr/marketdata.json)
+            OLD_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/fr/marketdata.json)
           else
             OLD_TS=""
+            OLD_REN=0
           fi
 
-          if [ "$OLD_TS" != "$NEW_TS" ]; then
+          # Auch committen, wenn mehr Erneuerbaren-Werte vorliegen (siehe DE-Block).
+          if [ "$OLD_TS" != "$NEW_TS" ] || [ "$NEW_REN" -gt "$OLD_REN" ]; then
             echo "new_data=true" >> $GITHUB_OUTPUT
           else
             echo "new_data=false" >> $GITHUB_OUTPUT
@@ -1763,14 +1802,18 @@ jobs:
           fi
 
           NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/be/marketdata_new.json)
+          NEW_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/be/marketdata_new.json)
 
           if [ -f public/data/be/marketdata.json ]; then
             OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/be/marketdata.json)
+            OLD_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/be/marketdata.json)
           else
             OLD_TS=""
+            OLD_REN=0
           fi
 
-          if [ "$OLD_TS" != "$NEW_TS" ]; then
+          # Auch committen, wenn mehr Erneuerbaren-Werte vorliegen (siehe DE-Block).
+          if [ "$OLD_TS" != "$NEW_TS" ] || [ "$NEW_REN" -gt "$OLD_REN" ]; then
             echo "new_data=true" >> $GITHUB_OUTPUT
           else
             echo "new_data=false" >> $GITHUB_OUTPUT
@@ -2048,14 +2091,18 @@ jobs:
           fi
 
           NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/dk/marketdata_new.json)
+          NEW_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/dk/marketdata_new.json)
 
           if [ -f public/data/dk/marketdata.json ]; then
             OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/dk/marketdata.json)
+            OLD_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/dk/marketdata.json)
           else
             OLD_TS=""
+            OLD_REN=0
           fi
 
-          if [ "$OLD_TS" != "$NEW_TS" ]; then
+          # Auch committen, wenn mehr Erneuerbaren-Werte vorliegen (siehe DE-Block).
+          if [ "$OLD_TS" != "$NEW_TS" ] || [ "$NEW_REN" -gt "$OLD_REN" ]; then
             echo "new_data=true" >> $GITHUB_OUTPUT
           else
             echo "new_data=false" >> $GITHUB_OUTPUT
