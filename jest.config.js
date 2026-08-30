@@ -21,7 +21,7 @@ module.exports = {
       'expo-updates|' +
       'expo-splash-screen|' +
       'expo-linear-gradient' +
-    ')/)',
+      ')/)',
   ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   testMatch: ['**/__tests__/**/*.test.(ts|tsx|js)', '**/*.test.(ts|tsx|js)'],
@@ -37,5 +37,15 @@ module.exports = {
   moduleNameMapper: {
     '\\.svg$': '<rootDir>/__mocks__/svgMock.js',
     '\\.(png|jpg|jpeg|gif|webp)$': '<rootDir>/__mocks__/fileMock.js',
+  },
+  // Schutz vor Regression: auf dem gemessenen Stand minus kleinem Puffer.
+  // Bei Verbesserungen nachziehen (Issue project-templates#113).
+  coverageThreshold: {
+    global: {
+      statements: 68,
+      branches: 54,
+      functions: 63,
+      lines: 68,
+    },
   },
 };
