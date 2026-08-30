@@ -17,6 +17,18 @@ on:
 permissions:
   contents: write
 
+# Gemeinsame curl-Optionen für alle API-Calls.
+# Hintergrund: Die ersten ausgehenden Verbindungen eines frischen Runners laufen
+# regelmäßig in einen Connect-Hang gegen api.energy-charts.info
+# ("curl: (28) Failed to connect ... after 134449 ms"), während derselbe Host
+# Sekunden später für die nachgelagerten Länder-Blöcke sofort antwortet.
+# Ohne Retry reißt das den DE-Block ab und erzwingt den aWATTar-Fallback, der
+# keinerlei renewable_share liefert – die App zeigt dann "Erneuerbare: --".
+# --connect-timeout begrenzt den Hang (statt ~134s), --retry-all-errors deckt
+# neben Timeouts (28) auch "couldn't connect" (7) ab.
+env:
+  CURL_OPTS: "--connect-timeout 15 --retry 3 --retry-delay 5 --retry-all-errors"
+
 jobs:
   # Issue #406: Rückblickende Auswertung der Commit-Historie
   # (`git log --pretty='%H|%ad|%s' -- public/data/marketdata.json`, siehe PR)
@@ -88,11 +100,14 @@ jobs:
         run: |
           mkdir -p public/data
 
-          # Energy Charts: Renewable share forecast (15-min resolution)
-          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=de" -o public/data/renewable_raw.json || exit 1
+          # Energy Charts: Renewable share forecast – non-fatal (429/500 oder fehlende
+          # Daten → überspringen, Preise bleiben nutzbar). Vorher `|| exit 1`: ein
+          # Ausfall dieses Endpunkts verwarf auch die validen EC-Preise und zwang den
+          # gesamten DE-Block in den aWATTar-Fallback (ganz ohne renewable_share).
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=de" -o public/data/renewable_raw.json || true
 
-          # Energy Charts: Day-ahead prices (15-min resolution)
-          curl -fsSL "https://api.energy-charts.info/price?country=de" -o public/data/price_raw.json || exit 1
+          # Energy Charts: Day-ahead prices (15-min resolution) – required
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=de" -o public/data/price_raw.json || exit 1
 
           echo "success=true" >> $GITHUB_OUTPUT
 
@@ -103,7 +118,8 @@ jobs:
           const fs = require("fs");
 
           try {
-            const renewable = JSON.parse(fs.readFileSync("public/data/renewable_raw.json", "utf8"));
+            const renewableRaw = fs.existsSync("public/data/renewable_raw.json") ? fs.readFileSync("public/data/renewable_raw.json", "utf8") : null;
+            const renewable = renewableRaw ? JSON.parse(renewableRaw) : {};
             const price = JSON.parse(fs.readFileSync("public/data/price_raw.json", "utf8"));
 
             // Create maps for price and renewable data
@@ -169,7 +185,7 @@ jobs:
       - name: Fetch aWATTar data for supplementation or fallback
         run: |
           echo "Fetching aWATTar data..."
-          curl -fsSL "https://api.awattar.de/v1/marketdata" -o public/data/marketdata_raw.json || echo "aWATTar fetch failed"
+          curl -fsSL $CURL_OPTS "https://api.awattar.de/v1/marketdata" -o public/data/marketdata_raw.json || echo "aWATTar fetch failed"
 
       - name: Merge Energy Charts with aWATTar or use aWATTar as fallback
         run: node scripts/merge-market-data.js
@@ -434,11 +450,12 @@ jobs:
         run: |
           mkdir -p public/data/nl
 
-          # Energy Charts: Renewable share forecast (15-min resolution)
-          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=nl" -o public/data/nl/renewable_raw.json || exit 1
+          # Energy Charts: Renewable share forecast – non-fatal (429/500 oder fehlende
+          # Daten → überspringen, Preise bleiben nutzbar), analog zu DE/AT/CH/FR/BE/DK.
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=nl" -o public/data/nl/renewable_raw.json || true
 
-          # Energy Charts: Day-ahead prices (15-min resolution)
-          curl -fsSL "https://api.energy-charts.info/price?country=nl" -o public/data/nl/price_raw.json || exit 1
+          # Energy Charts: Day-ahead prices (15-min resolution) – required
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=nl" -o public/data/nl/price_raw.json || exit 1
 
           echo "success=true" >> $GITHUB_OUTPUT
 
@@ -450,7 +467,8 @@ jobs:
           const fs = require("fs");
 
           try {
-            const renewable = JSON.parse(fs.readFileSync("public/data/nl/renewable_raw.json", "utf8"));
+            const renewableRaw = fs.existsSync("public/data/nl/renewable_raw.json") ? fs.readFileSync("public/data/nl/renewable_raw.json", "utf8") : null;
+            const renewable = renewableRaw ? JSON.parse(renewableRaw) : {};
             const price = JSON.parse(fs.readFileSync("public/data/nl/price_raw.json", "utf8"));
 
             const priceMap = new Map();
@@ -750,10 +768,10 @@ jobs:
           mkdir -p public/data/at
 
           # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
-          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=at" -o public/data/at/renewable_raw.json || true
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=at" -o public/data/at/renewable_raw.json || true
 
           # Energy Charts: Day-ahead prices (15-min resolution) – required
-          curl -fsSL "https://api.energy-charts.info/price?country=at" -o public/data/at/price_raw.json || exit 1
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=at" -o public/data/at/price_raw.json || exit 1
 
           echo "success=true" >> $GITHUB_OUTPUT
 
@@ -1035,10 +1053,10 @@ jobs:
           mkdir -p public/data/ch
 
           # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
-          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=ch" -o public/data/ch/renewable_raw.json || true
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=ch" -o public/data/ch/renewable_raw.json || true
 
           # Energy Charts: Day-ahead prices (15-min resolution) – required
-          curl -fsSL "https://api.energy-charts.info/price?country=ch" -o public/data/ch/price_raw.json || exit 1
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=ch" -o public/data/ch/price_raw.json || exit 1
 
           echo "success=true" >> $GITHUB_OUTPUT
 
@@ -1320,10 +1338,10 @@ jobs:
           mkdir -p public/data/fr
 
           # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
-          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=fr" -o public/data/fr/renewable_raw.json || true
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=fr" -o public/data/fr/renewable_raw.json || true
 
           # Energy Charts: Day-ahead prices (15-min resolution) – required
-          curl -fsSL "https://api.energy-charts.info/price?country=fr" -o public/data/fr/price_raw.json || exit 1
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=fr" -o public/data/fr/price_raw.json || exit 1
 
           echo "success=true" >> $GITHUB_OUTPUT
 
@@ -1605,10 +1623,10 @@ jobs:
           mkdir -p public/data/be
 
           # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
-          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=be" -o public/data/be/renewable_raw.json || true
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=be" -o public/data/be/renewable_raw.json || true
 
           # Energy Charts: Day-ahead prices (15-min resolution) – required
-          curl -fsSL "https://api.energy-charts.info/price?country=be" -o public/data/be/price_raw.json || exit 1
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=be" -o public/data/be/price_raw.json || exit 1
 
           echo "success=true" >> $GITHUB_OUTPUT
 
@@ -1890,10 +1908,10 @@ jobs:
           mkdir -p public/data/dk
 
           # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
-          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=dk" -o public/data/dk/renewable_raw.json || true
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=dk" -o public/data/dk/renewable_raw.json || true
 
           # Energy Charts: Day-ahead prices (15-min resolution) – required
-          curl -fsSL "https://api.energy-charts.info/price?country=dk" -o public/data/dk/price_raw.json || exit 1
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=dk" -o public/data/dk/price_raw.json || exit 1
 
           echo "success=true" >> $GITHUB_OUTPUT
 
