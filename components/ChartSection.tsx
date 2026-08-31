@@ -25,6 +25,7 @@ type Props = {
   isDark: boolean;
   debouncedPostalCode: string;
   hasRegionalData: boolean;
+  hasLimitedRenewableData: boolean;
   gridFees: number;
   priceDisplayMode: 'marketOnly' | 'withGridFees';
   priceClockView: boolean;
@@ -42,6 +43,7 @@ export function ChartSection({
   isDark,
   debouncedPostalCode,
   hasRegionalData,
+  hasLimitedRenewableData,
   gridFees,
   priceDisplayMode,
   priceClockView,
@@ -117,43 +119,60 @@ export function ChartSection({
         />
       </View>
 
-      {/* Renewable Chart */}
-      <ChartDetailView
-        title={renewableTitle}
-        colors={colors}
-        chartType="renewable"
-        gridFees={gridFees}
-        accentColor={colors.accentGreen}
-        metrics={
-          metrics
-            ? {
-                min: metrics.renewable.min,
-                max: metrics.renewable.max,
-                avg: metrics.renewable.avg,
-                current: metrics.today?.renewable.current,
-                unit: '%',
-                label: t.renewablePercent,
-              }
-            : undefined
-        }
-        legend={
-          showRegional ? (
-            <View style={styles.legendContainer}>
-              <Text style={[styles.legendTitle, { color: colors.text }]}>{t.legend}</Text>
-              <View style={styles.legendRow}>
-                <View style={styles.legendLineRegional} />
-                <Text style={[styles.legendLabel, { color: colors.text }]}>
-                  {t.regionalDataLabel}
-                </Text>
+      {/* Renewable Chart (Issue #417: overlay when today's data is incomplete) */}
+      <View style={styles.chartOverlayWrapper}>
+        <ChartDetailView
+          title={renewableTitle}
+          colors={colors}
+          chartType="renewable"
+          gridFees={gridFees}
+          accentColor={colors.accentGreen}
+          metrics={
+            metrics
+              ? {
+                  min: metrics.renewable.min,
+                  max: metrics.renewable.max,
+                  avg: metrics.renewable.avg,
+                  current: metrics.today?.renewable.current,
+                  unit: '%',
+                  label: t.renewablePercent,
+                }
+              : undefined
+          }
+          legend={
+            showRegional ? (
+              <View style={styles.legendContainer}>
+                <Text style={[styles.legendTitle, { color: colors.text }]}>{t.legend}</Text>
+                <View style={styles.legendRow}>
+                  <View style={styles.legendLineRegional} />
+                  <Text style={[styles.legendLabel, { color: colors.text }]}>
+                    {t.regionalDataLabel}
+                  </Text>
+                </View>
               </View>
-            </View>
-          ) : undefined
-        }
-        detailChildren={
+            ) : undefined
+          }
+          detailChildren={
+            <RenewableBarChart
+              title={renewableTitle}
+              subtitle={timeRange(filteredEnergyData)}
+              data={filteredEnergyData}
+              backgroundColor={colors.surface}
+              textColor={colors.text}
+              gridColor={colors.gridLine}
+              colors={colors}
+              labels={renewableLabels}
+              dataKey="renewableShare"
+              showRegionalLine={showRegional}
+              showLegend={false}
+              accentColor={colors.accentGreen}
+            />
+          }
+        >
           <RenewableBarChart
             title={renewableTitle}
-            subtitle={timeRange(filteredEnergyData)}
-            data={filteredEnergyData}
+            subtitle={timeRange(hourlyEnergyData)}
+            data={hourlyEnergyData}
             backgroundColor={colors.surface}
             textColor={colors.text}
             gridColor={colors.gridLine}
@@ -164,23 +183,23 @@ export function ChartSection({
             showLegend={false}
             accentColor={colors.accentGreen}
           />
-        }
-      >
-        <RenewableBarChart
-          title={renewableTitle}
-          subtitle={timeRange(hourlyEnergyData)}
-          data={hourlyEnergyData}
-          backgroundColor={colors.surface}
-          textColor={colors.text}
-          gridColor={colors.gridLine}
-          colors={colors}
-          labels={renewableLabels}
-          dataKey="renewableShare"
-          showRegionalLine={showRegional}
-          showLegend={false}
-          accentColor={colors.accentGreen}
-        />
-      </ChartDetailView>
+        </ChartDetailView>
+
+        {hasLimitedRenewableData && (
+          <View style={styles.limitedDataOverlay} accessibilityRole="alert" pointerEvents="none">
+            <View
+              style={[
+                styles.limitedDataOverlayCard,
+                { backgroundColor: colors.warningBackground, borderColor: colors.accentAmber },
+              ]}
+            >
+              <Text style={[styles.limitedDataOverlayText, { color: colors.warningText }]}>
+                {t.limitedDataMessage}
+              </Text>
+            </View>
+          </View>
+        )}
+      </View>
 
       {/* Price Chart */}
       <ChartDetailView
@@ -412,5 +431,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     marginTop: 16,
+  },
+  chartOverlayWrapper: {
+    position: 'relative',
+  },
+  limitedDataOverlay: {
+    position: 'absolute',
+    left: 24,
+    right: 24,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  limitedDataOverlayCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  limitedDataOverlayText: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

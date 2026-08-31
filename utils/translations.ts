@@ -109,6 +109,7 @@ export const translations = {
     timeRange: 'Time Range',
     noData: 'No data available',
     noDataMessage: 'The energy data could not be loaded. Please try again later.',
+    limitedDataMessage: 'Further data is currently not available',
     noCommercialUse: 'No commercial use without permission',
     // Chart labels
     renewablePercent: 'Renewables (%)',
@@ -277,6 +278,7 @@ export const translations = {
     noData: 'Keine Daten verfügbar',
     noDataMessage:
       'Die Energiedaten konnten nicht geladen werden. Bitte versuchen Sie es später erneut.',
+    limitedDataMessage: 'Weitere Daten sind aktuell nicht verfügbar',
     noCommercialUse: 'Keine kommerzielle Nutzung ohne Genehmigung',
     // Chart labels
     renewablePercent: 'Erneuerbare (%)',
