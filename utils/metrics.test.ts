@@ -135,6 +135,36 @@ describe('metrics.ts', () => {
         );
       });
 
+      it('should report coverage counts for today (Issue #417)', () => {
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+        const todayData: EnergyData[] = [
+          { timestamp: todayStart + 3600000, marketPrice: 100, renewableShare: 50 },
+          { timestamp: todayStart + 7200000, marketPrice: 200, renewableShare: null },
+        ];
+
+        const result = calculateMetrics(todayData);
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
+        if (!result.today) throw new Error('expected today metrics to be defined');
+        expect(result.today.coverage).toEqual({ priceCount: 2, renewableCount: 1, total: 2 });
+      });
+
+      it('should report zero renewable coverage when the API returns an empty renewable_share series (Issue #417)', () => {
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+        const todayData: EnergyData[] = [
+          { timestamp: todayStart + 3600000, marketPrice: 100, renewableShare: null },
+          { timestamp: todayStart + 7200000, marketPrice: 200, renewableShare: null },
+        ];
+
+        const result = calculateMetrics(todayData);
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
+        if (!result.today) throw new Error('expected today metrics to be defined');
+        expect(result.today.coverage).toEqual({ priceCount: 2, renewableCount: 0, total: 2 });
+      });
+
       it('should not include today metrics when no data for today', () => {
         const yesterday = Date.now() - 24 * 60 * 60 * 1000;
         const yesterdayData: EnergyData[] = [
