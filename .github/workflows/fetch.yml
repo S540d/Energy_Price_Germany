@@ -614,6 +614,14 @@ jobs:
             rm -f public/data/nl/marketdata_new.json
           fi
 
+      - name: Merge NL history
+        if: steps.energy_charts_nl.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          if [ -f public/data/nl/marketdata_new.json ]; then
+            node scripts/merge-history.js public/data/nl
+          fi
+
       - name: Compare with previous NL data
         id: compare_nl
         run: |
@@ -925,6 +933,14 @@ jobs:
             rm -f public/data/at/marketdata_new.json
           fi
 
+      - name: Merge AT history
+        if: steps.energy_charts_at.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          if [ -f public/data/at/marketdata_new.json ]; then
+            node scripts/merge-history.js public/data/at
+          fi
+
       - name: Compare with previous AT data
         id: compare_at
         run: |
@@ -1212,6 +1228,14 @@ jobs:
           '; then
             echo "⚠️ CH validation failed – removing temporary file"
             rm -f public/data/ch/marketdata_new.json
+          fi
+
+      - name: Merge CH history
+        if: steps.energy_charts_ch.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          if [ -f public/data/ch/marketdata_new.json ]; then
+            node scripts/merge-history.js public/data/ch
           fi
 
       - name: Compare with previous CH data
@@ -1503,6 +1527,14 @@ jobs:
             rm -f public/data/fr/marketdata_new.json
           fi
 
+      - name: Merge FR history
+        if: steps.energy_charts_fr.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          if [ -f public/data/fr/marketdata_new.json ]; then
+            node scripts/merge-history.js public/data/fr
+          fi
+
       - name: Compare with previous FR data
         id: compare_fr
         run: |
@@ -1792,6 +1824,14 @@ jobs:
             rm -f public/data/be/marketdata_new.json
           fi
 
+      - name: Merge BE history
+        if: steps.energy_charts_be.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          if [ -f public/data/be/marketdata_new.json ]; then
+            node scripts/merge-history.js public/data/be
+          fi
+
       - name: Compare with previous BE data
         id: compare_be
         run: |
@@ -2079,6 +2119,14 @@ jobs:
           '; then
             echo "⚠️ DK validation failed – removing temporary file"
             rm -f public/data/dk/marketdata_new.json
+          fi
+
+      - name: Merge DK history
+        if: steps.energy_charts_dk.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          if [ -f public/data/dk/marketdata_new.json ]; then
+            node scripts/merge-history.js public/data/dk
           fi
 
       - name: Compare with previous DK data
