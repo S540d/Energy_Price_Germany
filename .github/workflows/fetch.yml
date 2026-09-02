@@ -17,6 +17,18 @@ on:
 permissions:
   contents: write
 
+# Gemeinsame curl-Optionen für alle API-Calls.
+# Hintergrund: Die ersten ausgehenden Verbindungen eines frischen Runners laufen
+# regelmäßig in einen Connect-Hang gegen api.energy-charts.info
+# ("curl: (28) Failed to connect ... after 134449 ms"), während derselbe Host
+# Sekunden später für die nachgelagerten Länder-Blöcke sofort antwortet.
+# Ohne Retry reißt das den DE-Block ab und erzwingt den aWATTar-Fallback, der
+# keinerlei renewable_share liefert – die App zeigt dann "Erneuerbare: --".
+# --connect-timeout begrenzt den Hang (statt ~134s), --retry-all-errors deckt
+# neben Timeouts (28) auch "couldn't connect" (7) ab.
+env:
+  CURL_OPTS: "--connect-timeout 15 --retry 3 --retry-delay 5 --retry-all-errors"
+
 jobs:
   # Issue #406: Rückblickende Auswertung der Commit-Historie
   # (`git log --pretty='%H|%ad|%s' -- public/data/marketdata.json`, siehe PR)
@@ -88,11 +100,14 @@ jobs:
         run: |
           mkdir -p public/data
 
-          # Energy Charts: Renewable share forecast (15-min resolution)
-          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=de" -o public/data/renewable_raw.json || exit 1
+          # Energy Charts: Renewable share forecast – non-fatal (429/500 oder fehlende
+          # Daten → überspringen, Preise bleiben nutzbar). Vorher `|| exit 1`: ein
+          # Ausfall dieses Endpunkts verwarf auch die validen EC-Preise und zwang den
+          # gesamten DE-Block in den aWATTar-Fallback (ganz ohne renewable_share).
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=de" -o public/data/renewable_raw.json || true
 
-          # Energy Charts: Day-ahead prices (15-min resolution)
-          curl -fsSL "https://api.energy-charts.info/price?country=de" -o public/data/price_raw.json || exit 1
+          # Energy Charts: Day-ahead prices (15-min resolution) – required
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=de" -o public/data/price_raw.json || exit 1
 
           echo "success=true" >> $GITHUB_OUTPUT
 
@@ -103,7 +118,8 @@ jobs:
           const fs = require("fs");
 
           try {
-            const renewable = JSON.parse(fs.readFileSync("public/data/renewable_raw.json", "utf8"));
+            const renewableRaw = fs.existsSync("public/data/renewable_raw.json") ? fs.readFileSync("public/data/renewable_raw.json", "utf8") : null;
+            const renewable = renewableRaw ? JSON.parse(renewableRaw) : {};
             const price = JSON.parse(fs.readFileSync("public/data/price_raw.json", "utf8"));
 
             // Create maps for price and renewable data
@@ -169,7 +185,7 @@ jobs:
       - name: Fetch aWATTar data for supplementation or fallback
         run: |
           echo "Fetching aWATTar data..."
-          curl -fsSL "https://api.awattar.de/v1/marketdata" -o public/data/marketdata_raw.json || echo "aWATTar fetch failed"
+          curl -fsSL $CURL_OPTS "https://api.awattar.de/v1/marketdata" -o public/data/marketdata_raw.json || echo "aWATTar fetch failed"
 
       - name: Merge Energy Charts with aWATTar or use aWATTar as fallback
         run: node scripts/merge-market-data.js
@@ -245,18 +261,39 @@ jobs:
         id: compare
         run: |
           NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/marketdata_new.json)
+          NEW_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/marketdata_new.json)
 
           if [ -f public/data/marketdata.json ]; then
             OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/marketdata.json)
+            OLD_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/marketdata.json)
           else
             OLD_TS=""
+            OLD_REN=0
           fi
 
           echo "OLD_TS=$OLD_TS"
           echo "NEW_TS=$NEW_TS"
+          echo "OLD_REN=$OLD_REN"
+          echo "NEW_REN=$NEW_REN"
 
-          # Commit if newer data available
-          if [ "$OLD_TS" != "$NEW_TS" ]; then
+          # Commit, wenn neuere Daten ODER mehr Erneuerbaren-Werte vorliegen.
+          #
+          # Der reine Zeitstempel-Vergleich reichte nicht: Nach einem aWATTar-
+          # Fallback (liefert renewable_share durchgaengig null) reicht der
+          # Datensatz bereits bis zum Ende des Folgetages. Ein spaeterer,
+          # erfolgreicher Energy-Charts-Lauf liefert dann denselben
+          # max(start_timestamp) – OLD_TS == NEW_TS – und wurde samt seiner
+          # frisch geholten Erneuerbaren-Werte verworfen. Beobachtet in Run
+          # 33332831834: 96 Renewable-Punkte geholt, "Final dataset: 739 points,
+          # source: energy-charts", danach new_data=false und kein Commit.
+          #
+          # Bewusst nur bei ZUNAHME (-gt), nicht bei blosser Aenderung: ein
+          # Rueckgang bedeutet einen Fallback ohne Erneuerbaren-Daten, der die
+          # bereits vorhandenen Werte bei ueberlappenden Zeitstempeln
+          # ueberschreiben wuerde. Aus demselben Grund ist ein Wechsel von
+          # `source` allein kein Ausloeser – energy-charts -> awattar waere eine
+          # Verschlechterung.
+          if [ "$OLD_TS" != "$NEW_TS" ] || [ "$NEW_REN" -gt "$OLD_REN" ]; then
             echo "new_data=true" >> $GITHUB_OUTPUT
           else
             echo "new_data=false" >> $GITHUB_OUTPUT
@@ -434,11 +471,12 @@ jobs:
         run: |
           mkdir -p public/data/nl
 
-          # Energy Charts: Renewable share forecast (15-min resolution)
-          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=nl" -o public/data/nl/renewable_raw.json || exit 1
+          # Energy Charts: Renewable share forecast – non-fatal (429/500 oder fehlende
+          # Daten → überspringen, Preise bleiben nutzbar), analog zu DE/AT/CH/FR/BE/DK.
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=nl" -o public/data/nl/renewable_raw.json || true
 
-          # Energy Charts: Day-ahead prices (15-min resolution)
-          curl -fsSL "https://api.energy-charts.info/price?country=nl" -o public/data/nl/price_raw.json || exit 1
+          # Energy Charts: Day-ahead prices (15-min resolution) – required
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=nl" -o public/data/nl/price_raw.json || exit 1
 
           echo "success=true" >> $GITHUB_OUTPUT
 
@@ -450,7 +488,8 @@ jobs:
           const fs = require("fs");
 
           try {
-            const renewable = JSON.parse(fs.readFileSync("public/data/nl/renewable_raw.json", "utf8"));
+            const renewableRaw = fs.existsSync("public/data/nl/renewable_raw.json") ? fs.readFileSync("public/data/nl/renewable_raw.json", "utf8") : null;
+            const renewable = renewableRaw ? JSON.parse(renewableRaw) : {};
             const price = JSON.parse(fs.readFileSync("public/data/nl/price_raw.json", "utf8"));
 
             const priceMap = new Map();
@@ -575,6 +614,14 @@ jobs:
             rm -f public/data/nl/marketdata_new.json
           fi
 
+      - name: Merge NL history
+        if: steps.energy_charts_nl.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          if [ -f public/data/nl/marketdata_new.json ]; then
+            node scripts/merge-history.js public/data/nl
+          fi
+
       - name: Compare with previous NL data
         id: compare_nl
         run: |
@@ -585,17 +632,23 @@ jobs:
           fi
 
           NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/nl/marketdata_new.json)
+          NEW_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/nl/marketdata_new.json)
 
           if [ -f public/data/nl/marketdata.json ]; then
             OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/nl/marketdata.json)
+            OLD_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/nl/marketdata.json)
           else
             OLD_TS=""
+            OLD_REN=0
           fi
 
           echo "OLD_TS=$OLD_TS"
           echo "NEW_TS=$NEW_TS"
+          echo "OLD_REN=$OLD_REN"
+          echo "NEW_REN=$NEW_REN"
 
-          if [ "$OLD_TS" != "$NEW_TS" ]; then
+          # Auch committen, wenn mehr Erneuerbaren-Werte vorliegen (siehe DE-Block).
+          if [ "$OLD_TS" != "$NEW_TS" ] || [ "$NEW_REN" -gt "$OLD_REN" ]; then
             echo "new_data=true" >> $GITHUB_OUTPUT
           else
             echo "new_data=false" >> $GITHUB_OUTPUT
@@ -750,10 +803,10 @@ jobs:
           mkdir -p public/data/at
 
           # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
-          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=at" -o public/data/at/renewable_raw.json || true
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=at" -o public/data/at/renewable_raw.json || true
 
           # Energy Charts: Day-ahead prices (15-min resolution) – required
-          curl -fsSL "https://api.energy-charts.info/price?country=at" -o public/data/at/price_raw.json || exit 1
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=at" -o public/data/at/price_raw.json || exit 1
 
           echo "success=true" >> $GITHUB_OUTPUT
 
@@ -880,6 +933,14 @@ jobs:
             rm -f public/data/at/marketdata_new.json
           fi
 
+      - name: Merge AT history
+        if: steps.energy_charts_at.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          if [ -f public/data/at/marketdata_new.json ]; then
+            node scripts/merge-history.js public/data/at
+          fi
+
       - name: Compare with previous AT data
         id: compare_at
         run: |
@@ -890,14 +951,18 @@ jobs:
           fi
 
           NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/at/marketdata_new.json)
+          NEW_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/at/marketdata_new.json)
 
           if [ -f public/data/at/marketdata.json ]; then
             OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/at/marketdata.json)
+            OLD_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/at/marketdata.json)
           else
             OLD_TS=""
+            OLD_REN=0
           fi
 
-          if [ "$OLD_TS" != "$NEW_TS" ]; then
+          # Auch committen, wenn mehr Erneuerbaren-Werte vorliegen (siehe DE-Block).
+          if [ "$OLD_TS" != "$NEW_TS" ] || [ "$NEW_REN" -gt "$OLD_REN" ]; then
             echo "new_data=true" >> $GITHUB_OUTPUT
           else
             echo "new_data=false" >> $GITHUB_OUTPUT
@@ -1035,10 +1100,10 @@ jobs:
           mkdir -p public/data/ch
 
           # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
-          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=ch" -o public/data/ch/renewable_raw.json || true
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=ch" -o public/data/ch/renewable_raw.json || true
 
           # Energy Charts: Day-ahead prices (15-min resolution) – required
-          curl -fsSL "https://api.energy-charts.info/price?country=ch" -o public/data/ch/price_raw.json || exit 1
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=ch" -o public/data/ch/price_raw.json || exit 1
 
           echo "success=true" >> $GITHUB_OUTPUT
 
@@ -1165,6 +1230,14 @@ jobs:
             rm -f public/data/ch/marketdata_new.json
           fi
 
+      - name: Merge CH history
+        if: steps.energy_charts_ch.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          if [ -f public/data/ch/marketdata_new.json ]; then
+            node scripts/merge-history.js public/data/ch
+          fi
+
       - name: Compare with previous CH data
         id: compare_ch
         run: |
@@ -1175,14 +1248,18 @@ jobs:
           fi
 
           NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/ch/marketdata_new.json)
+          NEW_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/ch/marketdata_new.json)
 
           if [ -f public/data/ch/marketdata.json ]; then
             OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/ch/marketdata.json)
+            OLD_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/ch/marketdata.json)
           else
             OLD_TS=""
+            OLD_REN=0
           fi
 
-          if [ "$OLD_TS" != "$NEW_TS" ]; then
+          # Auch committen, wenn mehr Erneuerbaren-Werte vorliegen (siehe DE-Block).
+          if [ "$OLD_TS" != "$NEW_TS" ] || [ "$NEW_REN" -gt "$OLD_REN" ]; then
             echo "new_data=true" >> $GITHUB_OUTPUT
           else
             echo "new_data=false" >> $GITHUB_OUTPUT
@@ -1320,10 +1397,10 @@ jobs:
           mkdir -p public/data/fr
 
           # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
-          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=fr" -o public/data/fr/renewable_raw.json || true
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=fr" -o public/data/fr/renewable_raw.json || true
 
           # Energy Charts: Day-ahead prices (15-min resolution) – required
-          curl -fsSL "https://api.energy-charts.info/price?country=fr" -o public/data/fr/price_raw.json || exit 1
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=fr" -o public/data/fr/price_raw.json || exit 1
 
           echo "success=true" >> $GITHUB_OUTPUT
 
@@ -1450,6 +1527,14 @@ jobs:
             rm -f public/data/fr/marketdata_new.json
           fi
 
+      - name: Merge FR history
+        if: steps.energy_charts_fr.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          if [ -f public/data/fr/marketdata_new.json ]; then
+            node scripts/merge-history.js public/data/fr
+          fi
+
       - name: Compare with previous FR data
         id: compare_fr
         run: |
@@ -1460,14 +1545,18 @@ jobs:
           fi
 
           NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/fr/marketdata_new.json)
+          NEW_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/fr/marketdata_new.json)
 
           if [ -f public/data/fr/marketdata.json ]; then
             OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/fr/marketdata.json)
+            OLD_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/fr/marketdata.json)
           else
             OLD_TS=""
+            OLD_REN=0
           fi
 
-          if [ "$OLD_TS" != "$NEW_TS" ]; then
+          # Auch committen, wenn mehr Erneuerbaren-Werte vorliegen (siehe DE-Block).
+          if [ "$OLD_TS" != "$NEW_TS" ] || [ "$NEW_REN" -gt "$OLD_REN" ]; then
             echo "new_data=true" >> $GITHUB_OUTPUT
           else
             echo "new_data=false" >> $GITHUB_OUTPUT
@@ -1605,10 +1694,10 @@ jobs:
           mkdir -p public/data/be
 
           # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
-          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=be" -o public/data/be/renewable_raw.json || true
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=be" -o public/data/be/renewable_raw.json || true
 
           # Energy Charts: Day-ahead prices (15-min resolution) – required
-          curl -fsSL "https://api.energy-charts.info/price?country=be" -o public/data/be/price_raw.json || exit 1
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=be" -o public/data/be/price_raw.json || exit 1
 
           echo "success=true" >> $GITHUB_OUTPUT
 
@@ -1735,6 +1824,14 @@ jobs:
             rm -f public/data/be/marketdata_new.json
           fi
 
+      - name: Merge BE history
+        if: steps.energy_charts_be.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          if [ -f public/data/be/marketdata_new.json ]; then
+            node scripts/merge-history.js public/data/be
+          fi
+
       - name: Compare with previous BE data
         id: compare_be
         run: |
@@ -1745,14 +1842,18 @@ jobs:
           fi
 
           NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/be/marketdata_new.json)
+          NEW_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/be/marketdata_new.json)
 
           if [ -f public/data/be/marketdata.json ]; then
             OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/be/marketdata.json)
+            OLD_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/be/marketdata.json)
           else
             OLD_TS=""
+            OLD_REN=0
           fi
 
-          if [ "$OLD_TS" != "$NEW_TS" ]; then
+          # Auch committen, wenn mehr Erneuerbaren-Werte vorliegen (siehe DE-Block).
+          if [ "$OLD_TS" != "$NEW_TS" ] || [ "$NEW_REN" -gt "$OLD_REN" ]; then
             echo "new_data=true" >> $GITHUB_OUTPUT
           else
             echo "new_data=false" >> $GITHUB_OUTPUT
@@ -1890,10 +1991,10 @@ jobs:
           mkdir -p public/data/dk
 
           # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
-          curl -fsSL "https://api.energy-charts.info/ren_share_forecast?country=dk" -o public/data/dk/renewable_raw.json || true
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=dk" -o public/data/dk/renewable_raw.json || true
 
           # Energy Charts: Day-ahead prices (15-min resolution) – required
-          curl -fsSL "https://api.energy-charts.info/price?country=dk" -o public/data/dk/price_raw.json || exit 1
+          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=dk" -o public/data/dk/price_raw.json || exit 1
 
           echo "success=true" >> $GITHUB_OUTPUT
 
@@ -2020,6 +2121,14 @@ jobs:
             rm -f public/data/dk/marketdata_new.json
           fi
 
+      - name: Merge DK history
+        if: steps.energy_charts_dk.outputs.success == 'true'
+        continue-on-error: true
+        run: |
+          if [ -f public/data/dk/marketdata_new.json ]; then
+            node scripts/merge-history.js public/data/dk
+          fi
+
       - name: Compare with previous DK data
         id: compare_dk
         run: |
@@ -2030,14 +2139,18 @@ jobs:
           fi
 
           NEW_TS=$(jq '[.data[].start_timestamp] | max' public/data/dk/marketdata_new.json)
+          NEW_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/dk/marketdata_new.json)
 
           if [ -f public/data/dk/marketdata.json ]; then
             OLD_TS=$(jq '[.data[].start_timestamp] | max' public/data/dk/marketdata.json)
+            OLD_REN=$(jq '[.data[] | select(.renewable_share != null)] | length' public/data/dk/marketdata.json)
           else
             OLD_TS=""
+            OLD_REN=0
           fi
 
-          if [ "$OLD_TS" != "$NEW_TS" ]; then
+          # Auch committen, wenn mehr Erneuerbaren-Werte vorliegen (siehe DE-Block).
+          if [ "$OLD_TS" != "$NEW_TS" ] || [ "$NEW_REN" -gt "$OLD_REN" ]; then
             echo "new_data=true" >> $GITHUB_OUTPUT
           else
             echo "new_data=false" >> $GITHUB_OUTPUT
