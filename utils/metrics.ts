@@ -26,6 +26,14 @@ export interface Metrics {
   };
   today?: {
     date: string;
+    // Anzahl Datenpunkte heute mit vorhandenem marketPrice bzw. renewableShare.
+    // Dient der Erkennung von Teilausfällen einer Metrik (Issue #417) – z.B. wenn
+    // die API renewable_share als leeres Array liefert, marketprice aber vorhanden ist.
+    coverage: {
+      priceCount: number;
+      renewableCount: number;
+      total: number;
+    };
     renewable: {
       avg: number;
       min: number;
@@ -94,6 +102,11 @@ export function calculateMetrics(data: EnergyData[]): Metrics | null {
             month: '2-digit',
             year: 'numeric',
           }),
+          coverage: {
+            priceCount: todayValidPrice.length,
+            renewableCount: todayValidRenewable.length,
+            total: todayData.length,
+          },
           renewable: {
             avg:
               todayValidRenewable.length > 0

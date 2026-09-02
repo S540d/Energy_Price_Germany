@@ -32,7 +32,29 @@ Energy Price Germany - A visualization app for German electricity market prices 
    - `testing` ≥ `staging` (same commit or newer)
    - `testing` ≥ `main` (same commit or newer)
    - If outdated, merge staging and main into testing first
-4. **Claude Code Remote-Sessions:** Die vom System vorgegebene Arbeits-Branch wird standardmäßig von `main` abgezweigt, nicht von `testing`. `main` und `testing` können erheblich divergieren (bis hin zu gemeinsamen Vorfahren, die nicht mehr existieren, falls die History mal umgeschrieben wurde). **Vor dem ersten Commit** in einer solchen Session immer `git fetch origin testing && git checkout -B <branch> origin/testing` ausführen, sonst entsteht ein riesiger, irreführender PR-Diff gegen `testing` (inkl. bereits dort gemergter fremder Änderungen) und Fixes, die auf `testing` schon vorhanden sind, werden unnötig dupliziert/überschrieben.
+4. **Claude Code Remote-Sessions:** Die vom System vorgegebene Arbeits-Branch wird standardmäßig von `main` abgezweigt, nicht von `testing`. **Vor dem ersten Commit** in einer solchen Session immer `git fetch origin testing && git checkout -B <branch> origin/testing` ausführen, sonst entsteht ein riesiger, irreführender PR-Diff gegen `testing` (inkl. bereits dort gemergter fremder Änderungen) und Fixes, die auf `testing` schon vorhanden sind, werden unnötig dupliziert/überschrieben.
+
+   > ⚠️ **`fatal: refusing to merge unrelated histories` = shallow clone, NICHT umgeschriebene History.**
+   > Remote-Sessions klonen flach. `main` sieht dann aus, als hätte es ~60 Commits
+   > und einen „Root-Commit", der in Wahrheit nur die shallow-Grenze ist; über
+   > diese Grenze hinaus findet Git keinen gemeinsamen Vorfahren und meldet
+   > fälschlich unrelated histories. **Niemals mit `--allow-unrelated-histories`
+   > darüber hinweggehen** — das erzeugt `add/add`-Konflikte über das halbe Repo
+   > (am 2026-09-02: 18 Dateien inkl. `App.tsx`, `utils/translations.ts`, allen
+   > `marketdata.json`) und überschreibt bei naiver Auflösung fremden Code.
+   > ```bash
+   > git rev-parse --is-shallow-repository   # true = genau dieser Fall
+   > git fetch --unshallow origin            # danach: 3 echte Konflikte statt 18
+   > git merge-base origin/testing origin/main
+   > ```
+   > Ein *echter* fehlender gemeinsamer Vorfahre ist bislang nie aufgetreten.
+
+5. **`testing` kann bei `fetch.yml` HINTER `main` liegen.** Hotfixes gehen gelegentlich direkt auf `main` (z. B. PR #426 für #425) und werden nicht zurückgemergt. Wer dann naiv von `origin/testing` abzweigt und `fetch.yml` anfasst, macht diese Fixes beim nächsten Release rückgängig. Prüfen und ggf. zuerst `git merge origin/main` als eigenen Commit:
+   ```bash
+   git show origin/main:.github/workflows/fetch.yml    | grep -c fetch-energy-charts.sh
+   git show origin/testing:.github/workflows/fetch.yml | grep -c fetch-energy-charts.sh
+   ```
+   Bei Konflikten in `fetch.yml`: **immer die `main`-Seite nehmen** — dort ist der Inhalt eine echte Obermenge.
 
 **Workflow:**
 ```
@@ -164,23 +186,76 @@ War zunächst im GitHub-verwalteten *Default Setup* — dadurch über **keine** 
 > ```
 > Liefert das 0, ist der Fix noch nicht scharf, egal wie grün `testing` aussieht.
 
-### `fetch.yml`: Resilienz-Konventionen — nicht zurückbauen (Issues #418, #423, #425)
+### `fetch.yml`: Resilienz-Konventionen — nicht zurückbauen (Issues #418, #423, #425, #435)
 
-Drei Vorkehrungen halten die Datenpipeline stabil. Alle drei sehen nach
+Fünf Vorkehrungen halten die Datenpipeline stabil. Alle sehen nach
 Redundanz aus und sind es nicht:
 
-**1. `CURL_OPTS` auf Workflow-Ebene, für alle 15 API-Calls.**
+**1. Alle Energy-Charts-Calls laufen über `scripts/fetch-energy-charts.sh` (#435).**
 ```yaml
-env:
-  CURL_OPTS: "--connect-timeout 15 --retry 3 --retry-delay 5 --retry-all-errors"
+- name: Try fetching from Energy Charts API (preferred source)
+  id: energy_charts
+  continue-on-error: true
+  run: scripts/fetch-energy-charts.sh de public/data
 ```
-Die ersten ausgehenden Verbindungen eines frischen Runners laufen regelmäßig in
-einen Connect-Hang gegen `api.energy-charts.info` (`curl: (28) Failed to connect
-… after 134449 ms`), während derselbe Host Sekunden später für die
-nachgelagerten Länder-Blöcke sofort antwortet.
-> `--retry-all-errors` ist **nicht** optional: `--retry` allein wiederholt nur
-> Timeouts (28), nicht „couldn't connect" (7). Ohne die Option greift der Retry
-> im halben Fehlerraum nicht.
+Aufruf: `scripts/fetch-energy-charts.sh <country-code> <output-dir>`. Das Skript
+schreibt `<output-dir>/price_raw.json` und `<output-dir>/renewable_raw.json` —
+genau die Pfade, die die nachgelagerten `node -e`-Process-Steps lesen.
+
+Vertrag des Skripts:
+- **Exponentielles Backoff 5 s / 15 s / 45 s** statt des früheren fixen
+  `--retry-delay 5`. Drei Versuche im 5-s-Abstand laufen gegen ein Rate-Limit,
+  das minutenlang hält, wirkungslos ins Leere.
+- **`Retry-After` wird respektiert** (bei 429/503, gedeckelt auf 60 s). Das ist
+  der eigentliche Fix für den Vorfall vom 2026-09-02.
+- **Retry-würdig:** HTTP 429/5xx sowie curl-Exit 7, 28, 35, 52, 55, 56. Alles
+  andere (DNS, URL-Fehler) bricht sofort ab — ein Retry heilt es nicht.
+- **Payload-Validierung** per `jq` nach jedem erfolgreichen Download; schlägt sie
+  fehl, gilt der Versuch als fehlgeschlagen (siehe „stummer Ausfall" unten).
+- **Semantik unverändert:** `price` required (Exit ≠ 0), `ren_share_forecast`
+  non-fatal. `success=true` nach `$GITHUB_OUTPUT`, sobald `price` valide ist.
+- Env-Overrides nur für Tests: `ENERGY_CHARTS_API_BASE`, `FETCH_MAX_ATTEMPTS`,
+  `FETCH_BACKOFF_DELAYS`, `FETCH_RETRY_AFTER_CAP`.
+
+> ⚠️ **Die Retry-Logik nicht wieder in die einzelnen Länder-Blöcke zurückziehen.**
+> Vor #435 stand sie als `CURL_OPTS` siebenfach dupliziert im Workflow. `CURL_OPTS`
+> existiert nur noch für den **aWATTar**-Call und darf nicht wieder auf die
+> Energy-Charts-Blöcke ausgedehnt werden.
+
+**1b. 6 Cron-Slots mit datenbasiertem Gate (#435).**
+`- cron: '0 3,6,9,13,16,19 * * *'`. Nur **03 und 13 UTC laufen unbedingt**
+(Nacht-Update / primärer Day-Ahead-Slot); 06, 09, 16 und 19 UTC gehen durch den
+`gate`-Job und starten den ~90 s teuren `update`-Job nur, wenn sie etwas
+verbessern würden. Das Gate fetcht dazu zwei billige DE-Calls (dasselbe Skript,
+in `$RUNNER_TEMP`) und setzt `run-fetch=true`, wenn **eines** zutrifft:
+1. `max(unix_seconds)` der API **>** `max(start_timestamp)/1000` der committeten
+   Datei (neue Preis-Abdeckung), **oder**
+2. Zahl der Punkte mit `ren_share != null` **für heute (Europe/Berlin)** aus der
+   API **>** derselbe Wert aus der Datei (Erneuerbaren-Lücke schließt sich).
+
+Fehlt die Probe-Datei, entscheidet das Gate **fail open** (`run-fetch=true`) —
+der `update`-Job kann mit eigenen Retries und aWATTar-Fallback mehr ausrichten.
+
+> **Ersetzt die Commit-Message-Heuristik aus #406**
+> (`grep -Eq "@ ${TODAY}T(1[3-9]) UTC"`). Die prüfte nur, *ob* committet wurde,
+> nicht *ob Daten fehlen* — im 429-Fall vom 2026-09-02 hätte sie den Fallback
+> fälschlich übersprungen, weil ein Commit (mit Preisen, ohne Erneuerbare)
+> existierte. Nicht wieder einführen.
+
+**1c. Der `Data health check`-Step darf den Run rot färben (#435, schließt #417).**
+Letzter Step im `update`-Job, `if: always()`, also **nach** dem Commit — die
+Daten werden in jedem Fall veröffentlicht. Hat DE **0 Punkte mit
+`renewable_share != null` für heute (Europe/Berlin)**, setzt er `::error::` und
+`exit 1`; GitHub verschickt daraufhin die Standard-„workflow run failed"-Mail.
+Das ist der Benachrichtigungsweg aus #417 — ohne Webhook, Secret oder Kosten.
+
+Nicht-fatal (nur `::warning::`, Run bleibt grün): `source == "awattar"` für DE
+und jedes **Beta-Land** mit 0 Erneuerbaren-Punkten.
+
+> ⚠️ **Ein roter Run bei Upstream-Ausfall ist Absicht, kein Defekt.** An solchen
+> Tagen steht ein roter Eintrag in der Historie, obwohl die Preisdaten korrekt
+> committet wurden. Das ist der bewusst akzeptierte Preis für die
+> Benachrichtigung — nicht „wegreparieren".
 
 **2. `ren_share_forecast` ist in ALLEN Ländern non-fatal (`|| true`), `price` bleibt required.**
 Vorher hatten DE und NL `|| exit 1`. Ein Ausfall dieses **einen** Endpunkts
@@ -217,9 +292,17 @@ Das ist der **stumme** Ausfall und der gefährlichere: `curl -f` meldet Erfolg,
 `JSON.parse` läuft durch, und der Guard `if (renewable.unix_seconds &&
 renewable.ren_share)` **passiert sogar** — `[]` ist in JS truthy. Iteriert wird
 über ein leeres Array, alle Werte werden `null`, der Workflow endet grün.
-Retries helfen prinzipiell nicht, es gibt nichts zu wiederholen. Beobachtet für
-DE am 2026-08-31, während `?country=at` gleichzeitig normale Daten lieferte —
-der Ausfall ist länderspezifisch.
+Beobachtet für DE am 2026-08-31, während `?country=at` gleichzeitig normale
+Daten lieferte — der Ausfall ist länderspezifisch.
+
+> **Guard-Ort seit #435:** `scripts/fetch-energy-charts.sh` validiert die Payload
+> direkt nach dem Download —
+> `jq -e '(.unix_seconds|length) > 0 and (.ren_share|length) > 0'` (für `price`
+> analog mit `.price`). Schlägt das fehl, zählt der Versuch als Fehlschlag und
+> wird wiederholt; nach dem letzten Versuch wird die Datei **gelöscht**, damit
+> der `fs.existsSync(...)`-Guard im Process-Step greift, statt stillschweigend
+> `null`-Werte zu schreiben. Retries sind hier entgegen der früheren Annahme
+> **nicht** sinnlos: der Endpunkt erholt sich erfahrungsgemäß.
 > **Offener Bug (#425, `priority: high`):** Nur DE merged über
 > `scripts/merge-market-data.js` mit der bestehenden Datei. Die sechs anderen
 > Länder überschreiben ihre `marketdata.json` vollständig — ein einziger
@@ -239,6 +322,9 @@ sorgen dafür, dass fast nichts hart fehlschlägt. In dieser Reihenfolge prüfen
 3. Im Job-Log die Zeile `- Renewable points: N` je Land; `0` bei grünem Lauf ist
    der stumme Fall oben.
 4. Erst dann Workflow-Logs auf `curl:`-Fehler durchsuchen.
+
+### Deploy (Unified): transienter TLS-Fehler in `actions/deploy-pages@v4`
+Vereinzelt schlägt `Creating Pages deployment` mit `HttpError: self-signed certificate` fehl — **auf beiden** Versuchen (Erstversuch + der eingebaute Retry aus PR #378), da beide denselben Infra-Hänger auf GitHubs Seite treffen. Kein Code-/Config-Fehler im Repo: Build-Schritte (Checkout bis Artifact-Upload) laufen sauber durch, nur der `deploy-pages`-API-Call selbst scheitert. Beobachtet am 2026-08-12 bei einem Push auf `testing`, während zeitgleich derselbe Commit auf `main` erfolgreich deployte — bestätigt den Infra-Charakter. Abhilfe: manuellen `workflow_dispatch`-Lauf anstoßen (GitHub-UI → Run workflow); `rerun_failed_jobs` über die API schlägt mit **403 „Resource not accessible by integration"** fehl (Token-Scope reicht dafür nicht, siehe `mcp__github__actions_run_trigger`). Ein manueller Dispatch ist ein **neuer** Run, kein Rerun des fehlgeschlagenen — der rote Eintrag bleibt in der Historie stehen, das ist kein weiteres Problem.
 
 ### Deploy (Unified): transienter TLS-Fehler in `actions/deploy-pages@v4`
 Vereinzelt schlägt `Creating Pages deployment` mit `HttpError: self-signed certificate` fehl — **auf beiden** Versuchen (Erstversuch + der eingebaute Retry aus PR #378), da beide denselben Infra-Hänger auf GitHubs Seite treffen. Kein Code-/Config-Fehler im Repo: Build-Schritte (Checkout bis Artifact-Upload) laufen sauber durch, nur der `deploy-pages`-API-Call selbst scheitert. Beobachtet am 2026-08-12 bei einem Push auf `testing`, während zeitgleich derselbe Commit auf `main` erfolgreich deployte — bestätigt den Infra-Charakter. Abhilfe: manuellen `workflow_dispatch`-Lauf anstoßen (GitHub-UI → Run workflow); `rerun_failed_jobs` über die API schlägt mit **403 „Resource not accessible by integration"** fehl (Token-Scope reicht dafür nicht, siehe `mcp__github__actions_run_trigger`). Ein manueller Dispatch ist ein **neuer** Run, kein Rerun des fehlgeschlagenen — der rote Eintrag bleibt in der Historie stehen, das ist kein weiteres Problem.

@@ -210,6 +210,15 @@ function AppContent() {
     return now - arrayMax(pastTimestamps) > 2 * 60 * 60 * 1000;
   }, [filteredEnergyData]);
 
+  // Erkennt einen Teilausfall der Erneuerbaren-Daten (Issue #417): die API kann
+  // renewable_share als leeres Array liefern (HTTP 200), während marketprice
+  // normal befüllt ist – kein Fehler, kein Fallback, aber die Kachel bleibt leer.
+  const hasLimitedRenewableData = useMemo(() => {
+    const coverage = metrics?.today?.coverage;
+    if (!coverage) return false;
+    return coverage.priceCount > 0 && coverage.renewableCount === 0;
+  }, [metrics]);
+
   useEffect(() => {
     async function checkAndApplyUpdates() {
       if (!__DEV__) {
@@ -330,6 +339,7 @@ function AppContent() {
             isDark={isDark}
             debouncedPostalCode={debouncedPostalCode}
             hasRegionalData={hasRegionalData}
+            hasLimitedRenewableData={hasLimitedRenewableData}
             gridFees={gridFees}
             priceDisplayMode={priceDisplayMode}
             priceClockView={priceClockView}

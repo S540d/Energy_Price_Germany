@@ -1,45 +1,57 @@
 name: Fetch energy market data
 on:
   schedule:
-    # Issue #406: 13:00 UTC ist der primäre Lauf (~1h nach dem retrospektiv
-    # ermittelten Daten-Refresh, siehe "gate"-Job unten). Der frühere fixe
-    # zweite Lauf um 14:00 UTC wurde durch einen bedingten Fallback um
-    # 19:00 UTC (6h später) ersetzt, der nur läuft, wenn der 13:00-Lauf
-    # keine neuen Daten gebracht hat – siehe Kommentar im "gate"-Job.
-    # 03:00 UTC = 04:00 CET / 05:00 CEST (EC Nacht-Update abholen, liefert i.d.R.
-    #             den vollständigen Day-Ahead-Datensatz für den laufenden Tag)
-    # 13:00 UTC = 14:00 CET / 15:00 CEST (primärer Lauf; Day-Ahead-Daten für
-    #             "morgen" beginnen ab hier verfügbar zu werden)
-    # 19:00 UTC = 20:00 CET / 21:00 CEST (Fallback, nur bei Bedarf)
-    - cron: '0 3,13,19 * * *'
+    # Issue #435: 6 Slots statt 3. Nur 03 und 13 UTC laufen unbedingt durch;
+    # 06, 09, 16 und 19 UTC gehen durch das datenbasierte Gate unten und
+    # starten den teuren `update`-Job nur, wenn sie etwas verbessern würden.
+    #
+    # 03:00 UTC = 04:00 CET / 05:00 CEST  IMMER – EC Nacht-Update abholen, liefert
+    #             i.d.R. den vollständigen Day-Ahead-Datensatz für den laufenden Tag
+    # 06:00 UTC                           bedingt – frühe Erholung nach einem
+    #             fehlgeschlagenen Nachtlauf (der 429-Fall vom 2026-09-02)
+    # 09:00 UTC                           bedingt – zweite Erholungschance
+    # 13:00 UTC = 14:00 CET / 15:00 CEST  IMMER – primärer Lauf; Day-Ahead-Daten
+    #             für "morgen" beginnen ab hier verfügbar zu werden
+    # 16:00 UTC                           bedingt
+    # 19:00 UTC = 20:00 CET / 21:00 CEST  bedingt
+    #
+    # Laufzeit: an einem normalen Tag 2 volle Läufe (~90s) + 4 Gates (~20s)
+    # ≈ 3 min – praktisch identisch zu den früheren 3 vollen Läufen (~4,5 min),
+    # bei doppelt so vielen Erholungschancen.
+    - cron: '0 3,6,9,13,16,19 * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
 
-# Gemeinsame curl-Optionen für alle API-Calls.
-# Hintergrund: Die ersten ausgehenden Verbindungen eines frischen Runners laufen
-# regelmäßig in einen Connect-Hang gegen api.energy-charts.info
-# ("curl: (28) Failed to connect ... after 134449 ms"), während derselbe Host
-# Sekunden später für die nachgelagerten Länder-Blöcke sofort antwortet.
-# Ohne Retry reißt das den DE-Block ab und erzwingt den aWATTar-Fallback, der
-# keinerlei renewable_share liefert – die App zeigt dann "Erneuerbare: --".
+# curl-Optionen NUR NOCH für den aWATTar-Call weiter unten.
+#
+# Issue #435: Alle Energy-Charts-Aufrufe laufen inzwischen über
+# scripts/fetch-energy-charts.sh, das seine Retry-Logik selbst mitbringt
+# (exponentielles Backoff 5/15/45s, Retry-After-Header, Payload-Validierung).
+# Diese Variable bitte NICHT wieder auf die Energy-Charts-Blöcke ausdehnen –
+# sonst liegt die Retry-Logik wieder an zwei Stellen.
+#
+# Hintergrund für aWATTar: Die ersten ausgehenden Verbindungen eines frischen
+# Runners laufen regelmäßig in einen Connect-Hang ("curl: (28) Failed to connect
+# ... after 134449 ms"), während derselbe Host Sekunden später sofort antwortet.
 # --connect-timeout begrenzt den Hang (statt ~134s), --retry-all-errors deckt
 # neben Timeouts (28) auch "couldn't connect" (7) ab.
 env:
   CURL_OPTS: "--connect-timeout 15 --retry 3 --retry-delay 5 --retry-all-errors"
 
 jobs:
-  # Issue #406: Rückblickende Auswertung der Commit-Historie
-  # (`git log --pretty='%H|%ad|%s' -- public/data/marketdata.json`, siehe PR)
-  # zeigt ein sehr stabiles Muster über mehrere Wochen: der 13:00-UTC-Lauf
-  # bringt praktisch immer neue Daten (Day-Ahead-Preise für "morgen" beginnen
-  # dann verfügbar zu werden), der bisherige 14:00-UTC-Lauf lieferte danach
-  # nur noch eine einzelne zusätzliche Stunde. Die Historie lässt sich also
-  # retrospektiv aus den Commits ableiten – eine zusätzliche Tracking-Funktion
-  # ist dafür nicht nötig, die Commit-Message (`... @ <date>T<hour> UTC`)
-  # dient bereits als Zeitstempel-Log. Dieser Job nutzt genau das, um den
-  # 19:00-UTC-Fallback zu überspringen, wenn der 13:00-Lauf schon geliefert hat.
+  # Issue #435: Das Gate entscheidet datenbasiert, ob sich ein voller Lauf lohnt.
+  #
+  # Vorher (#406) wurde dafür die Commit-Message des letzten Laufs ausgewertet
+  # (`grep -Eq "@ ${TODAY}T(1[3-9]) UTC"`). Diese Heuristik prüfte aber nur, *ob*
+  # committet wurde – nicht, *ob Daten fehlen*. Im 429-Vorfall vom 2026-09-02
+  # hätte sie den Fallback fälschlich übersprungen: es gab einen Commit, er
+  # enthielt Preise, aber keinerlei Erneuerbaren-Daten. Genau der Fall, der in
+  # der App als "Erneuerbare: --" sichtbar wurde.
+  #
+  # Jetzt werden stattdessen zwei billige DE-Calls gegen die committete
+  # marketdata.json gehalten. Kosten: ~20s statt ~90s für den vollen Lauf.
   gate:
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule'
@@ -51,34 +63,117 @@ jobs:
         with:
           ref: main
 
-      - name: Decide whether the fallback run is needed
+      - name: Probe Energy Charts (DE) for the gate decision
+        id: probe
+        continue-on-error: true
+        run: |
+          HOUR_UTC=$(date -u +%H)
+          # Die beiden Pflicht-Slots brauchen keine Probe.
+          if [ "$HOUR_UTC" = "03" ] || [ "$HOUR_UTC" = "13" ]; then
+            echo "Pflicht-Slot ${HOUR_UTC}:00 UTC – keine Probe nötig."
+            exit 0
+          fi
+          # Wiederverwendung desselben Fetch-Skripts – kein zweiter Retry-Code.
+          scripts/fetch-energy-charts.sh de "${RUNNER_TEMP}/gate-probe"
+
+      - name: Decide whether this conditional run is needed
         id: decide
         run: |
           HOUR_UTC=$(date -u +%H)
 
-          # Nur der 19:00-UTC-Fallback ist bedingt; Nacht- (03:00) und
-          # Primärlauf (13:00) laufen immer.
-          if [ "$HOUR_UTC" != "19" ]; then
+          # 03 und 13 UTC laufen immer voll (Nacht-Update / primärer Day-Ahead-Slot).
+          if [ "$HOUR_UTC" = "03" ] || [ "$HOUR_UTC" = "13" ]; then
+            echo "Pflicht-Slot ${HOUR_UTC}:00 UTC – voller Lauf."
             echo "run-fetch=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          TODAY=$(date -u +%Y-%m-%d)
-          LAST_MSG=$(git log -1 --format=%s)
+          PROBE_DIR="${RUNNER_TEMP}/gate-probe"
 
-          echo "Last commit message: $LAST_MSG"
-
-          # Commit-Message des Primärlaufs enthält "@ <today>T13 UTC" (oder
-          # später am selben Tag, falls der Lauf verzögert startete). Wenn der
-          # jüngste Commit schon von heute Nachmittag stammt, hat der
-          # Primärlauf bereits neue Daten geliefert – Fallback überspringen.
-          if echo "$LAST_MSG" | grep -Eq "@ ${TODAY}T(1[3-9]) UTC"; then
-            echo "Primärlauf hat heute bereits neue Daten geliefert – Fallback wird übersprungen."
-            echo "run-fetch=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "Keine neuen Daten seit dem Primärlauf – Fallback wird ausgeführt."
+          # Fail open: Wenn die Probe selbst nicht durchkam, entscheidet das Gate
+          # nicht gegen einen Lauf. Der update-Job bringt eigene Retries und den
+          # aWATTar-Fallback mit und kann mehr ausrichten als das Gate.
+          if [ ! -f "${PROBE_DIR}/price_raw.json" ]; then
+            echo "Probe fehlgeschlagen – im Zweifel voller Lauf."
             echo "run-fetch=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+
+          RUN_FETCH=$(node -e '
+          const fs = require("fs");
+
+          const probeDir = process.argv[1];
+          const readJson = (p) => {
+            try { return JSON.parse(fs.readFileSync(p, "utf8")); } catch { return null; }
+          };
+
+          const berlinDay = (ms) =>
+            new Intl.DateTimeFormat("en-CA", {
+              timeZone: "Europe/Berlin",
+              year: "numeric", month: "2-digit", day: "2-digit",
+            }).format(new Date(ms));
+
+          const today = berlinDay(Date.now());
+
+          const committed = readJson("public/data/marketdata.json");
+          const apiPrice = readJson(probeDir + "/price_raw.json");
+          const apiRen = readJson(probeDir + "/renewable_raw.json");
+
+          // Ohne committete Datei gibt es nichts zu vergleichen -> laufen lassen.
+          if (!committed || !Array.isArray(committed.data) || committed.data.length === 0) {
+            console.log("true");
+            process.exit(0);
+          }
+
+          const reasons = [];
+
+          // (a) Neue Preis-Abdeckung?
+          const fileMaxMs = Math.max(...committed.data.map((d) => d.start_timestamp || 0));
+          if (apiPrice && Array.isArray(apiPrice.unix_seconds) && apiPrice.unix_seconds.length) {
+            const apiMaxMs = Math.max(...apiPrice.unix_seconds) * 1000;
+            if (apiMaxMs > fileMaxMs) {
+              reasons.push(
+                "neue Preis-Abdeckung: API bis " + new Date(apiMaxMs).toISOString() +
+                ", Datei bis " + new Date(fileMaxMs).toISOString()
+              );
+            }
+          }
+
+          // (b) Schliesst sich eine Erneuerbaren-Luecke fuer heute?
+          const fileRenToday = committed.data.filter(
+            (d) => d.renewable_share != null && berlinDay(d.start_timestamp) === today
+          ).length;
+
+          let apiRenToday = 0;
+          if (apiRen && Array.isArray(apiRen.unix_seconds) && Array.isArray(apiRen.ren_share)) {
+            for (let i = 0; i < apiRen.unix_seconds.length; i++) {
+              if (apiRen.ren_share[i] == null) continue;
+              if (berlinDay(apiRen.unix_seconds[i] * 1000) === today) apiRenToday++;
+            }
+          }
+          if (apiRenToday > fileRenToday) {
+            reasons.push(
+              "Erneuerbaren-Luecke schliesst sich: API " + apiRenToday +
+              " Punkte heute vs. Datei " + fileRenToday
+            );
+          }
+
+          for (const r of reasons) console.error("  - " + r);
+          if (reasons.length === 0) {
+            console.error("  - keine Verbesserung gegenueber der committeten Datei");
+          }
+          console.log(reasons.length > 0 ? "true" : "false");
+          ' "$PROBE_DIR")
+
+          echo "Gate-Entscheidung fuer ${HOUR_UTC}:00 UTC: run-fetch=${RUN_FETCH}"
+          echo "run-fetch=${RUN_FETCH}" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Gate (${HOUR_UTC}:00 UTC)"
+            echo ""
+            echo "\`run-fetch\` = **${RUN_FETCH}**"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
 
   update:
     needs: gate
@@ -97,19 +192,7 @@ jobs:
       - name: Try fetching from Energy Charts API (preferred source)
         id: energy_charts
         continue-on-error: true
-        run: |
-          mkdir -p public/data
-
-          # Energy Charts: Renewable share forecast – non-fatal (429/500 oder fehlende
-          # Daten → überspringen, Preise bleiben nutzbar). Vorher `|| exit 1`: ein
-          # Ausfall dieses Endpunkts verwarf auch die validen EC-Preise und zwang den
-          # gesamten DE-Block in den aWATTar-Fallback (ganz ohne renewable_share).
-          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=de" -o public/data/renewable_raw.json || true
-
-          # Energy Charts: Day-ahead prices (15-min resolution) – required
-          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=de" -o public/data/price_raw.json || exit 1
-
-          echo "success=true" >> $GITHUB_OUTPUT
+        run: scripts/fetch-energy-charts.sh de public/data
 
       - name: Process Energy Charts data if successful
         if: steps.energy_charts.outputs.success == 'true'
@@ -468,17 +551,7 @@ jobs:
       - name: Try fetching NL data from Energy Charts API
         id: energy_charts_nl
         continue-on-error: true
-        run: |
-          mkdir -p public/data/nl
-
-          # Energy Charts: Renewable share forecast – non-fatal (429/500 oder fehlende
-          # Daten → überspringen, Preise bleiben nutzbar), analog zu DE/AT/CH/FR/BE/DK.
-          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=nl" -o public/data/nl/renewable_raw.json || true
-
-          # Energy Charts: Day-ahead prices (15-min resolution) – required
-          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=nl" -o public/data/nl/price_raw.json || exit 1
-
-          echo "success=true" >> $GITHUB_OUTPUT
+        run: scripts/fetch-energy-charts.sh nl public/data/nl
 
       - name: Process Energy Charts NL data
         if: steps.energy_charts_nl.outputs.success == 'true'
@@ -799,16 +872,7 @@ jobs:
       - name: Try fetching AT data from Energy Charts API
         id: energy_charts_at
         continue-on-error: true
-        run: |
-          mkdir -p public/data/at
-
-          # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
-          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=at" -o public/data/at/renewable_raw.json || true
-
-          # Energy Charts: Day-ahead prices (15-min resolution) – required
-          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=at" -o public/data/at/price_raw.json || exit 1
-
-          echo "success=true" >> $GITHUB_OUTPUT
+        run: scripts/fetch-energy-charts.sh at public/data/at
 
       - name: Process Energy Charts AT data
         if: steps.energy_charts_at.outputs.success == 'true'
@@ -1096,16 +1160,7 @@ jobs:
       - name: Try fetching CH data from Energy Charts API
         id: energy_charts_ch
         continue-on-error: true
-        run: |
-          mkdir -p public/data/ch
-
-          # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
-          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=ch" -o public/data/ch/renewable_raw.json || true
-
-          # Energy Charts: Day-ahead prices (15-min resolution) – required
-          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=ch" -o public/data/ch/price_raw.json || exit 1
-
-          echo "success=true" >> $GITHUB_OUTPUT
+        run: scripts/fetch-energy-charts.sh ch public/data/ch
 
       - name: Process Energy Charts CH data
         if: steps.energy_charts_ch.outputs.success == 'true'
@@ -1393,16 +1448,7 @@ jobs:
       - name: Try fetching FR data from Energy Charts API
         id: energy_charts_fr
         continue-on-error: true
-        run: |
-          mkdir -p public/data/fr
-
-          # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
-          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=fr" -o public/data/fr/renewable_raw.json || true
-
-          # Energy Charts: Day-ahead prices (15-min resolution) – required
-          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=fr" -o public/data/fr/price_raw.json || exit 1
-
-          echo "success=true" >> $GITHUB_OUTPUT
+        run: scripts/fetch-energy-charts.sh fr public/data/fr
 
       - name: Process Energy Charts FR data
         if: steps.energy_charts_fr.outputs.success == 'true'
@@ -1690,16 +1736,7 @@ jobs:
       - name: Try fetching BE data from Energy Charts API
         id: energy_charts_be
         continue-on-error: true
-        run: |
-          mkdir -p public/data/be
-
-          # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
-          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=be" -o public/data/be/renewable_raw.json || true
-
-          # Energy Charts: Day-ahead prices (15-min resolution) – required
-          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=be" -o public/data/be/price_raw.json || exit 1
-
-          echo "success=true" >> $GITHUB_OUTPUT
+        run: scripts/fetch-energy-charts.sh be public/data/be
 
       - name: Process Energy Charts BE data
         if: steps.energy_charts_be.outputs.success == 'true'
@@ -1987,16 +2024,7 @@ jobs:
       - name: Try fetching DK data from Energy Charts API
         id: energy_charts_dk
         continue-on-error: true
-        run: |
-          mkdir -p public/data/dk
-
-          # Energy Charts: Renewable share forecast – non-fatal (429 or missing data → skip, price still usable)
-          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/ren_share_forecast?country=dk" -o public/data/dk/renewable_raw.json || true
-
-          # Energy Charts: Day-ahead prices (15-min resolution) – required
-          curl -fsSL $CURL_OPTS "https://api.energy-charts.info/price?country=dk" -o public/data/dk/price_raw.json || exit 1
-
-          echo "success=true" >> $GITHUB_OUTPUT
+        run: scripts/fetch-energy-charts.sh dk public/data/dk
 
       - name: Process Energy Charts DK data
         if: steps.energy_charts_dk.outputs.success == 'true'
@@ -2438,3 +2466,107 @@ jobs:
             echo "📊 **DE source:** $(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/marketdata.json", "utf8")).source)')" >> $GITHUB_STEP_SUMMARY
           fi
           echo "⏰ **Checked at:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+
+      # ─── Data health check (Issue #435, schließt #417) ────────────────────────
+      #
+      # Läuft als LETZTER Step mit `if: always()` – also NACH dem Commit. Die
+      # Daten werden in jedem Fall veröffentlicht; dieser Step markiert den Run
+      # lediglich zusätzlich als fehlgeschlagen.
+      #
+      # Zweck: Der Vorfall vom 2026-09-02 (HTTP 429 auf ren_share_forecast) lief
+      # GRÜN durch – sichtbar war er nur in der App als "Erneuerbare: --". Ein
+      # roter Run löst GitHubs Standard-"workflow run failed"-Mail aus und
+      # schließt damit den in #417 gesuchten Benachrichtigungsweg, ohne
+      # zusätzliche Infrastruktur (kein Webhook, kein Secret, keine Kosten).
+      #
+      # BEWUSSTE KONSEQUENZ: An Tagen mit echtem Upstream-Ausfall steht ein roter
+      # Eintrag in der Run-Historie, obwohl die Preisdaten korrekt committet
+      # wurden. Das ist Absicht und KEIN Defekt – nicht "wegreparieren".
+      - name: Data health check
+        if: always()
+        run: |
+          node -e '
+          const fs = require("fs");
+
+          const berlinDay = (ms) =>
+            new Intl.DateTimeFormat("en-CA", {
+              timeZone: "Europe/Berlin",
+              year: "numeric", month: "2-digit", day: "2-digit",
+            }).format(new Date(ms));
+
+          const today = berlinDay(Date.now());
+          const summary = [];
+          const readJson = (p) => {
+            try { return JSON.parse(fs.readFileSync(p, "utf8")); } catch { return null; }
+          };
+
+          const renTodayCount = (file) => {
+            const j = readJson(file);
+            if (!j || !Array.isArray(j.data)) return null;
+            return j.data.filter(
+              (d) => d.renewable_share != null && berlinDay(d.start_timestamp) === today
+            ).length;
+          };
+
+          let failed = false;
+
+          // ── DE: fatal ───────────────────────────────────────────────────────
+          const deFile = "public/data/marketdata.json";
+          const de = readJson(deFile);
+          const deRen = renTodayCount(deFile);
+
+          summary.push("### Data health check (" + today + ", Europe/Berlin)");
+          summary.push("");
+
+          if (de === null) {
+            console.log("::error::DE: " + deFile + " fehlt oder ist unlesbar.");
+            summary.push("- **DE: FEHLER** – `marketdata.json` fehlt oder ist unlesbar");
+            failed = true;
+          } else {
+            summary.push("- DE Quelle: `" + de.source + "`");
+            summary.push("- DE Erneuerbaren-Punkte heute: **" + deRen + "**");
+
+            if (deRen === 0) {
+              console.log(
+                "::error::DE: keine Erneuerbaren-Daten fuer heute (" + today + "). " +
+                "Der ren_share_forecast-Endpunkt hat nichts Verwertbares geliefert - " +
+                "die App zeigt 'Erneuerbare: --'."
+              );
+              summary.push("- **DE: FEHLER** – 0 Erneuerbaren-Punkte für heute");
+              failed = true;
+            }
+
+            // Nicht fatal: aWATTar liefert per Design keinen renewable_share.
+            if (de.source === "awattar") {
+              console.log(
+                "::warning::DE: Quelle ist aWATTar - Energy Charts war nicht " +
+                "erreichbar, deshalb gibt es per Design keine Erneuerbaren-Daten."
+              );
+              summary.push("- ⚠️ DE: Fallback auf aWATTar (keine Erneuerbaren-Daten per Design)");
+            }
+          }
+
+          // ── Beta-Länder: nur Warnung, nie rot ───────────────────────────────
+          for (const code of ["nl", "at", "ch", "fr", "be", "dk"]) {
+            const file = "public/data/" + code + "/marketdata.json";
+            if (!fs.existsSync(file)) continue;
+            const n = renTodayCount(file);
+            if (n === 0) {
+              console.log(
+                "::warning::" + code.toUpperCase() + ": keine Erneuerbaren-Daten " +
+                "fuer heute (Beta-Land, faerbt den Run nicht rot)."
+              );
+              summary.push("- ⚠️ " + code.toUpperCase() + ": 0 Erneuerbaren-Punkte für heute (BETA)");
+            } else if (n !== null) {
+              summary.push("- " + code.toUpperCase() + " Erneuerbaren-Punkte heute: " + n);
+            }
+          }
+
+          summary.push("");
+          if (process.env.GITHUB_STEP_SUMMARY) {
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary.join("\n") + "\n");
+          }
+          console.log(summary.join("\n"));
+
+          if (failed) process.exit(1);
+          '
