@@ -32,7 +32,29 @@ Energy Price Germany - A visualization app for German electricity market prices 
    - `testing` ≥ `staging` (same commit or newer)
    - `testing` ≥ `main` (same commit or newer)
    - If outdated, merge staging and main into testing first
-4. **Claude Code Remote-Sessions:** Die vom System vorgegebene Arbeits-Branch wird standardmäßig von `main` abgezweigt, nicht von `testing`. `main` und `testing` können erheblich divergieren (bis hin zu gemeinsamen Vorfahren, die nicht mehr existieren, falls die History mal umgeschrieben wurde). **Vor dem ersten Commit** in einer solchen Session immer `git fetch origin testing && git checkout -B <branch> origin/testing` ausführen, sonst entsteht ein riesiger, irreführender PR-Diff gegen `testing` (inkl. bereits dort gemergter fremder Änderungen) und Fixes, die auf `testing` schon vorhanden sind, werden unnötig dupliziert/überschrieben.
+4. **Claude Code Remote-Sessions:** Die vom System vorgegebene Arbeits-Branch wird standardmäßig von `main` abgezweigt, nicht von `testing`. **Vor dem ersten Commit** in einer solchen Session immer `git fetch origin testing && git checkout -B <branch> origin/testing` ausführen, sonst entsteht ein riesiger, irreführender PR-Diff gegen `testing` (inkl. bereits dort gemergter fremder Änderungen) und Fixes, die auf `testing` schon vorhanden sind, werden unnötig dupliziert/überschrieben.
+
+   > ⚠️ **`fatal: refusing to merge unrelated histories` = shallow clone, NICHT umgeschriebene History.**
+   > Remote-Sessions klonen flach. `main` sieht dann aus, als hätte es ~60 Commits
+   > und einen „Root-Commit", der in Wahrheit nur die shallow-Grenze ist; über
+   > diese Grenze hinaus findet Git keinen gemeinsamen Vorfahren und meldet
+   > fälschlich unrelated histories. **Niemals mit `--allow-unrelated-histories`
+   > darüber hinweggehen** — das erzeugt `add/add`-Konflikte über das halbe Repo
+   > (am 2026-09-02: 18 Dateien inkl. `App.tsx`, `utils/translations.ts`, allen
+   > `marketdata.json`) und überschreibt bei naiver Auflösung fremden Code.
+   > ```bash
+   > git rev-parse --is-shallow-repository   # true = genau dieser Fall
+   > git fetch --unshallow origin            # danach: 3 echte Konflikte statt 18
+   > git merge-base origin/testing origin/main
+   > ```
+   > Ein *echter* fehlender gemeinsamer Vorfahre ist bislang nie aufgetreten.
+
+5. **`testing` kann bei `fetch.yml` HINTER `main` liegen.** Hotfixes gehen gelegentlich direkt auf `main` (z. B. PR #426 für #425) und werden nicht zurückgemergt. Wer dann naiv von `origin/testing` abzweigt und `fetch.yml` anfasst, macht diese Fixes beim nächsten Release rückgängig. Prüfen und ggf. zuerst `git merge origin/main` als eigenen Commit:
+   ```bash
+   git show origin/main:.github/workflows/fetch.yml    | grep -c fetch-energy-charts.sh
+   git show origin/testing:.github/workflows/fetch.yml | grep -c fetch-energy-charts.sh
+   ```
+   Bei Konflikten in `fetch.yml`: **immer die `main`-Seite nehmen** — dort ist der Inhalt eine echte Obermenge.
 
 **Workflow:**
 ```
@@ -58,18 +80,29 @@ gh pr create --base testing --title "..." --body "..."
 - Wait for CI/CD to pass before merge
 - At least one code review (if available)
 
-### Automated Claude PR Review (Merge-Gate)
-PRs gegen `testing` und `main` lösen automatisch einen zweistufigen Claude-Review aus:
+### Merge-Gate: `review-gate` kommt von `mergeability.yml`, nicht von einem KI-Review
+Den required Status-Check **`review-gate`** setzt der kostenlose Workflow
+`mergeability.yml` (aus project-templates). Er prüft Konfliktfreiheit und
+Ziel-Branch-Policy und postet einen Mergeability-Report als PR-Kommentar —
+**kein** inhaltliches Code-Review, kein Autofix.
 
-1. **Autofix:** Ein Claude-Agent fixt alle umsetzbaren Findings selbst (Commit `[auto]` + Push auf den PR-Branch).
-2. **Review:** Bewertet den korrigierten End-Stand und setzt den required Status-Check **`review-gate`** sowie ein Label:
-   - Keine offenen Findings → 🟢 `ready to merge` → Merge frei
-   - Findings übrig → 🔴 `needs human review` + Inline-Kommentare
+> ⚠️ Frühere Fassungen dieses Abschnitts beschrieben einen automatischen
+> zweistufigen Claude-Review (Autofix + Review, Labels `ready to merge` /
+> `needs human review`). Das entspricht **nicht** dem aktuellen Stand —
+> verifiziert am 2026-08-30 an vier PRs: `review-gate` wurde jedes Mal von
+> `mergeability / mergeability` gesetzt, ein Autofix-Lauf existiert nicht.
+> Wer sich darauf verlässt, dass ein Agent Findings selbst wegfixt, wartet
+> vergeblich.
 
-Bei `needs human review`:
-1. Review-Kommentar und Inline-Findings lesen
-2. Findings klären/umsetzen und pushen → frischer Review-Lauf startet automatisch
-3. Es gibt **kein** manuelles Quittierungs-Label mehr — den roten Gate öffnet nur ein sauberer Re-Run
+Der KI-Review liegt in `pr-review.yml` und läuft **nur on-demand**: Label
+`ai-review` an den PR vergeben (kostet metered API-Token). Der bevorzugte,
+kostenlose Weg bleibt `/review` aus Claude Code.
+
+**Checks je Ziel-Branch:** `ci-cd.yml` triggert bewusst nur auf PRs gegen
+`main` — auf `testing` sind die Checks seit der `protect-testing`-Umstellung
+nicht mehr required. Ein PR gegen `testing` hat daher nur 2 Checks
+(`review-gate` + `mergeability`), einer gegen `main` rund 15. Das Fehlen von
+`🔍 Code Quality & Linting` auf einem `testing`-PR ist **kein** Defekt.
 
 ### Release-PRs testing → main (Branch Protection)
 `main` liegt unter dem `Main`-Ruleset mit **Required Approvals = 1**. Als Solo-Dev kann man den eigenen PR nicht approven → Admin-Bypass nötig.
@@ -78,7 +111,19 @@ Merge: `gh pr merge <nr> --squash --admin` (kein `--delete-branch` für langlebi
 
 > Nur mit expliziter schriftlicher Freigabe — dies ist der bewusste manuelle Release-Schritt, nicht mit dem `review-gate` zu verwechseln.
 
-> ⚠️ **Falle „Automatically delete head branches" + Release-PR:** Ist diese Repo-Einstellung aktiv (Settings → General → Pull Requests), löscht GitHub nach dem Merge automatisch den **Head**-Branch des PRs. Bei einem Release-PR `testing → main` ist `testing` selbst der Head-Branch — der Merge löscht also `testing` mit, nicht nur einen Feature-Branch (passiert am 2026-08-12 bei PR #404). Nach jedem Release-Merge prüfen, ob `testing` noch existiert (`git ls-remote --heads origin | grep testing`); falls nicht, sofort neu anlegen (`mcp__github__create_branch`, `from_branch: main` — Inhalt ist nach einem sauberen Merge identisch). Dauerhafte Abhilfe: Branch-Protection-Ruleset für `testing` mit **„Restrict deletions"**.
+> ⚠️ **Falle „Automatically delete head branches" + Release-PR:** Ist diese Repo-Einstellung aktiv (Settings → General → Pull Requests), löscht GitHub nach dem Merge automatisch den **Head**-Branch des PRs. Bei einem Release-PR `testing → main` ist `testing` selbst der Head-Branch — der Merge löscht also `testing` mit, nicht nur einen Feature-Branch. **Bereits viermal passiert:** 2026-08-12 (PR #404), zweimal am 2026-08-30 (PR #421 und #424) und erneut am 2026-08-31 (PR #427, Release für Fix #425). Nach jedem Release-Merge prüfen, ob `testing` noch existiert (`git ls-remote --heads origin | grep testing`); falls nicht, sofort neu anlegen (`mcp__github__create_branch`, `from_branch: main` — Inhalt ist nach einem sauberen Merge identisch, vor dem Anlegen mit `git diff <letzter-testing-SHA> origin/main` verifizierbar).
+
+> **Dauerhafte Abhilfe — Tracking in #428:** Branch-Protection-Ruleset für
+> `testing` mit **„Restrict deletions"**. Lässt sich **nicht** über die
+> verfügbaren GitHub-MCP-Tools automatisieren (keine Ruleset-/Settings-API) und
+> muss manuell im Repo-Settings-UI angelegt werden. Solange das offen ist,
+> wiederholt sich der Vorfall bei **jedem** Release.
+
+> **Symptom, an dem man es zuerst merkt:** `git fetch origin testing` scheitert
+> mit `fatal: couldn't find remote ref testing`, während ein `git checkout -B <branch> origin/testing`
+> danach trotzdem „funktioniert" — es greift dann auf die veraltete lokale
+> Tracking-Ref zurück. Ohne den Fetch-Fehler zu beachten, baut man seinen
+> Branch auf einem Stand auf, den es remote nicht mehr gibt.
 
 ### Branches löschen aus Remote-Execution-Environment
 `git push origin --delete <branch>` schlägt mit **HTTP 403** fehl (gleiche Ursache wie normaler Push, siehe unten) — **aber mit irreführendem Output:** Exit-Code ist trotzdem `0`, letzte Zeile lautet „Everything up-to-date". Nicht als Erfolg werten. Es gibt außerdem **kein** GitHub-MCP-Tool zum Löschen einer Branch-Ref (nur `create_branch`, kein `delete_branch`/`delete_ref`). Branch-Löschung ist aus dieser Umgebung technisch nicht möglich — stattdessen den fertigen `git push origin --delete ...`-Befehl für die lokale Ausführung ausgeben. Vor dem Vorschlagen prüfen, ob ein Branch wirklich gemergt ist: **nicht** über `git merge-base --is-ancestor` (liefert bei Squash-Merges falsch-negativ), sondern über die PR-Historie und dort das Feld `merged_at` (nicht `merged` — das steht in MCP-Antworten öfter fälschlich auf `false`, siehe project-templates#101).
@@ -123,7 +168,163 @@ War zunächst im GitHub-verwalteten *Default Setup* — dadurch über **keine** 
 
 **Wirkung immer messen statt schätzen** (GitHub Actions API, `list_workflow_runs` + `jq` nach `created_at`/`event` gruppieren). Gemessen nach allen vier Maßnahmen (3 Tage, 09.–11.08.): **~59,5 → ~18,6 min/Tag (≈ −69 %)**. `fetch.yml` fiel auf ~3,9 Runs/Tag, `ci-cd.yml` hatte **keinen einzigen** `Update marketdata.json`-Run mehr.
 
-> **Hinweis Workflow-Trigger-Semantik:** Der `push`-Trigger wird aus der Workflow-Datei **des gepushten Branches** gelesen, `schedule` immer aus dem **Default-Branch**. Änderungen an Triggern wirken deshalb erst, wenn sie auf `main` liegen — auf `testing` gemergt sind sie für `main`-Pushes noch wirkungslos.
+> **⚠️ Workflow-Semantik — gilt für den GESAMTEN Inhalt, nicht nur für Trigger:**
+> Der `push`-Trigger wird aus der Workflow-Datei **des gepushten Branches**
+> gelesen, `schedule` immer aus dem **Default-Branch** (`main`). Das betrifft
+> nicht nur die `on:`-Sektion, sondern **jede Zeile des Workflows**: Bei einem
+> `schedule`-Lauf führt GitHub die Fassung von `main` aus, Punkt.
+>
+> **Konsequenz für `fetch.yml`:** Ein Fix, der nur auf `testing` gemergt ist,
+> ist **vollständig wirkungslos** — der Workflow läuft per `schedule` und macht
+> zusätzlich `checkout ref: main`. Er wird erst mit dem Release nach `main`
+> scharf. Am 2026-08-30 (#418) genau so passiert: Fix gemergt, alle Checks grün,
+> Verhalten unverändert — bis der Release-PR #421 durch war.
+>
+> **Prüfbefehl vor jeder Wirksamkeits-Annahme:**
+> ```bash
+> git show origin/main:.github/workflows/fetch.yml | grep -c "<neues-Element>"
+> ```
+> Liefert das 0, ist der Fix noch nicht scharf, egal wie grün `testing` aussieht.
+
+### `fetch.yml`: Resilienz-Konventionen — nicht zurückbauen (Issues #418, #423, #425, #435)
+
+Fünf Vorkehrungen halten die Datenpipeline stabil. Alle sehen nach
+Redundanz aus und sind es nicht:
+
+**1. Alle Energy-Charts-Calls laufen über `scripts/fetch-energy-charts.sh` (#435).**
+```yaml
+- name: Try fetching from Energy Charts API (preferred source)
+  id: energy_charts
+  continue-on-error: true
+  run: scripts/fetch-energy-charts.sh de public/data
+```
+Aufruf: `scripts/fetch-energy-charts.sh <country-code> <output-dir>`. Das Skript
+schreibt `<output-dir>/price_raw.json` und `<output-dir>/renewable_raw.json` —
+genau die Pfade, die die nachgelagerten `node -e`-Process-Steps lesen.
+
+Vertrag des Skripts:
+- **Exponentielles Backoff 5 s / 15 s / 45 s** statt des früheren fixen
+  `--retry-delay 5`. Drei Versuche im 5-s-Abstand laufen gegen ein Rate-Limit,
+  das minutenlang hält, wirkungslos ins Leere.
+- **`Retry-After` wird respektiert** (bei 429/503, gedeckelt auf 60 s). Das ist
+  der eigentliche Fix für den Vorfall vom 2026-09-02.
+- **Retry-würdig:** HTTP 429/5xx sowie curl-Exit 7, 28, 35, 52, 55, 56. Alles
+  andere (DNS, URL-Fehler) bricht sofort ab — ein Retry heilt es nicht.
+- **Payload-Validierung** per `jq` nach jedem erfolgreichen Download; schlägt sie
+  fehl, gilt der Versuch als fehlgeschlagen (siehe „stummer Ausfall" unten).
+- **Semantik unverändert:** `price` required (Exit ≠ 0), `ren_share_forecast`
+  non-fatal. `success=true` nach `$GITHUB_OUTPUT`, sobald `price` valide ist.
+- Env-Overrides nur für Tests: `ENERGY_CHARTS_API_BASE`, `FETCH_MAX_ATTEMPTS`,
+  `FETCH_BACKOFF_DELAYS`, `FETCH_RETRY_AFTER_CAP`.
+
+> ⚠️ **Die Retry-Logik nicht wieder in die einzelnen Länder-Blöcke zurückziehen.**
+> Vor #435 stand sie als `CURL_OPTS` siebenfach dupliziert im Workflow. `CURL_OPTS`
+> existiert nur noch für den **aWATTar**-Call und darf nicht wieder auf die
+> Energy-Charts-Blöcke ausgedehnt werden.
+
+**1b. 6 Cron-Slots mit datenbasiertem Gate (#435).**
+`- cron: '0 3,6,9,13,16,19 * * *'`. Nur **03 und 13 UTC laufen unbedingt**
+(Nacht-Update / primärer Day-Ahead-Slot); 06, 09, 16 und 19 UTC gehen durch den
+`gate`-Job und starten den ~90 s teuren `update`-Job nur, wenn sie etwas
+verbessern würden. Das Gate fetcht dazu zwei billige DE-Calls (dasselbe Skript,
+in `$RUNNER_TEMP`) und setzt `run-fetch=true`, wenn **eines** zutrifft:
+1. `max(unix_seconds)` der API **>** `max(start_timestamp)/1000` der committeten
+   Datei (neue Preis-Abdeckung), **oder**
+2. Zahl der Punkte mit `ren_share != null` **für heute (Europe/Berlin)** aus der
+   API **>** derselbe Wert aus der Datei (Erneuerbaren-Lücke schließt sich).
+
+Fehlt die Probe-Datei, entscheidet das Gate **fail open** (`run-fetch=true`) —
+der `update`-Job kann mit eigenen Retries und aWATTar-Fallback mehr ausrichten.
+
+> **Ersetzt die Commit-Message-Heuristik aus #406**
+> (`grep -Eq "@ ${TODAY}T(1[3-9]) UTC"`). Die prüfte nur, *ob* committet wurde,
+> nicht *ob Daten fehlen* — im 429-Fall vom 2026-09-02 hätte sie den Fallback
+> fälschlich übersprungen, weil ein Commit (mit Preisen, ohne Erneuerbare)
+> existierte. Nicht wieder einführen.
+
+**1c. Der `Data health check`-Step darf den Run rot färben (#435, schließt #417).**
+Letzter Step im `update`-Job, `if: always()`, also **nach** dem Commit — die
+Daten werden in jedem Fall veröffentlicht. Hat DE **0 Punkte mit
+`renewable_share != null` für heute (Europe/Berlin)**, setzt er `::error::` und
+`exit 1`; GitHub verschickt daraufhin die Standard-„workflow run failed"-Mail.
+Das ist der Benachrichtigungsweg aus #417 — ohne Webhook, Secret oder Kosten.
+
+Nicht-fatal (nur `::warning::`, Run bleibt grün): `source == "awattar"` für DE
+und jedes **Beta-Land** mit 0 Erneuerbaren-Punkten.
+
+> ⚠️ **Ein roter Run bei Upstream-Ausfall ist Absicht, kein Defekt.** An solchen
+> Tagen steht ein roter Eintrag in der Historie, obwohl die Preisdaten korrekt
+> committet wurden. Das ist der bewusst akzeptierte Preis für die
+> Benachrichtigung — nicht „wegreparieren".
+
+**2. `ren_share_forecast` ist in ALLEN Ländern non-fatal (`|| true`), `price` bleibt required.**
+Vorher hatten DE und NL `|| exit 1`. Ein Ausfall dieses **einen** Endpunkts
+verwarf damit auch die validen Day-Ahead-Preise und zwang den ganzen Block in
+den aWATTar-Fallback. Wer das „der Strenge halber" zurückdreht, reaktiviert
+genau diesen Fehler.
+
+**3. Commit-Erkennung zählt zusätzlich die Erneuerbaren-Abdeckung.**
+```bash
+if [ "$OLD_TS" != "$NEW_TS" ] || [ "$NEW_REN" -gt "$OLD_REN" ]; then
+```
+Der reine Zeitstempel-Vergleich reichte nicht: Nach einem aWATTar-Fallback
+reicht der Datensatz bereits bis zum Ende des Folgetages, ein späterer
+erfolgreicher Energy-Charts-Lauf liefert denselben `max(start_timestamp)` und
+wurde samt seiner frisch geholten Erneuerbaren-Werte verworfen.
+> Bewusst `-gt` (Zunahme), nicht `!=`: Ein Rückgang bedeutet einen Fallback ohne
+> Erneuerbaren-Daten und darf vorhandene Werte nicht überschreiben. Ein Wechsel
+> von `source` allein ist aus demselben Grund **kein** Auslöser —
+> `energy-charts → awattar` wäre eine Verschlechterung.
+
+#### Zwei Fallstricke der Datenquelle
+
+**Der aWATTar-Fallback liefert per Design KEINE Erneuerbaren-Daten.**
+`interpolateAwattarData()` setzt `renewable_share: null` — hart, für jeden
+Punkt. Symptom in der App: Kachel „Erneuerbare jetzt" zeigt `--` und
+„Tages-Ø 0.0 %", während die Preise völlig normal aussehen. Wer diesen
+Symptomen begegnet, prüft als Erstes `jq -r .source public/data/marketdata.json`.
+
+**`ren_share_forecast` kann HTTP 200 mit leeren Arrays liefern.**
+```json
+{"unix_seconds":[],"ren_share":[],...,"substitute":false,"deprecated":false}
+```
+Das ist der **stumme** Ausfall und der gefährlichere: `curl -f` meldet Erfolg,
+`JSON.parse` läuft durch, und der Guard `if (renewable.unix_seconds &&
+renewable.ren_share)` **passiert sogar** — `[]` ist in JS truthy. Iteriert wird
+über ein leeres Array, alle Werte werden `null`, der Workflow endet grün.
+Beobachtet für DE am 2026-08-31, während `?country=at` gleichzeitig normale
+Daten lieferte — der Ausfall ist länderspezifisch.
+
+> **Guard-Ort seit #435:** `scripts/fetch-energy-charts.sh` validiert die Payload
+> direkt nach dem Download —
+> `jq -e '(.unix_seconds|length) > 0 and (.ren_share|length) > 0'` (für `price`
+> analog mit `.price`). Schlägt das fehl, zählt der Versuch als Fehlschlag und
+> wird wiederholt; nach dem letzten Versuch wird die Datei **gelöscht**, damit
+> der `fs.existsSync(...)`-Guard im Process-Step greift, statt stillschweigend
+> `null`-Werte zu schreiben. Retries sind hier entgegen der früheren Annahme
+> **nicht** sinnlos: der Endpunkt erholt sich erfahrungsgemäß.
+> **Offener Bug (#425, `priority: high`):** Nur DE merged über
+> `scripts/merge-market-data.js` mit der bestehenden Datei. Die sechs anderen
+> Länder überschreiben ihre `marketdata.json` vollständig — ein einziger
+> ausbleibender `ren_share_forecast` löscht dort die **gesamte**
+> Erneuerbaren-Historie. Am 2026-08-31 standen NL/CH/FR/BE/DK auf 0 Werten,
+> DE dank Merge noch auf 651.
+
+#### Diagnose-Reihenfolge bei „Website zeigt alte Daten"
+
+Ein grüner Workflow bedeutet **nicht**, dass Daten ankamen — die Fallbacks
+sorgen dafür, dass fast nichts hart fehlschlägt. In dieser Reihenfolge prüfen:
+
+1. `jq -r .source public/data/marketdata.json` — `awattar` heißt: Energy Charts
+   ist ausgefallen, keine Erneuerbaren-Daten.
+2. Abdeckung statt Fehler prüfen: Zahl der Punkte mit `renewable_share != null`
+   und wie weit sie reichen — nicht nur `max(start_timestamp)`.
+3. Im Job-Log die Zeile `- Renewable points: N` je Land; `0` bei grünem Lauf ist
+   der stumme Fall oben.
+4. Erst dann Workflow-Logs auf `curl:`-Fehler durchsuchen.
+
+### Deploy (Unified): transienter TLS-Fehler in `actions/deploy-pages@v4`
+Vereinzelt schlägt `Creating Pages deployment` mit `HttpError: self-signed certificate` fehl — **auf beiden** Versuchen (Erstversuch + der eingebaute Retry aus PR #378), da beide denselben Infra-Hänger auf GitHubs Seite treffen. Kein Code-/Config-Fehler im Repo: Build-Schritte (Checkout bis Artifact-Upload) laufen sauber durch, nur der `deploy-pages`-API-Call selbst scheitert. Beobachtet am 2026-08-12 bei einem Push auf `testing`, während zeitgleich derselbe Commit auf `main` erfolgreich deployte — bestätigt den Infra-Charakter. Abhilfe: manuellen `workflow_dispatch`-Lauf anstoßen (GitHub-UI → Run workflow); `rerun_failed_jobs` über die API schlägt mit **403 „Resource not accessible by integration"** fehl (Token-Scope reicht dafür nicht, siehe `mcp__github__actions_run_trigger`). Ein manueller Dispatch ist ein **neuer** Run, kein Rerun des fehlgeschlagenen — der rote Eintrag bleibt in der Historie stehen, das ist kein weiteres Problem.
 
 ### Deploy (Unified): transienter TLS-Fehler in `actions/deploy-pages@v4`
 Vereinzelt schlägt `Creating Pages deployment` mit `HttpError: self-signed certificate` fehl — **auf beiden** Versuchen (Erstversuch + der eingebaute Retry aus PR #378), da beide denselben Infra-Hänger auf GitHubs Seite treffen. Kein Code-/Config-Fehler im Repo: Build-Schritte (Checkout bis Artifact-Upload) laufen sauber durch, nur der `deploy-pages`-API-Call selbst scheitert. Beobachtet am 2026-08-12 bei einem Push auf `testing`, während zeitgleich derselbe Commit auf `main` erfolgreich deployte — bestätigt den Infra-Charakter. Abhilfe: manuellen `workflow_dispatch`-Lauf anstoßen (GitHub-UI → Run workflow); `rerun_failed_jobs` über die API schlägt mit **403 „Resource not accessible by integration"** fehl (Token-Scope reicht dafür nicht, siehe `mcp__github__actions_run_trigger`). Ein manueller Dispatch ist ein **neuer** Run, kein Rerun des fehlgeschlagenen — der rote Eintrag bleibt in der Historie stehen, das ist kein weiteres Problem.
