@@ -54,7 +54,26 @@ Energy Price Germany - A visualization app for German electricity market prices 
    git show origin/main:.github/workflows/fetch.yml    | grep -c fetch-energy-charts.sh
    git show origin/testing:.github/workflows/fetch.yml | grep -c fetch-energy-charts.sh
    ```
-   Bei Konflikten in `fetch.yml`: **immer die `main`-Seite nehmen** — dort ist der Inhalt eine echte Obermenge.
+   Bei Konflikten in `fetch.yml`: **nicht pauschal eine Seite nehmen, sondern messen, welche die Obermenge ist.** Bis zum Release vom 2026-09-02 war das `main`; seither ist es `testing`. Marker zählen statt raten:
+   ```bash
+   for m in merge-history.js NEW_REN OLD_REN merge-market-data.js fetch-energy-charts.sh "Data health check"; do
+     printf '%-24s main=%s testing=%s\n' "$m" \
+       "$(git show origin/main:.github/workflows/fetch.yml    | grep -c "$m")" \
+       "$(git show origin/testing:.github/workflows/fetch.yml | grep -c "$m")"
+   done
+   ```
+   Die Seite, die bei **allen** Markern ≥ der anderen liegt, ist die Obermenge. Liegt jede Seite bei irgendeinem Marker vorn, ist es ein echter inhaltlicher Konflikt — dann Hand anlegen, nicht `--ours`/`--theirs`.
+
+6. **Squash-only: `main` wird NIE Vorfahre von `testing`.** Das Repo erlaubte lange nur „Squash and merge". Ein Squash verwirft den zweiten Parent, deshalb bleibt `git merge-base --is-ancestor origin/main origin/testing` dauerhaft negativ — auch nach einem erfolgreichen Sync-PR. Folge: Git sieht Dateien, die beide Seiten angefasst haben (`fetch.yml`, `CHANGELOG.md`, `CLAUDE.md`), als beidseitig unabhängig geändert und meldet **Phantom-Konflikte**, obwohl eine Seite die reine Obermenge ist.
+
+   **Ein Sync-PR `main → testing` muss deshalb als „Create a merge commit" gemergt werden, nicht als Squash.** Am 2026-09-02 scheiterte PR #438 genau daran: gesquasht, Ancestry weg, Release-PR weiter blockiert. Erst PR #439 als echter Merge-Commit löste es.
+   ```bash
+   git log --format='%h parents=%p' -1 origin/testing   # zwei Parents = Sync ist angekommen
+   git merge-base --is-ancestor origin/main origin/testing && echo OK
+   ```
+   Erlaubt „Allow merge commits" nicht (Settings → General → Pull Requests), schlägt der Merge mit **405 „Merge commits are not allowed on this repository"** fehl — dann zuerst die Checkbox setzen.
+
+   > **Symptom, an dem man es zuerst merkt:** Der Release-PR steht auf `mergeable_state: "dirty"` und bekommt **gar keine Checks** (`total_count: 0`). Das ist kein CI-Defekt: GitHub startet für einen konfliktbehafteten PR keine `pull_request`-Workflows, weil es keinen mergebaren Ref zum Auschecken gibt. Zweites Symptom: der Release-Diff zeigt Hunderte Dateien (am 2026-09-02: **339** statt der tatsächlichen **9**).
 
 **Workflow:**
 ```
@@ -111,13 +130,16 @@ Merge: `gh pr merge <nr> --squash --admin` (kein `--delete-branch` für langlebi
 
 > Nur mit expliziter schriftlicher Freigabe — dies ist der bewusste manuelle Release-Schritt, nicht mit dem `review-gate` zu verwechseln.
 
-> ⚠️ **Falle „Automatically delete head branches" + Release-PR:** Ist diese Repo-Einstellung aktiv (Settings → General → Pull Requests), löscht GitHub nach dem Merge automatisch den **Head**-Branch des PRs. Bei einem Release-PR `testing → main` ist `testing` selbst der Head-Branch — der Merge löscht also `testing` mit, nicht nur einen Feature-Branch. **Bereits viermal passiert:** 2026-08-12 (PR #404), zweimal am 2026-08-30 (PR #421 und #424) und erneut am 2026-08-31 (PR #427, Release für Fix #425). Nach jedem Release-Merge prüfen, ob `testing` noch existiert (`git ls-remote --heads origin | grep testing`); falls nicht, sofort neu anlegen (`mcp__github__create_branch`, `from_branch: main` — Inhalt ist nach einem sauberen Merge identisch, vor dem Anlegen mit `git diff <letzter-testing-SHA> origin/main` verifizierbar).
+> ⚠️ **Falle „Automatically delete head branches" + Release-PR:** Ist diese Repo-Einstellung aktiv (Settings → General → Pull Requests), löscht GitHub nach dem Merge automatisch den **Head**-Branch des PRs. Bei einem Release-PR `testing → main` ist `testing` selbst der Head-Branch — der Merge löscht also `testing` mit, nicht nur einen Feature-Branch. **Viermal passiert:** 2026-08-12 (PR #404), zweimal am 2026-08-30 (PR #421 und #424) und erneut am 2026-08-31 (PR #427, Release für Fix #425). Die Einstellung ist weiterhin **aktiv** (verifiziert am 2026-09-02: `claude/issue-435-hq1agk` war nach dem Merge von PR #438 weg) — der Schutz kommt allein aus dem Ruleset unten.
 
-> **Dauerhafte Abhilfe — Tracking in #428:** Branch-Protection-Ruleset für
-> `testing` mit **„Restrict deletions"**. Lässt sich **nicht** über die
-> verfügbaren GitHub-MCP-Tools automatisieren (keine Ruleset-/Settings-API) und
-> muss manuell im Repo-Settings-UI angelegt werden. Solange das offen ist,
-> wiederholt sich der Vorfall bei **jedem** Release.
+> ✅ **Gelöst seit 2026-08-31 (#428) — beim Release am 2026-09-02 erstmals im Ernstfall bestätigt:** `testing` überlebte den Release-Merge von PR #437.
+>
+> **Die eigentliche Ursache war nicht ein fehlendes Ruleset.** `protect-testing` existierte samt `deletion`-Regel bereits seit dem 2026-08-04 — wirkungslos, weil ein `bypass_actor` für die Repository-Admin-Rolle mit `bypass_mode: "always"` gesetzt war. Admin-Merges (und die automatische Head-Branch-Löschung) umgingen die Regel **still**. Fix war das Entfernen des Bypass (`bypass_actors: []`, `current_user_can_bypass: "never"`).
+>
+> **Lehre für jede Branch-Protection-Frage:** Eine aktive Regel beweist nichts. Immer zusätzlich die Bypass-Actors prüfen — eine Regel mit `bypass_mode: always` für die eigene Rolle ist Dekoration. Der belastbare Test ist ein echter Versuch, kein Blick ins UI:
+> ```bash
+> git push origin --delete testing     # muss GH013 „Cannot delete this branch" liefern
+> ```
 
 > **Symptom, an dem man es zuerst merkt:** `git fetch origin testing` scheitert
 > mit `fatal: couldn't find remote ref testing`, während ein `git checkout -B <branch> origin/testing`
@@ -126,10 +148,20 @@ Merge: `gh pr merge <nr> --squash --admin` (kein `--delete-branch` für langlebi
 > Branch auf einem Stand auf, den es remote nicht mehr gibt.
 
 ### Branches löschen aus Remote-Execution-Environment
-`git push origin --delete <branch>` schlägt mit **HTTP 403** fehl (gleiche Ursache wie normaler Push, siehe unten) — **aber mit irreführendem Output:** Exit-Code ist trotzdem `0`, letzte Zeile lautet „Everything up-to-date". Nicht als Erfolg werten. Es gibt außerdem **kein** GitHub-MCP-Tool zum Löschen einer Branch-Ref (nur `create_branch`, kein `delete_branch`/`delete_ref`). Branch-Löschung ist aus dieser Umgebung technisch nicht möglich — stattdessen den fertigen `git push origin --delete ...`-Befehl für die lokale Ausführung ausgeben. Vor dem Vorschlagen prüfen, ob ein Branch wirklich gemergt ist: **nicht** über `git merge-base --is-ancestor` (liefert bei Squash-Merges falsch-negativ), sondern über die PR-Historie und dort das Feld `merged_at` (nicht `merged` — das steht in MCP-Antworten öfter fälschlich auf `false`, siehe project-templates#101).
+`git push origin --delete <branch>` schlägt fehl — **aber mit irreführendem Output:** Exit-Code ist trotzdem `0`, letzte Zeile lautet „Everything up-to-date". Nicht als Erfolg werten. (Bei `testing`/`main` ist die Ursache das Ruleset, siehe „Git Push aus Remote-Execution-Environment" unten — nicht ein fehlender SSH-Key.) Es gibt außerdem **kein** GitHub-MCP-Tool zum Löschen einer Branch-Ref (nur `create_branch`, kein `delete_branch`/`delete_ref`). Branch-Löschung ist aus dieser Umgebung technisch nicht möglich — stattdessen den fertigen `git push origin --delete ...`-Befehl für die lokale Ausführung ausgeben. Vor dem Vorschlagen prüfen, ob ein Branch wirklich gemergt ist: **nicht** über `git merge-base --is-ancestor` (liefert bei Squash-Merges falsch-negativ), sondern über die PR-Historie und dort das Feld `merged_at` (nicht `merged` — das steht in MCP-Antworten öfter fälschlich auf `false`, siehe project-templates#101).
 
 ### Git Push aus Remote-Execution-Environment
-Direktes `git push` auf `testing`/`main` schlägt mit **403** fehl (kein SSH-Key / eingeschränkte Rechte). Stattdessen GitHub MCP API nutzen:
+
+**Push auf Feature-Branches funktioniert normal** — `git push -u origin HEAD:<branch>` geht durch. Frühere Fassungen dieses Abschnitts behaupteten pauschal 403 „kein SSH-Key"; das ist **falsch** (verifiziert am 2026-09-02).
+
+Auf `testing`/`main` wird der Push abgelehnt — aber vom **Ruleset**, nicht von der Authentifizierung:
+```
+remote: error: GH013: Repository rule violations found for refs/heads/testing.
+remote: - Changes must be made through a pull request.
+```
+Der Unterschied ist praktisch relevant: **GH013 heißt „nimm den PR-Weg"**, nicht „nimm die API". Die MCP-API würde dieselbe Regel treffen. Ein echtes 403 („Resource not accessible by integration") kommt dagegen von zu engen Token-Scopes und betrifft in dieser Umgebung u. a. `mcp__github__actions_run_trigger` (workflow_dispatch, `rerun_failed_jobs`) — solche Läufe muss der Mensch im UI anstoßen.
+
+Für einzelne Dateien direkt auf einem Branch (wo erlaubt) gibt es zusätzlich:
 ```
 mcp__github__create_or_update_file  # für einzelne Dateien (SHA des Blobs erforderlich)
 mcp__github__push_files             # für mehrere Dateien
@@ -323,8 +355,23 @@ sorgen dafür, dass fast nichts hart fehlschlägt. In dieser Reihenfolge prüfen
    der stumme Fall oben.
 4. Erst dann Workflow-Logs auf `curl:`-Fehler durchsuchen.
 
-### Deploy (Unified): transienter TLS-Fehler in `actions/deploy-pages@v4`
-Vereinzelt schlägt `Creating Pages deployment` mit `HttpError: self-signed certificate` fehl — **auf beiden** Versuchen (Erstversuch + der eingebaute Retry aus PR #378), da beide denselben Infra-Hänger auf GitHubs Seite treffen. Kein Code-/Config-Fehler im Repo: Build-Schritte (Checkout bis Artifact-Upload) laufen sauber durch, nur der `deploy-pages`-API-Call selbst scheitert. Beobachtet am 2026-08-12 bei einem Push auf `testing`, während zeitgleich derselbe Commit auf `main` erfolgreich deployte — bestätigt den Infra-Charakter. Abhilfe: manuellen `workflow_dispatch`-Lauf anstoßen (GitHub-UI → Run workflow); `rerun_failed_jobs` über die API schlägt mit **403 „Resource not accessible by integration"** fehl (Token-Scope reicht dafür nicht, siehe `mcp__github__actions_run_trigger`). Ein manueller Dispatch ist ein **neuer** Run, kein Rerun des fehlgeschlagenen — der rote Eintrag bleibt in der Historie stehen, das ist kein weiteres Problem.
+> ⚠️ **Eine sinkende Gesamtzahl der Erneuerbaren-Punkte ist NICHT automatisch
+> Datenverlust.** `marketdata.json` ist ein **rollierendes Fenster fester Größe**
+> (aktuell 767 Punkte): kommen vorne neue dazu, fallen hinten alte heraus. Am
+> 2026-09-02 fiel die Zahl bei einem Lauf von 515 auf 503 — Start *und* Ende
+> waren dabei um exakt 3 h gewandert, die Gesamtzahl blieb bei 767. Völlig
+> normal. Vor jeder Verlust-Diagnose beide Fenstergrenzen vergleichen, nicht nur
+> die Punktezahl:
+> ```bash
+> jq -r '"von: \([.data[].start_timestamp]|min|./1000|todate)  bis: \([.data[].start_timestamp]|max|./1000|todate)  ren: \([.data[]|select(.renewable_share!=null)]|length)  gesamt: \(.data|length)"' public/data/marketdata.json
+> ```
+> Echter Verlust liegt nur vor, wenn die Punkte **innerhalb** des unveränderten
+> Fensters weniger werden.
+
+> **Die maßgebliche Kennzahl ist „Erneuerbaren-Punkte **für heute** (Europe/Berlin)",
+> nicht die Gesamtzahl.** Genau die prüft der `Data health check`, und genau die
+> war beim Vorfall am 2026-09-02 `0`, während die Gesamtzahl bei über 500 lag.
+> Eine gesunde Gesamtzahl sagt über den sichtbaren Ausfall in der App nichts aus.
 
 ### Deploy (Unified): transienter TLS-Fehler in `actions/deploy-pages@v4`
 Vereinzelt schlägt `Creating Pages deployment` mit `HttpError: self-signed certificate` fehl — **auf beiden** Versuchen (Erstversuch + der eingebaute Retry aus PR #378), da beide denselben Infra-Hänger auf GitHubs Seite treffen. Kein Code-/Config-Fehler im Repo: Build-Schritte (Checkout bis Artifact-Upload) laufen sauber durch, nur der `deploy-pages`-API-Call selbst scheitert. Beobachtet am 2026-08-12 bei einem Push auf `testing`, während zeitgleich derselbe Commit auf `main` erfolgreich deployte — bestätigt den Infra-Charakter. Abhilfe: manuellen `workflow_dispatch`-Lauf anstoßen (GitHub-UI → Run workflow); `rerun_failed_jobs` über die API schlägt mit **403 „Resource not accessible by integration"** fehl (Token-Scope reicht dafür nicht, siehe `mcp__github__actions_run_trigger`). Ein manueller Dispatch ist ein **neuer** Run, kein Rerun des fehlgeschlagenen — der rote Eintrag bleibt in der Historie stehen, das ist kein weiteres Problem.
