@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Data health check (Issue #435, schließt #417; Quoting-Fix #438)
+ * Data health check (Issue #435, schließt #417; Quoting-Fix #445)
  *
  * Prüft nach dem Commit, ob die frisch veröffentlichten Marktdaten für HEUTE
  * (Europe/Berlin) Erneuerbaren-Werte enthalten:

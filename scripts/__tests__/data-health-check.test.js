@@ -1,5 +1,5 @@
 /**
- * Tests für scripts/data-health-check.js (Issue #438).
+ * Tests für scripts/data-health-check.js (Issue #445).
  *
  * Der Health-Check lief zuvor als `node -e '…'`-Inline-Block in fetch.yml und
  * brach in JEDEM Run mit `node: bad option: --` ab, weil ein Apostroph im

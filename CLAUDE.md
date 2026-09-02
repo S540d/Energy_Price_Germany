@@ -141,7 +141,7 @@ Merge: `gh pr merge <nr> --squash --admin` (kein `--delete-branch` für langlebi
 > git push origin --delete testing     # muss GH013 „Cannot delete this branch" liefern
 > ```
 
-> 🔴 **Regression aus genau diesem Fix — `fetch.yml` kann nicht mehr auf `main` committen (Stand 2026-09-02, offen).** Mit dem Entfernen der Bypass-Actors verlor auch der `github-actions[bot]` seinen Bypass. Der `Commit and push`-Step des Fetch-Workflows scheitert seither an derselben Regel:
+> 🔴 **Regression aus genau diesem Fix — `fetch.yml` kann nicht mehr auf `main` committen (#446, Stand 2026-09-02, offen).** Mit dem Entfernen der Bypass-Actors verlor auch der `github-actions[bot]` seinen Bypass. Der `Commit and push`-Step des Fetch-Workflows scheitert seither an derselben Regel:
 > ```
 > remote: error: GH013: Repository rule violations found for refs/heads/main.
 > remote: - Changes must be made through a pull request.
@@ -285,7 +285,7 @@ der `update`-Job kann mit eigenen Retries und aWATTar-Fallback mehr ausrichten.
 > fälschlich übersprungen, weil ein Commit (mit Preisen, ohne Erneuerbare)
 > existierte. Nicht wieder einführen.
 
-**1c. Der `Data health check` liegt in `scripts/data-health-check.js` (#435/#438, schließt #417).**
+**1c. Der `Data health check` liegt in `scripts/data-health-check.js` (#435/#445, schließt #417).**
 Letzter Step im `update`-Job, `if: always()`, also **nach** dem Commit — die
 Daten werden in jedem Fall veröffentlicht. Hat DE **0 Punkte mit
 `renewable_share != null` für heute (Europe/Berlin)**, setzt das Skript
@@ -303,7 +303,7 @@ und jedes **Beta-Land** mit 0 Erneuerbaren-Punkten.
 > Benachrichtigung — nicht „wegreparieren".
 
 > ⚠️ **Kein Apostroph in `node -e '…'`-Inline-Blöcken — und lieber gar keine
-> mehrzeiligen `node -e`-Blöcke mehr (#438).** Der Health-Check war ursprünglich
+> mehrzeiligen `node -e`-Blöcke mehr (#445).** Der Health-Check war ursprünglich
 > inline geschrieben und enthielt im deutschen Fehlertext
 > `die App zeigt 'Erneuerbare: --'`. Die einfachen Quotes schlossen den
 > `node -e '…'`-String vorzeitig, `node` bekam `--` als Option und starb mit
