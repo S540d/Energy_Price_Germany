@@ -101,4 +101,18 @@ if [ "$GITIGNORE_PROBLEMS" -ne 0 ]; then
   exit 1
 fi
 
+# ============================================================================
+# WORKFLOW GUARD (Issue #445): nur wenn Workflows gestaged sind
+# ============================================================================
+# Faengt die Fehlerklasse ab, die actionlint/shellcheck NICHT sehen: ein
+# Apostroph im Body eines `node -e '...'`-Blocks ist fuer die Shell syntaktisch
+# korrekt, aber node bekommt die Folgewoerter als Optionen und bricht ab.
+if git diff --cached --name-only | grep -q '^\.github/workflows/'; then
+  echo "Checking workflow files..."
+  if ! node scripts/lint-workflows.js; then
+    echo "Fix the workflow errors above before committing."
+    exit 1
+  fi
+fi
+
 echo "✅ Pre-commit checks passed!"
