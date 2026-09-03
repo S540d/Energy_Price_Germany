@@ -54,7 +54,26 @@ Energy Price Germany - A visualization app for German electricity market prices 
    git show origin/main:.github/workflows/fetch.yml    | grep -c fetch-energy-charts.sh
    git show origin/testing:.github/workflows/fetch.yml | grep -c fetch-energy-charts.sh
    ```
-   Bei Konflikten in `fetch.yml`: **immer die `main`-Seite nehmen** — dort ist der Inhalt eine echte Obermenge.
+   Bei Konflikten in `fetch.yml`: **nicht pauschal eine Seite nehmen, sondern messen, welche die Obermenge ist.** Bis zum Release vom 2026-09-02 war das `main`; seither ist es `testing`. Marker zählen statt raten:
+   ```bash
+   for m in merge-history.js NEW_REN OLD_REN merge-market-data.js fetch-energy-charts.sh "Data health check"; do
+     printf '%-24s main=%s testing=%s\n' "$m" \
+       "$(git show origin/main:.github/workflows/fetch.yml    | grep -c "$m")" \
+       "$(git show origin/testing:.github/workflows/fetch.yml | grep -c "$m")"
+   done
+   ```
+   Die Seite, die bei **allen** Markern ≥ der anderen liegt, ist die Obermenge. Liegt jede Seite bei irgendeinem Marker vorn, ist es ein echter inhaltlicher Konflikt — dann Hand anlegen, nicht `--ours`/`--theirs`.
+
+6. **Squash-only: `main` wird NIE Vorfahre von `testing`.** Das Repo erlaubte lange nur „Squash and merge". Ein Squash verwirft den zweiten Parent, deshalb bleibt `git merge-base --is-ancestor origin/main origin/testing` dauerhaft negativ — auch nach einem erfolgreichen Sync-PR. Folge: Git sieht Dateien, die beide Seiten angefasst haben (`fetch.yml`, `CHANGELOG.md`, `CLAUDE.md`), als beidseitig unabhängig geändert und meldet **Phantom-Konflikte**, obwohl eine Seite die reine Obermenge ist.
+
+   **Ein Sync-PR `main → testing` muss deshalb als „Create a merge commit" gemergt werden, nicht als Squash.** Am 2026-09-02 scheiterte PR #438 genau daran: gesquasht, Ancestry weg, Release-PR weiter blockiert. Erst PR #439 als echter Merge-Commit löste es.
+   ```bash
+   git log --format='%h parents=%p' -1 origin/testing   # zwei Parents = Sync ist angekommen
+   git merge-base --is-ancestor origin/main origin/testing && echo OK
+   ```
+   Erlaubt „Allow merge commits" nicht (Settings → General → Pull Requests), schlägt der Merge mit **405 „Merge commits are not allowed on this repository"** fehl — dann zuerst die Checkbox setzen.
+
+   > **Symptom, an dem man es zuerst merkt:** Der Release-PR steht auf `mergeable_state: "dirty"` und bekommt **gar keine Checks** (`total_count: 0`). Das ist kein CI-Defekt: GitHub startet für einen konfliktbehafteten PR keine `pull_request`-Workflows, weil es keinen mergebaren Ref zum Auschecken gibt. Zweites Symptom: der Release-Diff zeigt Hunderte Dateien (am 2026-09-02: **339** statt der tatsächlichen **9**).
 
 **Workflow:**
 ```
@@ -111,13 +130,33 @@ Merge: `gh pr merge <nr> --squash --admin` (kein `--delete-branch` für langlebi
 
 > Nur mit expliziter schriftlicher Freigabe — dies ist der bewusste manuelle Release-Schritt, nicht mit dem `review-gate` zu verwechseln.
 
-> ⚠️ **Falle „Automatically delete head branches" + Release-PR:** Ist diese Repo-Einstellung aktiv (Settings → General → Pull Requests), löscht GitHub nach dem Merge automatisch den **Head**-Branch des PRs. Bei einem Release-PR `testing → main` ist `testing` selbst der Head-Branch — der Merge löscht also `testing` mit, nicht nur einen Feature-Branch. **Bereits viermal passiert:** 2026-08-12 (PR #404), zweimal am 2026-08-30 (PR #421 und #424) und erneut am 2026-08-31 (PR #427, Release für Fix #425). Nach jedem Release-Merge prüfen, ob `testing` noch existiert (`git ls-remote --heads origin | grep testing`); falls nicht, sofort neu anlegen (`mcp__github__create_branch`, `from_branch: main` — Inhalt ist nach einem sauberen Merge identisch, vor dem Anlegen mit `git diff <letzter-testing-SHA> origin/main` verifizierbar).
+> ⚠️ **Falle „Automatically delete head branches" + Release-PR:** Ist diese Repo-Einstellung aktiv (Settings → General → Pull Requests), löscht GitHub nach dem Merge automatisch den **Head**-Branch des PRs. Bei einem Release-PR `testing → main` ist `testing` selbst der Head-Branch — der Merge löscht also `testing` mit, nicht nur einen Feature-Branch. **Viermal passiert:** 2026-08-12 (PR #404), zweimal am 2026-08-30 (PR #421 und #424) und erneut am 2026-08-31 (PR #427, Release für Fix #425). Die Einstellung ist weiterhin **aktiv** (verifiziert am 2026-09-02: `claude/issue-435-hq1agk` war nach dem Merge von PR #438 weg) — der Schutz kommt allein aus dem Ruleset unten.
 
-> **Dauerhafte Abhilfe — Tracking in #428:** Branch-Protection-Ruleset für
-> `testing` mit **„Restrict deletions"**. Lässt sich **nicht** über die
-> verfügbaren GitHub-MCP-Tools automatisieren (keine Ruleset-/Settings-API) und
-> muss manuell im Repo-Settings-UI angelegt werden. Solange das offen ist,
-> wiederholt sich der Vorfall bei **jedem** Release.
+> ✅ **Gelöst seit 2026-08-31 (#428) — beim Release am 2026-09-02 erstmals im Ernstfall bestätigt:** `testing` überlebte den Release-Merge von PR #437.
+>
+> **Die eigentliche Ursache war nicht ein fehlendes Ruleset.** `protect-testing` existierte samt `deletion`-Regel bereits seit dem 2026-08-04 — wirkungslos, weil ein `bypass_actor` für die Repository-Admin-Rolle mit `bypass_mode: "always"` gesetzt war. Admin-Merges (und die automatische Head-Branch-Löschung) umgingen die Regel **still**. Fix war das Entfernen des Bypass (`bypass_actors: []`, `current_user_can_bypass: "never"`).
+>
+> **Lehre für jede Branch-Protection-Frage:** Eine aktive Regel beweist nichts. Immer zusätzlich die Bypass-Actors prüfen — eine Regel mit `bypass_mode: always` für die eigene Rolle ist Dekoration. Der belastbare Test ist ein echter Versuch, kein Blick ins UI:
+> ```bash
+> git push origin --delete testing     # muss GH013 „Cannot delete this branch" liefern
+> ```
+
+> 🔴 **Regression aus genau diesem Fix — `fetch.yml` kann nicht mehr auf `main` committen (#446, Stand 2026-09-03, offen).** `fetch.yml` checkt mit `token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}` aus, pusht also bevorzugt mit einem **User-PAT** — gedeckt war der durch den **Repository-admin**-Bypass, und genau den hat der #428-Fix entfernt. Der `Commit and push`-Step scheitert seither an derselben Regel:
+> ```
+> remote: error: GH013: Repository rule violations found for refs/heads/main.
+> remote: - Changes must be made through a pull request.
+> ```
+> Zuerst aufgetreten in Run 33690118651 (22:25 UTC); der Lauf um 16:00 UTC (33652243129) kam noch durch. **Wirkung: Die Datenpipeline steht** — Preise werden geholt und verworfen, die Website friert auf dem letzten Stand ein. Kein Code-Fehler, keine Änderung an `fetch.yml` kann es beheben.
+>
+> ⚠️ **`github-actions[bot]` ist in Rulesets grundsätzlich NICHT als Bypass-Actor wählbar** — GitHub lässt das aus Sicherheitsgründen nicht zu (ein kompromittierter Workflow könnte sonst jede Regel umgehen). Wählbar sind Rollen, Teams, installierte GitHub Apps und **Deploy Keys**. Wer danach im UI sucht, sucht vergeblich.
+>
+> **Behebung (nur manuell im UI möglich, kein MCP-Tool für Rulesets):**
+> - **Weg A (minimal):** Im Ruleset für `main` die Rolle **`Repository admin`** wieder in die *Bypass list* aufnehmen. Das **`protect-testing`**-Ruleset bleibt bypass-frei, damit der Löschschutz aus #428 erhalten bleibt. **Voraussetzung: getrennte Rulesets pro Branch** — deckt ein einziges beide ab, vorher aufteilen, sonst kehrt die gelöschte-`testing`-Falle zurück.
+> - **Weg B (ohne Rollen-Bypass):** Deploy Key mit Write-Access, Private Key als Secret, im Checkout `ssh-key:` statt `token:`, Deploy Key in die Bypass-Liste. Nebeneffekt: Deploy-Key-Pushes lösen Workflows aus, `GITHUB_TOKEN`-Pushes nicht — die Run-Zahlen verschieben sich.
+>
+> **Verifikation, beides muss gelten:** `git push origin --delete testing` liefert weiterhin GH013, **und** ein `workflow_dispatch`-Lauf von `fetch.yml` erzeugt einen `Update marketdata.json`-Commit auf `main`.
+>
+> **Merksatz:** Bypass-Actors sind nicht nur ein Sicherheitsrisiko, sondern auch eine Abhängigkeit. Vor dem Entfernen prüfen, **wer** außer dem Menschen über den Bypass schreibt — in diesem Repo pusht der Fetch-Workflow mit einem User-PAT bis zu 6× täglich direkt auf `main` und hing damit am selben Admin-Bypass.
 
 > **Symptom, an dem man es zuerst merkt:** `git fetch origin testing` scheitert
 > mit `fatal: couldn't find remote ref testing`, während ein `git checkout -B <branch> origin/testing`
@@ -126,10 +165,20 @@ Merge: `gh pr merge <nr> --squash --admin` (kein `--delete-branch` für langlebi
 > Branch auf einem Stand auf, den es remote nicht mehr gibt.
 
 ### Branches löschen aus Remote-Execution-Environment
-`git push origin --delete <branch>` schlägt mit **HTTP 403** fehl (gleiche Ursache wie normaler Push, siehe unten) — **aber mit irreführendem Output:** Exit-Code ist trotzdem `0`, letzte Zeile lautet „Everything up-to-date". Nicht als Erfolg werten. Es gibt außerdem **kein** GitHub-MCP-Tool zum Löschen einer Branch-Ref (nur `create_branch`, kein `delete_branch`/`delete_ref`). Branch-Löschung ist aus dieser Umgebung technisch nicht möglich — stattdessen den fertigen `git push origin --delete ...`-Befehl für die lokale Ausführung ausgeben. Vor dem Vorschlagen prüfen, ob ein Branch wirklich gemergt ist: **nicht** über `git merge-base --is-ancestor` (liefert bei Squash-Merges falsch-negativ), sondern über die PR-Historie und dort das Feld `merged_at` (nicht `merged` — das steht in MCP-Antworten öfter fälschlich auf `false`, siehe project-templates#101).
+`git push origin --delete <branch>` schlägt fehl — **aber mit irreführendem Output:** Exit-Code ist trotzdem `0`, letzte Zeile lautet „Everything up-to-date". Nicht als Erfolg werten. (Bei `testing`/`main` ist die Ursache das Ruleset, siehe „Git Push aus Remote-Execution-Environment" unten — nicht ein fehlender SSH-Key.) Es gibt außerdem **kein** GitHub-MCP-Tool zum Löschen einer Branch-Ref (nur `create_branch`, kein `delete_branch`/`delete_ref`). Branch-Löschung ist aus dieser Umgebung technisch nicht möglich — stattdessen den fertigen `git push origin --delete ...`-Befehl für die lokale Ausführung ausgeben. Vor dem Vorschlagen prüfen, ob ein Branch wirklich gemergt ist: **nicht** über `git merge-base --is-ancestor` (liefert bei Squash-Merges falsch-negativ), sondern über die PR-Historie und dort das Feld `merged_at` (nicht `merged` — das steht in MCP-Antworten öfter fälschlich auf `false`, siehe project-templates#101).
 
 ### Git Push aus Remote-Execution-Environment
-Direktes `git push` auf `testing`/`main` schlägt mit **403** fehl (kein SSH-Key / eingeschränkte Rechte). Stattdessen GitHub MCP API nutzen:
+
+**Push auf Feature-Branches funktioniert normal** — `git push -u origin HEAD:<branch>` geht durch. Frühere Fassungen dieses Abschnitts behaupteten pauschal 403 „kein SSH-Key"; das ist **falsch** (verifiziert am 2026-09-02).
+
+Auf `testing`/`main` wird der Push abgelehnt — aber vom **Ruleset**, nicht von der Authentifizierung:
+```
+remote: error: GH013: Repository rule violations found for refs/heads/testing.
+remote: - Changes must be made through a pull request.
+```
+Der Unterschied ist praktisch relevant: **GH013 heißt „nimm den PR-Weg"**, nicht „nimm die API". Die MCP-API würde dieselbe Regel treffen. Ein echtes 403 („Resource not accessible by integration") kommt dagegen von zu engen Token-Scopes und betrifft in dieser Umgebung u. a. `mcp__github__actions_run_trigger` (workflow_dispatch, `rerun_failed_jobs`) — solche Läufe muss der Mensch im UI anstoßen.
+
+Für einzelne Dateien direkt auf einem Branch (wo erlaubt) gibt es zusätzlich:
 ```
 mcp__github__create_or_update_file  # für einzelne Dateien (SHA des Blobs erforderlich)
 mcp__github__push_files             # für mehrere Dateien
@@ -242,12 +291,14 @@ der `update`-Job kann mit eigenen Retries und aWATTar-Fallback mehr ausrichten.
 > fälschlich übersprungen, weil ein Commit (mit Preisen, ohne Erneuerbare)
 > existierte. Nicht wieder einführen.
 
-**1c. Der `Data health check`-Step darf den Run rot färben (#435, schließt #417).**
+**1c. Der `Data health check` liegt in `scripts/data-health-check.js` (#435/#445, schließt #417).**
 Letzter Step im `update`-Job, `if: always()`, also **nach** dem Commit — die
 Daten werden in jedem Fall veröffentlicht. Hat DE **0 Punkte mit
-`renewable_share != null` für heute (Europe/Berlin)**, setzt er `::error::` und
-`exit 1`; GitHub verschickt daraufhin die Standard-„workflow run failed"-Mail.
-Das ist der Benachrichtigungsweg aus #417 — ohne Webhook, Secret oder Kosten.
+`renewable_share != null` für heute (Europe/Berlin)**, setzt das Skript
+`::error::` und `exit 1`; GitHub verschickt daraufhin die Standard-„workflow run
+failed"-Mail. Das ist der Benachrichtigungsweg aus #417 — ohne Webhook, Secret
+oder Kosten. Der Workflow-Step ist nur noch `run: node scripts/data-health-check.js`.
+Semantik-Absicherung: `scripts/__tests__/data-health-check.test.js`.
 
 Nicht-fatal (nur `::warning::`, Run bleibt grün): `source == "awattar"` für DE
 und jedes **Beta-Land** mit 0 Erneuerbaren-Punkten.
@@ -256,6 +307,22 @@ und jedes **Beta-Land** mit 0 Erneuerbaren-Punkten.
 > Tagen steht ein roter Eintrag in der Historie, obwohl die Preisdaten korrekt
 > committet wurden. Das ist der bewusst akzeptierte Preis für die
 > Benachrichtigung — nicht „wegreparieren".
+
+> ⚠️ **Kein Apostroph in `node -e '…'`-Inline-Blöcken — und lieber gar keine
+> mehrzeiligen `node -e`-Blöcke mehr (#445).** Der Health-Check war ursprünglich
+> inline geschrieben und enthielt im deutschen Fehlertext
+> `die App zeigt 'Erneuerbare: --'`. Die einfachen Quotes schlossen den
+> `node -e '…'`-String vorzeitig, `node` bekam `--` als Option und starb mit
+> **Exit 9, bevor eine einzige Prüfung lief** — der Step färbte damit **jeden**
+> Run rot, unabhängig von der Datenlage, und machte den Alarm aus #417 wertlos
+> (ein Dauer-Rot ist von einem echten Ausfall nicht unterscheidbar).
+> Deutsche Texte in `fetch.yml` sind voller Anführungszeichen; jede nennenswerte
+> Logik gehört deshalb in eine Datei unter `scripts/` (wie
+> `fetch-energy-charts.sh`), nicht in einen Inline-Block. Prüfbefehl für den
+> gesamten Workflow:
+> ```bash
+> grep -n "node -e '" .github/workflows/fetch.yml   # sollte nur Einzeiler ohne ' im Body zeigen
+> ```
 
 **2. `ren_share_forecast` ist in ALLEN Ländern non-fatal (`|| true`), `price` bleibt required.**
 Vorher hatten DE und NL `|| exit 1`. Ein Ausfall dieses **einen** Endpunkts
@@ -323,8 +390,23 @@ sorgen dafür, dass fast nichts hart fehlschlägt. In dieser Reihenfolge prüfen
    der stumme Fall oben.
 4. Erst dann Workflow-Logs auf `curl:`-Fehler durchsuchen.
 
-### Deploy (Unified): transienter TLS-Fehler in `actions/deploy-pages@v4`
-Vereinzelt schlägt `Creating Pages deployment` mit `HttpError: self-signed certificate` fehl — **auf beiden** Versuchen (Erstversuch + der eingebaute Retry aus PR #378), da beide denselben Infra-Hänger auf GitHubs Seite treffen. Kein Code-/Config-Fehler im Repo: Build-Schritte (Checkout bis Artifact-Upload) laufen sauber durch, nur der `deploy-pages`-API-Call selbst scheitert. Beobachtet am 2026-08-12 bei einem Push auf `testing`, während zeitgleich derselbe Commit auf `main` erfolgreich deployte — bestätigt den Infra-Charakter. Abhilfe: manuellen `workflow_dispatch`-Lauf anstoßen (GitHub-UI → Run workflow); `rerun_failed_jobs` über die API schlägt mit **403 „Resource not accessible by integration"** fehl (Token-Scope reicht dafür nicht, siehe `mcp__github__actions_run_trigger`). Ein manueller Dispatch ist ein **neuer** Run, kein Rerun des fehlgeschlagenen — der rote Eintrag bleibt in der Historie stehen, das ist kein weiteres Problem.
+> ⚠️ **Eine sinkende Gesamtzahl der Erneuerbaren-Punkte ist NICHT automatisch
+> Datenverlust.** `marketdata.json` ist ein **rollierendes Fenster fester Größe**
+> (aktuell 767 Punkte): kommen vorne neue dazu, fallen hinten alte heraus. Am
+> 2026-09-02 fiel die Zahl bei einem Lauf von 515 auf 503 — Start *und* Ende
+> waren dabei um exakt 3 h gewandert, die Gesamtzahl blieb bei 767. Völlig
+> normal. Vor jeder Verlust-Diagnose beide Fenstergrenzen vergleichen, nicht nur
+> die Punktezahl:
+> ```bash
+> jq -r '"von: \([.data[].start_timestamp]|min|./1000|todate)  bis: \([.data[].start_timestamp]|max|./1000|todate)  ren: \([.data[]|select(.renewable_share!=null)]|length)  gesamt: \(.data|length)"' public/data/marketdata.json
+> ```
+> Echter Verlust liegt nur vor, wenn die Punkte **innerhalb** des unveränderten
+> Fensters weniger werden.
+
+> **Die maßgebliche Kennzahl ist „Erneuerbaren-Punkte **für heute** (Europe/Berlin)",
+> nicht die Gesamtzahl.** Genau die prüft der `Data health check`, und genau die
+> war beim Vorfall am 2026-09-02 `0`, während die Gesamtzahl bei über 500 lag.
+> Eine gesunde Gesamtzahl sagt über den sichtbaren Ausfall in der App nichts aus.
 
 ### Deploy (Unified): transienter TLS-Fehler in `actions/deploy-pages@v4`
 Vereinzelt schlägt `Creating Pages deployment` mit `HttpError: self-signed certificate` fehl — **auf beiden** Versuchen (Erstversuch + der eingebaute Retry aus PR #378), da beide denselben Infra-Hänger auf GitHubs Seite treffen. Kein Code-/Config-Fehler im Repo: Build-Schritte (Checkout bis Artifact-Upload) laufen sauber durch, nur der `deploy-pages`-API-Call selbst scheitert. Beobachtet am 2026-08-12 bei einem Push auf `testing`, während zeitgleich derselbe Commit auf `main` erfolgreich deployte — bestätigt den Infra-Charakter. Abhilfe: manuellen `workflow_dispatch`-Lauf anstoßen (GitHub-UI → Run workflow); `rerun_failed_jobs` über die API schlägt mit **403 „Resource not accessible by integration"** fehl (Token-Scope reicht dafür nicht, siehe `mcp__github__actions_run_trigger`). Ein manueller Dispatch ist ein **neuer** Run, kein Rerun des fehlgeschlagenen — der rote Eintrag bleibt in der Historie stehen, das ist kein weiteres Problem.
