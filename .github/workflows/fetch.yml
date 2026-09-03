@@ -2305,6 +2305,24 @@ jobs:
             echo "🧹 Cleaned up DK temporary file (no new data)"
           fi
 
+      # ─── Frische-Signal (Retrospektive zu #445/#446) ──────────────────────────
+      #
+      # Beantwortet "läuft die Pipeline gerade?" ohne Log-Lesen. Bewusst an
+      # dieselbe Bedingung wie der Commit gekoppelt: generatedAt ist damit der
+      # Zeitpunkt des letzten tatsächlichen Daten-Updates. Ein eigener Commit
+      # nur für status.json würde den "keine neuen Daten"-Fall zu einem
+      # Daten-Commit machen und die Loop-Guards in deploy-unified.yml stören.
+      - name: Write status.json
+        if: >
+          steps.compare.outputs.new_data == 'true' ||
+          steps.compare_nl.outputs.new_data == 'true' ||
+          steps.compare_at.outputs.new_data == 'true' ||
+          steps.compare_ch.outputs.new_data == 'true' ||
+          steps.compare_fr.outputs.new_data == 'true' ||
+          steps.compare_be.outputs.new_data == 'true' ||
+          steps.compare_dk.outputs.new_data == 'true'
+        run: node scripts/write-status.js
+
       # ─── Commit ───────────────────────────────────────────────────────────────
 
       - name: Commit changes
@@ -2401,6 +2419,9 @@ jobs:
             DK_SOURCE=$(node -e 'console.log(JSON.parse(require("fs").readFileSync("public/data/dk/marketdata.json", "utf8")).source)')
             PARTS="${PARTS:+$PARTS, }DK: $DK_SOURCE"
           fi
+
+          # Frische-Signal immer mitnehmen (laenderunabhaengig, #445/#446)
+          git add public/data/status.json
 
           git commit -m "Update marketdata.json ($PARTS @ $TIMESTAMP)"
           git push
