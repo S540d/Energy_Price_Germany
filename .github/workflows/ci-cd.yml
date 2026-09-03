@@ -24,6 +24,47 @@ jobs:
   # ============================================================================
   # JOB 1: Code Quality & Linting
   # ============================================================================
+  # ============================================================================
+  # JOB 0: Workflow-Linting (Issue #445)
+  # ============================================================================
+  # Zwei Checks, weil sie unterschiedliche Fehlerklassen abdecken:
+  #
+  #   actionlint (+ shellcheck)  → allgemeine Workflow-/Shell-Fehler.
+  #     Severity ab "warning": die ~48 info-Findings in fetch.yml (SC2086/SC2012/
+  #     SC2016) sind Stilhinweise und sollen den Merge nicht blockieren.
+  #
+  #   scripts/lint-workflows.js → die Fehlerklasse aus #445, die actionlint
+  #     NICHT findet: Ein Apostroph im Body eines `node -e '…'`-Blocks ist für
+  #     die Shell syntaktisch korrekt (aus einem String werden mehrere Wörter),
+  #     nur semantisch falsch — node bekam `--` als Option und starb mit Exit 9,
+  #     bevor eine einzige Prüfung lief. Verifiziert: shellcheck meldet an der
+  #     Stelle nur SC2016 (info), das bei jedem `node -e` normal ist.
+  workflow-lint:
+    name: ⚙️ Workflow Linting
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: actionlint installieren
+        run: |
+          curl -fsSL -o actionlint.tar.gz \
+            https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz
+          tar xzf actionlint.tar.gz actionlint
+          ./actionlint --version
+        env:
+          ACTIONLINT_VERSION: 1.7.7
+
+      - name: actionlint (mit shellcheck)
+        # shellcheck ist auf ubuntu-latest vorinstalliert. SHELLCHECK_OPTS wird
+        # an den shellcheck-Subprozess vererbt und filtert die info-Findings.
+        run: ./actionlint -color
+        env:
+          SHELLCHECK_OPTS: -S warning
+
+      - name: Guard gegen node -e Inline-Blöcke (#445)
+        run: node scripts/lint-workflows.js
+
   code-quality:
     name: 🔍 Code Quality & Linting
     runs-on: ubuntu-latest

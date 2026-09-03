@@ -1,9 +1,8 @@
 name: Sync Testing Branch
 
 on:
-  # Fully disabled – kept for reference only
-  # push:
-  #   branches: [ main ]
+  push:
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
@@ -12,7 +11,9 @@ permissions:
 jobs:
   sync-testing:
     name: 🔄 Sync main → testing
-    if: false  # Disabled – sync is done manually via PR workflow
+    # Re-enabled (Issue #451): protect-main/protect-testing sind seit #450 getrennte
+    # Rulesets mit allow_merge_commit=true; der Push läuft über den DeployKey-Bypass-Actor.
+    if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'Update marketdata.json')
     runs-on: ubuntu-latest
 
     steps:
@@ -20,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch all history for proper merge
-          token: ${{ secrets.GITHUB_TOKEN }}
+          ssh-key: ${{ secrets.FETCH_DEPLOY_KEY }}
 
       - name: Configure git
         run: |
