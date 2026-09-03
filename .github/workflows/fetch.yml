@@ -186,7 +186,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
-          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          ssh-key: ${{ secrets.FETCH_DEPLOY_KEY }}
 
       # ─── Germany (DE) ─────────────────────────────────────────────────────────
 
