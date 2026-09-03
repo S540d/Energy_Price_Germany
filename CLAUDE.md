@@ -82,6 +82,28 @@ Energy Price Germany - A visualization app for German electricity market prices 
 - Ziel-Branch: **immer `testing`** (sofern nicht anders gesagt)
 - CI abwarten; nie bei rotem CI mergen
 
+### Dependabot-PRs: Ausnahme von der `testing`-Regel
+
+Dependabot legt seine PRs **direkt gegen `main`** an — das ist Standardverhalten
+bei UI-Konfiguration (Settings → Security → Dependabot); es gibt **keine**
+`.github/dependabot.yml` im Repo, die das umlenken würde. Das ist eine bewusste
+Ausnahme von „Ziel-Branch immer `testing`", keine Fehlkonfiguration.
+
+- Solche PRs referenzieren **keine** GitHub-Issues — nach dem Merge gibt es
+  nichts zum Schließen.
+- Bei `main` als Ziel laufen alle ~15 `ci-cd.yml`-Checks (nicht nur
+  `review-gate`), da der `pull_request`-Trigger dort greift.
+- Merge nach `main` braucht laut globaler Policy weiterhin **explizite
+  schriftliche Freigabe** — die Dependabot-Zielsetzung ändert daran nichts.
+- **Beobachtung (2026-09-03, PRs #440–#442):** Der Merge lief über die
+  GitHub-API glatt durch, **ohne** `--admin` und ohne vorheriges Approval —
+  obwohl das `Main`-Ruleset laut Doku oben „Required Approvals = 1" verlangt.
+  Nicht als Freibrief für menschliche PRs missverstehen: naheliegende
+  Erklärung ist, dass das Ruleset Bot-Autoren (`dependabot[bot]`) oder
+  reine Squash-Merges über die API anders behandelt als PRs mit
+  Code-Änderungen von Menschen/Claude. Nicht verifiziert — vor der nächsten
+  Regeländerung am Ruleset gezielt gegenprüfen.
+
 ### Merge-Gate: `review-gate` kommt von `mergeability.yml`
 
 Den required Status-Check **`review-gate`** setzt der kostenlose Workflow
