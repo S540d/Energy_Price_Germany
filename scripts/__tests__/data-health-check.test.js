@@ -10,7 +10,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const { run } = require('../data-health-check');
+const { run, syncAlertIssue } = require('../data-health-check');
 
 const BERLIN_DAY = '2026-09-02';
 // 12:00 Europe/Berlin am 2026-09-02
@@ -97,5 +97,85 @@ describe('data health check', () => {
     const { summary } = run(dataDir, BERLIN_DAY);
 
     expect(summary.some((line) => line.includes('DK'))).toBe(false);
+  });
+});
+
+describe('Alarm-Issue statt Exit-Code (#445)', () => {
+  // Der Health-Check darf den Run nicht mehr rot färben — sonst ist "rot"
+  // mehrdeutig (Upstream-Ausfall vs. echter Defekt) und ein Dauer-Rot wie bei
+  // #445 fällt nicht auf.
+  const summary = ['### Data health check', '- DE Erneuerbaren-Punkte heute: **0**'];
+  const TODAY = '2026-09-03';
+
+  /** Fake-Client, der die API-Aufrufe protokolliert. */
+  const fakeGh = (openIssue = null, comments = []) => {
+    const calls = [];
+    return {
+      calls,
+      findOpenAlert: async () => (openIssue ? [openIssue] : []),
+      createAlert: async (title, body) => {
+        calls.push({ op: 'create', title, body });
+      },
+      commentAlert: async (number, body) => {
+        calls.push({ op: 'comment', number, body });
+      },
+      listComments: async () => comments,
+      closeAlert: async (number) => {
+        calls.push({ op: 'close', number });
+      },
+    };
+  };
+
+  it('öffnet ein Issue, wenn eine Lücke auftritt und keines offen ist', async () => {
+    const gh = fakeGh(null);
+
+    const res = await syncAlertIssue({ failed: true, summary, today: TODAY, gh });
+
+    expect(res.action).toBe('opened');
+    expect(gh.calls).toEqual([
+      expect.objectContaining({ op: 'create', title: expect.stringContaining(TODAY) }),
+    ]);
+  });
+
+  it('kommentiert bei Fortdauer höchstens einmal pro Tag', async () => {
+    const gh = fakeGh({ number: 7 }, [{ body: `Weiterhin offen (${TODAY}).` }]);
+
+    const res = await syncAlertIssue({ failed: true, summary, today: TODAY, gh });
+
+    expect(res.action).toBe('noop-already-commented');
+    expect(gh.calls).toEqual([]);
+  });
+
+  it('kommentiert an einem neuen Tag erneut', async () => {
+    const gh = fakeGh({ number: 7 }, [{ body: 'Weiterhin offen (2026-09-02).' }]);
+
+    const res = await syncAlertIssue({ failed: true, summary, today: TODAY, gh });
+
+    expect(res.action).toBe('commented');
+    expect(gh.calls).toEqual([expect.objectContaining({ op: 'comment', number: 7 })]);
+  });
+
+  it('schließt das Issue, sobald die Daten wieder vollständig sind', async () => {
+    const gh = fakeGh({ number: 7 }, []);
+
+    const res = await syncAlertIssue({ failed: false, summary, today: TODAY, gh });
+
+    expect(res.action).toBe('closed');
+    expect(gh.calls.map((c) => c.op)).toEqual(['comment', 'close']);
+  });
+
+  it('tut nichts, wenn alles gesund ist und kein Issue offen ist', async () => {
+    const gh = fakeGh(null);
+
+    const res = await syncAlertIssue({ failed: false, summary, today: TODAY, gh });
+
+    expect(res.action).toBe('noop-healthy');
+    expect(gh.calls).toEqual([]);
+  });
+
+  it('läuft ohne Credentials durch, statt zu scheitern (lokaler Aufruf)', async () => {
+    const res = await syncAlertIssue({ failed: true, summary, today: TODAY, gh: null });
+
+    expect(res.action).toBe('skipped-no-credentials');
   });
 });

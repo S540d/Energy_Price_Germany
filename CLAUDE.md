@@ -303,10 +303,17 @@ Semantik-Absicherung: `scripts/__tests__/data-health-check.test.js`.
 Nicht-fatal (nur `::warning::`, Run bleibt grün): `source == "awattar"` für DE
 und jedes **Beta-Land** mit 0 Erneuerbaren-Punkten.
 
-> ⚠️ **Ein roter Run bei Upstream-Ausfall ist Absicht, kein Defekt.** An solchen
-> Tagen steht ein roter Eintrag in der Historie, obwohl die Preisdaten korrekt
-> committet wurden. Das ist der bewusst akzeptierte Preis für die
-> Benachrichtigung — nicht „wegreparieren".
+> ⚠️ **Datenlücken färben den Run NICHT rot** (geändert mit der Retrospektive
+> zu #445). Der Befund geht in ein automatisch verwaltetes Issue mit Label
+> `data-health` (öffnen / höchstens ein Kommentar pro Tag / schließen bei
+> Erholung). Grund: Solange ein Datenausfall den Run rot färbte, war **rot
+> mehrdeutig** — Upstream-Ausfall oder echter Defekt. Genau dadurch blieb der
+> Exit-9-Dauerfehler aus #445 stundenlang unentdeckt: Ein Dauer-Rot sah aus wie
+> ein funktionierender Alarm.
+>
+> **Seither gilt: rot = der Workflow ist defekt.** Diese Eindeutigkeit ist der
+> eigentliche Wert — nicht wieder aufweichen, indem fachliche Befunde in den
+> Exit-Code wandern.
 
 > ⚠️ **Kein Apostroph in `node -e '…'`-Inline-Blöcken — und lieber gar keine
 > mehrzeiligen `node -e`-Blöcke mehr (#445).** Der Health-Check war ursprünglich
@@ -318,11 +325,19 @@ und jedes **Beta-Land** mit 0 Erneuerbaren-Punkten.
 > (ein Dauer-Rot ist von einem echten Ausfall nicht unterscheidbar).
 > Deutsche Texte in `fetch.yml` sind voller Anführungszeichen; jede nennenswerte
 > Logik gehört deshalb in eine Datei unter `scripts/` (wie
-> `fetch-energy-charts.sh`), nicht in einen Inline-Block. Prüfbefehl für den
-> gesamten Workflow:
-> ```bash
-> grep -n "node -e '" .github/workflows/fetch.yml   # sollte nur Einzeiler ohne ' im Body zeigen
-> ```
+> `fetch-energy-charts.sh`), nicht in einen Inline-Block.
+>
+> **Seit der Retrospektive maschinell durchgesetzt** — `npm run lint:workflows`
+> (`scripts/lint-workflows.js`), im CI-Job `⚙️ Workflow Linting` und im
+> Pre-Commit-Hook, sobald `.github/workflows/**` gestaged ist.
+>
+> ⚠️ **`actionlint`/`shellcheck` finden diese Fehlerklasse NICHT** — nicht darauf
+> verlassen. Nachgemessen am 2026-09-03 gegen die fehlerhafte Fassung
+> (`9abdda2`): 48 Findings, kein einziges auf dem Bug. Der Grund ist subtil: Ein
+> Apostroph im Body ist für die Shell **syntaktisch korrekt**, aus einem String
+> werden nur mehrere Wörter — an der Stelle meldet shellcheck bloß `SC2016`
+> (info), das bei jedem `node -e` normal ist. Der Fehler ist semantisch, nicht
+> syntaktisch. Deshalb der eigene Guard **zusätzlich** zu actionlint.
 
 **2. `ren_share_forecast` ist in ALLEN Ländern non-fatal (`|| true`), `price` bleibt required.**
 Vorher hatten DE und NL `|| exit 1`. Ein Ausfall dieses **einen** Endpunkts
