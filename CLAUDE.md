@@ -17,223 +17,205 @@ Energy Price Germany - A visualization app for German electricity market prices 
 - [Architecture](../docs/ARCHITECTURE.md) - System architecture and data flow
 - [Data Merge Strategy](../docs/DATA-MERGE-STRATEGY.md) - How data from multiple sources is combined
 - [Changelog](../CHANGELOG.md) - Version history
+- [Vorfallsarchiv](docs/INCIDENTS.md) - Chronik der Betriebsvorfälle, aus denen die Regeln unten entstanden sind
 - [Build Guide](../docs/BUILD.md) - Build and deployment instructions
 - [Privacy Policy](../PRIVACY_POLICY.md) - Data privacy information
 - [Store Description](../docs/STORE_DESCRIPTION.md) - Play Store listing text
 
 ## Workflow & Git Management
-
 ### Branch Strategy & PR Workflow
-**IMPORTANT: Apply these rules to ALL changes unless explicitly overridden:**
 
-1. **Always create a PR** - Even for small changes, unless told otherwise
-2. **Work on `testing` branch** - Never commit directly to main/staging
-3. **Branch sync requirement** - Before starting work on testing, verify:
-   - `testing` ≥ `staging` (same commit or newer)
-   - `testing` ≥ `main` (same commit or newer)
-   - If outdated, merge staging and main into testing first
-4. **Claude Code Remote-Sessions:** Die vom System vorgegebene Arbeits-Branch wird standardmäßig von `main` abgezweigt, nicht von `testing`. **Vor dem ersten Commit** in einer solchen Session immer `git fetch origin testing && git checkout -B <branch> origin/testing` ausführen, sonst entsteht ein riesiger, irreführender PR-Diff gegen `testing` (inkl. bereits dort gemergter fremder Änderungen) und Fixes, die auf `testing` schon vorhanden sind, werden unnötig dupliziert/überschrieben.
+**Gilt für ALLE Änderungen, sofern nicht ausdrücklich anders gesagt:**
 
-   > ⚠️ **`fatal: refusing to merge unrelated histories` = shallow clone, NICHT umgeschriebene History.**
-   > Remote-Sessions klonen flach. `main` sieht dann aus, als hätte es ~60 Commits
-   > und einen „Root-Commit", der in Wahrheit nur die shallow-Grenze ist; über
-   > diese Grenze hinaus findet Git keinen gemeinsamen Vorfahren und meldet
-   > fälschlich unrelated histories. **Niemals mit `--allow-unrelated-histories`
-   > darüber hinweggehen** — das erzeugt `add/add`-Konflikte über das halbe Repo
-   > (am 2026-09-02: 18 Dateien inkl. `App.tsx`, `utils/translations.ts`, allen
-   > `marketdata.json`) und überschreibt bei naiver Auflösung fremden Code.
-   > ```bash
-   > git rev-parse --is-shallow-repository   # true = genau dieser Fall
-   > git fetch --unshallow origin            # danach: 3 echte Konflikte statt 18
-   > git merge-base origin/testing origin/main
-   > ```
-   > Ein *echter* fehlender gemeinsamer Vorfahre ist bislang nie aufgetreten.
-
-5. **`testing` kann bei `fetch.yml` HINTER `main` liegen.** Hotfixes gehen gelegentlich direkt auf `main` (z. B. PR #426 für #425) und werden nicht zurückgemergt. Wer dann naiv von `origin/testing` abzweigt und `fetch.yml` anfasst, macht diese Fixes beim nächsten Release rückgängig. Prüfen und ggf. zuerst `git merge origin/main` als eigenen Commit:
+1. **Immer einen PR** — auch für Kleinigkeiten.
+2. **Ziel-Branch ist `testing`** — nie direkt auf `main`/`staging` committen.
+3. **In Claude-Code-Remote-Sessions zuerst umbranchen.** Die vorgegebene
+   Arbeits-Branch zweigt von `main` ab, nicht von `testing`:
+   ```bash
+   git fetch origin testing && git checkout -B <branch> origin/testing
+   ```
+   Ohne das entsteht ein riesiger, irreführender Diff gegen `testing`, und dort
+   bereits vorhandene Fixes werden dupliziert oder überschrieben.
+4. **`testing` kann bei `fetch.yml` HINTER `main` liegen.** Hotfixes gehen
+   gelegentlich direkt auf `main` und werden nicht zurückgemergt. Vor dem
+   Anfassen von `fetch.yml` prüfen:
    ```bash
    git show origin/main:.github/workflows/fetch.yml    | grep -c fetch-energy-charts.sh
    git show origin/testing:.github/workflows/fetch.yml | grep -c fetch-energy-charts.sh
    ```
-   Bei Konflikten in `fetch.yml`: **nicht pauschal eine Seite nehmen, sondern messen, welche die Obermenge ist.** Bis zum Release vom 2026-09-02 war das `main`; seither ist es `testing`. Marker zählen statt raten:
+5. **Bei Konflikten in `fetch.yml`: messen, nicht raten.** Nicht pauschal eine
+   Seite nehmen — die Obermenge über Marker bestimmen:
    ```bash
-   for m in merge-history.js NEW_REN OLD_REN merge-market-data.js fetch-energy-charts.sh "Data health check"; do
+   for m in merge-history.js NEW_REN OLD_REN merge-market-data.js \
+            fetch-energy-charts.sh data-health-check.js; do
      printf '%-24s main=%s testing=%s\n' "$m" \
        "$(git show origin/main:.github/workflows/fetch.yml    | grep -c "$m")" \
        "$(git show origin/testing:.github/workflows/fetch.yml | grep -c "$m")"
    done
    ```
-   Die Seite, die bei **allen** Markern ≥ der anderen liegt, ist die Obermenge. Liegt jede Seite bei irgendeinem Marker vorn, ist es ein echter inhaltlicher Konflikt — dann Hand anlegen, nicht `--ours`/`--theirs`.
-
-6. **Squash-only: `main` wird NIE Vorfahre von `testing`.** Das Repo erlaubte lange nur „Squash and merge". Ein Squash verwirft den zweiten Parent, deshalb bleibt `git merge-base --is-ancestor origin/main origin/testing` dauerhaft negativ — auch nach einem erfolgreichen Sync-PR. Folge: Git sieht Dateien, die beide Seiten angefasst haben (`fetch.yml`, `CHANGELOG.md`, `CLAUDE.md`), als beidseitig unabhängig geändert und meldet **Phantom-Konflikte**, obwohl eine Seite die reine Obermenge ist.
-
-   **Ein Sync-PR `main → testing` muss deshalb als „Create a merge commit" gemergt werden, nicht als Squash.** Am 2026-09-02 scheiterte PR #438 genau daran: gesquasht, Ancestry weg, Release-PR weiter blockiert. Erst PR #439 als echter Merge-Commit löste es.
+   Die Seite, die bei **allen** Markern ≥ der anderen liegt, ist die Obermenge.
+   Liegt jede Seite bei irgendeinem Marker vorn, ist es ein echter inhaltlicher
+   Konflikt — dann Hand anlegen, nicht `--ours`/`--theirs`.
+6. **Ein Sync-PR `main → testing` muss als „Create a merge commit" gemergt
+   werden, nicht als Squash.** Squash verwirft den zweiten Parent, `main` wird
+   nie Vorfahre von `testing`, und der nächste Release-PR ist wieder
+   konfliktbehaftet.
    ```bash
-   git log --format='%h parents=%p' -1 origin/testing   # zwei Parents = Sync ist angekommen
+   git log --format='%h parents=%p' -1 origin/testing   # zwei Parents = angekommen
    git merge-base --is-ancestor origin/main origin/testing && echo OK
    ```
-   Erlaubt „Allow merge commits" nicht (Settings → General → Pull Requests), schlägt der Merge mit **405 „Merge commits are not allowed on this repository"** fehl — dann zuerst die Checkbox setzen.
+   → Hintergrund und Symptome: [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-02--squash-only-blockierte-den-release-438-439).
+   Zentrale Abhilfe in **#450**.
 
-   > **Symptom, an dem man es zuerst merkt:** Der Release-PR steht auf `mergeable_state: "dirty"` und bekommt **gar keine Checks** (`total_count: 0`). Das ist kein CI-Defekt: GitHub startet für einen konfliktbehafteten PR keine `pull_request`-Workflows, weil es keinen mergebaren Ref zum Auschecken gibt. Zweites Symptom: der Release-Diff zeigt Hunderte Dateien (am 2026-09-02: **339** statt der tatsächlichen **9**).
-
-**Workflow:**
-```
-git checkout testing
-git pull origin testing
-# Ensure testing is synced with staging & main
-git merge origin/staging  (if needed)
-git merge origin/main     (if needed)
-
-# Create feature branch
-git checkout -b feature/issue-XXX
-
-# ... make changes ...
-
-# Create PR: testing ← feature/issue-XXX
-gh pr create --base testing --title "..." --body "..."
-```
+> ⚠️ **`fatal: refusing to merge unrelated histories` = shallow clone**, nicht
+> umgeschriebene History. **Niemals `--allow-unrelated-histories`** verwenden:
+> ```bash
+> git rev-parse --is-shallow-repository   # true = genau dieser Fall
+> git fetch --unshallow origin
+> ```
+> → [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-02--shallow-clone-sieht-aus-wie-umgeschriebene-history)
 
 ### Pull Request Requirements
-- Title: Reference issue number (e.g., "Fix #145: Jest configuration")
-- Body: Explain what changed and why
-- Target branch: **Always `testing`** (unless told otherwise)
-- Wait for CI/CD to pass before merge
-- At least one code review (if available)
 
-### Merge-Gate: `review-gate` kommt von `mergeability.yml`, nicht von einem KI-Review
+- Titel referenziert die Issue-Nummer (z. B. „Fix #145: Jest configuration")
+- Body erklärt **was** und **warum**
+- Ziel-Branch: **immer `testing`** (sofern nicht anders gesagt)
+- CI abwarten; nie bei rotem CI mergen
+
+### Merge-Gate: `review-gate` kommt von `mergeability.yml`
+
 Den required Status-Check **`review-gate`** setzt der kostenlose Workflow
 `mergeability.yml` (aus project-templates). Er prüft Konfliktfreiheit und
-Ziel-Branch-Policy und postet einen Mergeability-Report als PR-Kommentar —
-**kein** inhaltliches Code-Review, kein Autofix.
+Ziel-Branch-Policy — **kein** inhaltliches Code-Review, **kein** Autofix. Wer
+darauf wartet, dass ein Agent Findings selbst wegfixt, wartet vergeblich.
 
-> ⚠️ Frühere Fassungen dieses Abschnitts beschrieben einen automatischen
-> zweistufigen Claude-Review (Autofix + Review, Labels `ready to merge` /
-> `needs human review`). Das entspricht **nicht** dem aktuellen Stand —
-> verifiziert am 2026-08-30 an vier PRs: `review-gate` wurde jedes Mal von
-> `mergeability / mergeability` gesetzt, ein Autofix-Lauf existiert nicht.
-> Wer sich darauf verlässt, dass ein Agent Findings selbst wegfixt, wartet
-> vergeblich.
+Der KI-Review liegt in `pr-review.yml` und läuft **nur on-demand** über das Label
+`ai-review` (kostet metered API-Token). Kostenlos und bevorzugt: `/review` aus
+Claude Code.
 
-Der KI-Review liegt in `pr-review.yml` und läuft **nur on-demand**: Label
-`ai-review` an den PR vergeben (kostet metered API-Token). Der bevorzugte,
-kostenlose Weg bleibt `/review` aus Claude Code.
+**Checks je Ziel-Branch:** `ci-cd.yml` triggert bewusst nur auf PRs gegen `main`.
+Ein PR gegen `testing` hat daher nur 2 Checks (`review-gate` + `mergeability`),
+einer gegen `main` rund 15. Das Fehlen von `🔍 Code Quality & Linting` auf einem
+`testing`-PR ist **kein** Defekt.
 
-**Checks je Ziel-Branch:** `ci-cd.yml` triggert bewusst nur auf PRs gegen
-`main` — auf `testing` sind die Checks seit der `protect-testing`-Umstellung
-nicht mehr required. Ein PR gegen `testing` hat daher nur 2 Checks
-(`review-gate` + `mergeability`), einer gegen `main` rund 15. Das Fehlen von
-`🔍 Code Quality & Linting` auf einem `testing`-PR ist **kein** Defekt.
+### Release-PRs testing → main
 
-### Release-PRs testing → main (Branch Protection)
-`main` liegt unter dem `Main`-Ruleset mit **Required Approvals = 1**. Als Solo-Dev kann man den eigenen PR nicht approven → Admin-Bypass nötig.
+`main` liegt unter dem `Main`-Ruleset mit **Required Approvals = 1**. Als Solo-Dev
+kann man den eigenen PR nicht approven → Admin-Bypass nötig:
 
-Merge: `gh pr merge <nr> --squash --admin` (kein `--delete-branch` für langlebige Branches)
+```bash
+gh pr merge <nr> --squash --admin      # KEIN --delete-branch: testing ist der Head!
+```
 
-> Nur mit expliziter schriftlicher Freigabe — dies ist der bewusste manuelle Release-Schritt, nicht mit dem `review-gate` zu verwechseln.
+> **Nur mit ausdrücklicher schriftlicher Freigabe.** Das ist der bewusste manuelle
+> Release-Schritt, nicht mit dem `review-gate` zu verwechseln.
 
-> ⚠️ **Falle „Automatically delete head branches" + Release-PR:** Ist diese Repo-Einstellung aktiv (Settings → General → Pull Requests), löscht GitHub nach dem Merge automatisch den **Head**-Branch des PRs. Bei einem Release-PR `testing → main` ist `testing` selbst der Head-Branch — der Merge löscht also `testing` mit, nicht nur einen Feature-Branch. **Viermal passiert:** 2026-08-12 (PR #404), zweimal am 2026-08-30 (PR #421 und #424) und erneut am 2026-08-31 (PR #427, Release für Fix #425). Die Einstellung ist weiterhin **aktiv** (verifiziert am 2026-09-02: `claude/issue-435-hq1agk` war nach dem Merge von PR #438 weg) — der Schutz kommt allein aus dem Ruleset unten.
+**Nach dem Merge prüfen:**
+```bash
+git ls-remote --heads origin | grep testing    # muss existieren
+```
 
-> ✅ **Gelöst seit 2026-08-31 (#428) — beim Release am 2026-09-02 erstmals im Ernstfall bestätigt:** `testing` überlebte den Release-Merge von PR #437.
->
-> **Die eigentliche Ursache war nicht ein fehlendes Ruleset.** `protect-testing` existierte samt `deletion`-Regel bereits seit dem 2026-08-04 — wirkungslos, weil ein `bypass_actor` für die Repository-Admin-Rolle mit `bypass_mode: "always"` gesetzt war. Admin-Merges (und die automatische Head-Branch-Löschung) umgingen die Regel **still**. Fix war das Entfernen des Bypass (`bypass_actors: []`, `current_user_can_bypass: "never"`).
->
-> **Lehre für jede Branch-Protection-Frage:** Eine aktive Regel beweist nichts. Immer zusätzlich die Bypass-Actors prüfen — eine Regel mit `bypass_mode: always` für die eigene Rolle ist Dekoration. Der belastbare Test ist ein echter Versuch, kein Blick ins UI:
+> ⚠️ **Branch-Protection: Eine aktive Regel beweist nichts.** Immer zusätzlich die
+> Bypass-Actors prüfen — eine Regel mit `bypass_mode: always` für die eigene Rolle
+> ist Dekoration. Der belastbare Test ist ein echter Versuch, kein Blick ins UI:
 > ```bash
-> git push origin --delete testing     # muss GH013 „Cannot delete this branch" liefern
+> git push origin --delete testing     # muss GH013 liefern
 > ```
+> Umgekehrt gilt: **Ein Bypass ist nicht nur ein Risiko, sondern eine
+> Abhängigkeit.** Vor dem Entfernen prüfen, *wer* außer Menschen darüber schreibt
+> — hier pusht `fetch.yml` mit einem User-PAT bis zu 6× täglich direkt auf `main`.
+> Beide Lehren stammen aus realen Ausfällen:
+> [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-0203--datenpipeline-steht-13-stunden-445-446).
 
-> 🔴 **Regression aus genau diesem Fix — `fetch.yml` kann nicht mehr auf `main` committen (#446, Stand 2026-09-03, offen).** `fetch.yml` checkt mit `token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}` aus, pusht also bevorzugt mit einem **User-PAT** — gedeckt war der durch den **Repository-admin**-Bypass, und genau den hat der #428-Fix entfernt. Der `Commit and push`-Step scheitert seither an derselben Regel:
-> ```
-> remote: error: GH013: Repository rule violations found for refs/heads/main.
-> remote: - Changes must be made through a pull request.
-> ```
-> Zuerst aufgetreten in Run 33690118651 (22:25 UTC); der Lauf um 16:00 UTC (33652243129) kam noch durch. **Wirkung: Die Datenpipeline steht** — Preise werden geholt und verworfen, die Website friert auf dem letzten Stand ein. Kein Code-Fehler, keine Änderung an `fetch.yml` kann es beheben.
->
-> ⚠️ **`github-actions[bot]` ist in Rulesets grundsätzlich NICHT als Bypass-Actor wählbar** — GitHub lässt das aus Sicherheitsgründen nicht zu (ein kompromittierter Workflow könnte sonst jede Regel umgehen). Wählbar sind Rollen, Teams, installierte GitHub Apps und **Deploy Keys**. Wer danach im UI sucht, sucht vergeblich.
->
-> **Behebung (nur manuell im UI möglich, kein MCP-Tool für Rulesets):**
-> - **Weg A (minimal):** Im Ruleset für `main` die Rolle **`Repository admin`** wieder in die *Bypass list* aufnehmen. Das **`protect-testing`**-Ruleset bleibt bypass-frei, damit der Löschschutz aus #428 erhalten bleibt. **Voraussetzung: getrennte Rulesets pro Branch** — deckt ein einziges beide ab, vorher aufteilen, sonst kehrt die gelöschte-`testing`-Falle zurück.
-> - **Weg B (ohne Rollen-Bypass):** Deploy Key mit Write-Access, Private Key als Secret, im Checkout `ssh-key:` statt `token:`, Deploy Key in die Bypass-Liste. Nebeneffekt: Deploy-Key-Pushes lösen Workflows aus, `GITHUB_TOKEN`-Pushes nicht — die Run-Zahlen verschieben sich.
->
-> **Verifikation, beides muss gelten:** `git push origin --delete testing` liefert weiterhin GH013, **und** ein `workflow_dispatch`-Lauf von `fetch.yml` erzeugt einen `Update marketdata.json`-Commit auf `main`.
->
-> **Merksatz:** Bypass-Actors sind nicht nur ein Sicherheitsrisiko, sondern auch eine Abhängigkeit. Vor dem Entfernen prüfen, **wer** außer dem Menschen über den Bypass schreibt — in diesem Repo pusht der Fetch-Workflow mit einem User-PAT bis zu 6× täglich direkt auf `main` und hing damit am selben Admin-Bypass.
+> ⚠️ **`github-actions[bot]` ist in Rulesets NICHT als Bypass-Actor wählbar.**
+> GitHub lässt das prinzipiell nicht zu. Wählbar sind Rollen, Teams, installierte
+> GitHub Apps und **Deploy Keys**. Wer danach im UI sucht, sucht vergeblich.
 
-> **Symptom, an dem man es zuerst merkt:** `git fetch origin testing` scheitert
-> mit `fatal: couldn't find remote ref testing`, während ein `git checkout -B <branch> origin/testing`
-> danach trotzdem „funktioniert" — es greift dann auf die veraltete lokale
-> Tracking-Ref zurück. Ohne den Fetch-Fehler zu beachten, baut man seinen
-> Branch auf einem Stand auf, den es remote nicht mehr gibt.
+### Git-Operationen aus der Remote-Execution-Umgebung
 
-### Branches löschen aus Remote-Execution-Environment
-`git push origin --delete <branch>` schlägt fehl — **aber mit irreführendem Output:** Exit-Code ist trotzdem `0`, letzte Zeile lautet „Everything up-to-date". Nicht als Erfolg werten. (Bei `testing`/`main` ist die Ursache das Ruleset, siehe „Git Push aus Remote-Execution-Environment" unten — nicht ein fehlender SSH-Key.) Es gibt außerdem **kein** GitHub-MCP-Tool zum Löschen einer Branch-Ref (nur `create_branch`, kein `delete_branch`/`delete_ref`). Branch-Löschung ist aus dieser Umgebung technisch nicht möglich — stattdessen den fertigen `git push origin --delete ...`-Befehl für die lokale Ausführung ausgeben. Vor dem Vorschlagen prüfen, ob ein Branch wirklich gemergt ist: **nicht** über `git merge-base --is-ancestor` (liefert bei Squash-Merges falsch-negativ), sondern über die PR-Historie und dort das Feld `merged_at` (nicht `merged` — das steht in MCP-Antworten öfter fälschlich auf `false`, siehe project-templates#101).
+**Push auf Feature-Branches funktioniert normal** (`git push -u origin HEAD:<branch>`).
 
-### Git Push aus Remote-Execution-Environment
-
-**Push auf Feature-Branches funktioniert normal** — `git push -u origin HEAD:<branch>` geht durch. Frühere Fassungen dieses Abschnitts behaupteten pauschal 403 „kein SSH-Key"; das ist **falsch** (verifiziert am 2026-09-02).
-
-Auf `testing`/`main` wird der Push abgelehnt — aber vom **Ruleset**, nicht von der Authentifizierung:
+Auf `testing`/`main` lehnt das **Ruleset** ab — nicht die Authentifizierung:
 ```
 remote: error: GH013: Repository rule violations found for refs/heads/testing.
 remote: - Changes must be made through a pull request.
 ```
-Der Unterschied ist praktisch relevant: **GH013 heißt „nimm den PR-Weg"**, nicht „nimm die API". Die MCP-API würde dieselbe Regel treffen. Ein echtes 403 („Resource not accessible by integration") kommt dagegen von zu engen Token-Scopes und betrifft in dieser Umgebung u. a. `mcp__github__actions_run_trigger` (workflow_dispatch, `rerun_failed_jobs`) — solche Läufe muss der Mensch im UI anstoßen.
+Der Unterschied ist praktisch relevant: **GH013 heißt „nimm den PR-Weg"**, nicht
+„nimm die API" — die MCP-API trifft dieselbe Regel. Ein echtes **403** („Resource
+not accessible by integration") kommt dagegen von zu engen Token-Scopes und
+betrifft u. a. `mcp__github__actions_run_trigger` (workflow_dispatch,
+`rerun_failed_jobs`); solche Läufe muss ein Mensch im UI anstoßen.
 
-Für einzelne Dateien direkt auf einem Branch (wo erlaubt) gibt es zusätzlich:
-```
-mcp__github__create_or_update_file  # für einzelne Dateien (SHA des Blobs erforderlich)
-mcp__github__push_files             # für mehrere Dateien
-```
-SHA ermitteln: `git rev-parse origin/<branch>:<path>`
-> **Hinweis SHA-Typen:** `git rev-parse origin/<branch>:<path>` liefert den **Blob-SHA** (SHA des Datei-Inhalts), nicht den Commit-SHA. `create_or_update_file` erwartet diesen Blob-SHA im Feld `sha`. Für den Branch-HEAD (Commit-SHA) stattdessen `git rev-parse origin/<branch>` (ohne Pfad) verwenden.
+**Branches löschen ist aus dieser Umgebung nicht möglich.**
+`git push origin --delete <branch>` schlägt fehl, **meldet aber Exit-Code 0** und
+„Everything up-to-date" — nicht als Erfolg werten. Ein MCP-Tool zum Löschen einer
+Ref gibt es nicht (nur `create_branch`). Stattdessen den fertigen Befehl zur
+lokalen Ausführung ausgeben. Vorher prüfen, ob der Branch wirklich gemergt ist:
+**nicht** über `git merge-base --is-ancestor` (bei Squash-Merges falsch-negativ),
+sondern über das PR-Feld `merged_at` (nicht `merged` — das steht in MCP-Antworten
+öfter fälschlich auf `false`, siehe project-templates#101).
+
+**Einzelne Dateien direkt auf einem Branch** (wo erlaubt):
+`mcp__github__create_or_update_file` (Blob-SHA nötig: `git rev-parse
+origin/<branch>:<path>`) bzw. `mcp__github__push_files`. Für den Branch-HEAD
+(Commit-SHA) `git rev-parse origin/<branch>` ohne Pfad.
 
 ### Sicherheitshinweis: MCP-Token und KI-gesteuerte Pushes
-- MCP-GitHub-Token sollte **minimale Scopes** haben (empfohlen: `repo` ohne `admin`-Rechte).
-- KI-gesteuerte direkte Pushes auf `main`/`testing` unterliegen denselben Risiken wie manuelle Force-Pushes. Im Zweifelsfall lieber PR-Workflow nutzen.
-- Nach jeder MCP-Push-Sitzung: **Audit-Log in GitHub prüfen** (Settings → Audit log), um unbeabsichtigte Änderungen zu erkennen.
 
-### CI-Laufzeit: Daten-Commits sind vom App-Build entkoppelt (Issues #394, #400)
+- MCP-GitHub-Token mit **minimalen Scopes** (empfohlen: `repo` ohne `admin`)
+- KI-gesteuerte Direktpushes auf `main`/`testing` bergen dieselben Risiken wie
+  manuelle Force-Pushes — im Zweifel den PR-Weg nehmen
+- Nach MCP-Push-Sitzungen das **Audit-Log** prüfen (Settings → Audit log)
 
-`fetch.yml` committet bis zu 3x täglich reine Daten nach `public/data/**` auf `main` (seit Issue #406: der dritte, späte Lauf ist ein bedingter Fallback und läuft nur, wenn der Nachmittagslauf keine neuen Daten gebracht hat — an den meisten Tagen also nur 2 Commits). Ohne Gegenmaßnahmen löst jeder dieser Commits einen vollständigen App-Build, Quality-Check und Security-Scan aus. Drei Vorkehrungen verhindern das — **alle drei lassen sich versehentlich leicht wieder aushebeln:**
+### CI-Laufzeit: Daten-Commits sind vom App-Build entkoppelt (#394, #400)
+
+Vier Vorkehrungen verhindern, dass jeder Daten-Commit einen vollen App-Build
+auslöst. **Alle vier lassen sich versehentlich leicht wieder aushebeln:**
 
 **1. `ci-cd.yml`: `paths-ignore: ['public/data/**']` — nur am `push`-Trigger.**
-Der `pull_request`-Trigger hat bewusst **kein** `paths-ignore`, damit der required Status-Check `🔍 Code Quality & Linting` (Ruleset `protect-main`) weiterhin jeden PR gated. Ergänzt man es dort „der Symmetrie halber", fällt der Merge-Gate aus.
+Der `pull_request`-Trigger hat bewusst **kein** `paths-ignore`, damit der required
+Check `🔍 Code Quality & Linting` jeden PR gated. Ergänzt man es dort „der
+Symmetrie halber", fällt der Merge-Gate aus.
 
 **2. `deploy-unified.yml`: der Job `refresh-data` überspringt Daten-Commits.**
 ```yaml
 if: github.ref == 'refs/heads/main' &&
     (github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'Update marketdata.json'))
 ```
-Ohne diesen Guard entsteht eine Rückkopplung: Daten-Commit → Deploy → `refresh-data` dispatcht `fetch.yml` → neue Daten → Commit → Deploy → … Gemessen waren das **~10 statt ~3 Fetch-Runs/Tag**.
-> ⚠️ Die Bedingung hängt an der **exakten Commit-Message** aus `fetch.yml` (`git commit -m "Update marketdata.json (…)"`). Wer diese Message ändert, reaktiviert die Schleife **still** — kein Fehler, kein Hinweis, nur wieder ~3x so viele Runs.
+Ohne diesen Guard entsteht eine Rückkopplung Daten-Commit → Deploy → Fetch → …
+> ⚠️ Die Bedingung hängt an der **exakten Commit-Message** aus `fetch.yml`. Wer
+> sie ändert, reaktiviert die Schleife **still** — kein Fehler, kein Hinweis.
 
-**3. `deploy-unified.yml`: Cron 1x täglich (`30 3 * * *`), nicht 5x.**
-Push-getriggerte Deploys decken den Normalfall ab; der Cron ist nur Sicherheitsnetz kurz nach dem Fetch um 03:00 UTC.
+**3. `deploy-unified.yml`: Cron 1× täglich (`30 3 * * *`), nicht 5×.**
 
-**❌ Kein `paths-ignore` in `deploy-unified.yml`!** Naheliegend, würde aber die Datenauslieferung brechen: `public/data/**` gelangt ausschließlich über den Deploy ins Pages-Artefakt. Ohne Deploy lägen neue Preise im Repo, aber nie auf der ausgelieferten Seite. Der geplante schlanke Daten-Deploy steht in #396.
+**4. CodeQL läuft über `.github/workflows/codeql.yml`** (Advanced Setup), damit
+`paths-ignore` überhaupt greifen kann — im GitHub-verwalteten *Default Setup* ist
+es über keine Datei im Repo steuerbar.
 
-**4. CodeQL: `.github/workflows/codeql.yml` (Advanced Setup, seit #400/#402 erledigt).**
-War zunächst im GitHub-verwalteten *Default Setup* — dadurch über **keine** Datei in `.github/workflows/` steuerbar, `paths-ignore` wirkte nicht. Gelöst durch Wechsel auf *Advanced Setup* (Settings → Code security → Code scanning) mit eigener `codeql.yml`, `paths-ignore` analog zu `ci-cd.yml` nur am `push`-Trigger.
-> ⚠️ Der Wechsel Default→Advanced erzeugt in der GitHub-UI automatisch einen **eigenen Boilerplate-PR** (unveränderte Starter-Datei, direkt gegen `main`, ignoriert die `testing`-Konvention). Kollidiert mit einem selbst erstellten `codeql.yml`-PR auf derselben Datei — den Boilerplate-PR als Duplikat schließen, nicht beide mergen. Außerdem: Default Setup **vor** dem Merge der eigenen `codeql.yml` deaktivieren (oder direkt danach), sonst laufen beide parallel und es entstehen doppelte Runs.
+**❌ Kein `paths-ignore` in `deploy-unified.yml`!** Naheliegend, würde aber die
+Datenauslieferung brechen: `public/data/**` gelangt ausschließlich über den Deploy
+ins Pages-Artefakt. Der geplante schlanke Daten-Deploy steht in **#452**.
 
-**Wirkung immer messen statt schätzen** (GitHub Actions API, `list_workflow_runs` + `jq` nach `created_at`/`event` gruppieren). Gemessen nach allen vier Maßnahmen (3 Tage, 09.–11.08.): **~59,5 → ~18,6 min/Tag (≈ −69 %)**. `fetch.yml` fiel auf ~3,9 Runs/Tag, `ci-cd.yml` hatte **keinen einzigen** `Update marketdata.json`-Run mehr.
+**Wirkung immer messen statt schätzen** (`list_workflow_runs` + `jq` nach
+`created_at`/`event` gruppieren). Gemessene Wirkung der vier Maßnahmen und die
+Fallstricke der CodeQL-Umstellung:
+[`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-08--ci-laufzeit-daten-commits-lösten-volle-app-builds-aus-394-400).
 
-> **⚠️ Workflow-Semantik — gilt für den GESAMTEN Inhalt, nicht nur für Trigger:**
-> Der `push`-Trigger wird aus der Workflow-Datei **des gepushten Branches**
-> gelesen, `schedule` immer aus dem **Default-Branch** (`main`). Das betrifft
-> nicht nur die `on:`-Sektion, sondern **jede Zeile des Workflows**: Bei einem
-> `schedule`-Lauf führt GitHub die Fassung von `main` aus, Punkt.
+> ### ⚠️ Workflow-Semantik — gilt für den GESAMTEN Inhalt, nicht nur für Trigger
 >
-> **Konsequenz für `fetch.yml`:** Ein Fix, der nur auf `testing` gemergt ist,
-> ist **vollständig wirkungslos** — der Workflow läuft per `schedule` und macht
-> zusätzlich `checkout ref: main`. Er wird erst mit dem Release nach `main`
-> scharf. Am 2026-08-30 (#418) genau so passiert: Fix gemergt, alle Checks grün,
-> Verhalten unverändert — bis der Release-PR #421 durch war.
+> Der `push`-Trigger wird aus der Workflow-Datei **des gepushten Branches**
+> gelesen, `schedule` immer aus dem **Default-Branch** (`main`) — und zwar
+> **jede Zeile** des Workflows, nicht nur die `on:`-Sektion.
+>
+> **Konsequenz für `fetch.yml`:** Ein Fix, der nur auf `testing` liegt, ist
+> **vollständig wirkungslos**. Er wird erst mit dem Release nach `main` scharf.
+> Bereits dreimal passiert (#418, #435, #445).
 >
 > **Prüfbefehl vor jeder Wirksamkeits-Annahme:**
 > ```bash
 > git show origin/main:.github/workflows/fetch.yml | grep -c "<neues-Element>"
 > ```
-> Liefert das 0, ist der Fix noch nicht scharf, egal wie grün `testing` aussieht.
+> Liefert das `0`, ist der Fix noch nicht scharf — egal wie grün `testing` aussieht.
 
 ### `fetch.yml`: Resilienz-Konventionen — nicht zurückbauen (Issues #418, #423, #425, #435)
 
@@ -357,10 +339,9 @@ Symptomen begegnet, prüft als Erstes `jq -r .source public/data/marketdata.json
 ```
 Das ist der **stumme** Ausfall und der gefährlichere: `curl -f` meldet Erfolg,
 `JSON.parse` läuft durch, und der Guard `if (renewable.unix_seconds &&
-renewable.ren_share)` **passiert sogar** — `[]` ist in JS truthy. Iteriert wird
-über ein leeres Array, alle Werte werden `null`, der Workflow endet grün.
-Beobachtet für DE am 2026-08-31, während `?country=at` gleichzeitig normale
-Daten lieferte — der Ausfall ist länderspezifisch.
+renewable.ren_share)` **passiert sogar** — `[]` ist in JS truthy. Der Workflow
+endet grün. Der Ausfall ist länderspezifisch.
+→ [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-08-31--ren_share_forecast-liefert-http-200-mit-leeren-arrays)
 
 > **Guard-Ort seit #435:** `scripts/fetch-energy-charts.sh` validiert die Payload
 > direkt nach dem Download —
@@ -409,7 +390,15 @@ sorgen dafür, dass fast nichts hart fehlschlägt. In dieser Reihenfolge prüfen
 > Eine gesunde Gesamtzahl sagt über den sichtbaren Ausfall in der App nichts aus.
 
 ### Deploy (Unified): transienter TLS-Fehler in `actions/deploy-pages@v4`
-Vereinzelt schlägt `Creating Pages deployment` mit `HttpError: self-signed certificate` fehl — **auf beiden** Versuchen (Erstversuch + der eingebaute Retry aus PR #378), da beide denselben Infra-Hänger auf GitHubs Seite treffen. Kein Code-/Config-Fehler im Repo: Build-Schritte (Checkout bis Artifact-Upload) laufen sauber durch, nur der `deploy-pages`-API-Call selbst scheitert. Beobachtet am 2026-08-12 bei einem Push auf `testing`, während zeitgleich derselbe Commit auf `main` erfolgreich deployte — bestätigt den Infra-Charakter. Abhilfe: manuellen `workflow_dispatch`-Lauf anstoßen (GitHub-UI → Run workflow); `rerun_failed_jobs` über die API schlägt mit **403 „Resource not accessible by integration"** fehl (Token-Scope reicht dafür nicht, siehe `mcp__github__actions_run_trigger`). Ein manueller Dispatch ist ein **neuer** Run, kein Rerun des fehlgeschlagenen — der rote Eintrag bleibt in der Historie stehen, das ist kein weiteres Problem.
+
+Vereinzelt schlägt `Creating Pages deployment` mit `HttpError: self-signed
+certificate` fehl — auf **beiden** Versuchen, da beide denselben Infra-Hänger auf
+GitHubs Seite treffen. Kein Code-/Config-Fehler im Repo.
+
+**Abhilfe:** manuellen `workflow_dispatch`-Lauf anstoßen (`rerun_failed_jobs`
+scheitert an den Token-Scopes). Das ist ein *neuer* Run — der rote Eintrag bleibt
+in der Historie stehen, das ist kein weiteres Problem.
+→ [`docs/INCIDENTS.md`](docs/INCIDENTS.md#wiederkehrend--transienter-tls-fehler-in-actionsdeploy-pagesv4)
 
 ---
 
@@ -620,7 +609,7 @@ cd android && ./gradlew bundleRelease --no-daemon --console=plain \
 - `/android` directory is NOT tracked in git (generated by `expo prebuild`)
 - **After each `expo prebuild --clean`**: manually add `signingConfigs.release` block to `android/app/build.gradle` and change the release buildType to use `signingConfigs.release` (not `debug`)
 - `keystore/` directory is gitignored (Issue #276) – Signing-Docs lokal halten, nie committen
-- **RESOLVED (Security-Audit, Aug 2026):** `keystore/keystores.md` bleibt zwar in der Git-History erreichbar (`git show 98b1d6e15:keystore/keystores.md`), enthielt aber nie echte Credentials – nur Platzhalter (`[in credentials.json]`) sowie den öffentlichen Signing-Cert-Fingerprint (MD5/SHA1/SHA256) und Key-Alias. Ein Zertifikats-Fingerprint ist ein Hash des öffentlichen Schlüssels, kein Secret – er ist aus jedem veröffentlichten APK extrahierbar und muss für Digital Asset Links ohnehin öffentlich publiziert werden. Ein `git filter-repo`-Rewrite wurde bewusst **nicht** durchgeführt (würde alle nachfolgenden Commit-SHAs, Tags und PR/Issue-Referenzen brechen) – der Impact steht in keinem Verhältnis zum Risiko. `keystore/KEYSTORE_BACKUP_GUIDE.md` (enthielt nur Platzhalter, keine echten Werte) wurde aus dem aktuellen Tracking entfernt, da sie der `.gitignore`-Policy widersprach.
+- **RESOLVED (Security-Audit, Aug 2026):** `keystore/keystores.md` ist in der Git-History erreichbar, enthielt aber nie echte Credentials — nur Platzhalter und den **öffentlichen** Signing-Cert-Fingerprint (kein Secret). Ein `filter-repo`-Rewrite wurde bewusst **nicht** durchgeführt. → [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-08--security-audit-keystorekeystoresmd-in-der-git-history)
 - **Large-Screen-Kompatibilität (Issue #381):** Da `AndroidManifest.xml` generiert/gitignored ist, werden Manifest-Attribute ohne eigenes Expo-Config-Schema-Feld (z.B. `android:resizeableActivity`) über Config-Plugins in `plugins/` gesetzt (siehe `withAndroidResizeableActivity.js`, registriert in `app.config.js` → `plugins`). Gleiches Muster für künftige Manifest-Anpassungen verwenden statt `/android` manuell zu patchen.
 
 ### Reanimated 4 Upgrade (Issue #247, resolved)
