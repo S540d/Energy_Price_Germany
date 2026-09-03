@@ -141,6 +141,17 @@ Merge: `gh pr merge <nr> --squash --admin` (kein `--delete-branch` für langlebi
 > git push origin --delete testing     # muss GH013 „Cannot delete this branch" liefern
 > ```
 
+> 🔴 **Regression aus genau diesem Fix — `fetch.yml` kann nicht mehr auf `main` committen (#446, Stand 2026-09-02, offen).** Mit dem Entfernen der Bypass-Actors verlor auch der `github-actions[bot]` seinen Bypass. Der `Commit and push`-Step des Fetch-Workflows scheitert seither an derselben Regel:
+> ```
+> remote: error: GH013: Repository rule violations found for refs/heads/main.
+> remote: - Changes must be made through a pull request.
+> ```
+> Zuerst aufgetreten in Run 33690118651 (22:25 UTC); der Lauf um 16:00 UTC (33652243129) kam noch durch. **Wirkung: Die Datenpipeline steht** — Preise werden geholt und verworfen, die Website friert auf dem letzten Stand ein. Kein Code-Fehler, keine Änderung an `fetch.yml` kann es beheben.
+>
+> **Behebung (nur manuell im UI möglich, kein MCP-Tool für Rulesets):** Settings → Rules → Ruleset für `main` → unter *Bypass list* **`github-actions[bot]`** bzw. die GitHub-Actions-App hinzufügen (`bypass_mode: always`). Bewusst **nur** diesen Actor — die Admin-Rolle bleibt draußen, sonst kehrt die gelöschte-`testing`-Falle zurück. Danach mit einem `workflow_dispatch`-Lauf von `fetch.yml` verifizieren, dass ein Daten-Commit auf `main` landet.
+>
+> **Merksatz:** Bypass-Actors sind nicht nur ein Sicherheitsrisiko, sondern auch eine Abhängigkeit. Vor dem Entfernen prüfen, **wer** außer dem Menschen über den Bypass schreibt — in diesem Repo committet der Fetch-Workflow bis zu 6× täglich direkt auf `main`.
+
 > **Symptom, an dem man es zuerst merkt:** `git fetch origin testing` scheitert
 > mit `fatal: couldn't find remote ref testing`, während ein `git checkout -B <branch> origin/testing`
 > danach trotzdem „funktioniert" — es greift dann auf die veraltete lokale
@@ -274,12 +285,14 @@ der `update`-Job kann mit eigenen Retries und aWATTar-Fallback mehr ausrichten.
 > fälschlich übersprungen, weil ein Commit (mit Preisen, ohne Erneuerbare)
 > existierte. Nicht wieder einführen.
 
-**1c. Der `Data health check`-Step darf den Run rot färben (#435, schließt #417).**
+**1c. Der `Data health check` liegt in `scripts/data-health-check.js` (#435/#445, schließt #417).**
 Letzter Step im `update`-Job, `if: always()`, also **nach** dem Commit — die
 Daten werden in jedem Fall veröffentlicht. Hat DE **0 Punkte mit
-`renewable_share != null` für heute (Europe/Berlin)**, setzt er `::error::` und
-`exit 1`; GitHub verschickt daraufhin die Standard-„workflow run failed"-Mail.
-Das ist der Benachrichtigungsweg aus #417 — ohne Webhook, Secret oder Kosten.
+`renewable_share != null` für heute (Europe/Berlin)**, setzt das Skript
+`::error::` und `exit 1`; GitHub verschickt daraufhin die Standard-„workflow run
+failed"-Mail. Das ist der Benachrichtigungsweg aus #417 — ohne Webhook, Secret
+oder Kosten. Der Workflow-Step ist nur noch `run: node scripts/data-health-check.js`.
+Semantik-Absicherung: `scripts/__tests__/data-health-check.test.js`.
 
 Nicht-fatal (nur `::warning::`, Run bleibt grün): `source == "awattar"` für DE
 und jedes **Beta-Land** mit 0 Erneuerbaren-Punkten.
@@ -288,6 +301,22 @@ und jedes **Beta-Land** mit 0 Erneuerbaren-Punkten.
 > Tagen steht ein roter Eintrag in der Historie, obwohl die Preisdaten korrekt
 > committet wurden. Das ist der bewusst akzeptierte Preis für die
 > Benachrichtigung — nicht „wegreparieren".
+
+> ⚠️ **Kein Apostroph in `node -e '…'`-Inline-Blöcken — und lieber gar keine
+> mehrzeiligen `node -e`-Blöcke mehr (#445).** Der Health-Check war ursprünglich
+> inline geschrieben und enthielt im deutschen Fehlertext
+> `die App zeigt 'Erneuerbare: --'`. Die einfachen Quotes schlossen den
+> `node -e '…'`-String vorzeitig, `node` bekam `--` als Option und starb mit
+> **Exit 9, bevor eine einzige Prüfung lief** — der Step färbte damit **jeden**
+> Run rot, unabhängig von der Datenlage, und machte den Alarm aus #417 wertlos
+> (ein Dauer-Rot ist von einem echten Ausfall nicht unterscheidbar).
+> Deutsche Texte in `fetch.yml` sind voller Anführungszeichen; jede nennenswerte
+> Logik gehört deshalb in eine Datei unter `scripts/` (wie
+> `fetch-energy-charts.sh`), nicht in einen Inline-Block. Prüfbefehl für den
+> gesamten Workflow:
+> ```bash
+> grep -n "node -e '" .github/workflows/fetch.yml   # sollte nur Einzeiler ohne ' im Body zeigen
+> ```
 
 **2. `ren_share_forecast` ist in ALLEN Ländern non-fatal (`|| true`), `price` bleibt required.**
 Vorher hatten DE und NL `|| exit 1`. Ein Ausfall dieses **einen** Endpunkts
