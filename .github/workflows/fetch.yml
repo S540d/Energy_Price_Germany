@@ -23,6 +23,7 @@ on:
 
 permissions:
   contents: write
+  issues: write   # Data health check meldet Datenlücken per Issue (#445)
 
 # curl-Optionen NUR NOCH für den aWATTar-Call weiter unten.
 #
@@ -2485,3 +2486,5 @@ jobs:
       - name: Data health check
         if: always()
         run: node scripts/data-health-check.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
