@@ -141,16 +141,22 @@ Merge: `gh pr merge <nr> --squash --admin` (kein `--delete-branch` für langlebi
 > git push origin --delete testing     # muss GH013 „Cannot delete this branch" liefern
 > ```
 
-> 🔴 **Regression aus genau diesem Fix — `fetch.yml` kann nicht mehr auf `main` committen (#446, Stand 2026-09-02, offen).** Mit dem Entfernen der Bypass-Actors verlor auch der `github-actions[bot]` seinen Bypass. Der `Commit and push`-Step des Fetch-Workflows scheitert seither an derselben Regel:
+> 🔴 **Regression aus genau diesem Fix — `fetch.yml` kann nicht mehr auf `main` committen (#446, Stand 2026-09-03, offen).** `fetch.yml` checkt mit `token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}` aus, pusht also bevorzugt mit einem **User-PAT** — gedeckt war der durch den **Repository-admin**-Bypass, und genau den hat der #428-Fix entfernt. Der `Commit and push`-Step scheitert seither an derselben Regel:
 > ```
 > remote: error: GH013: Repository rule violations found for refs/heads/main.
 > remote: - Changes must be made through a pull request.
 > ```
 > Zuerst aufgetreten in Run 33690118651 (22:25 UTC); der Lauf um 16:00 UTC (33652243129) kam noch durch. **Wirkung: Die Datenpipeline steht** — Preise werden geholt und verworfen, die Website friert auf dem letzten Stand ein. Kein Code-Fehler, keine Änderung an `fetch.yml` kann es beheben.
 >
-> **Behebung (nur manuell im UI möglich, kein MCP-Tool für Rulesets):** Settings → Rules → Ruleset für `main` → unter *Bypass list* **`github-actions[bot]`** bzw. die GitHub-Actions-App hinzufügen (`bypass_mode: always`). Bewusst **nur** diesen Actor — die Admin-Rolle bleibt draußen, sonst kehrt die gelöschte-`testing`-Falle zurück. Danach mit einem `workflow_dispatch`-Lauf von `fetch.yml` verifizieren, dass ein Daten-Commit auf `main` landet.
+> ⚠️ **`github-actions[bot]` ist in Rulesets grundsätzlich NICHT als Bypass-Actor wählbar** — GitHub lässt das aus Sicherheitsgründen nicht zu (ein kompromittierter Workflow könnte sonst jede Regel umgehen). Wählbar sind Rollen, Teams, installierte GitHub Apps und **Deploy Keys**. Wer danach im UI sucht, sucht vergeblich.
 >
-> **Merksatz:** Bypass-Actors sind nicht nur ein Sicherheitsrisiko, sondern auch eine Abhängigkeit. Vor dem Entfernen prüfen, **wer** außer dem Menschen über den Bypass schreibt — in diesem Repo committet der Fetch-Workflow bis zu 6× täglich direkt auf `main`.
+> **Behebung (nur manuell im UI möglich, kein MCP-Tool für Rulesets):**
+> - **Weg A (minimal):** Im Ruleset für `main` die Rolle **`Repository admin`** wieder in die *Bypass list* aufnehmen. Das **`protect-testing`**-Ruleset bleibt bypass-frei, damit der Löschschutz aus #428 erhalten bleibt. **Voraussetzung: getrennte Rulesets pro Branch** — deckt ein einziges beide ab, vorher aufteilen, sonst kehrt die gelöschte-`testing`-Falle zurück.
+> - **Weg B (ohne Rollen-Bypass):** Deploy Key mit Write-Access, Private Key als Secret, im Checkout `ssh-key:` statt `token:`, Deploy Key in die Bypass-Liste. Nebeneffekt: Deploy-Key-Pushes lösen Workflows aus, `GITHUB_TOKEN`-Pushes nicht — die Run-Zahlen verschieben sich.
+>
+> **Verifikation, beides muss gelten:** `git push origin --delete testing` liefert weiterhin GH013, **und** ein `workflow_dispatch`-Lauf von `fetch.yml` erzeugt einen `Update marketdata.json`-Commit auf `main`.
+>
+> **Merksatz:** Bypass-Actors sind nicht nur ein Sicherheitsrisiko, sondern auch eine Abhängigkeit. Vor dem Entfernen prüfen, **wer** außer dem Menschen über den Bypass schreibt — in diesem Repo pusht der Fetch-Workflow mit einem User-PAT bis zu 6× täglich direkt auf `main` und hing damit am selben Admin-Bypass.
 
 > **Symptom, an dem man es zuerst merkt:** `git fetch origin testing` scheitert
 > mit `fatal: couldn't find remote ref testing`, während ein `git checkout -B <branch> origin/testing`
