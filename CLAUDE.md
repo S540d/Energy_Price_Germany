@@ -303,10 +303,17 @@ Semantik-Absicherung: `scripts/__tests__/data-health-check.test.js`.
 Nicht-fatal (nur `::warning::`, Run bleibt grün): `source == "awattar"` für DE
 und jedes **Beta-Land** mit 0 Erneuerbaren-Punkten.
 
-> ⚠️ **Ein roter Run bei Upstream-Ausfall ist Absicht, kein Defekt.** An solchen
-> Tagen steht ein roter Eintrag in der Historie, obwohl die Preisdaten korrekt
-> committet wurden. Das ist der bewusst akzeptierte Preis für die
-> Benachrichtigung — nicht „wegreparieren".
+> ⚠️ **Datenlücken färben den Run NICHT rot** (geändert mit der Retrospektive
+> zu #445). Der Befund geht in ein automatisch verwaltetes Issue mit Label
+> `data-health` (öffnen / höchstens ein Kommentar pro Tag / schließen bei
+> Erholung). Grund: Solange ein Datenausfall den Run rot färbte, war **rot
+> mehrdeutig** — Upstream-Ausfall oder echter Defekt. Genau dadurch blieb der
+> Exit-9-Dauerfehler aus #445 stundenlang unentdeckt: Ein Dauer-Rot sah aus wie
+> ein funktionierender Alarm.
+>
+> **Seither gilt: rot = der Workflow ist defekt.** Diese Eindeutigkeit ist der
+> eigentliche Wert — nicht wieder aufweichen, indem fachliche Befunde in den
+> Exit-Code wandern.
 
 > ⚠️ **Kein Apostroph in `node -e '…'`-Inline-Blöcken — und lieber gar keine
 > mehrzeiligen `node -e`-Blöcke mehr (#445).** Der Health-Check war ursprünglich

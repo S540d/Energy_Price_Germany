@@ -5,14 +5,15 @@
  * Prüft nach dem Commit, ob die frisch veröffentlichten Marktdaten für HEUTE
  * (Europe/Berlin) Erneuerbaren-Werte enthalten:
  *
- *   - DE ohne Erneuerbaren-Punkte  → ::error:: + Exit 1 (Run wird rot)
+ *   - DE ohne Erneuerbaren-Punkte  → ::error:: + Alarm-Issue
  *   - DE-Quelle == "awattar"       → nur ::warning:: (liefert per Design keine)
- *   - Beta-Länder ohne Punkte      → nur ::warning::, färbt den Run nie rot
+ *   - Beta-Länder ohne Punkte      → nur ::warning::
  *
- * Ein roter Run löst GitHubs Standard-"workflow run failed"-Mail aus und ist
- * damit der Benachrichtigungsweg aus #417 — ohne Webhook, Secret oder Kosten.
- * An Tagen mit echtem Upstream-Ausfall ist ein roter Eintrag in der Historie
- * deshalb ABSICHT und kein Defekt.
+ * Der Befund geht in ein automatisch verwaltetes GitHub-Issue (Label
+ * `data-health`), NICHT in den Exit-Code. Das ist der Benachrichtigungsweg aus
+ * #417 — ohne Webhook, Secret oder Kosten — und hält zugleich die Bedeutung von
+ * "roter Run" eindeutig: rot heißt Defekt, nicht Datenlücke. Begründung siehe
+ * den Kommentar bei syncAlertIssue() weiter unten (#445).
  *
  * Bewusst als eigenständige Datei statt als `node -e '…'`-Inline-Block: der
  * Inline-Block lief in jedem Fetch-Run auf `node: bad option: --` auf, weil ein
@@ -114,8 +115,93 @@ function run(dataDir, today) {
   return { summary, messages, failed };
 }
 
-if (require.main === module) {
-  const { summary, messages, failed } = run(DATA_DIR, berlinDay(Date.now()));
+// ─── Alarmierung über ein Issue statt über den Exit-Code (Issue #445) ──────
+//
+// Vorher setzte dieser Check `exit 1` und faerbte den Run rot. Das machte ROT
+// mehrdeutig: entweder Upstream-Ausfall (gewollt) oder echter Defekt. Genau
+// daran ist #445 durchgerutscht — ein Step, der in JEDEM Run mit Exit 9 abbrach,
+// sah aus wie "der Alarm tut, was er soll", und blieb stundenlang unentdeckt.
+//
+// Seither gilt: ein roter Run heisst "der Workflow ist defekt". Der fachliche
+// Befund (fehlende Daten) landet in einem automatisch verwalteten Issue —
+// oeffnen bei Luecke, hoechstens ein Kommentar pro Tag bei Fortdauer, schliessen
+// bei Erholung. Kein Webhook, kein Secret, nur GITHUB_TOKEN.
+
+const ALERT_LABEL = 'data-health';
+const ALERT_TITLE = 'Datenluecke: keine Erneuerbaren-Daten fuer heute';
+
+/** Minimaler GitHub-Client. Gibt null zurueck, wenn die Umgebung fehlt (lokal). */
+function githubClient() {
+  const token = process.env.GITHUB_TOKEN;
+  const repo = process.env.GITHUB_REPOSITORY;
+  if (!token || !repo) return null;
+
+  const call = async (method, urlPath, body) => {
+    const res = await fetch(`https://api.github.com/repos/${repo}${urlPath}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (!res.ok) {
+      throw new Error(`GitHub API ${method} ${urlPath} → ${res.status} ${await res.text()}`);
+    }
+    return res.status === 204 ? null : res.json();
+  };
+
+  return {
+    findOpenAlert: () =>
+      call('GET', `/issues?state=open&labels=${ALERT_LABEL}&per_page=1`),
+    createAlert: (title, body) =>
+      call('POST', '/issues', { title, body, labels: [ALERT_LABEL] }),
+    commentAlert: (number, body) => call('POST', `/issues/${number}/comments`, { body }),
+    listComments: (number) => call('GET', `/issues/${number}/comments?per_page=100`),
+    closeAlert: (number) =>
+      call('PATCH', `/issues/${number}`, { state: 'closed', state_reason: 'completed' }),
+  };
+}
+
+/**
+ * Haelt das Alarm-Issue mit der Datenlage in Einklang.
+ * Der gh-Client ist injizierbar, damit Tests ohne Netz laufen.
+ */
+async function syncAlertIssue({ failed, summary, today, gh, runUrl }) {
+  if (!gh) return { action: 'skipped-no-credentials' };
+
+  const found = await gh.findOpenAlert();
+  const open = Array.isArray(found) ? found[0] : null;
+  const details = summary.join('\n') + (runUrl ? `\n\n[Workflow-Run](${runUrl})` : '');
+
+  if (failed) {
+    if (!open) {
+      await gh.createAlert(`${ALERT_TITLE} (${today})`, details);
+      return { action: 'opened' };
+    }
+    // Bei bis zu 6 Läufen/Tag nicht jedes Mal kommentieren — hoechstens einmal
+    // pro Berlin-Tag, sonst ertrinkt der Verlauf im Rauschen.
+    const comments = (await gh.listComments(open.number)) || [];
+    const alreadyToday = comments.some((c) => (c.body || '').includes(`(${today})`));
+    if (alreadyToday) return { action: 'noop-already-commented' };
+
+    await gh.commentAlert(open.number, `Weiterhin offen (${today}).\n\n${details}`);
+    return { action: 'commented' };
+  }
+
+  if (open) {
+    await gh.commentAlert(open.number, `Erholt (${today}) — Daten sind wieder vollstaendig.\n\n${details}`);
+    await gh.closeAlert(open.number);
+    return { action: 'closed' };
+  }
+
+  return { action: 'noop-healthy' };
+}
+
+async function main() {
+  const today = berlinDay(Date.now());
+  const { summary, messages, failed } = run(DATA_DIR, today);
 
   for (const message of messages) {
     console.log(message);
@@ -126,7 +212,29 @@ if (require.main === module) {
     fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary.join('\n') + '\n');
   }
 
-  if (failed) process.exit(1);
+  // Ein Fehler der Alarmierung selbst darf die Pipeline nicht rot faerben —
+  // die Daten sind zu diesem Zeitpunkt bereits committet.
+  try {
+    const result = await syncAlertIssue({
+      failed,
+      summary,
+      today,
+      gh: githubClient(),
+      runUrl:
+        process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY && process.env.GITHUB_RUN_ID
+          ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
+          : null,
+    });
+    console.log(`Alarm-Issue: ${result.action}`);
+  } catch (err) {
+    console.log(`::warning::Alarm-Issue konnte nicht aktualisiert werden: ${err.message}`);
+  }
+
+  // Bewusst KEIN exit 1 bei einer Datenluecke — siehe Kommentar oben.
 }
 
-module.exports = { run, berlinDay };
+if (require.main === module) {
+  main();
+}
+
+module.exports = { run, berlinDay, syncAlertIssue, ALERT_LABEL, ALERT_TITLE };
