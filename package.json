@@ -38,7 +38,8 @@
     "deploy": "npm run build && npm run deploy:gh-pages",
     "deploy:gh-pages": "gh-pages -d dist -t --dotfiles",
     "validate": "./scripts/validate-release.sh",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "lint:workflows": "node scripts/lint-workflows.js"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
