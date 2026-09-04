@@ -53,6 +53,14 @@ den Bot; das kostete eine Runde vergebliches Suchen.
 
 **Nachfolge:** #450 (zentrale Vorlagen), #451 (Deploy Key + Auto-Sync).
 
+**Update 2026-09-04 (#459):** #451 ist gemergt (2026-09-03, 18:02 UTC) und löst den
+interimistischen `Repository admin`-Bypass wieder ab — `fetch.yml` checkt seither mit
+`ssh-key: ${{ secrets.FETCH_DEPLOY_KEY }}` statt `token:` aus, der Deploy Key steht als
+eigener Bypass-Actor im `main`-Ruleset. In Produktion verifiziert: Die Fetch-Commits
+`9fe2c47` (2026-09-03T18:05 UTC) und `4f5171f` (2026-09-04T03:06 UTC) landeten auf `main`,
+obwohl der `Repository admin`-Bypass zu diesem Zeitpunkt bereits wieder entfernt war. Der
+Bypass-Zirkel aus #446 ist damit ohne Rollen-Bypass geschlossen.
+
 ### Ursache 2: Ein Apostroph legte den Health-Check lahm (#445)
 
 Der `Data health check` aus #435 war als `node -e '…'`-Inline-Block geschrieben
