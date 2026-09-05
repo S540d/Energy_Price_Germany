@@ -37,7 +37,7 @@ import {
 
 SplashScreenModule.preventAutoHideAsync().catch(() => {});
 
-const APP_VERSION = '1.10.0';
+const APP_VERSION = '1.11.0';
 const TRANSPARENT = 'transparent';
 
 function AppContent() {
