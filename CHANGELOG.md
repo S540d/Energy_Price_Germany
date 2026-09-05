@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-09-05
+
 ### Changed
 - **Datenlücken melden per Issue statt per rotem Run (Issue #445, Retrospektive).** Der `Data health check` setzte bei fehlenden Erneuerbaren-Daten `exit 1` und färbte den Run rot — der Benachrichtigungsweg aus #417. Nebenwirkung: **Rot wurde mehrdeutig**, entweder Upstream-Ausfall (gewollt) oder echter Defekt. Genau daran ist #445 durchgerutscht: Ein Step, der in *jedem* Run mit Exit 9 abbrach, sah aus wie „der Alarm tut, was er soll", und blieb über Stunden unentdeckt. Der Befund landet jetzt in einem automatisch verwalteten Issue (Label `data-health`): öffnen bei Lücke, höchstens ein Kommentar pro Berlin-Tag bei Fortdauer, Kommentar + Schließen bei Erholung — über `GITHUB_TOKEN`, ohne Webhook oder Secret. Der Verlauf ist damit sogar besser nachvollziehbar als per Einzelmail. **Seither gilt wieder: rot = Defekt.** Die Prüf-Semantik ist unverändert (DE 0 Punkte für heute = Alarm, aWATTar und Beta-Länder = nur Warnung); ein Fehler der Alarmierung selbst färbt den Run bewusst nicht rot, da die Daten zu dem Zeitpunkt bereits committet sind. 6 zusätzliche Unit-Tests.
 - **Fetch-Pipeline: Resilienz, mehr Erholungschancen, Alarmierung (Issue #435, schließt #417).** Am 02.09.2026 antwortete `ren_share_forecast?country=de` mit HTTP 429; der Workflow lief **grün** durch, die App zeigte trotzdem 10 Stunden lang "Erneuerbare: --". Drei Ursachen, drei Gegenmaßnahmen:
