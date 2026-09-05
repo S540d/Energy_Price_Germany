@@ -120,6 +120,23 @@ Ein PR gegen `testing` hat daher nur 2 Checks (`review-gate` + `mergeability`),
 einer gegen `main` rund 15. Das Fehlen von `🔍 Code Quality & Linting` auf einem
 `testing`-PR ist **kein** Defekt.
 
+### Versions-Bump ist kein Automatismus (Session vom 05.09.2026)
+
+Zwischen 1.9.0 (27.06.2026) und 1.10.0 (05.09.2026) liefen **fünf** Releases
+`testing → main` (#421–#458), ohne dass jemand `version`/`versionCode`
+angehoben hat — `[Unreleased]` in `CHANGELOG.md` wuchs über zwei Monate an,
+inkl. eines potenziell absturzrelevanten Fixes (#376), der so ungenutzt blieb.
+
+**Vor jedem Release-PR `testing → main` prüfen:**
+```bash
+git show origin/main:app.json | grep -E '"version"|versionCode'
+git show origin/testing:CHANGELOG.md | grep -n '^## \['
+```
+Steht unter `## [Unreleased]` etwas User-Relevantes, gehört ein Versions-Bump
+(`package.json`, `app.json` `version`+`versionCode`, `App.tsx` `APP_VERSION`,
+`package-lock.json`) **in denselben PR**, der nach `testing` geht — nicht erst
+im Release-PR nach `main` nachgezogen.
+
 ### Release-PRs testing → main
 
 `main` liegt unter dem `Main`-Ruleset mit **Required Approvals = 1**. Als Solo-Dev
