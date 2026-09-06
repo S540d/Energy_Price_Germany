@@ -500,6 +500,18 @@ Validation rules enforced by Husky:
 - **Local Dev:** `expo start --web`
 - **Local Build:** `npm run serve:local` (port 8080)
 
+### Test-Suite läuft automatisiert in CI (Issue #468)
+`ci-cd.yml` hat einen Job `🧪 Test Suite` (`npm run test:coverage`), Voraussetzung
+für `build-web` und den Release-Report. Vorher liefen die 350 Tests (27
+`*.test.ts(x)`-Dateien) nirgends automatisiert — weder hier noch in den
+Husky-Hooks —, die in `jest.config.js` konfigurierten Coverage-Schwellen
+(68/54/63/68) waren dadurch wirkungslos.
+
+> ⚠️ **`npx tsc --noEmit` in `code-quality` läuft ohne `|| true`.** Vor #468
+> maskierte `|| true` jeden Type-Fehler, der Schritt konnte nie fehlschlagen.
+> Beim erneuten Hinzufügen (z. B. „der Robustheit halber") wird der Type-Check
+> wieder wirkungslos — nicht zurückbauen.
+
 ## Critical Areas
 
 1. **Data Fetching (App.tsx):**
