@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Changed
+- **Code-Health-Audit umgesetzt (Issue #468).** Erster Durchlauf des wiederkehrenden Audit-Standards (project-templates#136) deckte auf, dass Tests trotz 350 lokal grüner Tests nirgends automatisiert liefen und `tsc`-Fehler in CI stillschweigend verschluckt wurden:
+  - **Test-Suite läuft jetzt in `ci-cd.yml`** (neuer Job `🧪 Test Suite`, `npm run test:coverage`), Voraussetzung für `build-web` und den Release-Report. Die in `jest.config.js` konfigurierten Coverage-Schwellen (68/54/63/68) werden dadurch erstmals im Merge-Pfad geprüft.
+  - **`npx tsc --noEmit || true` → `npx tsc --noEmit`.** Das `|| true` maskierte jeden Type-Fehler; der Check konnte nie fehlschlagen. Verifiziert: `tsc --noEmit` läuft aktuell fehlerfrei durch, es gab also keine versteckten Typfehler.
+  - **Chart-Farblogik zentralisiert:** `getRenewableColor`/`interpolateColor` aus `RenewableBarChart.tsx` nach `utils/chartHelpers.ts` verschoben, analog zur bereits zentralen `getPriceColor`.
+  - **Neuer Design-Token `colors.renewable`** (`utils/designSystem.ts`) ersetzt die 3 unabhängig hartkodierten `#4CAF50`-Vorkommen in `RenewableBarChart.tsx`, `MetricsView.tsx` und `ChartSection.tsx`.
+  - **Toter Code entfernt:** `typography`, `transitions`, `opacity`, `zIndex`, `semanticColors` aus `utils/designSystem.ts` — laut `ts-prune` ohne jeden Import außerhalb der Definitionsdatei, täuschten eine im Code nicht eingehaltene Design-Konsistenz vor.
+
 ## [1.10.0] - 2026-09-05
 
 ### Changed

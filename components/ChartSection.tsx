@@ -12,6 +12,7 @@ import { isValidPostalCode } from '../utils/postalCodeUtils';
 import type { ThemeColors } from '../utils/theme';
 import type { EnergyData } from '../utils/metrics';
 import type { calculateMetrics } from '../utils/metrics';
+import { colors as designColors } from '../utils/designSystem';
 
 type Metrics = ReturnType<typeof calculateMetrics>;
 
@@ -421,7 +422,12 @@ const styles = StyleSheet.create({
   legendGroup: { gap: 6 },
   legendRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   legendLineRegional: { width: 16, height: 3, backgroundColor: '#FF9800', borderRadius: 1.5 },
-  legendSquareGreen: { width: 16, height: 16, backgroundColor: '#4CAF50', borderRadius: 2 },
+  legendSquareGreen: {
+    width: 16,
+    height: 16,
+    backgroundColor: designColors.renewable,
+    borderRadius: 2,
+  },
   legendSquareGray: { width: 16, height: 16, backgroundColor: '#757575', borderRadius: 2 },
   legendLabel: { fontSize: 12 },
   viewToggleRow: { flexDirection: 'row', gap: 6 },

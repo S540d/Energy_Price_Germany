@@ -27,27 +27,6 @@ export const borderRadius = {
   full: 9999,
 } as const;
 
-// ============ TYPOGRAPHY ============
-export const typography = {
-  sizes: {
-    xs: 10,
-    sm: 12,
-    base: 14,
-    lg: 16,
-    xl: 18,
-    '2xl': 20,
-    '3xl': 24,
-    '4xl': 28,
-  },
-  weights: {
-    light: '300',
-    normal: '400',
-    medium: '500',
-    semibold: '600',
-    bold: '700',
-  },
-} as const;
-
 // ============ SHADOWS / ELEVATION ============
 // Subtle, modern elevation system
 export const elevation = {
@@ -80,31 +59,6 @@ export const elevation = {
     shadowRadius: 12,
     elevation: 8,
   },
-} as const;
-
-// ============ TRANSITIONS / ANIMATIONS ============
-export const transitions = {
-  fast: 100,
-  normal: 200,
-  slow: 300,
-  slower: 500,
-} as const;
-
-// ============ OPACITIES ============
-export const opacity = {
-  disabled: 0.5,
-  hover: 0.8,
-  active: 0.9,
-  full: 1,
-} as const;
-
-// ============ Z-INDEX SCALE ============
-export const zIndex = {
-  base: 0,
-  dropdown: 10,
-  modal: 100,
-  popover: 110,
-  loading: 9999,
 } as const;
 
 // ============ SEMANTIC COLOR SCALES ============
@@ -194,11 +148,11 @@ export const colorScales = {
   },
 } as const;
 
-// ============ SEMANTIC COLOR INTENTIONS ============
-export const semanticColors = {
-  success: '#22C55E',
-  warning: '#F97316',
-  error: '#EF4444',
-  info: '#3B82F6',
-  pending: '#FBBF24',
+// ============ DATA-VIZ / BRAND COLORS ============
+// Feste Markenfarbe für "Erneuerbare Energien" — unabhängig vom semantischen
+// Success-Grün, da sie eine Datenkategorie (Chart-Legende, Icon-Akzent)
+// kennzeichnet statt eines UI-Zustands. War zuvor an 3 Stellen hartkodiert
+// (RenewableBarChart, MetricsView, ChartSection – Issue #468).
+export const colors = {
+  renewable: '#4CAF50',
 } as const;
