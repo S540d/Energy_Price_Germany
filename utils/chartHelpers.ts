@@ -25,6 +25,32 @@ export function getPriceColor(totalPrice: number): string {
 }
 
 /**
+ * Maps a renewable energy share (%) to a color.
+ * Red = low (<50%), Yellow→Green = medium (50–80%), Green = high (80–100%),
+ * Green→Blue = surplus (>100%, can happen with export/negative residual load).
+ * Shared with PriceBarChart's color scale to keep the visual language consistent.
+ */
+export function getRenewableColor(renewablePercent: number): string {
+  const red = [244, 67, 54];
+  const yellow = [255, 193, 7];
+  const green = [76, 175, 80];
+  const blue = [33, 150, 243];
+
+  if (renewablePercent > 100) {
+    const factor = Math.min((renewablePercent - 100) / 20, 1);
+    return interpolateColor(green, blue, factor);
+  } else if (renewablePercent > 80) {
+    return '#4CAF50';
+  } else if (renewablePercent > 50) {
+    const factor = (renewablePercent - 50) / 30;
+    return interpolateColor(yellow, green, factor);
+  } else {
+    const factor = renewablePercent / 50;
+    return interpolateColor(red, yellow, factor);
+  }
+}
+
+/**
  * Berechnet die Position für rotierte Y-Achsen-Beschriftungen
  * Bei -90deg Rotation: 'top' steuert die horizontale Position (links/rechts)
  *

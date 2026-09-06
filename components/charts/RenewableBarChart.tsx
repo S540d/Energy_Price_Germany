@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, Platform, ScrollView, StyleSheet } from 'react-native';
 import Svg, { Rect, Line, Polyline } from 'react-native-svg';
 import type { ThemeColors } from '../../utils/theme';
-import { getYAxisLabelStyle } from '../../utils/chartHelpers';
+import { getYAxisLabelStyle, getRenewableColor } from '../../utils/chartHelpers';
 import { useChartDimensions } from '../../utils/chartUtils';
 import { arrayMin, arrayMax } from '../../utils/mathUtils';
 import { useLanguageContext } from '../../context/LanguageContext';
@@ -16,34 +16,6 @@ import {
   ZoomResetBadge,
 } from './shared';
 import { scaleToX, scaleToY, getBarWidth, getBarHeight, getPlotHeight } from './shared/chartScale';
-
-// Performance: Move color helpers outside component for stable references
-const interpolateColor = (color1: number[], color2: number[], factor: number) => {
-  const r = Math.round(color1[0] + (color2[0] - color1[0]) * factor);
-  const g = Math.round(color1[1] + (color2[1] - color1[1]) * factor);
-  const b = Math.round(color1[2] + (color2[2] - color1[2]) * factor);
-  return `rgb(${r}, ${g}, ${b})`;
-};
-
-const getRenewableColor = (renewablePercent: number) => {
-  const red = [244, 67, 54];
-  const yellow = [255, 193, 7];
-  const green = [76, 175, 80];
-  const blue = [33, 150, 243];
-
-  if (renewablePercent > 100) {
-    const factor = Math.min((renewablePercent - 100) / 20, 1);
-    return interpolateColor(green, blue, factor);
-  } else if (renewablePercent > 80) {
-    return '#4CAF50';
-  } else if (renewablePercent > 50) {
-    const factor = (renewablePercent - 50) / 30;
-    return interpolateColor(yellow, green, factor);
-  } else {
-    const factor = renewablePercent / 50;
-    return interpolateColor(red, yellow, factor);
-  }
-};
 
 /**
  * Type alias for renewable share data keys in EnergyData

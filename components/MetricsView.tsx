@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import type { Metrics } from '../utils/metrics';
 import { GRID_FEES_AND_TAXES } from '../utils/metrics';
 import type { ThemeColors } from '../utils/theme';
+import { colors as designColors } from '../utils/designSystem';
 
 interface MetricsViewProps {
   metrics: Metrics;
@@ -51,7 +52,7 @@ function createStyles(colors: ThemeColors, renewableAvg: number) {
       width: Math.max(BUBBLE_MIN_SIZE, renewableAvg * BUBBLE_SCALE_FACTOR),
       height: Math.max(BUBBLE_MIN_SIZE, renewableAvg * BUBBLE_SCALE_FACTOR),
       borderRadius: Math.max(BUBBLE_MIN_RADIUS, renewableAvg * BUBBLE_RADIUS_FACTOR),
-      backgroundColor: '#4CAF50',
+      backgroundColor: designColors.renewable,
       opacity: 0.8,
       justifyContent: 'center',
       alignItems: 'center',
