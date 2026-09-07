@@ -1,0 +1,56 @@
+# Dependabot – kostenlose Dependency-Updates + Security-Alerts (Issue #60).
+# Ersetzt zusammen mit codeql.yml den kostenpflichtigen Anthropic-API-Scan.
+#
+# Kopieren nach .github/dependabot.yml (NICHT nach workflows/ — liegt direkt
+# unter .github/). GitHub liest die Datei automatisch, kein Trigger nötig.
+#
+# package-ecosystem an das Repo anpassen:
+#   - Node-Repos:            "npm"  (deckt npm, yarn, pnpm ab)
+#   - reine Doc/Config-Repos: nur "github-actions" behalten, "npm"-Block löschen
+#
+# Drosselung der PR-Flut (Issue #144):
+#   - target-branch: "testing" — PRs gegen main sind wegen der Ruleset-Pflicht
+#     (PR-Review + Status-Checks) nicht direkt mergebar. MUSS in jedem Repo
+#     stehen, sonst landen die PRs auf dem Default-Branch main.
+#   - interval: "monthly" statt weekly — ein Schwung pro Monat.
+#   - EIN Gruppen-Block ohne update-types-Filter: bündelt auch Major-Updates,
+#     sonst geht pro Major-Bump (vitest 4→5, vite 7→8) ein eigener PR auf.
+#   - open-pull-requests-limit: 5 als Sicherheitsnetz gegen Ausreißer.
+#
+# ACHTUNG: target-branch wirkt nur auf NEUE PRs; bereits offene PRs gegen main
+# bleiben stehen und müssen manuell geschlossen oder gemerged werden.
+# ACHTUNG: GitHubs Default-Security-Updates ignorieren target-branch. Deshalb
+# muss diese Datei auch in Repos liegen, die sonst keine Config bräuchten.
+
+version: 2
+updates:
+  # GitHub-Actions-Versionen (gilt für ALLE Repos, auch ohne package.json).
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    target-branch: 'testing'
+    schedule:
+      interval: 'monthly'
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'ci'
+    groups:
+      # Kein update-types-Filter → Major landet mit im Sammel-PR.
+      actions-all:
+        patterns:
+          - '*'
+
+  # NPM/Yarn/PNPM-Abhängigkeiten (nur Node-Repos; sonst diesen Block entfernen).
+  - package-ecosystem: 'npm'
+    directory: '/'
+    target-branch: 'testing'
+    schedule:
+      interval: 'monthly'
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore'
+    groups:
+      # Ein PR für alles — inklusive Major. Breaking Changes stehen damit
+      # gesammelt im PR-Body und werden dort geprüft, nicht pro Paket.
+      npm-all:
+        patterns:
+          - '*'
