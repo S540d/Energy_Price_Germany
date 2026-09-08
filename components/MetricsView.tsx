@@ -91,12 +91,18 @@ export function MetricsView({ metrics, colors }: MetricsViewProps) {
     },
   };
 
-  const styles = useMemo(
-    () => createStyles(colors, displayMetrics.renewable.avg),
-    [colors, displayMetrics.renewable.avg]
-  );
+  // Ohne Erneuerbaren-Daten gibt es keinen Mix zu zeigen: Der Bubble-Chart
+  // würde sonst „0 % erneuerbar / 100 % konventionell“ behaupten, wo schlicht
+  // keine Messwerte vorliegen.
+  const renewableAvg = displayMetrics.renewable.avg;
+  const hasRenewableStats = renewableAvg !== null;
 
-  const nonRenewablePercentage = 100 - displayMetrics.renewable.avg;
+  const styles = useMemo(() => createStyles(colors, renewableAvg ?? 0), [colors, renewableAvg]);
+
+  const nonRenewablePercentage = renewableAvg !== null ? 100 - renewableAvg : 0;
+
+  const formatPercent = (value: number | null, digits = 1) =>
+    value !== null ? `${value.toFixed(digits)}%` : '—';
 
   return (
     <View style={styles.container}>
@@ -147,39 +153,41 @@ export function MetricsView({ metrics, colors }: MetricsViewProps) {
         <View style={styles.statsRow}>
           <View style={styles.statColumn}>
             <Text style={styles.statCaption}>Durchschnitt</Text>
-            <Text style={styles.statValue}>{displayMetrics.renewable.avg.toFixed(1)}%</Text>
+            <Text style={styles.statValue}>{formatPercent(displayMetrics.renewable.avg)}</Text>
           </View>
           <View style={styles.statColumn}>
             <Text style={styles.statCaption}>Minimum</Text>
-            <Text style={styles.statValue}>{displayMetrics.renewable.min.toFixed(1)}%</Text>
+            <Text style={styles.statValue}>{formatPercent(displayMetrics.renewable.min)}</Text>
           </View>
           <View style={styles.statColumn}>
             <Text style={styles.statCaption}>Maximum</Text>
-            <Text style={styles.statValue}>{displayMetrics.renewable.max.toFixed(1)}%</Text>
+            <Text style={styles.statValue}>{formatPercent(displayMetrics.renewable.max)}</Text>
           </View>
         </View>
 
-        {/* Energy Mix Visualization - Bubble Chart */}
-        <View style={styles.bubbleSection}>
-          <Text style={styles.bubbleSectionLabel}>Energiemix (Durchschnitt)</Text>
-          <View style={styles.bubbleRow}>
-            {/* Renewable bubble */}
-            <View style={styles.bubbleColumn}>
-              <View style={styles.renewableBubble}>
-                <Text style={styles.bubbleValue}>{displayMetrics.renewable.avg.toFixed(0)}%</Text>
+        {/* Energy Mix Visualization - Bubble Chart (nur bei vorhandenen Werten) */}
+        {hasRenewableStats && (
+          <View style={styles.bubbleSection}>
+            <Text style={styles.bubbleSectionLabel}>Energiemix (Durchschnitt)</Text>
+            <View style={styles.bubbleRow}>
+              {/* Renewable bubble */}
+              <View style={styles.bubbleColumn}>
+                <View style={styles.renewableBubble}>
+                  <Text style={styles.bubbleValue}>{formatPercent(renewableAvg, 0)}</Text>
+                </View>
+                <Text style={styles.bubbleCaption}>Erneuerbar</Text>
               </View>
-              <Text style={styles.bubbleCaption}>Erneuerbar</Text>
-            </View>
 
-            {/* Non-renewable bubble */}
-            <View style={styles.bubbleColumn}>
-              <View style={styles.nonRenewableBubble}>
-                <Text style={styles.bubbleValue}>{nonRenewablePercentage.toFixed(0)}%</Text>
+              {/* Non-renewable bubble */}
+              <View style={styles.bubbleColumn}>
+                <View style={styles.nonRenewableBubble}>
+                  <Text style={styles.bubbleValue}>{nonRenewablePercentage.toFixed(0)}%</Text>
+                </View>
+                <Text style={styles.bubbleCaption}>Konventionell</Text>
               </View>
-              <Text style={styles.bubbleCaption}>Konventionell</Text>
             </View>
           </View>
-        </View>
+        )}
       </View>
 
       {/* Börsenstrompreis */}

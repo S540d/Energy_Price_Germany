@@ -2,6 +2,7 @@ import type { EnergyData } from '../utils/metrics';
 import { Platform } from 'react-native';
 import { isValidPostalCode } from '../utils/postalCodeUtils';
 import { validateMarketDataResponse, fetchWithTimeout } from '../utils/apiValidation';
+import type { RegionalDataResponse } from '../utils/apiValidation';
 import { RegionalDataCache } from './regionalDataCache';
 import { mergeRegionalData } from './dataMerger';
 import { historicalDataStoreForCountry } from './historicalDataStore';
@@ -305,6 +306,20 @@ export class EnergyDataManager {
    */
   public async invalidateRegionalCache(): Promise<void> {
     await this.regionalCache.invalidate();
+  }
+
+  /**
+   * Holt Regionaldaten für eine PLZ, ohne sie in die Chart-Daten zu mergen.
+   *
+   * Wird für den Ersatzort verwendet, wenn der nationale Erneuerbaren-Anteil
+   * fehlt und der Nutzer keine eigene PLZ gesetzt hat: Der Wert soll nur in
+   * der Kachel erscheinen, nicht als zusätzliche Linie in einem Chart für
+   * einen Ort, den niemand ausgewählt hat. Läuft über denselben Cache wie der
+   * reguläre Regional-Abruf (15 min Memory / tagesweise persistent).
+   */
+  public async fetchRegionalDataOnly(postalCode: string): Promise<RegionalDataResponse | null> {
+    if (!isValidPostalCode(postalCode)) return null;
+    return this.regionalCache.fetchRegionalData(postalCode);
   }
 
   /**

@@ -165,6 +165,28 @@ describe('metrics.ts', () => {
         expect(result.today.coverage).toEqual({ priceCount: 2, renewableCount: 0, total: 2 });
       });
 
+      it('should report null (not 0) for renewable stats when today has no renewable values', () => {
+        // Regression: 0 wurde in der Kachel als „Tages-Ø 0.0 %“ angezeigt und
+        // damit ein Datenausfall als „keine Erneuerbaren im Netz“ gelesen.
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+        const todayData: EnergyData[] = [
+          { timestamp: todayStart + 3600000, marketPrice: 100, renewableShare: null },
+          { timestamp: todayStart + 7200000, marketPrice: 200, renewableShare: null },
+        ];
+
+        const result = calculateMetrics(todayData);
+        if (!result) throw new Error('expected calculateMetrics result to be non-null');
+        if (!result.today) throw new Error('expected today metrics to be defined');
+        expect(result.today.renewable.avg).toBeNull();
+        expect(result.today.renewable.min).toBeNull();
+        expect(result.today.renewable.max).toBeNull();
+        expect(result.today.renewable.current).toBeNull();
+        // Preise sind davon unberührt und bleiben numerisch.
+        expect(result.today.marketPrice.avg).toBeCloseTo(15);
+      });
+
       it('should not include today metrics when no data for today', () => {
         const yesterday = Date.now() - 24 * 60 * 60 * 1000;
         const yesterdayData: EnergyData[] = [

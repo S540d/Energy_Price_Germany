@@ -7,6 +7,11 @@ type Props = {
   unit: string;
   avg: number | null | undefined;
   avgLabel: string;
+  /**
+   * Kleiner Zusatz unter dem Wert – z.B. um kenntlich zu machen, dass hier
+   * ausnahmsweise ein Ortswert und kein bundesweiter Wert steht.
+   */
+  note?: string;
   accentColor: string;
   isDark: boolean;
   surfaceColor: string;
@@ -40,6 +45,7 @@ function createStyles(bg: string, border: string, labelColor: string, accentColo
       marginBottom: 4,
     },
     avg: { fontSize: 11, color: labelColor },
+    note: { fontSize: 10, color: labelColor, opacity: 0.85, marginTop: 2 },
   });
 }
 
@@ -49,6 +55,7 @@ export function KpiCard({
   unit,
   avg,
   avgLabel,
+  note,
   accentColor,
   isDark,
   surfaceColor,
@@ -73,6 +80,7 @@ export function KpiCard({
           {avgLabel} {displayAvg}
         </Text>
       )}
+      {note && <Text style={styles.note}>{note}</Text>}
     </View>
   );
 }

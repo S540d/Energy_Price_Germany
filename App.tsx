@@ -14,6 +14,12 @@ import { HistoricalDataView } from './components/HistoricalDataView';
 import { AppHeader } from './components/AppHeader';
 import { ChartSection } from './components/ChartSection';
 import { calculateMetrics } from './utils/metrics';
+import {
+  renewableFallbackFromEnergyData,
+  renewableFallbackFromRegionalResponse,
+} from './utils/renewableFallback';
+import type { RenewableFallback } from './utils/renewableFallback';
+import { isValidPostalCode } from './utils/postalCodeUtils';
 import { getThemeColors } from './utils/theme';
 import { arrayMax } from './utils/mathUtils';
 import { useEnergyData } from './hooks/useEnergyData';
@@ -219,6 +225,57 @@ function AppContent() {
     return coverage.priceCount > 0 && coverage.renewableCount === 0;
   }, [metrics]);
 
+  // Ersatzwert für die Kachel „Erneuerbare jetzt“, wenn der nationale Anteil
+  // für heute fehlt. Nationale und regionale Werte stammen aus zwei getrennten
+  // Quellen (Workflow-Datei vs. Signal API live), fallen also unabhängig
+  // voneinander aus – siehe utils/renewableFallback.ts.
+  const ownRegionalFallback = useMemo(
+    () =>
+      hasLimitedRenewableData && hasRegionalData
+        ? renewableFallbackFromEnergyData(filteredEnergyData)
+        : null,
+    [hasLimitedRenewableData, hasRegionalData, filteredEnergyData]
+  );
+
+  const [defaultLocationFallback, setDefaultLocationFallback] = useState<RenewableFallback | null>(
+    null
+  );
+
+  const fallbackPostalCode = countryConfig.fallbackPostalCode;
+  const needsDefaultLocationFallback =
+    hasLimitedRenewableData &&
+    countryConfig.hasRegionalData &&
+    ownRegionalFallback === null &&
+    !isValidPostalCode(debouncedPostalCode) &&
+    fallbackPostalCode !== undefined;
+
+  useEffect(() => {
+    if (!needsDefaultLocationFallback || !fallbackPostalCode) {
+      setDefaultLocationFallback(null);
+      return;
+    }
+    let cancelled = false;
+    energyDataManager
+      .fetchRegionalDataOnly(fallbackPostalCode)
+      .then(response => {
+        if (!cancelled) setDefaultLocationFallback(renewableFallbackFromRegionalResponse(response));
+      })
+      .catch(() => {
+        // Ersatzwert ist optional – ohne ihn bleibt die Kachel auf `--`.
+        if (!cancelled) setDefaultLocationFallback(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [needsDefaultLocationFallback, fallbackPostalCode]);
+
+  const renewableFallback = ownRegionalFallback ?? defaultLocationFallback;
+
+  const renewableFallbackLocation =
+    renewableFallback?.source === 'own'
+      ? debouncedPostalCode
+      : (countryConfig.fallbackPostalCodeLabel ?? '');
+
   useEffect(() => {
     async function checkAndApplyUpdates() {
       if (!__DEV__) {
@@ -340,6 +397,8 @@ function AppContent() {
             debouncedPostalCode={debouncedPostalCode}
             hasRegionalData={hasRegionalData}
             hasLimitedRenewableData={hasLimitedRenewableData}
+            renewableFallback={renewableFallback}
+            renewableFallbackLocation={renewableFallbackLocation}
             gridFees={gridFees}
             priceDisplayMode={priceDisplayMode}
             priceClockView={priceClockView}
