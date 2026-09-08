@@ -187,6 +187,11 @@ export default [
   {
     files: ['**/__tests__/**', '**/*.test.ts', '**/*.test.tsx'],
     plugins: {
+      // Muss hier erneut registriert werden: dieser Block matcht auch
+      // scripts/__tests__/*.test.js, das die TS/TSX-Basis-Config (die das
+      // Plugin registriert) nicht erreicht – ohne das crasht ESLint mit
+      // "could not find plugin '@typescript-eslint'".
+      '@typescript-eslint': typescriptPlugin,
       'jest': jestPlugin,
     },
     rules: {
