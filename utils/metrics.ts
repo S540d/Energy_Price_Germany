@@ -35,9 +35,13 @@ export interface Metrics {
       total: number;
     };
     renewable: {
-      avg: number;
-      min: number;
-      max: number;
+      // `null` (nicht 0) wenn es heute keinen einzigen Wert gibt. 0 wäre eine
+      // Falschaussage: „keine Daten“ liest sich sonst als „keine Erneuerbaren
+      // im Netz“ – genau das zeigte die Kachel beim Ausfall am 2026-09-08
+      // als „Tages-Ø 0.0 %“.
+      avg: number | null;
+      min: number | null;
+      max: number | null;
       current: number | null;
     };
     marketPrice: {
@@ -112,15 +116,15 @@ export function calculateMetrics(data: EnergyData[]): Metrics | null {
               todayValidRenewable.length > 0
                 ? todayValidRenewable.reduce((sum, d) => sum + (d.renewableShare ?? 0), 0) /
                   todayValidRenewable.length
-                : 0,
+                : null,
             min:
               todayValidRenewable.length > 0
                 ? arrayMin(todayValidRenewable.map(d => d.renewableShare ?? 0))
-                : 0,
+                : null,
             max:
               todayValidRenewable.length > 0
                 ? arrayMax(todayValidRenewable.map(d => d.renewableShare ?? 0))
-                : 0,
+                : null,
             current: currentHourData?.renewableShare ?? null,
           },
           marketPrice: {

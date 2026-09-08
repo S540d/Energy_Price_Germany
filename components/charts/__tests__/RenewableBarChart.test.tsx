@@ -129,6 +129,40 @@ describe('RenewableBarChart', () => {
     });
   });
 
+  describe('average line coverage guard', () => {
+    const coverageLabels = {
+      ...labels,
+      averageLowCoverage: 'Kein Ø: nur {valid} von {total} Werten',
+    };
+
+    it('shows the average when most points in the window have a value', async () => {
+      const { queryByText } = renderChart({ data: buildData(24), labels: coverageLabels });
+      await waitFor(() => {
+        expect(queryByText('Ø 50.0%')).toBeTruthy();
+      });
+    });
+
+    it('replaces the average with a coverage hint when most values are missing', async () => {
+      // Entspricht dem Ausfall vom 2026-09-08: nur die ersten Punkte des
+      // Fensters tragen Werte, der Rest des Tages ist leer. Ein Ø über diese
+      // Reste sah plausibel aus und verdeckte den Ausfall.
+      const data = buildData(24, i => (i < 4 ? {} : { renewableShare: null }));
+      const { queryByText } = renderChart({ data, labels: coverageLabels });
+      await waitFor(() => {
+        expect(queryByText('Ø 50.0%')).toBeNull();
+        expect(queryByText('Kein Ø: nur 4 von 24 Werten')).toBeTruthy();
+      });
+    });
+
+    it('omits the hint entirely when no label is provided', async () => {
+      const data = buildData(24, i => (i < 4 ? {} : { renewableShare: null }));
+      const { queryByText } = renderChart({ data, labels });
+      await waitFor(() => {
+        expect(queryByText('Ø 50.0%')).toBeNull();
+      });
+    });
+  });
+
   it('supports the renewableShareRegional dataKey without throwing', async () => {
     const data = buildData(10, i => ({ renewableShareRegional: 30 + i }));
     const { UNSAFE_root } = renderChart({ data, dataKey: 'renewableShareRegional' });

@@ -11,6 +11,8 @@ import { KpiCard } from './ui/KpiCard';
 import { isValidPostalCode } from '../utils/postalCodeUtils';
 import type { ThemeColors } from '../utils/theme';
 import type { EnergyData } from '../utils/metrics';
+import { resolveRenewableKpi } from '../utils/renewableFallback';
+import type { RenewableFallback } from '../utils/renewableFallback';
 import type { calculateMetrics } from '../utils/metrics';
 import { colors as designColors } from '../utils/designSystem';
 
@@ -27,6 +29,10 @@ type Props = {
   debouncedPostalCode: string;
   hasRegionalData: boolean;
   hasLimitedRenewableData: boolean;
+  /** Ortswert als Ersatz, wenn der nationale Erneuerbaren-Anteil fehlt (#417-Folgefall). */
+  renewableFallback: RenewableFallback | null;
+  /** Ort/PLZ zu `renewableFallback`, für die Kennzeichnung in der Kachel. */
+  renewableFallbackLocation: string;
   gridFees: number;
   priceDisplayMode: 'marketOnly' | 'withGridFees';
   priceClockView: boolean;
@@ -45,6 +51,8 @@ export function ChartSection({
   debouncedPostalCode,
   hasRegionalData,
   hasLimitedRenewableData,
+  renewableFallback,
+  renewableFallbackLocation,
   gridFees,
   priceDisplayMode,
   priceClockView,
@@ -68,8 +76,21 @@ export function ChartSection({
     yAxis: t.renewablePercent,
     now: t.now,
     average: t.average,
+    averageLowCoverage: t.averageLowCoverage,
     regional: t.regionalData,
   };
+
+  // Nationale Werte haben Vorrang; der Ortswert tritt nur ein, wenn heute
+  // keiner vorliegt – dann aber sichtbar gekennzeichnet, damit er nicht als
+  // bundesweite Zahl gelesen wird (die Streuung zwischen Netzregionen liegt
+  // regelmäßig über Faktor 2).
+  const renewableKpi = resolveRenewableKpi(metrics?.today?.renewable, renewableFallback);
+
+  const renewableNote = renewableKpi.usesFallback
+    ? (renewableKpi.fallbackSource === 'own' ? t.renewableFallbackOwn : t.renewableFallbackDefault)
+        ?.replace('{location}', renewableFallbackLocation)
+        .trim()
+    : undefined;
 
   const priceLabels = {
     yAxis: t.pricePerKwh,
@@ -98,10 +119,11 @@ export function ChartSection({
       <View style={styles.kpiRow}>
         <KpiCard
           label={t.renewableNow}
-          value={metrics?.today?.renewable.current}
+          value={renewableKpi.current}
           unit="%"
-          avg={metrics?.today?.renewable.avg}
+          avg={renewableKpi.avg}
           avgLabel={t.dailyAvg}
+          note={renewableNote}
           accentColor={colors.accentGreen}
           isDark={isDark}
           surfaceColor={colors.surface}
