@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-09-08
+
 ### Fixed
 - **`npm run lint` crashte mit „could not find plugin '@typescript-eslint'".** Ursache: In `eslint.config.mjs` registriert der Block für Testdateien (`**/__tests__/**`, `**/*.test.ts(x)`) `@typescript-eslint`-Regeln, ohne das Plugin selbst zu registrieren — für `.ts`/`.tsx`-Testdateien fiel das nicht auf, weil der TS/TSX-Basis-Block (der das Plugin registriert) über seine eigenen `files`-Globs mitgreift und mit dem Testblock zusammengeführt wird. `scripts/__tests__/*.test.js` erreicht diesen Basis-Block aber nicht (kein `.ts`/`.tsx`), landet nur im Testblock und crashte damit den kompletten Lint-Lauf über alle Dateien — nicht nur den ESLint-Test-Files-Scope. Fix: Plugin zusätzlich im Testblock registriert. Vorbestehend (nicht durch PR #473 verursacht, per `git stash` gegen unverändertes `origin/testing` verifiziert); auf `testing`-PRs unsichtbar, da `ci-cd.yml` dort keinen Lint-Check triggert (nur `main`-PRs, siehe „Checks je Ziel-Branch" oben) — wäre erst im nächsten Release-PR nach `main` aufgefallen.
 - **Erneuerbaren-Ausfall wurde in der UI kaschiert statt angezeigt (Folgefall zu #417/#445).** Am 08.09.2026 fehlten die nationalen `ren_share_forecast`-Werte für den gesamten laufenden Tag (letzter Punkt: 07.09., 23:45; erst der Lauf um 15:34 UTC brachte sie zurück). Die App zeigte dazu drei Dinge gleichzeitig an: `--` in der Kachel, `Tages-Ø 0.0 %` darunter und eine plausibel wirkende Ø-Linie bei 45 % im Chart. Alle drei stammen aus derselben leeren Datenlage, sind aber unterschiedlich falsch:
