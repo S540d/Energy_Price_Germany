@@ -43,6 +43,22 @@ export interface CountryConfig {
    * countries expose national values only and hide the PLZ UI entirely.
    */
   hasRegionalData: boolean;
+  /**
+   * Postal code used as a stand-in when the *national* renewable share is
+   * unavailable and the user has not entered a postal code of their own.
+   *
+   * Caveat, deliberately accepted: a single location is not the national mix.
+   * The Signal API reports the renewable share of the load in that grid region,
+   * and regions differ by more than a factor of two (wind-heavy north vs.
+   * load-heavy metropolitan areas). The value is therefore only ever shown
+   * labelled as a location reading, never as a national figure – see
+   * `renewableFallback.ts` and the KPI card's `note`.
+   *
+   * Only meaningful when `hasRegionalData` is true.
+   */
+  fallbackPostalCode?: string;
+  /** Human-readable name of `fallbackPostalCode`, shown in the UI. */
+  fallbackPostalCodeLabel?: string;
   /** Path (relative to the public data root) of the national market data file. */
   marketDataPath: string;
   /** Path prefix (relative to the public data root) for per-day history files. */
@@ -61,6 +77,8 @@ export const COUNTRIES: Record<CountryCode, CountryConfig> = {
     timezone: 'Europe/Berlin',
     currency: 'EUR',
     hasRegionalData: true,
+    fallbackPostalCode: '10115',
+    fallbackPostalCodeLabel: 'Berlin',
     // Legacy flat paths – kept for backward compatibility with deployed clients.
     marketDataPath: 'data/marketdata.json',
     historyPathPrefix: 'data/history/',

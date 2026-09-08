@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, Platform, ScrollView, StyleSheet } from 'react-native';
 import Svg, { Rect, Line, Polyline } from 'react-native-svg';
 import type { ThemeColors } from '../../utils/theme';
-import { getYAxisLabelStyle } from '../../utils/chartHelpers';
+import { getYAxisLabelStyle, getRenewableColor } from '../../utils/chartHelpers';
 import { useChartDimensions } from '../../utils/chartUtils';
 import { arrayMin, arrayMax } from '../../utils/mathUtils';
 import { useLanguageContext } from '../../context/LanguageContext';
@@ -17,33 +17,11 @@ import {
 } from './shared';
 import { scaleToX, scaleToY, getBarWidth, getBarHeight, getPlotHeight } from './shared/chartScale';
 
-// Performance: Move color helpers outside component for stable references
-const interpolateColor = (color1: number[], color2: number[], factor: number) => {
-  const r = Math.round(color1[0] + (color2[0] - color1[0]) * factor);
-  const g = Math.round(color1[1] + (color2[1] - color1[1]) * factor);
-  const b = Math.round(color1[2] + (color2[2] - color1[2]) * factor);
-  return `rgb(${r}, ${g}, ${b})`;
-};
-
-const getRenewableColor = (renewablePercent: number) => {
-  const red = [244, 67, 54];
-  const yellow = [255, 193, 7];
-  const green = [76, 175, 80];
-  const blue = [33, 150, 243];
-
-  if (renewablePercent > 100) {
-    const factor = Math.min((renewablePercent - 100) / 20, 1);
-    return interpolateColor(green, blue, factor);
-  } else if (renewablePercent > 80) {
-    return '#4CAF50';
-  } else if (renewablePercent > 50) {
-    const factor = (renewablePercent - 50) / 30;
-    return interpolateColor(yellow, green, factor);
-  } else {
-    const factor = renewablePercent / 50;
-    return interpolateColor(red, yellow, factor);
-  }
-};
+/**
+ * Mindestanteil der Punkte im Fenster, die einen Wert haben müssen, damit ein
+ * Mittelwert über das Fenster überhaupt als aussagekräftig gilt.
+ */
+const AVERAGE_MIN_COVERAGE_RATIO = 0.5;
 
 /**
  * Type alias for renewable share data keys in EnergyData
@@ -69,6 +47,11 @@ interface RenewableBarChartProps {
     yAxis: string;
     now: string;
     average: string;
+    /**
+     * Hinweis statt Mittelwert, wenn zu wenige Punkte im Fenster einen Wert
+     * haben. Platzhalter `{valid}` / `{total}` werden ersetzt.
+     */
+    averageLowCoverage?: string;
     regional?: string; // Label für regionale Linie
   };
   interactionHint?: string;
@@ -152,7 +135,29 @@ function RenewableBarChartComponent({
     const lastValidValue =
       validData.length > 0 ? (validData[validData.length - 1][dataKey] ?? avgValue) : avgValue;
 
-    return { minTime, maxTime, timeRange, min, max, range, avgValue, lastValidValue };
+    // Die Ø-Linie spannt sich über das gesamte Fenster und suggeriert damit
+    // eine Abdeckung, die es bei einem Teilausfall nicht gibt: Am 2026-09-08
+    // trugen 28 von ~180 Punkten (allesamt vom Vorabend) eine Linie mit
+    // „Ø 45.0 %“, während für den ganzen laufenden Tag kein einziger Wert
+    // vorlag. Unterhalb der Schwelle wird deshalb kein Mittelwert gezeigt.
+    const validCount = validData.length;
+    const totalCount = data.length;
+    const hasReliableAverage =
+      totalCount > 0 && validCount / totalCount >= AVERAGE_MIN_COVERAGE_RATIO;
+
+    return {
+      minTime,
+      maxTime,
+      timeRange,
+      min,
+      max,
+      range,
+      avgValue,
+      lastValidValue,
+      validCount,
+      totalCount,
+      hasReliableAverage,
+    };
   }, [data, dataKey]);
 
   // Performance: Pre-calculate all bar positions, colors, and dimensions
@@ -236,7 +241,19 @@ function RenewableBarChartComponent({
   // Guard against invalid data
   if (!chartCalcs) return null;
 
-  const { minTime, maxTime, timeRange, min, max, range, avgValue, lastValidValue } = chartCalcs;
+  const {
+    minTime,
+    maxTime,
+    timeRange,
+    min,
+    max,
+    range,
+    avgValue,
+    lastValidValue,
+    validCount,
+    totalCount,
+    hasReliableAverage,
+  } = chartCalcs;
 
   return (
     <ChartCard
@@ -422,25 +439,27 @@ function RenewableBarChartComponent({
                 );
               })}
 
-              {/* Durchschnittslinie */}
-              <Line
-                x1={leftPadding}
-                y1={
-                  chartHeight -
-                  bottomPadding -
-                  ((avgValue - min) / range) * (chartHeight - padding - bottomPadding)
-                }
-                x2={chartWidth - rightPadding}
-                y2={
-                  chartHeight -
-                  bottomPadding -
-                  ((avgValue - min) / range) * (chartHeight - padding - bottomPadding)
-                }
-                stroke={textColor}
-                strokeWidth="2"
-                strokeDasharray="8,4"
-                opacity={0.5}
-              />
+              {/* Durchschnittslinie – nur bei ausreichender Abdeckung (s. chartCalcs) */}
+              {hasReliableAverage && (
+                <Line
+                  x1={leftPadding}
+                  y1={
+                    chartHeight -
+                    bottomPadding -
+                    ((avgValue - min) / range) * (chartHeight - padding - bottomPadding)
+                  }
+                  x2={chartWidth - rightPadding}
+                  y2={
+                    chartHeight -
+                    bottomPadding -
+                    ((avgValue - min) / range) * (chartHeight - padding - bottomPadding)
+                  }
+                  stroke={textColor}
+                  strokeWidth="2"
+                  strokeDasharray="8,4"
+                  opacity={0.5}
+                />
+              )}
 
               {/* Regionale Datenlinie - gestrichelt */}
               {showRegionalLine &&
@@ -549,23 +568,39 @@ function RenewableBarChartComponent({
               );
             })}
 
-            {/* Durchschnittslinie Label */}
-            <Text
-              style={[
-                styles.averageLabel,
-                {
-                  right: rightPadding + 4,
-                  top:
-                    chartHeight -
-                    bottomPadding -
-                    ((avgValue - min) / range) * (chartHeight - padding - bottomPadding) -
-                    12,
-                  color: textColor,
-                },
-              ]}
-            >
-              {labels.average} {avgValue.toFixed(1)}%
-            </Text>
+            {/* Durchschnittslinie Label bzw. Abdeckungshinweis an ihrer Stelle */}
+            {hasReliableAverage ? (
+              <Text
+                style={[
+                  styles.averageLabel,
+                  {
+                    right: rightPadding + 4,
+                    top:
+                      chartHeight -
+                      bottomPadding -
+                      ((avgValue - min) / range) * (chartHeight - padding - bottomPadding) -
+                      12,
+                    color: textColor,
+                  },
+                ]}
+              >
+                {labels.average} {avgValue.toFixed(1)}%
+              </Text>
+            ) : (
+              labels.averageLowCoverage !== undefined && (
+                <Text
+                  style={[
+                    styles.averageLabel,
+                    styles.averageLowCoverageLabel,
+                    { right: rightPadding + 4, top: padding, color: textColor },
+                  ]}
+                >
+                  {labels.averageLowCoverage
+                    .replace('{valid}', String(validCount))
+                    .replace('{total}', String(totalCount))}
+                </Text>
+              )
+            )}
 
             {/* X-axis labels (every 6 hours) */}
             {(() => {
@@ -679,6 +714,7 @@ const styles = StyleSheet.create({
   touchArea: { position: 'absolute', zIndex: 10 },
   touchAreaWeb: { position: 'absolute', zIndex: 10, cursor: 'pointer' },
   averageLabel: { position: 'absolute', fontSize: 12, fontWeight: '600', opacity: 0.7 },
+  averageLowCoverageLabel: { fontSize: 10, fontWeight: '500', opacity: 0.6, maxWidth: 180 },
   xAxisLabel: { position: 'absolute', fontSize: 12, opacity: 0.6 },
   yAxisLabelPhone: {
     position: 'absolute',

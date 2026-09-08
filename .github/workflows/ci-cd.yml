@@ -122,7 +122,32 @@ jobs:
           fi
 
       - name: TypeScript Type Check
-        run: npx tsc --noEmit || true
+        run: npx tsc --noEmit
+
+  # ============================================================================
+  # JOB 1b: Test Suite (Issue #468)
+  # ============================================================================
+  # Bislang lief die Test-Suite (350 Tests, 27 *.test.ts(x)-Dateien) nirgends
+  # automatisiert — weder hier noch in den Husky-Hooks. Die in jest.config.js
+  # konfigurierten Coverage-Schwellen waren dadurch wirkungslos.
+  test:
+    name: 🧪 Test Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
 
   # ============================================================================
   # JOB 2: Cross-Platform Build Tests
@@ -130,7 +155,7 @@ jobs:
   build-web:
     name: 🌐 Build Web
     runs-on: ubuntu-latest
-    needs: code-quality
+    needs: [code-quality, test]
 
     steps:
       - uses: actions/checkout@v4
@@ -267,7 +292,7 @@ jobs:
   release-checklist:
     name: 📋 Release Readiness Report
     runs-on: ubuntu-latest
-    needs: [code-quality, build-web, platform-checks]
+    needs: [code-quality, test, build-web, platform-checks]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:

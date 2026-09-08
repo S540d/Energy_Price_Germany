@@ -274,3 +274,80 @@ nachfolgenden Commit-SHAs, Tags und PR/Issue-Referenzen brechen; der Impact steh
 in keinem Verhältnis zum Risiko. `keystore/KEYSTORE_BACKUP_GUIDE.md` (ebenfalls
 nur Platzhalter) wurde aus dem Tracking entfernt, weil sie der
 `.gitignore`-Policy widersprach.
+
+---
+
+## 2026-09-08 — Erneuerbaren-Ausfall in der UI kaschiert statt angezeigt (#473)
+
+Am 08.09.2026 fehlten die nationalen `ren_share_forecast`-Werte für den
+gesamten laufenden Tag (letzter Punkt: 07.09., 23:45 Berlin; erst der Lauf
+um 15:34 UTC brachte sie zurück). Kein neuer Ausfallmechanismus — derselbe
+stumme Fall aus [„`ren_share_forecast` liefert HTTP 200 mit leeren
+Arrays"](#2026-08-31--ren_share_forecast-liefert-http-200-mit-leeren-arrays)
+oben —, aber diesmal fiel er nicht am Data-Health-Check auf (der lief
+korrekt), sondern an drei gleichzeitigen Fehlanzeigen in der App:
+
+1. **`Tages-Ø 0.0 %` war eine erfundene Zahl.** `calculateMetrics` gab bei
+   null Datenpunkten `0` statt `null` zurück — „keine Daten" las sich als
+   „keine Erneuerbaren im Netz".
+2. **Die Ø-Linie im Chart kaschierte den Ausfall.** Sie mittelt über das
+   gesamte Chart-Fenster, unabhängig vom Tag — hier über 28 verbliebene
+   Punkte vom Vorabend (Ø 46,1 %), gezogen über zwei Tage und angezeigt als
+   plausible „Ø 45.0 %". Ein Nutzer, der Preis- und Renewable-Chart
+   nebeneinander sieht, hat keinen Grund, an der Zahl zu zweifeln.
+3. **Ein gültiger Wert lag vor und wurde weggeworfen.** Die regionale
+   Signal-API (live via Cloudflare Worker) war unabhängig von der
+   nationalen Quelle gesund und lieferte weiterhin Werte für die zuletzt
+   gesetzte PLZ — sichtbar als gestrichelte Linie im Chart —, floss aber in
+   keine Kennzahl ein.
+
+**Fix (PR #473):** `today.renewable.{avg,min,max}` sind jetzt
+`number | null` statt `0`-bei-Fehlen; die Ø-Linie im Chart erscheint nur
+noch bei ≥ 50 % Abdeckung im Fenster, sonst ein expliziter
+Abdeckungshinweis; und `renewableShareRegional` dient jetzt als
+Kachel-Fallback, wenn der nationale Wert für heute komplett fehlt — immer
+sichtbar als Ortswert markiert (eigene PLZ, sonst ein Ersatzort aus der
+Country-Registry, DE: Berlin), nie als Bundeswert, da die Streuung
+zwischen Netzregionen regelmäßig über Faktor 2 liegt. Details und Code-Ort
+in `CLAUDE.md` unter „Chart Components".
+
+**Verallgemeinerbare Lehre:** Ein grüner Data-Health-Check bedeutet nicht,
+dass die UI den Ausfall auch ehrlich zeigt — die beiden Prüfungen sind
+unabhängig. Bei jeder neuen aggregierten Kennzahl (Ø/Min/Max über mehrere
+Punkte) gilt: fehlende Daten sind `null`, nie `0`; ein Mittelwert über ein
+Fenster mit Lücken braucht eine Abdeckungs-Schwelle, sonst suggeriert er
+Vollständigkeit, die nicht da ist.
+
+---
+
+## 2026-09-08 — `eslint.config.mjs`: Testblock ohne eigene Plugin-Registrierung crashte `npm run lint` (#474)
+
+`npm run lint` schlug mit `could not find plugin "@typescript-eslint"` fehl
+— nicht als einzelnes Finding, sondern als Crash des **gesamten** Laufs.
+
+**Ursache:** Der Flat-Config-Block für Testdateien
+(`**/__tests__/**`, `**/*.test.ts(x)`) setzt
+`@typescript-eslint/no-explicit-any` und `@typescript-eslint/no-non-null-assertion`,
+registriert das Plugin selbst aber nicht. Für `.ts`/`.tsx`-Testdateien fiel
+das nie auf, weil ESLints Flat-Config für eine Datei alle passenden
+Config-Objekte mergt — der TS/TSX-Basis-Block (der `@typescript-eslint`
+registriert) matcht über seine eigenen `files`-Globs zusätzlich. Die drei
+Dateien `scripts/__tests__/{data-health-check,lint-workflows,write-status}.test.js`
+sind aber `.js`, erreichen den Basis-Block nicht, landen nur im Testblock —
+und crashten damit den kompletten Lauf über `"**/*.{ts,tsx}" "scripts/**/*.js"`.
+
+**Warum es monatelang unbemerkt blieb:** `ci-cd.yml` triggert den Lint-Job
+nur auf PRs gegen `main` (siehe „Checks je Ziel-Branch" in `CLAUDE.md`); ein
+`testing`-PR hat nur `review-gate` + `mergeability`. Der Pre-Commit-Hook
+läuft über `lint-staged`, das ESLint **pro Datei** mit `--fix` aufruft — nie
+die volle `scripts/**/*.js`-Menge auf einmal, also nie in der Konstellation,
+die den Crash auslöst. Erst ein manuelles `npm run lint` deckte es auf.
+
+**Fix (PR #474):** Plugin zusätzlich im Testblock registriert, +6 Zeilen.
+
+**Verallgemeinerbare Lehre:** In ESLint Flat-Config braucht **jeder**
+Config-Block, der eine `<plugin>/<rule>` setzt, dieses Plugin in seinem
+eigenen `plugins`-Objekt — man kann sich nicht darauf verlassen, dass ein
+anderer Block für dieselben Dateien matcht und es „mitbringt". Nach jeder
+Änderung an `eslint.config.mjs`: `npm run lint` gegen den vollen Scope
+laufen lassen, nicht nur gegen einzelne geänderte Dateien.

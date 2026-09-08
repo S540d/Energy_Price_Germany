@@ -120,6 +120,23 @@ Ein PR gegen `testing` hat daher nur 2 Checks (`review-gate` + `mergeability`),
 einer gegen `main` rund 15. Das Fehlen von `🔍 Code Quality & Linting` auf einem
 `testing`-PR ist **kein** Defekt.
 
+### Versions-Bump ist kein Automatismus (Session vom 05.09.2026)
+
+Zwischen 1.9.0 (27.06.2026) und 1.10.0 (05.09.2026) liefen **fünf** Releases
+`testing → main` (#421–#458), ohne dass jemand `version`/`versionCode`
+angehoben hat — `[Unreleased]` in `CHANGELOG.md` wuchs über zwei Monate an,
+inkl. eines potenziell absturzrelevanten Fixes (#376), der so ungenutzt blieb.
+
+**Vor jedem Release-PR `testing → main` prüfen:**
+```bash
+git show origin/main:app.json | grep -E '"version"|versionCode'
+git show origin/testing:CHANGELOG.md | grep -n '^## \['
+```
+Steht unter `## [Unreleased]` etwas User-Relevantes, gehört ein Versions-Bump
+(`package.json`, `app.json` `version`+`versionCode`, `App.tsx` `APP_VERSION`,
+`package-lock.json`) **in denselben PR**, der nach `testing` geht — nicht erst
+im Release-PR nach `main` nachgezogen.
+
 ### Release-PRs testing → main
 
 `main` liegt unter dem `Main`-Ruleset mit **Required Approvals = 1**. Als Solo-Dev
@@ -483,6 +500,55 @@ Validation rules enforced by Husky:
 - **Local Dev:** `expo start --web`
 - **Local Build:** `npm run serve:local` (port 8080)
 
+### Test-Suite läuft automatisiert in CI (Issue #468)
+`ci-cd.yml` hat einen Job `🧪 Test Suite` (`npm run test:coverage`), Voraussetzung
+für `build-web` und den Release-Report. Vorher liefen die 350 Tests (27
+`*.test.ts(x)`-Dateien) nirgends automatisiert — weder hier noch in den
+Husky-Hooks —, die in `jest.config.js` konfigurierten Coverage-Schwellen
+(68/54/63/68) waren dadurch wirkungslos.
+
+> ⚠️ **`npx tsc --noEmit` in `code-quality` läuft ohne `|| true`.** Vor #468
+> maskierte `|| true` jeden Type-Fehler, der Schritt konnte nie fehlschlagen.
+> Beim erneuten Hinzufügen (z. B. „der Robustheit halber") wird der Type-Check
+> wieder wirkungslos — nicht zurückbauen.
+
+### `eslint.config.mjs`: Jeder matchende Flat-Config-Block braucht sein eigenes Plugin (PR #474)
+
+`npm run lint` crashte für den **gesamten** Lauf mit `could not find plugin
+"@typescript-eslint"`. Ursache: Der Block für Testdateien (`**/__tests__/**`,
+`**/*.test.ts(x)`) setzt `@typescript-eslint/no-explicit-any` und
+`@typescript-eslint/no-non-null-assertion`, registriert das Plugin selbst aber
+nicht.
+
+Für `.ts`/`.tsx`-Testdateien fiel das nie auf: ESLints Flat-Config mergt für
+eine Datei **alle** passenden Config-Objekte, und der TS/TSX-Basis-Block (der
+`@typescript-eslint` registriert) matcht über seine eigenen `files`-Globs
+zusätzlich. `scripts/__tests__/*.test.js` ist aber `.js`, erreicht den
+Basis-Block nicht, landet nur im Testblock — und riss damit den kompletten
+Lauf über alle Dateien, nicht nur die Prüfung dieser drei:
+```
+scripts/__tests__/data-health-check.test.js
+scripts/__tests__/lint-workflows.test.js
+scripts/__tests__/write-status.test.js
+```
+Alle drei sind über `"scripts/**/*.js"` im `lint`-Skript eingeschlossen.
+
+**Regel:** Ein Config-Block, der eine `<plugin>/<rule>` setzt, muss dieses
+Plugin selbst in seinem eigenen `plugins`-Objekt registrieren — auch wenn ein
+anderer Block im selben File es bereits registriert. Man kann sich nicht
+darauf verlassen, dass ein anderer Block für **dieselben** Dateien matcht.
+
+> ⚠️ **Blieb monatelang unbemerkt, weil `ci-cd.yml` den Lint-Job nur auf
+> PRs gegen `main` triggert** (siehe „Checks je Ziel-Branch" oben). Ein
+> `testing`-PR hat nur `review-gate` + `mergeability`, kein Lint. Der
+> Pre-Commit-Hook läuft über `lint-staged`, das ESLint **pro Datei** mit
+> `--fix` aufruft — nie die volle `scripts/**/*.js`-Menge auf einmal, also
+> nie in der Konstellation, die den Crash auslöst. Erst ein manuelles
+> `npm run lint` (oder der `main`-Lint-Job) deckt es auf. Nach jeder Änderung
+> an `eslint.config.mjs` deshalb **immer** `npm run lint` lokal gegen den
+> vollen Scope laufen lassen, nicht nur gegen einzelne geänderte Dateien.
+> → [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-08--eslintconfigmjs-testblock-ohne-eigene-plugin-registrierung-crashte-npm-run-lint-474)
+
 ## Critical Areas
 
 1. **Data Fetching (App.tsx):**
@@ -518,6 +584,33 @@ Validation rules enforced by Husky:
    - **Title overflow (Issue #355, PR #380):** title wrapper needs `flex: 1` + the `<Text>` needs
      `numberOfLines={2}`/`ellipsizeMode="tail"` — otherwise long titles (e.g. regional renewable
      title) clip on small screens instead of wrapping.
+   - **Ausfall-Kaschierung durch Fenster-Ø (PR #473, 08.09.2026):** Ein Teilausfall von
+     `renewable_share` (0 Punkte für heute) blieb unsichtbar, weil `RenewableBarChart`s
+     Ø-Linie über das **gesamte** Chart-Fenster mittelt, unabhängig vom Tag — bei nur 28
+     von ~180 Punkten (Rest des Vortags) zeigte sie plausible „Ø 45.0 %", während die
+     maßgebliche Kennzahl (Erneuerbaren-Punkte für heute) bei 0 lag. `avgValue` wird jetzt
+     nur noch gezeichnet, wenn ≥ `AVERAGE_MIN_COVERAGE_RATIO` (50 %) der Punkte im Fenster
+     einen Wert haben; darunter erscheint `labels.averageLowCoverage` („Kein Ø: nur {valid}
+     von {total} Werten") an ihrer Stelle. Bei jeder neuen Fenster-Statistik (Ø/Min/Max über
+     mehrere Datenpunkte) diese Abdeckungs-Guard-Logik als Vorbild nehmen, nicht stillschweigend
+     über Lücken hinweg mitteln.
+     → [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-08--erneuerbaren-ausfall-in-der-ui-kaschiert-statt-angezeigt-473)
+   - **`0` statt `null` bei fehlenden Tageswerten ist eine Falschaussage (PR #473).**
+     `calculateMetrics` (`utils/metrics.ts`) gab bei 0 heutigen Renewable-Datenpunkten `0`
+     zurück statt `null` — „keine Daten" las sich als „keine Erneuerbaren im Netz"
+     (`Tages-Ø 0.0 %`). `today.renewable.{avg,min,max}` sind jetzt `number | null`; UI-Code
+     muss `null` explizit auf `--`/`—` abbilden, nicht auf `0` casten. Gleiches Prinzip gilt
+     für jede neue aggregierte Kennzahl: fehlende Daten sind `null`, nicht `0`.
+   - **`renewableShareRegional` wird in keiner Kennzahl ausgewertet — nur gezeichnet (PR #473).**
+     National (`ren_share_forecast`, via `fetch.yml`, statisch ausgeliefert) und regional
+     (Signal API, via Cloudflare Worker, live im Client) sind zwei unabhängige Quellen mit
+     unabhängigen Ausfällen. Fällt nur die nationale aus, liegt trotzdem ein gültiger
+     Regionalwert vor. `utils/renewableFallback.ts` (`resolveRenewableKpi`) nutzt ihn jetzt
+     als Fallback für die Kachel „Erneuerbare jetzt" — **immer sichtbar als Ortswert markiert**
+     (nie als Bundeswert), da die Streuung zwischen Netzregionen regelmäßig über Faktor 2
+     liegt. Reihenfolge: eigene PLZ → `CountryConfig.fallbackPostalCode` (DE: Berlin,
+     `10115`) → `--`. Nationale und Fallback-Werte werden nie gemischt (kein aktueller
+     Ortswert neben nationalem Tages-Ø).
 
 5. **Historical Data (`services/historicalDataStore.ts`) – Issues #307/#1/#3 (PR #309):**
    - **Device cache is the primary source.** Every successful national fetch in
@@ -556,8 +649,12 @@ Validation rules enforced by Husky:
 6. **Multi-Country / Europäische Datenexpansion (`utils/countries.ts`) – Issues #356/#368:**
    - **Country Registry is the single source of truth.** `COUNTRIES: Record<CountryCode, CountryConfig>`
      (currently `de` | `nl` | `at` | `ch` | `fr` | `be` | `dk`) derives data paths, timezone,
-     `hasRegionalData`, default grid fees. Adding a country = one registry entry + one pipeline
-     block in `fetch.yml`, no scattered `if country === 'de'` checks. `DEFAULT_COUNTRY = 'de'`.
+     `hasRegionalData`, default grid fees, plus (since PR #473) `fallbackPostalCode` /
+     `fallbackPostalCodeLabel` — the location used as a KPI-tile stand-in when the national
+     renewable share is missing (DE: `10115` / „Berlin"); see Chart Components above for why
+     it must always be labelled as a location value. Adding a country = one registry entry +
+     one pipeline block in `fetch.yml`, no scattered `if country === 'de'` checks.
+     `DEFAULT_COUNTRY = 'de'`.
    - **BETA countries** (NL, AT, CH, FR, BE, DK): `beta: true`, no regional/PLZ UI, no aWATTar,
      data under `data/<code>/marketdata.json` + `data/<code>/history/`.
    - **Active country** lives in `context/CountryContext.tsx` + `hooks/useCountry.ts`
@@ -813,6 +910,7 @@ Refer to documentation in root directory or check GitHub issues:
 - `--no-verify` nur auf explizite Bitte
 - **Vor jedem Push: lokale Tests ausführen** (`npm test` bzw. projektspezifischer Test-Befehl) – kein Push ohne grüne lokale Tests
 - **Kein Merge bei CI-Fail** – Branch Protection erzwingt das technisch; nie mit `--admin` umgehen außer auf explizite Bitte
+- **Zugehöriges Issue beim Merge schließen** (Issue #111): `Closes #X` im PR-Body greift nur beim Merge in den Default-Branch (`main`) — bei PRs nach `testing` also **nie**. Das Issue nach dem Merge manuell schließen (`gh issue close <N> -c "Umgesetzt in #<PR>, gemergt nach \`testing\`."`), sonst bleiben erledigte Issues offen liegen. Ausnahme: Sammel-/Meta-Issues, die ein Teil-PR nur anteilig abarbeitet — die bleiben offen. `Closes #X` trotzdem im PR-Body lassen: es erzeugt die sichtbare Verknüpfung.
 
 ## [ANDROID BUILD – PFLICHTREGELN]
 
@@ -822,6 +920,10 @@ Refer to documentation in root directory or check GitHub issues:
 - **JAVA_HOME** für EAS/Expo-Builds explizit auf Android Studio JBR setzen: `export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"`
 - **Gradle-Lock nach Absturz:** Bei "Cannot lock file hash cache"-Fehler Daemons stoppen: `pkill -f GradleDaemon`, dann Workingdir leeren und neu starten
 - **AAB-Archiv:** Gebaute Release-AABs in einem **gitignored** `aab-archive/`-Verzeichnis im Repo-Root ablegen (in `.gitignore` aufnehmen – AABs sind 3–110 MB und gehören nie in die Git-History). Benennung: `<Projekt>-vX.Y.Z-vc<versionCode>-YYYY-MM-DD.aab`. **Retention: max. 2 Dateien** (aktuelles Release + ein Vorgänger für schnelles Rollback); ältere AABs löschen. Der Git-Tag `vX.Y.Z` ist die eigentliche Release-Baseline – ältere AABs lassen sich daraus jederzeit neu bauen.
+
+## [CODE HEALTH AUDIT]
+
+- **Wiederkehrendes Code-Health-Audit** (Ballast/Architektur: God Components, Boilerplate-Duplikation, toter Code, Dependency-Bloat, Test-Integrität, Design-Konsistenz, Bundle-Größe) alle ~3 Monate oder ~15 gemergte Feature-PRs (je nachdem was zuerst eintritt). Checkliste + Ablauf: https://github.com/S540d/project-templates/blob/main/dev-standards/code-health-audit.md — Ergebnis ist immer ein Issue im jeweiligen Projekt-Repo, nie in project-templates.
 
 ## [CI – CACHE-CLEANUP]
 
