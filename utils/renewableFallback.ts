@@ -44,9 +44,17 @@ export interface RenewableFallback {
   /** Tagesmittel über alle heutigen Punkte, `null` wenn es keine gibt. */
   avg: number | null;
   source: RenewableFallbackSource;
+  /**
+   * Heutige Einzelwerte, damit das Chart pro fehlendem nationalen Balken
+   * einen Ortswert einblenden kann (#481) – nie an Stellen, an denen ein
+   * nationaler Wert vorliegt, s. `RenewableBarChart`. Optional, damit
+   * bestehende KPI-Fallback-Objekte (die series nicht brauchen) sie nicht
+   * mitführen müssen.
+   */
+  series?: Sample[];
 }
 
-interface Sample {
+export interface Sample {
   timestamp: number;
   value: number;
 }
@@ -79,7 +87,7 @@ function summarize(
   // Ohne beides ist der Fallback wertlos – dann lieber ehrlich `--` zeigen.
   if (current === null && avg === null) return null;
 
-  return { current, avg, source };
+  return { current, avg, source, series: todaySamples };
 }
 
 export interface RenewableKpi {

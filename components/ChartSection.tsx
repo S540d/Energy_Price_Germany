@@ -2,7 +2,10 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import type { AnimatedStyle } from 'react-native-reanimated';
 import Animated from 'react-native-reanimated';
-import { RenewableBarChart } from './charts/RenewableBarChart';
+import {
+  RenewableBarChart,
+  FALLBACK_BAR_STROKE as RENEWABLE_FALLBACK_CHART_COLOR,
+} from './charts/RenewableBarChart';
 import { PriceBarChart } from './charts/PriceBarChart';
 import { ClockChart } from './charts/ClockChart';
 import { CorrelationScatterChart } from './charts/CorrelationScatterChart';
@@ -78,6 +81,7 @@ export function ChartSection({
     average: t.average,
     averageLowCoverage: t.averageLowCoverage,
     regional: t.regionalData,
+    fallback: t.renewableFallbackChartLabel?.replace('{location}', renewableFallbackLocation),
   };
 
   // Nationale Werte haben Vorrang; der Ortswert tritt nur ein, wenn heute
@@ -163,15 +167,25 @@ export function ChartSection({
               : undefined
           }
           legend={
-            showRegional ? (
+            showRegional || renewableFallback?.series?.length ? (
               <View style={styles.legendContainer}>
                 <Text style={[styles.legendTitle, { color: colors.text }]}>{t.legend}</Text>
-                <View style={styles.legendRow}>
-                  <View style={styles.legendLineRegional} />
-                  <Text style={[styles.legendLabel, { color: colors.text }]}>
-                    {t.regionalDataLabel}
-                  </Text>
-                </View>
+                {showRegional && (
+                  <View style={styles.legendRow}>
+                    <View style={styles.legendLineRegional} />
+                    <Text style={[styles.legendLabel, { color: colors.text }]}>
+                      {t.regionalDataLabel}
+                    </Text>
+                  </View>
+                )}
+                {!!renewableFallback?.series?.length && (
+                  <View style={styles.legendRow}>
+                    <View style={styles.legendSwatchFallback} />
+                    <Text style={[styles.legendLabel, { color: colors.text }]}>
+                      {renewableLabels.fallback}
+                    </Text>
+                  </View>
+                )}
               </View>
             ) : undefined
           }
@@ -189,6 +203,7 @@ export function ChartSection({
               showRegionalLine={showRegional}
               showLegend={false}
               accentColor={colors.accentGreen}
+              fallbackSeries={renewableFallback?.series}
             />
           }
         >
@@ -205,6 +220,7 @@ export function ChartSection({
             showRegionalLine={showRegional}
             showLegend={false}
             accentColor={colors.accentGreen}
+            fallbackSeries={renewableFallback?.series}
           />
         </ChartDetailView>
 
@@ -451,6 +467,14 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   legendSquareGray: { width: 16, height: 16, backgroundColor: '#757575', borderRadius: 2 },
+  legendSwatchFallback: {
+    width: 16,
+    height: 16,
+    borderRadius: 2,
+    borderWidth: 2,
+    borderColor: RENEWABLE_FALLBACK_CHART_COLOR,
+    borderStyle: 'dashed',
+  },
   legendLabel: { fontSize: 12 },
   viewToggleRow: { flexDirection: 'row', gap: 6 },
   viewToggleButton: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },

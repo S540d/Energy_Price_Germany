@@ -2,11 +2,19 @@ name: Fetch energy market data
 on:
   schedule:
     # Issue #435: 6 Slots statt 3. Nur 03 und 13 UTC laufen unbedingt durch;
-    # 06, 09, 16 und 19 UTC gehen durch das datenbasierte Gate unten und
+    # 04, 05, 06, 09, 16 und 19 UTC gehen durch das datenbasierte Gate unten und
     # starten den teuren `update`-Job nur, wenn sie etwas verbessern würden.
     #
     # 03:00 UTC = 04:00 CET / 05:00 CEST  IMMER – EC Nacht-Update abholen, liefert
     #             i.d.R. den vollständigen Day-Ahead-Datensatz für den laufenden Tag
+    # 04:00 UTC                           bedingt – siehe #481: DE liefert
+    # 05:00 UTC                           bedingt    ren_share_forecast für den neuen
+    #             Tag beim 03-UTC-Lauf so gut wie täglich noch nicht (Preise sind
+    #             da, Erneuerbare noch nicht veröffentlicht); zwei enge Slots
+    #             direkt danach verkürzen die Erkennungslücke von bis zu 3-6h
+    #             (bisher erster bedingter Slot: 06 UTC) auf ~1h, ohne den vollen
+    #             `update`-Job unnötig zu belasten – das Gate macht dafür nur zwei
+    #             billige DE-Probe-Calls (~20s statt ~90s).
     # 06:00 UTC                           bedingt – frühe Erholung nach einem
     #             fehlgeschlagenen Nachtlauf (der 429-Fall vom 2026-09-02)
     # 09:00 UTC                           bedingt – zweite Erholungschance
@@ -15,10 +23,9 @@ on:
     # 16:00 UTC                           bedingt
     # 19:00 UTC = 20:00 CET / 21:00 CEST  bedingt
     #
-    # Laufzeit: an einem normalen Tag 2 volle Läufe (~90s) + 4 Gates (~20s)
-    # ≈ 3 min – praktisch identisch zu den früheren 3 vollen Läufen (~4,5 min),
-    # bei doppelt so vielen Erholungschancen.
-    - cron: '0 3,6,9,13,16,19 * * *'
+    # Laufzeit: an einem normalen Tag 2 volle Läufe (~90s) + 6 Gates (~20s)
+    # ≈ 3,5 min – die beiden zusätzlichen Gates fallen praktisch nicht auf.
+    - cron: '0 3,4,5,6,9,13,16,19 * * *'
   workflow_dispatch:
 
 permissions:
