@@ -292,12 +292,12 @@ Vertrag des Skripts:
 > existiert nur noch für den **aWATTar**-Call und darf nicht wieder auf die
 > Energy-Charts-Blöcke ausgedehnt werden.
 
-**1b. 6 Cron-Slots mit datenbasiertem Gate (#435).**
-`- cron: '0 3,6,9,13,16,19 * * *'`. Nur **03 und 13 UTC laufen unbedingt**
-(Nacht-Update / primärer Day-Ahead-Slot); 06, 09, 16 und 19 UTC gehen durch den
-`gate`-Job und starten den ~90 s teuren `update`-Job nur, wenn sie etwas
-verbessern würden. Das Gate fetcht dazu zwei billige DE-Calls (dasselbe Skript,
-in `$RUNNER_TEMP`) und setzt `run-fetch=true`, wenn **eines** zutrifft:
+**1b. 8 Cron-Slots mit datenbasiertem Gate (#435, seit #481: 04/05 UTC ergänzt).**
+`- cron: '0 3,4,5,6,9,13,16,19 * * *'`. Nur **03 und 13 UTC laufen unbedingt**
+(Nacht-Update / primärer Day-Ahead-Slot); 04, 05, 06, 09, 16 und 19 UTC gehen
+durch den `gate`-Job und starten den ~90 s teuren `update`-Job nur, wenn sie
+etwas verbessern würden. Das Gate fetcht dazu zwei billige DE-Calls (dasselbe
+Skript, in `$RUNNER_TEMP`) und setzt `run-fetch=true`, wenn **eines** zutrifft:
 1. `max(unix_seconds)` der API **>** `max(start_timestamp)/1000` der committeten
    Datei (neue Preis-Abdeckung), **oder**
 2. Zahl der Punkte mit `ren_share != null` **für heute (Europe/Berlin)** aus der
@@ -305,6 +305,19 @@ in `$RUNNER_TEMP`) und setzt `run-fetch=true`, wenn **eines** zutrifft:
 
 Fehlt die Probe-Datei, entscheidet das Gate **fail open** (`run-fetch=true`) —
 der `update`-Job kann mit eigenen Retries und aWATTar-Fallback mehr ausrichten.
+
+> **Bekanntes tägliches Muster (#481, nicht dasselbe wie der 429-Fall von
+> #435): DE liefert `ren_share_forecast` für den neuen Tag beim 03-UTC-Lauf so
+> gut wie täglich noch nicht** — Preise sind da (`source: energy-charts`),
+> keine 429/5xx, der Wert für den neuen Tag ist bei Energy Charts einfach noch
+> nicht veröffentlicht. Der `data-health-check`-Alarm hat das an zwei
+> aufeinanderfolgenden Tagen korrekt erkannt (#472: offen 03:07–15:34 UTC,
+> ~12,5h; #480: offen 03:08–09:06 UTC, ~6h), bis dahin lief die Selbstheilung
+> ausschließlich über die bisherigen Slots 06/09/13/16/19 UTC. Die zusätzlichen
+> 04/05-UTC-Slots verkürzen die Erkennungslücke auf ~1h, ohne den vollen
+> `update`-Job unnötig zu belasten (Gate-Kosten ~20s statt ~90s). Das
+> `RenewableBarChart` überbrückt eine verbleibende Lücke zusätzlich mit einem
+> visuell klar abgesetzten Ortswert-Ersatzbalken, s. Chart Components unten.
 
 > **Ersetzt die Commit-Message-Heuristik aus #406**
 > (`grep -Eq "@ ${TODAY}T(1[3-9]) UTC"`). Die prüfte nur, *ob* committet wurde,
@@ -611,6 +624,20 @@ darauf verlassen, dass ein anderer Block für **dieselben** Dateien matcht.
      liegt. Reihenfolge: eigene PLZ → `CountryConfig.fallbackPostalCode` (DE: Berlin,
      `10115`) → `--`. Nationale und Fallback-Werte werden nie gemischt (kein aktueller
      Ortswert neben nationalem Tages-Ø).
+   - **Ortswert-Fallback jetzt auch im Chart, nicht nur in der KPI-Kachel (Issue #481).**
+     `RenewableFallback` (`utils/renewableFallback.ts`) trägt zusätzlich ein optionales
+     Feld `series` (Zeitstempel + Wert je heutigem Ortswert-Punkt), nicht mehr nur
+     `current`/`avg`. `RenewableBarChart` bekommt diese Reihe über die neue Prop
+     `fallbackSeries`; für jeden Balken **ohne** nationalen Wert wird per
+     `findFallbackValue()` (±20 Min. Toleranz) ein passender Ortswert gesucht und, falls
+     gefunden, als eigener Balken gezeichnet — visuell klar abgesetzt (gestrichelter
+     violetter Rahmen `FALLBACK_BAR_STROKE`, reduzierte Deckkraft, eigener
+     Legenden-Eintrag und Tooltip „Ortswert (Berlin)"), niemals identisch zum nationalen
+     Balken. Nationale Werte haben weiterhin immer Vorrang und werden nie überschrieben —
+     dieselbe Nie-mischen-Regel wie oben gilt unverändert, nur jetzt auch fürs Chart statt
+     nur für die Kachel. `FALLBACK_BAR_STROKE` ist aus `RenewableBarChart.tsx` exportiert,
+     damit `ChartSection`s externe Legende (im Detail-Modal) dieselbe Farbe verwendet statt
+     sie zu duplizieren.
 
 5. **Historical Data (`services/historicalDataStore.ts`) – Issues #307/#1/#3 (PR #309):**
    - **Device cache is the primary source.** Every successful national fetch in
