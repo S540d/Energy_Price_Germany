@@ -351,3 +351,47 @@ eigenen `plugins`-Objekt — man kann sich nicht darauf verlassen, dass ein
 anderer Block für dieselben Dateien matcht und es „mitbringt". Nach jeder
 Änderung an `eslint.config.mjs`: `npm run lint` gegen den vollen Scope
 laufen lassen, nicht nur gegen einzelne geänderte Dateien.
+
+---
+
+## 2026-09-09 — Tägliche Renewable-Lücke direkt nach Mitternacht ist kein Einzelfall (#481)
+
+Nutzer-Meldung: „Ab heute Nacht 0:00 sind keine Daten für den Share
+verfügbar." Vermutung war zunächst, der Berlin-Ortswert-Fallback aus PR
+#473 hänge noch auf `testing` fest.
+
+**Befund:** Der Fallback war längst auf `main` scharf — die eigentliche
+Ursache lag woanders. Der erste Fetch-Lauf nach Mitternacht (03:00 UTC)
+liefert für DE **fast täglich** 0 Erneuerbaren-Punkte für den neuen Tag:
+Preise sind normal da (`source: energy-charts`, kein 429/5xx), aber Energy
+Charts hat den `ren_share_forecast`-Wert für den neuen Tag zu dem
+Zeitpunkt schlicht noch nicht veröffentlicht. Der
+`data-health-check`-Alarm (#445) hat das an zwei aufeinanderfolgenden
+Tagen korrekt erkannt und automatisch dokumentiert — beide Male mit
+mehrstündiger Selbstheilung, nicht mit einem echten Fehler:
+
+- #472 (08.09.): offen 03:07–15:34 UTC (~12,5h)
+- #480 (09.09.): offen 03:08–09:06 UTC (~6h)
+
+Der Fetch-Workflow blieb dabei korrekt grün (rot bedeutet seit #445
+„Workflow defekt", nicht „Datenlücke") — das System funktionierte wie
+vorgesehen, nur fehlte eine Einordnung, dass dieses Muster **normal und
+wiederkehrend** ist, nicht ein einmaliger Vorfall.
+
+**Fix (PR #483):**
+1. Zwei zusätzliche gated Cron-Slots (04:00 + 05:00 UTC) zwischen dem
+   Pflicht-Nachtlauf und dem bisher ersten bedingten Slot (06:00 UTC) —
+   verkürzt die Erkennungslücke von bis zu 6–12,5h auf ~1h, fast
+   kostenneutral über das bestehende Gate.
+2. `RenewableBarChart` überbrückt fehlende nationale Balken jetzt mit
+   einem visuell klar abgesetzten Ortswert-Ersatzbalken (gestrichelter
+   Rahmen, eigene Legende/Tooltip), zusätzlich zur bereits bestehenden
+   KPI-Kachel-Überbrückung aus PR #473. Details in `CLAUDE.md` unter
+   „Chart Components".
+
+**Verallgemeinerbare Lehre:** Ein automatisierter Alarm, der zuverlässig
+öffnet und sich zuverlässig wieder schließt, wird leicht für „erledigt"
+gehalten — dabei kann dasselbe Muster jeden Tag zur selben Zeit erneut
+auftreten. Bei einer Nutzermeldung zu einem bereits bekannten
+Alarm-Pattern zuerst `list_issues`/`search_issues` nach dem zugehörigen
+Label (hier `data-health`) prüfen, bevor man eine neue Ursache vermutet.

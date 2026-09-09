@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Fixed
+- **Tägliche Erneuerbaren-Lücke direkt nach Mitternacht verkürzt und im Chart überbrückt (#481).** Der erste Fetch-Lauf nach Mitternacht (03:00 UTC) liefert für DE fast täglich 0 Erneuerbaren-Punkte für den neuen Tag (Energy Charts veröffentlicht `ren_share_forecast` für den neuen Tag verzögert, kein Fehler). Zwei zusätzliche gated Cron-Slots (04:00 + 05:00 UTC) verkürzen die Erkennungslücke von bis zu 6–12,5h auf ~1h. Zusätzlich überbrückt `RenewableBarChart` fehlende nationale Balken jetzt mit einem visuell klar abgesetzten Ortswert-Ersatzbalken (gestrichelter Rahmen, eigene Legende/Tooltip) — die KPI-Kachel „Erneuerbare jetzt" wurde bereits seit PR #473 überbrückt, das Chart selbst zeigte bisher weiterhin eine Lücke. Nationale Werte haben weiterhin immer Vorrang, es wird nie gemischt.
+
 ## [1.11.0] - 2026-09-08
 
 ### Fixed
