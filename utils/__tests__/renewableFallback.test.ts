@@ -23,6 +23,18 @@ describe('renewableFallbackFromEnergyData', () => {
     expect(result?.source).toBe('own');
   });
 
+  it('liefert die heutigen Einzelwerte als series, für die Chart-Balken (#481)', () => {
+    // -20h liegt am Vortag und darf nicht in der series landen.
+    const result = renewableFallbackFromEnergyData(
+      [point(-20 * 60, 10), point(-60, 40), point(-30, 60)],
+      NOW
+    );
+    expect(result?.series).toEqual([
+      { timestamp: point(-60, 40).timestamp, value: 40 },
+      { timestamp: point(-30, 60).timestamp, value: 60 },
+    ]);
+  });
+
   it('mittelt nur über die heutigen Punkte', () => {
     // -20 h liegt am Vortag und darf nicht ins Tagesmittel einfließen.
     const result = renewableFallbackFromEnergyData(
@@ -68,6 +80,14 @@ describe('renewableFallbackFromRegionalResponse', () => {
       NOW
     );
     expect(result?.current).toBe(100);
+  });
+
+  it('kappt auch die Werte in series auf 0–100 (#481)', () => {
+    const result = renewableFallbackFromRegionalResponse(
+      { unix_seconds: [seconds(-5)], share: [125] },
+      NOW
+    );
+    expect(result?.series).toEqual([{ timestamp: seconds(-5) * 1000, value: 100 }]);
   });
 
   it('liefert null bei ungleich langen Arrays', () => {

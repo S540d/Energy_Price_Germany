@@ -16,12 +16,25 @@ import {
   ZoomResetBadge,
 } from './shared';
 import { scaleToX, scaleToY, getBarWidth, getBarHeight, getPlotHeight } from './shared/chartScale';
+import type { Sample as FallbackSample } from '../../utils/renewableFallback';
 
 /**
  * Mindestanteil der Punkte im Fenster, die einen Wert haben müssen, damit ein
  * Mittelwert über das Fenster überhaupt als aussagekräftig gilt.
  */
 const AVERAGE_MIN_COVERAGE_RATIO = 0.5;
+
+/**
+ * Wie weit ein Ortswert-Zeitstempel von einem fehlenden nationalen Balken
+ * entfernt sein darf, um ihn noch zu ersetzen (#481). Die Signal-API tickt
+ * nicht notwendigerweise im selben 15-Minuten-Raster wie die nationalen Daten.
+ */
+const FALLBACK_MATCH_TOLERANCE_MS = 20 * 60 * 1000;
+
+/** Farbe für den Ortswert-Ersatzbalken – bewusst nicht Grün/Orange, die schon für
+ * die Erneuerbaren-Skala bzw. die eigene Regionallinie stehen. Exportiert, damit
+ * `ChartSection`s externe Legende dieselbe Farbe für ihren Schwatch verwendet. */
+export const FALLBACK_BAR_STROKE = '#7E57C2';
 
 /**
  * Type alias for renewable share data keys in EnergyData
@@ -53,12 +66,39 @@ interface RenewableBarChartProps {
      */
     averageLowCoverage?: string;
     regional?: string; // Label für regionale Linie
+    /** Legenden-/Balken-Label für den Ortswert-Ersatz, z.B. "Ortswert (Berlin)". */
+    fallback?: string;
   };
   interactionHint?: string;
   dataKey?: RenewableDataKey;
   showRegionalLine?: boolean; // Zeigt gestrichelte Linie für regionale Daten
   showLegend?: boolean;
   accentColor?: string;
+  /**
+   * Ortswert-Zeitreihe, mit der fehlende nationale Balken für heute ersetzt
+   * werden (#481 – Berlin-Fallback aus `utils/renewableFallback.ts`). Nur
+   * Balken, an denen kein nationaler Wert vorliegt, werden ersetzt; ein
+   * nationaler Wert hat immer Vorrang und wird nie überschrieben.
+   */
+  fallbackSeries?: FallbackSample[];
+}
+
+/** Nächstgelegener Ortswert für `timestamp` innerhalb der Toleranz, sonst `null`. */
+function findFallbackValue(
+  timestamp: number,
+  fallbackSeries: FallbackSample[] | undefined
+): number | null {
+  if (!fallbackSeries || fallbackSeries.length === 0) return null;
+  let closest: FallbackSample | null = null;
+  let closestDiff = Infinity;
+  for (const sample of fallbackSeries) {
+    const diff = Math.abs(sample.timestamp - timestamp);
+    if (diff < closestDiff) {
+      closestDiff = diff;
+      closest = sample;
+    }
+  }
+  return closest && closestDiff <= FALLBACK_MATCH_TOLERANCE_MS ? closest.value : null;
 }
 
 function RenewableBarChartComponent({
@@ -75,6 +115,7 @@ function RenewableBarChartComponent({
   showRegionalLine = false,
   showLegend = true,
   accentColor,
+  fallbackSeries,
 }: RenewableBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const { t } = useLanguageContext();
@@ -177,6 +218,30 @@ function RenewableBarChartComponent({
       const timestamp = d.timestamp;
 
       if (value === null || value === undefined) {
+        const fallbackValue = findFallbackValue(timestamp, fallbackSeries);
+        if (fallbackValue !== null) {
+          const yScale = {
+            domainMin: cMin,
+            domainRange: cRange,
+            chartHeight,
+            padding,
+            bottomPadding,
+          };
+          const clampedFallback = Math.min(fallbackValue, 100);
+          const fallbackHeight = getBarHeight(clampedFallback, yScale);
+          const fallbackY = chartHeight - bottomPadding - fallbackHeight;
+          return {
+            index,
+            x,
+            barWidth,
+            value: null,
+            isInterpolated: false,
+            timestamp,
+            fallbackValue,
+            fallbackHeight,
+            fallbackY,
+          };
+        }
         return {
           index,
           x,
@@ -236,10 +301,13 @@ function RenewableBarChartComponent({
     rightPadding,
     padding,
     bottomPadding,
+    fallbackSeries,
   ]);
 
   // Guard against invalid data
   if (!chartCalcs) return null;
+
+  const hasFallbackBars = barData.some(bar => bar.fallbackValue != null);
 
   const {
     minTime,
@@ -291,6 +359,39 @@ function RenewableBarChartComponent({
             </ChartTooltip>
           );
         })()}
+      {selectedIndex !== null &&
+        (data[selectedIndex]?.[dataKey] === null || data[selectedIndex]?.[dataKey] === undefined) &&
+        (() => {
+          const bar = barData[selectedIndex];
+          if (!bar || bar.fallbackValue == null) return null;
+
+          const x = scaleToX(bar.timestamp, {
+            domainMin: minTime,
+            domainRange: timeRange,
+            chartWidth,
+            leftPadding,
+            rightPadding,
+          });
+          const tooltipLeft = getTooltipLeft(toViewportX(x), 80, viewportWidth);
+
+          return (
+            <ChartTooltip
+              tooltipLeft={tooltipLeft}
+              cardPadding={cardPadding}
+              backgroundColor={backgroundColor}
+              colors={colors}
+            >
+              <Text style={[styles.tooltipValue, { color: colors.text }]}>
+                {bar.fallbackValue.toFixed(1)}%
+              </Text>
+              {labels.fallback && (
+                <Text style={[styles.tooltipFallbackNote, { color: colors.textSecondary }]}>
+                  {labels.fallback}
+                </Text>
+              )}
+            </ChartTooltip>
+          );
+        })()}
       <View style={styles.headerRow}>
         <View style={styles.titleColumn}>
           <Text
@@ -324,6 +425,12 @@ function RenewableBarChartComponent({
                 <Text style={[styles.legendLabel, { color: textColor }]}>{labels.regional}</Text>
               </View>
             )}
+            {hasFallbackBars && labels.fallback && (
+              <View style={styles.legendItem}>
+                <View style={styles.legendSwatchFallback} />
+                <Text style={[styles.legendLabel, { color: textColor }]}>{labels.fallback}</Text>
+              </View>
+            )}
           </View>
         )}
       </View>
@@ -351,6 +458,27 @@ function RenewableBarChartComponent({
             {/* Bars (SVG) - Using pre-calculated bar data for performance */}
             <Svg width={chartWidth} height={chartHeight}>
               {barData.map(bar => {
+                // Ortswert-Ersatzbalken (#481): visuell klar vom nationalen Balken
+                // abgesetzt (violetter Rahmen + gestrichelt), nie identisch gefärbt,
+                // damit er nicht als nationaler Wert missverstanden wird.
+                if (bar.value === null && bar.fallbackValue != null) {
+                  const isSelected = selectedIndex === bar.index;
+                  return (
+                    <Rect
+                      key={bar.index}
+                      x={bar.x - bar.barWidth / 2}
+                      y={bar.fallbackY}
+                      width={bar.barWidth}
+                      height={bar.fallbackHeight}
+                      fill={getRenewableColor(bar.fallbackValue)}
+                      opacity={isSelected ? 0.55 : 0.35}
+                      stroke={FALLBACK_BAR_STROKE}
+                      strokeWidth={2}
+                      strokeDasharray="4,3"
+                    />
+                  );
+                }
+
                 // Render gray fading bar for missing data
                 if (bar.value === null) {
                   // Seeded random for consistent but varied heights
@@ -544,7 +672,11 @@ function RenewableBarChartComponent({
 
             {/* Invisible touch/hover areas for bars - Using pre-calculated positions */}
             {barData.map(bar => {
-              if (bar.value === null) return null;
+              const isFallback = bar.value === null && bar.fallbackValue != null;
+              if (bar.value === null && !isFallback) return null;
+
+              const top = isFallback ? bar.fallbackY : bar.y;
+              const height = isFallback ? bar.fallbackHeight : bar.barHeight;
 
               return (
                 <View
@@ -553,9 +685,9 @@ function RenewableBarChartComponent({
                     Platform.OS === 'web' ? styles.touchAreaWeb : styles.touchArea,
                     {
                       left: bar.x - bar.barWidth / 2,
-                      top: bar.y,
+                      top,
                       width: bar.barWidth,
-                      height: bar.barHeight,
+                      height,
                     },
                   ]}
                   onStartShouldSetResponder={() => true}
@@ -687,6 +819,7 @@ export const RenewableBarChart = React.memo(RenewableBarChartComponent);
 
 const styles = StyleSheet.create({
   tooltipValue: { fontSize: 14, fontWeight: 'bold' },
+  tooltipFallbackNote: { fontSize: 11, marginTop: 2 },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -702,6 +835,15 @@ const styles = StyleSheet.create({
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendLine: { width: 12, height: 2, opacity: 0.5 },
   legendLineRegional: { width: 12, height: 2, backgroundColor: '#FF9800', opacity: 0.8 },
+  legendSwatchFallback: {
+    width: 12,
+    height: 12,
+    borderRadius: 2,
+    borderWidth: 2,
+    borderColor: FALLBACK_BAR_STROKE,
+    borderStyle: 'dashed',
+    opacity: 0.8,
+  },
   legendLabel: { fontSize: 12, opacity: 0.7 },
   relative: { position: 'relative' },
   regionalLabel: {
