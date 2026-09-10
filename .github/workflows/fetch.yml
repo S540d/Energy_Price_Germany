@@ -80,7 +80,7 @@ jobs:
       run-fetch: ${{ steps.decide.outputs.run-fetch }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: main
 
@@ -139,7 +139,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: main
           ssh-key: ${{ secrets.FETCH_DEPLOY_KEY }}
