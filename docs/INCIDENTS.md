@@ -395,3 +395,86 @@ gehalten — dabei kann dasselbe Muster jeden Tag zur selben Zeit erneut
 auftreten. Bei einer Nutzermeldung zu einem bereits bekannten
 Alarm-Pattern zuerst `list_issues`/`search_issues` nach dem zugehörigen
 Label (hier `data-health`) prüfen, bevor man eine neue Ursache vermutet.
+
+> ⚠️ **Nachtrag vom 2026-09-10:** Die hier notierte Ursache („Energy Charts
+> veröffentlicht den Wert für den neuen Tag verzögert") war **unvollständig**
+> und für die eigentliche Beschwerde die falsche Fährte. Sie erklärt nur die
+> Morgenlücke; die dauerhafte Lücke für *morgen* hatte eine ganz andere
+> Ursache — siehe den nächsten Eintrag (#487).
+
+---
+
+## 2026-09-10 — Das Gate verwarf die Morgen-Prognose täglich (#487)
+
+Nutzer-Meldung: Das Chart zeigt für morgen Preise und eine regionale
+Erneuerbaren-Kurve, aber **keine nationalen** Erneuerbaren-Werte — und der
+Ortswert-Fallback aus #473/#483 greift auch nicht.
+
+**Messung statt Vermutung.** Der Vortag hatte die Ursache in der Upstream-API
+vermutet. Live abgefragt am 2026-09-10 gegen 19:15 UTC:
+
+| Quelle | Fenster | Punkte |
+|---|---|---|
+| `ren_share_forecast?country=de` | 10.09. 00:00 – **11.09. 23:45** Berlin | **192** |
+| `signal?postal_code=14612` | 10.09. 00:00 – 11.09. 23:45 Berlin | 192 |
+| `public/data/marketdata.json` (main) | Renewable nur bis **10.09. 23:45** | 707 |
+
+Die API lieferte volle 48 h. Die zweite Hälfte kam nie an — der Verlust lag
+also im eigenen Repo, nicht upstream.
+
+**Ursache.** Job-Log des Pflicht-Laufs um 13:04 UTC:
+
+```
+- Price points: 96
+- Renewable points: 96
+- Points with renewable only (for tomorrow): 0
+```
+
+Um 13 UTC hat `ren_share_forecast` tatsächlich erst 96 Punkte (nur heute); die
+Preise für morgen stammen an dieser Stelle aus aWATTar und tragen per Design
+`renewable_share: null`. Später erweitert Energy Charts die Prognose auf 192
+Punkte — und genau die Läufe, die das holen würden (16/19 UTC), blockte das
+Gate:
+
+```
+- keine Verbesserung gegenueber der committeten Datei
+Gate-Entscheidung fuer 19:00 UTC: run-fetch=false
+```
+
+Beide Gate-Kriterien konnten die Lücke prinzipiell nicht sehen:
+
+```js
+if (apiMaxMs > fileMaxMs)         // Datei reichte via aWATTar bereits weiter -> false
+if (apiRenToday > fileRenToday)   // zählte nur HEUTE, 96 vs. 96          -> false
+```
+
+**Es war eine selbstverschuldete Regression.** Vor dem Gate (#435) liefen die
+Abend-Slots unbedingt durch; die Git-History von `marketdata.json` belegt es:
+Lauf am 31.08. um 22:26 UTC, Preise bis 01.09. 21:45, Renewable bis 01.09.
+21:45 — Delta 0 h. Das Gate wurde gebaut, um Lücken zu schließen, und hat dabei
+genau die Läufe abgeschaltet, die die Zukunftsdaten holten.
+
+**Fix (#487/PR #488):** Kriterium (b) vergleicht Zeitstempel über das gesamte
+API-Fenster statt Punkte pro Kalendertag. Die Logik liegt jetzt in
+`scripts/gate-decision.js` mit Unit-Tests. Gegen den realen Datenstand
+verifiziert: alte Logik `false`, neue `true` mit 96 fehlenden Punkten.
+
+**Verallgemeinerbare Lehren:**
+
+1. **Ein Gate, das entscheidet, *ob* Daten geholt werden, muss dieselbe Frage
+   stellen wie die Prüfung, die die Lücke erkennt.** Fragen sie
+   Unterschiedliches, blockiert das Gate genau die Läufe, die die Lücke
+   schließen würden — und zwar lautlos, mit grünem Workflow.
+2. **„Für heute (Europe/Berlin)" ist der falsche Maßstab, sobald die UI ein
+   48-h-Fenster zeigt.** Derselbe Bias steckte gleichzeitig in vier Schichten:
+   Gate, `data-health-check.js`, `metrics.today` und dem daran hängenden
+   Fallback. Jede war einzeln gegen ein „heute"-Symptom gebaut worden, keine
+   kannte das Fenster, das der Nutzer tatsächlich sieht.
+3. **Job-Logs vor Hypothesen.** Zwei Tage lang wurde die Ursache upstream
+   vermutet und diese Vermutung aus den committeten Daten „bestätigt". Die eine
+   Zeile `- Renewable points: 96` im Job-Log hätte sie sofort widerlegt. Bei
+   „Daten fehlen" gilt die Reihenfolge: erst messen, was die API **jetzt**
+   liefert, dann was der Job-Log sagt, erst dann eine Ursache formulieren.
+4. **Ein Fix, der nur auf `testing` liegt, ist kein Fix.** `fetch.yml` wird
+   ausschließlich vom Default-Branch gelesen (bereits viermal passiert: #418,
+   #435, #445, #483).

@@ -306,18 +306,34 @@ Skript, in `$RUNNER_TEMP`) und setzt `run-fetch=true`, wenn **eines** zutrifft:
 Fehlt die Probe-Datei, entscheidet das Gate **fail open** (`run-fetch=true`) —
 der `update`-Job kann mit eigenen Retries und aWATTar-Fallback mehr ausrichten.
 
-> **Bekanntes tägliches Muster (#481, nicht dasselbe wie der 429-Fall von
-> #435): DE liefert `ren_share_forecast` für den neuen Tag beim 03-UTC-Lauf so
-> gut wie täglich noch nicht** — Preise sind da (`source: energy-charts`),
-> keine 429/5xx, der Wert für den neuen Tag ist bei Energy Charts einfach noch
-> nicht veröffentlicht. Der `data-health-check`-Alarm hat das an zwei
-> aufeinanderfolgenden Tagen korrekt erkannt (#472: offen 03:07–15:34 UTC,
-> ~12,5h; #480: offen 03:08–09:06 UTC, ~6h), bis dahin lief die Selbstheilung
-> ausschließlich über die bisherigen Slots 06/09/13/16/19 UTC. Die zusätzlichen
-> 04/05-UTC-Slots verkürzen die Erkennungslücke auf ~1h, ohne den vollen
-> `update`-Job unnötig zu belasten (Gate-Kosten ~20s statt ~90s). Das
-> `RenewableBarChart` überbrückt eine verbleibende Lücke zusätzlich mit einem
-> visuell klar abgesetzten Ortswert-Ersatzbalken, s. Chart Components unten.
+> **ZWEI verschiedene Erneuerbaren-Lücken — nicht verwechseln (#481 / #487).**
+>
+> **Lücke A „Morgenlücke" (#481):** Beim 03-UTC-Lauf fehlen die Werte für den
+> laufenden Tag noch. Preise sind da (`source: energy-charts`), keine 429/5xx.
+> Belegt durch die Alarm-Issues #472 (offen 03:07–15:34 UTC) und #480
+> (03:08–09:06 UTC). Dagegen helfen die zusätzlichen Slots 04/05 UTC.
+>
+> **Lücke B „Zukunftslücke" (#487):** Für **morgen** gibt es Preise, aber keine
+> nationalen Erneuerbaren-Werte. Ursache ist **nicht** die API — die liefert ab
+> ca. 15 UTC volle 192 Punkte bis morgen 23:45 Berlin (am 2026-09-10 live
+> nachgemessen). Der Ablauf:
+> 1. Um 13 UTC hat `ren_share_forecast` erst 96 Punkte (nur heute). Die Preise
+>    für morgen kommen an dieser Stelle aus **aWATTar** und tragen per Design
+>    `renewable_share: null`.
+> 2. Später erweitert Energy Charts die Prognose auf 192 Punkte.
+> 3. Die Slots 16/19 UTC würden das holen — **das Gate blockte sie**, weil sein
+>    Erneuerbaren-Kriterium nur „heute" zählte (96 vs. 96) und das
+>    Preis-Kriterium keine neue Abdeckung sah (die Datei reichte via aWATTar
+>    bereits weiter).
+>
+> Ergebnis: Seit Einführung des Gates (#435) endete `renewable_share` **täglich**
+> um 23:45 Berlin. Vor dem Gate lief der Abend-Slot unbedingt durch und holte die
+> Morgen-Werte (belegt: Lauf 2026-08-31, 22:26 UTC, Delta 0h). Behoben in #487
+> durch das zeitstempel-basierte Kriterium.
+>
+> ⚠️ **Mehr Cron-Slots allein hätten Lücke B nie behoben** — mit dem alten
+> „heute"-Kriterium hätten auch 04/05 UTC geblockt, sobald heute vollständig
+> war. Die Slot-Anzahl ist nicht der Hebel, das Gate-Kriterium ist es.
 
 > **Ersetzt die Commit-Message-Heuristik aus #406**
 > (`grep -Eq "@ ${TODAY}T(1[3-9]) UTC"`). Die prüfte nur, *ob* committet wurde,
@@ -638,6 +654,19 @@ darauf verlassen, dass ein anderer Block für **dieselben** Dateien matcht.
      nur für die Kachel. `FALLBACK_BAR_STROKE` ist aus `RenewableBarChart.tsx` exportiert,
      damit `ChartSection`s externe Legende (im Detail-Modal) dieselbe Farbe verwendet statt
      sie zu duplizieren.
+   - ⚠️ **Der gesamte Fallback-Pfad löst derzeit praktisch nie aus — „heute"-Bias (#487).**
+     Er hängt an `hasLimitedRenewableData` (`App.tsx`), und das ist
+     `metrics.today.coverage.priceCount > 0 && renewableCount === 0` — also **nur heute**.
+     Bei der real häufigsten Lage (heute 88 von 96 Punkten, morgen 0) ist die Bedingung
+     `false`, `renewableFallback` bleibt `null`, und weder Kachel noch Chart zeigen einen
+     Ersatzwert. Zusätzlich filtert `summarize()` in `renewableFallback.ts` auf
+     `todaySamples` — die `series` enthält also **nie** Punkte für morgen und könnte
+     Lücke B (s. `fetch.yml`-Abschnitt oben) selbst dann nicht schließen, wenn sie
+     auslöste. Wer den Fallback fürs Chart nutzbar machen will, muss **beide** Stellen
+     auf das tatsächlich gezeigte Chart-Fenster umstellen, nicht auf den Kalendertag.
+     Vorher prüfen, ob nach dem Pipeline-Fix (#487) überhaupt noch eine Lücke bleibt,
+     die einen Ortswert rechtfertigt — ein Ortswert für *morgen* ist eine Prognose für
+     einen einzelnen Netzbereich, dargestellt anstelle eines Bundeswerts.
 
 5. **Historical Data (`services/historicalDataStore.ts`) – Issues #307/#1/#3 (PR #309):**
    - **Device cache is the primary source.** Every successful national fetch in
