@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-09-10T03:42:58.854Z",
+  "generatedAt": "2026-09-10T13:05:19.862Z",
   "berlinDay": "2026-09-10",
   "countries": {
     "de": {
       "available": true,
       "source": "energy-charts",
-      "points": 745,
+      "points": 767,
       "renewablePointsToday": 96,
-      "coverageFrom": "2026-09-03T03:45:00.000Z",
-      "coverageUntil": "2026-09-10T21:45:00.000Z",
-      "coverageAgeHours": -18
+      "coverageFrom": "2026-09-03T13:15:00.000Z",
+      "coverageUntil": "2026-09-11T12:45:00.000Z",
+      "coverageAgeHours": -23.7
     },
     "nl": {
       "available": true,
@@ -18,7 +18,7 @@
       "renewablePointsToday": 96,
       "coverageFrom": "2026-09-03T03:15:00.000Z",
       "coverageUntil": "2026-09-10T21:45:00.000Z",
-      "coverageAgeHours": -18
+      "coverageAgeHours": -8.7
     },
     "at": {
       "available": true,
@@ -27,7 +27,7 @@
       "renewablePointsToday": 96,
       "coverageFrom": "2026-09-03T03:15:00.000Z",
       "coverageUntil": "2026-09-11T21:45:00.000Z",
-      "coverageAgeHours": -42
+      "coverageAgeHours": -32.7
     },
     "ch": {
       "available": true,
@@ -36,7 +36,7 @@
       "renewablePointsToday": 24,
       "coverageFrom": "2026-09-03T03:15:00.000Z",
       "coverageUntil": "2026-09-10T21:45:00.000Z",
-      "coverageAgeHours": -18
+      "coverageAgeHours": -8.7
     },
     "fr": {
       "available": true,
@@ -45,16 +45,16 @@
       "renewablePointsToday": 96,
       "coverageFrom": "2026-09-03T03:15:00.000Z",
       "coverageUntil": "2026-09-10T21:45:00.000Z",
-      "coverageAgeHours": -18
+      "coverageAgeHours": -8.7
     },
     "be": {
       "available": true,
       "source": "energy-charts",
-      "points": 747,
-      "renewablePointsToday": 0,
-      "coverageFrom": "2026-09-03T03:15:00.000Z",
+      "points": 707,
+      "renewablePointsToday": 24,
+      "coverageFrom": "2026-09-03T13:15:00.000Z",
       "coverageUntil": "2026-09-10T21:45:00.000Z",
-      "coverageAgeHours": -18
+      "coverageAgeHours": -8.7
     },
     "dk": {
       "available": true,
@@ -63,7 +63,7 @@
       "renewablePointsToday": 96,
       "coverageFrom": "2026-09-03T03:45:00.000Z",
       "coverageUntil": "2026-09-10T21:45:00.000Z",
-      "coverageAgeHours": -18
+      "coverageAgeHours": -8.7
     }
   }
 }
