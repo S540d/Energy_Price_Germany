@@ -2,11 +2,19 @@ name: Fetch energy market data
 on:
   schedule:
     # Issue #435: 6 Slots statt 3. Nur 03 und 13 UTC laufen unbedingt durch;
-    # 06, 09, 16 und 19 UTC gehen durch das datenbasierte Gate unten und
+    # 04, 05, 06, 09, 16 und 19 UTC gehen durch das datenbasierte Gate unten und
     # starten den teuren `update`-Job nur, wenn sie etwas verbessern würden.
     #
     # 03:00 UTC = 04:00 CET / 05:00 CEST  IMMER – EC Nacht-Update abholen, liefert
     #             i.d.R. den vollständigen Day-Ahead-Datensatz für den laufenden Tag
+    # 04:00 UTC                           bedingt – siehe #481: DE liefert
+    # 05:00 UTC                           bedingt    ren_share_forecast für den neuen
+    #             Tag beim 03-UTC-Lauf so gut wie täglich noch nicht (Preise sind
+    #             da, Erneuerbare noch nicht veröffentlicht); zwei enge Slots
+    #             direkt danach verkürzen die Erkennungslücke von bis zu 3-6h
+    #             (bisher erster bedingter Slot: 06 UTC) auf ~1h, ohne den vollen
+    #             `update`-Job unnötig zu belasten – das Gate macht dafür nur zwei
+    #             billige DE-Probe-Calls (~20s statt ~90s).
     # 06:00 UTC                           bedingt – frühe Erholung nach einem
     #             fehlgeschlagenen Nachtlauf (der 429-Fall vom 2026-09-02)
     # 09:00 UTC                           bedingt – zweite Erholungschance
@@ -15,10 +23,9 @@ on:
     # 16:00 UTC                           bedingt
     # 19:00 UTC = 20:00 CET / 21:00 CEST  bedingt
     #
-    # Laufzeit: an einem normalen Tag 2 volle Läufe (~90s) + 4 Gates (~20s)
-    # ≈ 3 min – praktisch identisch zu den früheren 3 vollen Läufen (~4,5 min),
-    # bei doppelt so vielen Erholungschancen.
-    - cron: '0 3,6,9,13,16,19 * * *'
+    # Laufzeit: an einem normalen Tag 2 volle Läufe (~90s) + 6 Gates (~20s)
+    # ≈ 3,5 min – die beiden zusätzlichen Gates fallen praktisch nicht auf.
+    - cron: '0 3,4,5,6,9,13,16,19 * * *'
   workflow_dispatch:
 
 permissions:
@@ -53,6 +60,19 @@ jobs:
   #
   # Jetzt werden stattdessen zwei billige DE-Calls gegen die committete
   # marketdata.json gehalten. Kosten: ~20s statt ~90s für den vollen Lauf.
+  #
+  # Die Entscheidungslogik liegt in `scripts/gate-decision.js` (#487) — nicht
+  # mehr als `node -e`-Inline-Block (Konvention aus #445), und damit über
+  # `scripts/__tests__/gate-decision.test.js` abgesichert.
+  #
+  # ⚠️ Das Erneuerbaren-Kriterium vergleicht ZEITSTEMPEL über das gesamte
+  # API-Fenster, nicht Punkte "für heute". Die frühere Tageszählung war blind
+  # für die Morgen-Prognose: Um 13 UTC liefert `ren_share_forecast` nur heute,
+  # die Preise für morgen kommen aus aWATTar (mit `renewable_share: null`) —
+  # und die späteren Slots, die die dann erweiterte Prognose geholt hätten,
+  # entschieden `false`, weil "heute" ja vollständig war. Ergebnis: seit #435
+  # endeten die Erneuerbaren-Werte täglich um 23:45 Berlin. Nicht auf eine
+  # Kennzahl "pro Kalendertag" zurückbauen. → #487
   gate:
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule'
@@ -100,71 +120,7 @@ jobs:
             exit 0
           fi
 
-          RUN_FETCH=$(node -e '
-          const fs = require("fs");
-
-          const probeDir = process.argv[1];
-          const readJson = (p) => {
-            try { return JSON.parse(fs.readFileSync(p, "utf8")); } catch { return null; }
-          };
-
-          const berlinDay = (ms) =>
-            new Intl.DateTimeFormat("en-CA", {
-              timeZone: "Europe/Berlin",
-              year: "numeric", month: "2-digit", day: "2-digit",
-            }).format(new Date(ms));
-
-          const today = berlinDay(Date.now());
-
-          const committed = readJson("public/data/marketdata.json");
-          const apiPrice = readJson(probeDir + "/price_raw.json");
-          const apiRen = readJson(probeDir + "/renewable_raw.json");
-
-          // Ohne committete Datei gibt es nichts zu vergleichen -> laufen lassen.
-          if (!committed || !Array.isArray(committed.data) || committed.data.length === 0) {
-            console.log("true");
-            process.exit(0);
-          }
-
-          const reasons = [];
-
-          // (a) Neue Preis-Abdeckung?
-          const fileMaxMs = Math.max(...committed.data.map((d) => d.start_timestamp || 0));
-          if (apiPrice && Array.isArray(apiPrice.unix_seconds) && apiPrice.unix_seconds.length) {
-            const apiMaxMs = Math.max(...apiPrice.unix_seconds) * 1000;
-            if (apiMaxMs > fileMaxMs) {
-              reasons.push(
-                "neue Preis-Abdeckung: API bis " + new Date(apiMaxMs).toISOString() +
-                ", Datei bis " + new Date(fileMaxMs).toISOString()
-              );
-            }
-          }
-
-          // (b) Schliesst sich eine Erneuerbaren-Luecke fuer heute?
-          const fileRenToday = committed.data.filter(
-            (d) => d.renewable_share != null && berlinDay(d.start_timestamp) === today
-          ).length;
-
-          let apiRenToday = 0;
-          if (apiRen && Array.isArray(apiRen.unix_seconds) && Array.isArray(apiRen.ren_share)) {
-            for (let i = 0; i < apiRen.unix_seconds.length; i++) {
-              if (apiRen.ren_share[i] == null) continue;
-              if (berlinDay(apiRen.unix_seconds[i] * 1000) === today) apiRenToday++;
-            }
-          }
-          if (apiRenToday > fileRenToday) {
-            reasons.push(
-              "Erneuerbaren-Luecke schliesst sich: API " + apiRenToday +
-              " Punkte heute vs. Datei " + fileRenToday
-            );
-          }
-
-          for (const r of reasons) console.error("  - " + r);
-          if (reasons.length === 0) {
-            console.error("  - keine Verbesserung gegenueber der committeten Datei");
-          }
-          console.log(reasons.length > 0 ? "true" : "false");
-          ' "$PROBE_DIR")
+          RUN_FETCH=$(node scripts/gate-decision.js "$PROBE_DIR")
 
           echo "Gate-Entscheidung fuer ${HOUR_UTC}:00 UTC: run-fetch=${RUN_FETCH}"
           echo "run-fetch=${RUN_FETCH}" >> "$GITHUB_OUTPUT"
