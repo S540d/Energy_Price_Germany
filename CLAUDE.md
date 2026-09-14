@@ -82,27 +82,62 @@ Energy Price Germany - A visualization app for German electricity market prices 
 - Ziel-Branch: **immer `testing`** (sofern nicht anders gesagt)
 - CI abwarten; nie bei rotem CI mergen
 
-### Dependabot-PRs: Ausnahme von der `testing`-Regel
+### Dependabot-PRs: gruppierte Sammel-Bumps gegen `testing` — dort läuft KEIN Lint/Test (#479/#492, 2026-09-14)
 
-Dependabot legt seine PRs **direkt gegen `main`** an — das ist Standardverhalten
-bei UI-Konfiguration (Settings → Security → Dependabot); es gibt **keine**
-`.github/dependabot.yml` im Repo, die das umlenken würde. Das ist eine bewusste
-Ausnahme von „Ziel-Branch immer `testing`", keine Fehlkonfiguration.
+> ⚠️ **Frühere Fassung dieses Abschnitts war überholt.** Sie behauptete, es
+> gäbe keine `.github/dependabot.yml` und Dependabot ziele immer auf `main`.
+> Seit Issue #60 existiert die Datei und setzt `target-branch: testing` für
+> **beide** konfigurierten Ökosysteme — geprüft am realen Zustand, nicht
+> vermutet.
+
+`.github/dependabot.yml` bündelt **alle** Updates pro Ökosystem monatlich in
+je einem Gruppen-PR gegen `testing` — **ohne** `update-types`-Filter, Majors
+also inklusive:
+
+- `npm-all` (npm/yarn/pnpm, ein PR für z. B. 32 Pakete auf einmal)
+- `actions-all` (GitHub Actions)
 
 - Solche PRs referenzieren **keine** GitHub-Issues — nach dem Merge gibt es
   nichts zum Schließen.
-- Bei `main` als Ziel laufen alle ~15 `ci-cd.yml`-Checks (nicht nur
-  `review-gate`), da der `pull_request`-Trigger dort greift.
-- Merge nach `main` braucht laut globaler Policy weiterhin **explizite
-  schriftliche Freigabe** — die Dependabot-Zielsetzung ändert daran nichts.
-- **Beobachtung (2026-09-03, PRs #440–#442):** Der Merge lief über die
-  GitHub-API glatt durch, **ohne** `--admin` und ohne vorheriges Approval —
-  obwohl das `Main`-Ruleset laut Doku oben „Required Approvals = 1" verlangt.
-  Nicht als Freibrief für menschliche PRs missverstehen: naheliegende
-  Erklärung ist, dass das Ruleset Bot-Autoren (`dependabot[bot]`) oder
-  reine Squash-Merges über die API anders behandelt als PRs mit
-  Code-Änderungen von Menschen/Claude. Nicht verifiziert — vor der nächsten
-  Regeländerung am Ruleset gezielt gegenprüfen.
+- Da Ziel-Branch `testing` ist, greift „Checks je Ziel-Branch" unten
+  **ungebremst**: nur `review-gate` + `mergeability`, **kein** Lint, kein
+  `tsc --noEmit`, keine Tests, kein Build. Ein grüner Dependabot-Gruppen-PR
+  sagt über Kompatibilität nichts aus.
+- **Vorfall (PR #479, 2026-09-14):** Der 32-Paket-`npm-all`-Bump hob
+  gleichzeitig `typescript` 5.9→7.0 (inkompatibel mit
+  `@typescript-eslint@8.70` → `npm run lint` crasht komplett), `eslint`
+  9→10 (inkompatibel mit `eslint-plugin-react` → `npm ci` schlägt ohne
+  `--legacy-peer-deps` fehl) und `@testing-library/react-native` 13→14
+  (`render()`/`renderHook()` wurden async → mehrere Testdateien kompilieren
+  nicht mehr). Der PR merged trotzdem glatt durch (`review-gate` grün) und
+  machte `testing` lokal und für jeden Folge-PR unbrauchbar, bis ein
+  unabhängiger Commit-Versuch auf einem Feature-Branch den kaputten
+  Pre-Commit-Hook offenlegte. Fix: vollständiger Revert in #492 (nicht
+  einzelne Pakete zurückpinnen — mehrere der 32 Bumps hingen zusammen, z. B.
+  Expo 55→57 mit `@testing-library/react-native` 14).
+- **Regel:** Vor dem Mergen eines Dependabot-Gruppen-PRs (Branch-Muster
+  `dependabot/.../testing/<gruppe>-...`) **immer lokal** gegen den PR-Branch
+  prüfen: `npm ci` (**ohne** `--legacy-peer-deps`, sonst wird ein
+  ERESOLVE-Konflikt stillschweigend übertüncht), `npx tsc --noEmit`,
+  `npm run lint`, `npm run test:coverage`. Bei einem Major-Sprung in
+  `typescript`, `eslint` oder einer Testing-Library immer zuerst prüfen, ob
+  die jeweiligen Plugin-/Peer-Pakete (`@typescript-eslint/*`,
+  `eslint-plugin-*`) bereits eine kompatible Version unterstützen, bevor
+  gemergt wird.
+
+> ⚠️ **Ausnahme:** GitHub-eigene Security-Alert-PRs (einzelne CVE-Fixes,
+> nicht die gruppierten Sammel-Bumps) **ignorieren `target-branch`** laut
+> Kommentar in `dependabot.yml` und landen weiterhin direkt gegen `main` —
+> dort greifen alle ~15 `ci-cd.yml`-Checks und die reguläre
+> `main`-Freigabepflicht.
+> **Beobachtung (2026-09-03, PRs #440–#442):** Der Merge lief über die
+> GitHub-API glatt durch, **ohne** `--admin` und ohne vorheriges Approval —
+> obwohl das `Main`-Ruleset laut Doku oben „Required Approvals = 1" verlangt.
+> Nicht als Freibrief für menschliche PRs missverstehen: naheliegende
+> Erklärung ist, dass das Ruleset Bot-Autoren (`dependabot[bot]`) oder
+> reine Squash-Merges über die API anders behandelt als PRs mit
+> Code-Änderungen von Menschen/Claude. Nicht verifiziert — vor der nächsten
+> Regeländerung am Ruleset gezielt gegenprüfen.
 
 ### Merge-Gate: `review-gate` kommt von `mergeability.yml`
 
@@ -136,6 +171,17 @@ Steht unter `## [Unreleased]` etwas User-Relevantes, gehört ein Versions-Bump
 (`package.json`, `app.json` `version`+`versionCode`, `App.tsx` `APP_VERSION`,
 `package-lock.json`) **in denselben PR**, der nach `testing` geht — nicht erst
 im Release-PR nach `main` nachgezogen.
+
+> ⚠️ **Fast wieder passiert (2026-09-14, #493/#494).** Der Fix-PR für #482
+> wurde ohne Versions-Bump nach `testing` gemergt — die Regel wurde beim
+> eigentlichen Feature-PR schlicht vergessen, obwohl dokumentiert. Erst beim
+> Vorbereiten des Release-PRs `testing → main` fiel der `[Unreleased]`-Rest
+> in `CHANGELOG.md` auf und wurde in einem eigenen Nachzieh-PR (#494)
+> nachgeholt, bevor nach `main` released wurde. **Konsequenz:** die
+> Prüfbefehle oben gehören nicht nur „vor jedem Release-PR", sondern als
+> letzter Schritt in **jeden** PR, der einen `[Unreleased]`-Eintrag setzt —
+> sonst hängt die Erkennung allein davon ab, dass sie beim Release zufällig
+> nachgeholt wird.
 
 ### Release-PRs testing → main
 

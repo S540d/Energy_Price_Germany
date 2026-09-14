@@ -478,3 +478,64 @@ verifiziert: alte Logik `false`, neue `true` mit 96 fehlenden Punkten.
 4. **Ein Fix, der nur auf `testing` liegt, ist kein Fix.** `fetch.yml` wird
    ausschließlich vom Default-Branch gelesen (bereits viermal passiert: #418,
    #435, #445, #483).
+
+---
+
+## 2026-09-14 — Grouped Dependabot-Bump machte `testing` lautlos unbenutzbar (PR #479/#492)
+
+Beim Umsetzen von Issue #482 (LIVE-Anzeige im Header) schlug der lokale
+Pre-Commit-Hook (`eslint --fix`) für jede beliebige `.ts`/`.tsx`-Änderung mit
+`typescript-eslint does not support TS 7.0` fehl — unabhängig vom eigentlichen
+Feature. `npm ci` (strikt, ohne `--legacy-peer-deps`) scheiterte ebenfalls mit
+einem ERESOLVE-Konflikt.
+
+**Ursache.** `.github/dependabot.yml` (Issue #60) bündelt monatlich **alle**
+Updates pro Ökosystem ohne `update-types`-Filter in einem Gruppen-PR gegen
+`testing` — Majors inklusive. PR #479 („npm-all", 32 Pakete) hatte drei
+voneinander unabhängige Breaking Changes gleichzeitig gebündelt:
+
+- `typescript` `~5.9.2` → `~7.0.2`: `@typescript-eslint@8.70.0` verlangt
+  `>=4.8.4 <6.1.0` als Peer → `npm run lint` crasht komplett.
+- `eslint` `^9.39.4` → `^10.10.0`: `eslint-plugin-react@7.37.5` verlangt
+  Peer `eslint` bis `^9.7` → `npm ci` schlägt ohne `--legacy-peer-deps` fehl.
+- `@testing-library/react-native` `13` → `14`: `render()`/`renderHook()`
+  wurden async → sechs Testdateien (u. a. `GridFeesSection`,
+  `usePriceAlertNotification`) kompilieren nicht mehr.
+
+Der PR merged trotzdem glatt (`review-gate` grün, `mergeability` grün) — weil
+PRs gegen `testing` nur diese beiden Checks triggern, **kein** Lint, kein
+`tsc --noEmit`, keine Tests (siehe „Checks je Ziel-Branch" in `CLAUDE.md`).
+Ein Sammel-Dependabot-PR läuft dadurch komplett unvalidiert durch, obwohl er
+mehr Angriffsfläche hat als jeder von Menschen geschriebene Feature-PR.
+
+**Fix.** Statt einzelne Pakete zurückzupinnen (mehrere der 32 Bumps hingen
+zusammen, z. B. Expo 55→57 mit `@testing-library/react-native` 14), wurde der
+gesamte Bump-Commit `af60067` per `git revert` rückgängig gemacht (#492).
+Danach liefen `npm ci` (strikt), `npx tsc --noEmit`, `npm run lint` und
+`npm run test:coverage` (377 Tests) wieder sauber durch. Der Revert ging
+denselben Weg wie jede andere Änderung: eigener Branch, PR gegen `testing`,
+danach mit ins Release `testing → main` (1.11.2).
+
+**Verallgemeinerbare Lehren:**
+
+1. **„Grün" bei einem Dependabot-Gruppen-PR gegen `testing` heißt nur
+   „konfliktfrei", nicht „kompatibel".** Die Lücke, die schon für
+   Code-PRs gegen `testing` dokumentiert war (kein Lint/Test-Job), trifft
+   Dependency-Bumps genauso — mit dem Unterschied, dass ein Mensch bei einem
+   Code-PR den Diff liest, bei einem 32-Paket-Bump aber kaum je alle
+   Peer-Dependency-Graphen der einzelnen Updates durchgeht.
+2. **Ein Sammel-PR ohne `update-types`-Filter bündelt unabhängige Risiken zu
+   einem einzigen Merge-Entscheid.** Drei voneinander unabhängige Breaking
+   Changes (Lint-Toolchain, Test-Library, App-Runtime) landen gemeinsam in
+   einem PR — entweder alle oder keine werden validiert.
+3. **`npm ci` ohne `--legacy-peer-deps` ist der ehrliche Kompatibilitätstest.**
+   Der Flag maskiert ERESOLVE-Konflikte, die `npm ci` in CI (wo der Flag
+   nicht gesetzt ist) genauso zum Scheitern bringen würden — lokal mit dem
+   Flag zu arbeiten hätte das Problem verdeckt statt es zu zeigen.
+4. **Ein Vorfall, der beim Bearbeiten eines unabhängigen Issues auffällt,
+   verdient einen eigenen Fix-PR, keine Vermischung.** Der Revert wurde
+   bewusst getrennt von #482 gehalten, damit beide PRs unabhängig
+   nachvollziehbar und review-/revert-fähig bleiben.
+
+→ Regel in `CLAUDE.md`: „Dependabot-PRs: gruppierte Sammel-Bumps gegen
+`testing`".
