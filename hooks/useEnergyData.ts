@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchEnergyData, energyDataManager } from '../services/energyDataManager';
+import type { DataSource } from '../services/energyDataManager';
 import type { EnergyData } from '../utils/metrics';
 import type { CountryCode } from '../utils/countries';
 import { DEFAULT_COUNTRY } from '../utils/countries';
@@ -13,6 +14,9 @@ export function useEnergyData(debouncedPostalCode: string, country: CountryCode 
   const [energyData, setEnergyData] = useState<EnergyData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  // Datenquelle des zuletzt geladenen Datensatzes (Issue #482: "LIVE"-Anzeige
+  // im Header soll gelb werden, sobald nicht mehr die primäre Quelle liefert).
+  const [dataSource, setDataSource] = useState<DataSource>('none');
   const isInitialMountRef = useRef(true);
 
   useEffect(() => {
@@ -32,6 +36,9 @@ export function useEnergyData(debouncedPostalCode: string, country: CountryCode 
 
         const data = await fetchEnergyData(country, debouncedPostalCode || undefined);
         setEnergyData(data);
+        // Von processRawData()/generateMockData() synchron vor dem Resolve
+        // gesetzt – spiegelt exakt die Quelle der eben geladenen Daten.
+        setDataSource(energyDataManager.getCurrentDataSource());
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Unknown error loading energy data'));
         setEnergyData([]);
@@ -43,5 +50,5 @@ export function useEnergyData(debouncedPostalCode: string, country: CountryCode 
     loadData();
   }, [debouncedPostalCode, country]);
 
-  return { energyData, loading, error };
+  return { energyData, loading, error, dataSource };
 }

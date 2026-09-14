@@ -43,7 +43,7 @@ import {
 
 SplashScreenModule.preventAutoHideAsync().catch(() => {});
 
-const APP_VERSION = '1.11.1';
+const APP_VERSION = '1.11.2';
 const TRANSPARENT = 'transparent';
 
 function AppContent() {
@@ -97,7 +97,7 @@ function AppContent() {
   } = useSettingsContext();
   const { language, t } = useLanguageContext();
   const { country, countryConfig } = useCountryContext();
-  const { energyData, loading } = useEnergyData(debouncedPostalCode, country);
+  const { energyData, loading, dataSource } = useEnergyData(debouncedPostalCode, country);
 
   // Nutzer-Limit für die persistente Historie an den Daten-Manager weitergeben (#307)
   useEffect(() => {
@@ -224,6 +224,14 @@ function AppContent() {
     if (!coverage) return false;
     return coverage.priceCount > 0 && coverage.renewableCount === 0;
   }, [metrics]);
+
+  // Issue #482: die "LIVE"-Anzeige im Header soll sich am Stand der
+  // Datenverfügbarkeit orientieren statt immer grün zu sein. Gelb sobald die
+  // Daten veraltet sind (isDataStale) oder wir irgendwo auf einen Fallback
+  // ausweichen mussten: Preise kommen nicht von der primären Quelle (Energy
+  // Charts) oder die Erneuerbaren-Daten für heute fehlen komplett (siehe
+  // hasLimitedRenewableData oben).
+  const isFallbackActive = isDataStale || dataSource !== 'energy-charts' || hasLimitedRenewableData;
 
   // Ersatzwert für die Kachel „Erneuerbare jetzt“, wenn der nationale Anteil
   // für heute fehlt. Nationale und regionale Werte stammen aus zwei getrennten
@@ -360,7 +368,7 @@ function AppContent() {
         <AppHeader
           colors={colors}
           isDark={isDark}
-          isDataStale={isDataStale}
+          isFallbackActive={isFallbackActive}
           alertState={alertState}
           livePulseStyle={livePulseStyle}
           alertLowLabel={t.priceAlertActiveLow}
