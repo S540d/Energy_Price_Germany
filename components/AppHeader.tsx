@@ -9,7 +9,8 @@ import type { AlertState } from '../utils/priceAlertUtils';
 type Props = {
   colors: ThemeColors;
   isDark: boolean;
-  isDataStale: boolean;
+  /** True wenn Daten veraltet sind oder wir auf einen Fallback ausweichen mussten (Issue #482). */
+  isFallbackActive: boolean;
   alertState: AlertState;
   livePulseStyle: AnimatedStyle;
   alertLowLabel: string;
@@ -22,7 +23,7 @@ type Props = {
 export function AppHeader({
   colors,
   isDark,
-  isDataStale,
+  isFallbackActive,
   alertState,
   livePulseStyle,
   alertLowLabel,
@@ -47,14 +48,14 @@ export function AppHeader({
           <Animated.View
             style={[
               styles.liveDot,
-              { backgroundColor: isDataStale ? colors.accentAmber : colors.accentGreen },
+              { backgroundColor: isFallbackActive ? colors.accentAmber : colors.accentGreen },
               livePulseStyle,
             ]}
           />
           <Text
             style={[
               styles.liveLabel,
-              { color: isDataStale ? colors.accentAmber : colors.accentGreen },
+              { color: isFallbackActive ? colors.accentAmber : colors.accentGreen },
             ]}
           >
             LIVE

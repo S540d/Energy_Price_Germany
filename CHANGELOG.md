@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Changed
+- **„LIVE"-Anzeige im Header orientiert sich jetzt am Datenstatus (#482).** Bisher wurde sie nur bei veralteten Daten (>2h) gelb; ansonsten immer grün, unabhängig davon, ob im Hintergrund bereits auf einen Fallback ausgewichen wurde. Jetzt zusätzlich gelb, wenn die Preisdaten nicht von der primären Quelle (Energy Charts) stammen (aWATTar-Fallback oder Mock-Daten) oder die Erneuerbaren-Daten für heute komplett fehlen (`hasLimitedRenewableData`, #417). `useEnergyData` liefert dafür neu die zuletzt geladene `dataSource` zurück; `AppHeader`s Prop `isDataStale` wurde entsprechend zu `isFallbackActive` umbenannt.
+
 ## [1.11.1] - 2026-09-10
 
 ### Fixed
