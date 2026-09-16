@@ -32,3 +32,13 @@ export function playStoreUrlWithCampaign(source: string, medium: string): string
 export const WEB_APP_URL = 'https://s540d.github.io/Energy_Price_Germany/';
 
 export const GITHUB_REPO_URL = 'https://github.com/S540d/Energy_Price_Germany';
+
+/**
+ * Zentrales Impressum für alle Projekte unter s540d.github.io (nicht
+ * projektlokal) — siehe project-templates/dev-standards/about-section.md,
+ * Issue #150.
+ */
+export const IMPRESSUM_URL = 'https://s540d.github.io/impressum.html';
+
+/** Bereits gehostet unter public/PRIVACY_POLICY.html, siehe PRIVACY_POLICY.md */
+export const PRIVACY_POLICY_URL = 'https://s540d.github.io/Energy_Price_Germany/PRIVACY_POLICY.html';
