@@ -10,7 +10,13 @@ import {
   Linking,
 } from 'react-native';
 import type { ThemeColors } from '../utils/theme';
-import { GITHUB_REPO_URL, PLAY_STORE_URL, playStoreUrlWithCampaign } from '../utils/appLinks';
+import {
+  GITHUB_REPO_URL,
+  IMPRESSUM_URL,
+  PLAY_STORE_URL,
+  PRIVACY_POLICY_URL,
+  playStoreUrlWithCampaign,
+} from '../utils/appLinks';
 
 interface AboutViewProps {
   visible: boolean;
@@ -21,6 +27,8 @@ interface AboutViewProps {
     version: string;
     dataSource: string;
     dataLicense: string;
+    impressum: string;
+    privacyPolicy: string;
     appLicense: string;
     repository: string;
     supportSection: string;
@@ -36,6 +44,14 @@ interface AboutViewProps {
     license: string;
     url: string;
   };
+}
+
+function openExternalUrl(url: string) {
+  if (Platform.OS === 'web') {
+    window.open(url, '_blank'); // platform-safe
+  } else {
+    Linking.openURL(url);
+  }
 }
 
 export function AboutView({
@@ -70,6 +86,22 @@ export function AboutView({
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
               {t.version} {appVersion}
             </Text>
+          </View>
+
+          {/* Legal: Impressum & Datenschutz */}
+          <View style={styles.section}>
+            <TouchableOpacity
+              onPress={() => openExternalUrl(IMPRESSUM_URL)}
+              style={styles.link}
+            >
+              <Text style={[styles.linkText, { color: colors.primary }]}>{t.impressum}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => openExternalUrl(PRIVACY_POLICY_URL)}
+              style={styles.link}
+            >
+              <Text style={[styles.linkText, { color: colors.primary }]}>{t.privacyPolicy}</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Data Source */}
