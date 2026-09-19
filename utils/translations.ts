@@ -66,6 +66,8 @@ export const translations = {
     version: 'Version',
     dataSource: 'Data Source',
     dataLicense: 'Data License',
+    impressum: 'Impressum',
+    privacyPolicy: 'Privacy Policy',
     appLicense: 'App License',
     repository: 'GitHub Repository',
     // Support Section
@@ -238,6 +240,8 @@ export const translations = {
     version: 'Version',
     dataSource: 'Datenquelle',
     dataLicense: 'Daten-Lizenz',
+    impressum: 'Impressum',
+    privacyPolicy: 'Datenschutz',
     appLicense: 'App-Lizenz',
     repository: 'GitHub Repository',
     // Support Section
