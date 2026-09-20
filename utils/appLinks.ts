@@ -41,4 +41,5 @@ export const GITHUB_REPO_URL = 'https://github.com/S540d/Energy_Price_Germany';
 export const IMPRESSUM_URL = 'https://s540d.github.io/impressum.html';
 
 /** Bereits gehostet unter public/PRIVACY_POLICY.html, siehe PRIVACY_POLICY.md */
-export const PRIVACY_POLICY_URL = 'https://s540d.github.io/Energy_Price_Germany/PRIVACY_POLICY.html';
+export const PRIVACY_POLICY_URL =
+  'https://s540d.github.io/Energy_Price_Germany/PRIVACY_POLICY.html';
