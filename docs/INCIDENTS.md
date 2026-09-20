@@ -539,3 +539,61 @@ danach mit ins Release `testing → main` (1.11.2).
 
 → Regel in `CLAUDE.md`: „Dependabot-PRs: gruppierte Sammel-Bumps gegen
 `testing`".
+
+## 2026-09-19 — Mitternachts-Sprung in Preis und Erneuerbaren-Anteil: kein Bug
+
+**Auslöser.** In der App fiel am 19./20.09. um Mitternacht ein deutlicher
+Knick in beiden Charts auf: der Börsenpreis fiel abrupt von 70,82 €/MWh auf
+15,79 €/MWh, gleichzeitig brach der nationale Erneuerbaren-Anteil von 98,6 %
+auf 40,7 % ein — innerhalb eines einzigen 15-Min-Slots.
+
+**Untersuchung.** Der auslösende Fetch-Lauf (Commit `93933d3`,
+19.09. 16:03 UTC / 18:00 Berlin, Archiv-Snapshot
+`public/data/archive/marketdata_2026-09-19T16.json`) wurde direkt geprüft —
+beide Werte stammen aus **diesem einen** Lauf, keine Vermischung zweier
+Fetch-Zeitpunkte.
+
+- **Preis:** Zu diesem Zeitpunkt lag von Energy Charts noch kein
+  Day-Ahead-Preis für den 20.09. vor (`marketprice: null` in der rohen
+  Energy-Charts-Antwort). `scripts/merge-market-data.js` behandelt solche
+  Punkte als „renewable-only" (Zeilen ~120–165) und füllt **nur den Preis**
+  aus der aWATTar-Antwort auf — der `renewable_share`-Wert bleibt
+  unverändert der von Energy Charts. Zwei unabhängige Preismodelle
+  (Energy-Charts-Auktion vs. aWATTar-Prognose) treffen an dieser Stelle
+  aufeinander → der Preissprung ist eine direkte, erwartbare Folge dieses
+  Merges, kein Fehler.
+- **Erneuerbaren-Anteil:** Der Sprung 98,6 %→40,7 % steht bereits **vor**
+  jeder Verarbeitung so in der rohen `ren_share_forecast`-Antwort (verifiziert
+  am Archiv-Snapshot, der Merge fasst `renewable_share` bei renewable-only-
+  Punkten nie an). Der Verlauf davor (48,9 %→98,6 % über 2 h, physikalisch
+  plausibler Wind-Anstieg) bricht exakt an der Kalendertagesgrenze ab und
+  setzt sich danach wieder glatt fort (40,7→48,4 % über die nächsten 2 h) —
+  das Muster „glatt–Klippe–glatt genau am Tageswechsel" spricht für einen
+  Wechsel des Prognosemodells bei Energy Charts selbst (Tag-1- vs.
+  Tag-2-Forecast), nicht für einen Fehler in unserem Code.
+
+**Nicht verifizierbar:** Ein Live-Abgleich gegen `api.energy-charts.info` war
+aus der Remote-Execution-Umgebung nicht möglich (Netzwerk-Policy blockt die
+Domain) — die Hypothese zum Modellwechsel bei Energy Charts bleibt daher
+unbestätigt, aber durch das Muster gut gestützt.
+
+**Bestehende Absicherung.** `detectAnomalies()` in `merge-market-data.js`
+erkennt den Renewable-Sprung bereits korrekt als `warning` (Schwelle 20
+Prozentpunkte/15 Min, hier 57,9 pp) — das landet aber nur im CI-Log, nirgends
+sichtbar für Nutzer oder Maintainer.
+
+**Entscheidung: kein Fix.** Auf ausdrücklichen Wunsch nicht behoben. Eine
+Korrektur der Werte wäre Raten (wir wissen nicht, welcher der beiden
+15-Min-Werte „richtiger" ist als der andere), und eine reine
+Sichtbarmachung (z. B. über den `data-health`-Issue-Mechanismus) wurde als
+nicht notwendig eingestuft.
+
+**Verallgemeinerbare Lehre:** Ein auffälliger Sprung in der App ist nicht
+automatisch ein Verarbeitungsfehler — bei kombinierten Datenquellen
+(Energy Charts + aWATTar) zuerst am Archiv-Snapshot des auslösenden Laufs
+prüfen, *bevor* der Merge etwas anfasst, ob der Sprung schon in der rohen
+API-Antwort steckt. Das trennt „unser Merge hat einen Bug" sauber von
+„Upstream liefert das so".
+
+→ Regel in `CLAUDE.md`: Abschnitt „`fetch.yml`: Resilienz-Konventionen",
+Notiz direkt nach Lücke B.
