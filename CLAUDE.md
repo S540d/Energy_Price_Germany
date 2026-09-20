@@ -381,6 +381,28 @@ der `update`-Job kann mit eigenen Retries und aWATTar-Fallback mehr ausrichten.
 > „heute"-Kriterium hätten auch 04/05 UTC geblockt, sobald heute vollständig
 > war. Die Slot-Anzahl ist nicht der Hebel, das Gate-Kriterium ist es.
 
+> **„Mitternachts-Sprung" in Preis UND Erneuerbaren-Anteil ist kein Bug, sondern
+> zwei unabhängige, erklärbare Effekte (untersucht 2026-09-19/20).** Am
+> Tageswechsel kann `renewable_share` innerhalb von 15 Min. um >50 Prozentpunkte
+> springen, während gleichzeitig der Preis abrupt fällt:
+> - **Preis:** reine Merge-Folge, kein Fehler. Sobald Energy Charts für den
+>   Folgetag noch keinen Day-Ahead-Preis hat, füllt `merge-market-data.js`
+>   (Zeilen ~120–165, „renewable-only enrichment") genau diese Slots mit dem
+>   aWATTar-Preis auf — zwei unabhängige Preismodelle treffen aufeinander.
+> - **Erneuerbaren-Anteil:** steht bereits so in der **rohen** Energy-Charts-
+>   Antwort, bevor unser Merge etwas anfasst (im Archiv-Snapshot des
+>   auslösenden Fetch-Laufs verifiziert) — vermutlich ein Wechsel des
+>   Prognosemodells bei Energy Charts an der Kalendertagesgrenze (Tag-1- vs.
+>   Tag-2-Forecast). Live gegen die API nicht verifizierbar (kein
+>   Netzwerkzugriff auf `api.energy-charts.info` aus der Remote-Execution-Umgebung).
+>
+> `detectAnomalies()` in `scripts/merge-market-data.js` erkennt solche Sprünge
+> bereits korrekt als `warning` (Schwelle 20 pp/15 Min), macht sie aber nirgends
+> sichtbar (nur CI-Log). Bewusst **nicht** behoben — Werte sind nicht
+> nachweisbar falsch, ein Fix würde nur raten, welcher der beiden Werte
+> „richtig" ist. Vor einer erneuten Untersuchung: Diagnose-Details in
+> [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-19--mitternachts-sprung-in-preis-und-erneuerbaren-anteil-kein-bug).
+
 > **Ersetzt die Commit-Message-Heuristik aus #406**
 > (`grep -Eq "@ ${TODAY}T(1[3-9]) UTC"`). Die prüfte nur, *ob* committet wurde,
 > nicht *ob Daten fehlen* — im 429-Fall vom 2026-09-02 hätte sie den Fallback
