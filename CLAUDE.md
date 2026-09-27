@@ -82,62 +82,33 @@ Energy Price Germany - A visualization app for German electricity market prices 
 - Ziel-Branch: **immer `testing`** (sofern nicht anders gesagt)
 - CI abwarten; nie bei rotem CI mergen
 
-### Dependabot-PRs: gruppierte Sammel-Bumps gegen `testing` — dort läuft KEIN Lint/Test (#479/#492, 2026-09-14)
-
-> ⚠️ **Frühere Fassung dieses Abschnitts war überholt.** Sie behauptete, es
-> gäbe keine `.github/dependabot.yml` und Dependabot ziele immer auf `main`.
-> Seit Issue #60 existiert die Datei und setzt `target-branch: testing` für
-> **beide** konfigurierten Ökosysteme — geprüft am realen Zustand, nicht
-> vermutet.
+### Dependabot-PRs: gruppierte Sammel-Bumps gegen `testing` — dort läuft KEIN Lint/Test
 
 `.github/dependabot.yml` bündelt **alle** Updates pro Ökosystem monatlich in
-je einem Gruppen-PR gegen `testing` — **ohne** `update-types`-Filter, Majors
-also inklusive:
+je einem Gruppen-PR gegen `testing` (`npm-all`, `actions-all`) — **ohne**
+`update-types`-Filter, Majors also inklusive. Da Ziel-Branch `testing` ist,
+greift „Checks je Ziel-Branch" unten ungebremst: nur `review-gate` +
+`mergeability`, **kein** Lint, kein `tsc --noEmit`, keine Tests, kein Build.
+Ein grüner Dependabot-Gruppen-PR sagt über Kompatibilität nichts aus.
 
-- `npm-all` (npm/yarn/pnpm, ein PR für z. B. 32 Pakete auf einmal)
-- `actions-all` (GitHub Actions)
-
-- Solche PRs referenzieren **keine** GitHub-Issues — nach dem Merge gibt es
-  nichts zum Schließen.
-- Da Ziel-Branch `testing` ist, greift „Checks je Ziel-Branch" unten
-  **ungebremst**: nur `review-gate` + `mergeability`, **kein** Lint, kein
-  `tsc --noEmit`, keine Tests, kein Build. Ein grüner Dependabot-Gruppen-PR
-  sagt über Kompatibilität nichts aus.
-- **Vorfall (PR #479, 2026-09-14):** Der 32-Paket-`npm-all`-Bump hob
-  gleichzeitig `typescript` 5.9→7.0 (inkompatibel mit
-  `@typescript-eslint@8.70` → `npm run lint` crasht komplett), `eslint`
-  9→10 (inkompatibel mit `eslint-plugin-react` → `npm ci` schlägt ohne
-  `--legacy-peer-deps` fehl) und `@testing-library/react-native` 13→14
-  (`render()`/`renderHook()` wurden async → mehrere Testdateien kompilieren
-  nicht mehr). Der PR merged trotzdem glatt durch (`review-gate` grün) und
-  machte `testing` lokal und für jeden Folge-PR unbrauchbar, bis ein
-  unabhängiger Commit-Versuch auf einem Feature-Branch den kaputten
-  Pre-Commit-Hook offenlegte. Fix: vollständiger Revert in #492 (nicht
-  einzelne Pakete zurückpinnen — mehrere der 32 Bumps hingen zusammen, z. B.
-  Expo 55→57 mit `@testing-library/react-native` 14).
-- **Regel:** Vor dem Mergen eines Dependabot-Gruppen-PRs (Branch-Muster
-  `dependabot/.../testing/<gruppe>-...`) **immer lokal** gegen den PR-Branch
-  prüfen: `npm ci` (**ohne** `--legacy-peer-deps`, sonst wird ein
-  ERESOLVE-Konflikt stillschweigend übertüncht), `npx tsc --noEmit`,
-  `npm run lint`, `npm run test:coverage`. Bei einem Major-Sprung in
-  `typescript`, `eslint` oder einer Testing-Library immer zuerst prüfen, ob
-  die jeweiligen Plugin-/Peer-Pakete (`@typescript-eslint/*`,
-  `eslint-plugin-*`) bereits eine kompatible Version unterstützen, bevor
-  gemergt wird.
+**Regel:** Vor dem Mergen eines Dependabot-Gruppen-PRs (Branch-Muster
+`dependabot/.../testing/<gruppe>-...`) **immer lokal** gegen den PR-Branch
+prüfen: `npm ci` (**ohne** `--legacy-peer-deps`, sonst wird ein
+ERESOLVE-Konflikt stillschweigend übertüncht), `npx tsc --noEmit`,
+`npm run lint`, `npm run test:coverage`. Bei einem Major-Sprung in
+`typescript`, `eslint` oder einer Testing-Library immer zuerst prüfen, ob
+die jeweiligen Plugin-/Peer-Pakete (`@typescript-eslint/*`,
+`eslint-plugin-*`) bereits eine kompatible Version unterstützen, bevor
+gemergt wird.
+→ [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-14--grouped-dependabot-bump-machte-testing-lautlos-unbenutzbar-pr-479492)
 
 > ⚠️ **Ausnahme:** GitHub-eigene Security-Alert-PRs (einzelne CVE-Fixes,
 > nicht die gruppierten Sammel-Bumps) **ignorieren `target-branch`** laut
 > Kommentar in `dependabot.yml` und landen weiterhin direkt gegen `main` —
 > dort greifen alle ~15 `ci-cd.yml`-Checks und die reguläre
-> `main`-Freigabepflicht.
-> **Beobachtung (2026-09-03, PRs #440–#442):** Der Merge lief über die
-> GitHub-API glatt durch, **ohne** `--admin` und ohne vorheriges Approval —
-> obwohl das `Main`-Ruleset laut Doku oben „Required Approvals = 1" verlangt.
-> Nicht als Freibrief für menschliche PRs missverstehen: naheliegende
-> Erklärung ist, dass das Ruleset Bot-Autoren (`dependabot[bot]`) oder
-> reine Squash-Merges über die API anders behandelt als PRs mit
-> Code-Änderungen von Menschen/Claude. Nicht verifiziert — vor der nächsten
-> Regeländerung am Ruleset gezielt gegenprüfen.
+> `main`-Freigabepflicht. Beobachtet wurde, dass solche PRs über die
+> GitHub-API auch ohne `--admin`/Approval durchmergen — nicht als Freibrief
+> für menschliche PRs missverstehen, nicht verifiziert.
 
 ### Merge-Gate: `review-gate` kommt von `mergeability.yml`
 
@@ -155,14 +126,15 @@ Ein PR gegen `testing` hat daher nur 2 Checks (`review-gate` + `mergeability`),
 einer gegen `main` rund 15. Das Fehlen von `🔍 Code Quality & Linting` auf einem
 `testing`-PR ist **kein** Defekt.
 
-### Versions-Bump ist kein Automatismus (Session vom 05.09.2026)
+### Versions-Bump ist kein Automatismus
 
-Zwischen 1.9.0 (27.06.2026) und 1.10.0 (05.09.2026) liefen **fünf** Releases
-`testing → main` (#421–#458), ohne dass jemand `version`/`versionCode`
-angehoben hat — `[Unreleased]` in `CHANGELOG.md` wuchs über zwei Monate an,
-inkl. eines potenziell absturzrelevanten Fixes (#376), der so ungenutzt blieb.
+Ein Versions-Bump nach einem Feature-PR ist keine Selbstverständlichkeit —
+mehrere Releases liefen bereits ohne, mit `[Unreleased]`-Rest, der wochenlang
+liegen blieb. Die Prüfbefehle unten gehören deshalb als letzter Schritt in
+**jeden** PR, der einen `[Unreleased]`-Eintrag setzt, nicht erst ins
+Release-PR-Ritual.
 
-**Vor jedem Release-PR `testing → main` prüfen:**
+**Vor jedem Release-PR `testing → main` (und nach jedem `[Unreleased]`-Eintrag) prüfen:**
 ```bash
 git show origin/main:app.json | grep -E '"version"|versionCode'
 git show origin/testing:CHANGELOG.md | grep -n '^## \['
@@ -171,17 +143,7 @@ Steht unter `## [Unreleased]` etwas User-Relevantes, gehört ein Versions-Bump
 (`package.json`, `app.json` `version`+`versionCode`, `App.tsx` `APP_VERSION`,
 `package-lock.json`) **in denselben PR**, der nach `testing` geht — nicht erst
 im Release-PR nach `main` nachgezogen.
-
-> ⚠️ **Fast wieder passiert (2026-09-14, #493/#494).** Der Fix-PR für #482
-> wurde ohne Versions-Bump nach `testing` gemergt — die Regel wurde beim
-> eigentlichen Feature-PR schlicht vergessen, obwohl dokumentiert. Erst beim
-> Vorbereiten des Release-PRs `testing → main` fiel der `[Unreleased]`-Rest
-> in `CHANGELOG.md` auf und wurde in einem eigenen Nachzieh-PR (#494)
-> nachgeholt, bevor nach `main` released wurde. **Konsequenz:** die
-> Prüfbefehle oben gehören nicht nur „vor jedem Release-PR", sondern als
-> letzter Schritt in **jeden** PR, der einen `[Unreleased]`-Eintrag setzt —
-> sonst hängt die Erkennung allein davon ab, dass sie beim Release zufällig
-> nachgeholt wird.
+→ [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-14--versions-bump-im-feature-pr-vergessen-493494)
 
 ### Release-PRs testing → main
 
@@ -209,8 +171,7 @@ git ls-remote --heads origin | grep testing    # muss existieren
 > Umgekehrt gilt: **Ein Bypass ist nicht nur ein Risiko, sondern eine
 > Abhängigkeit.** Vor dem Entfernen prüfen, *wer* außer Menschen darüber schreibt
 > — hier pusht `fetch.yml` mit einem User-PAT bis zu 6× täglich direkt auf `main`.
-> Beide Lehren stammen aus realen Ausfällen:
-> [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-0203--datenpipeline-steht-13-stunden-445-446).
+> → [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-0203--datenpipeline-steht-13-stunden-445-446).
 
 > ⚠️ **`github-actions[bot]` ist in Rulesets NICHT als Bypass-Actor wählbar.**
 > GitHub lässt das prinzipiell nicht zu. Wählbar sind Rollen, Teams, installierte
@@ -290,11 +251,9 @@ Fallstricke der CodeQL-Umstellung:
 >
 > Der `push`-Trigger wird aus der Workflow-Datei **des gepushten Branches**
 > gelesen, `schedule` immer aus dem **Default-Branch** (`main`) — und zwar
-> **jede Zeile** des Workflows, nicht nur die `on:`-Sektion.
->
-> **Konsequenz für `fetch.yml`:** Ein Fix, der nur auf `testing` liegt, ist
-> **vollständig wirkungslos**. Er wird erst mit dem Release nach `main` scharf.
-> Bereits dreimal passiert (#418, #435, #445).
+> **jede Zeile** des Workflows, nicht nur die `on:`-Sektion. Ein Fix, der nur
+> auf `testing` liegt, ist für `fetch.yml` **vollständig wirkungslos**, bis er
+> nach `main` released ist (bereits mehrfach passiert: #418, #435, #445, #483).
 >
 > **Prüfbefehl vor jeder Wirksamkeits-Annahme:**
 > ```bash
@@ -319,11 +278,8 @@ schreibt `<output-dir>/price_raw.json` und `<output-dir>/renewable_raw.json` —
 genau die Pfade, die die nachgelagerten `node -e`-Process-Steps lesen.
 
 Vertrag des Skripts:
-- **Exponentielles Backoff 5 s / 15 s / 45 s** statt des früheren fixen
-  `--retry-delay 5`. Drei Versuche im 5-s-Abstand laufen gegen ein Rate-Limit,
-  das minutenlang hält, wirkungslos ins Leere.
-- **`Retry-After` wird respektiert** (bei 429/503, gedeckelt auf 60 s). Das ist
-  der eigentliche Fix für den Vorfall vom 2026-09-02.
+- **Exponentielles Backoff 5 s / 15 s / 45 s**, `Retry-After` wird respektiert
+  (bei 429/503, gedeckelt auf 60 s).
 - **Retry-würdig:** HTTP 429/5xx sowie curl-Exit 7, 28, 35, 52, 55, 56. Alles
   andere (DNS, URL-Fehler) bricht sofort ab — ein Retry heilt es nicht.
 - **Payload-Validierung** per `jq` nach jedem erfolgreichen Download; schlägt sie
@@ -334,9 +290,8 @@ Vertrag des Skripts:
   `FETCH_BACKOFF_DELAYS`, `FETCH_RETRY_AFTER_CAP`.
 
 > ⚠️ **Die Retry-Logik nicht wieder in die einzelnen Länder-Blöcke zurückziehen.**
-> Vor #435 stand sie als `CURL_OPTS` siebenfach dupliziert im Workflow. `CURL_OPTS`
-> existiert nur noch für den **aWATTar**-Call und darf nicht wieder auf die
-> Energy-Charts-Blöcke ausgedehnt werden.
+> `CURL_OPTS` existiert nur noch für den **aWATTar**-Call und darf nicht wieder
+> auf die Energy-Charts-Blöcke ausgedehnt werden (vorher siebenfach dupliziert).
 
 **1b. 8 Cron-Slots mit datenbasiertem Gate (#435, seit #481: 04/05 UTC ergänzt).**
 `- cron: '0 3,4,5,6,9,13,16,19 * * *'`. Nur **03 und 13 UTC laufen unbedingt**
@@ -352,62 +307,29 @@ Skript, in `$RUNNER_TEMP`) und setzt `run-fetch=true`, wenn **eines** zutrifft:
 Fehlt die Probe-Datei, entscheidet das Gate **fail open** (`run-fetch=true`) —
 der `update`-Job kann mit eigenen Retries und aWATTar-Fallback mehr ausrichten.
 
-> **ZWEI verschiedene Erneuerbaren-Lücken — nicht verwechseln (#481 / #487).**
->
-> **Lücke A „Morgenlücke" (#481):** Beim 03-UTC-Lauf fehlen die Werte für den
-> laufenden Tag noch. Preise sind da (`source: energy-charts`), keine 429/5xx.
-> Belegt durch die Alarm-Issues #472 (offen 03:07–15:34 UTC) und #480
-> (03:08–09:06 UTC). Dagegen helfen die zusätzlichen Slots 04/05 UTC.
->
-> **Lücke B „Zukunftslücke" (#487):** Für **morgen** gibt es Preise, aber keine
-> nationalen Erneuerbaren-Werte. Ursache ist **nicht** die API — die liefert ab
-> ca. 15 UTC volle 192 Punkte bis morgen 23:45 Berlin (am 2026-09-10 live
-> nachgemessen). Der Ablauf:
-> 1. Um 13 UTC hat `ren_share_forecast` erst 96 Punkte (nur heute). Die Preise
->    für morgen kommen an dieser Stelle aus **aWATTar** und tragen per Design
->    `renewable_share: null`.
-> 2. Später erweitert Energy Charts die Prognose auf 192 Punkte.
-> 3. Die Slots 16/19 UTC würden das holen — **das Gate blockte sie**, weil sein
->    Erneuerbaren-Kriterium nur „heute" zählte (96 vs. 96) und das
->    Preis-Kriterium keine neue Abdeckung sah (die Datei reichte via aWATTar
->    bereits weiter).
->
-> Ergebnis: Seit Einführung des Gates (#435) endete `renewable_share` **täglich**
-> um 23:45 Berlin. Vor dem Gate lief der Abend-Slot unbedingt durch und holte die
-> Morgen-Werte (belegt: Lauf 2026-08-31, 22:26 UTC, Delta 0h). Behoben in #487
-> durch das zeitstempel-basierte Kriterium.
->
-> ⚠️ **Mehr Cron-Slots allein hätten Lücke B nie behoben** — mit dem alten
-> „heute"-Kriterium hätten auch 04/05 UTC geblockt, sobald heute vollständig
-> war. Die Slot-Anzahl ist nicht der Hebel, das Gate-Kriterium ist es.
+> **ZWEI verschiedene Erneuerbaren-Lücken — nicht verwechseln.** Lücke A
+> „Morgenlücke": Beim 03-UTC-Lauf fehlen die Werte für den laufenden Tag noch
+> (Preise sind da, keine 429/5xx) — dagegen helfen die zusätzlichen Slots
+> 04/05 UTC. Lücke B „Zukunftslücke": Für morgen gibt es Preise, aber keine
+> nationalen Erneuerbaren-Werte, weil das Gate-Kriterium nur „heute" zählte,
+> nicht die tatsächliche Zeitstempel-Abdeckung — behoben durch das
+> zeitstempel-basierte Kriterium. **Mehr Cron-Slots allein hätten Lücke B nie
+> behoben**, die Slot-Anzahl ist nicht der Hebel, das Gate-Kriterium ist es.
+> → [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-09--tägliche-renewable-lücke-direkt-nach-mitternacht-ist-kein-einzelfall-481)
+> und [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-10--das-gate-verwarf-die-morgen-prognose-täglich-487).
 
-> **„Mitternachts-Sprung" in Preis UND Erneuerbaren-Anteil ist kein Bug, sondern
-> zwei unabhängige, erklärbare Effekte (untersucht 2026-09-19/20).** Am
-> Tageswechsel kann `renewable_share` innerhalb von 15 Min. um >50 Prozentpunkte
-> springen, während gleichzeitig der Preis abrupt fällt:
-> - **Preis:** reine Merge-Folge, kein Fehler. Sobald Energy Charts für den
->   Folgetag noch keinen Day-Ahead-Preis hat, füllt `merge-market-data.js`
->   (Zeilen ~120–165, „renewable-only enrichment") genau diese Slots mit dem
->   aWATTar-Preis auf — zwei unabhängige Preismodelle treffen aufeinander.
-> - **Erneuerbaren-Anteil:** steht bereits so in der **rohen** Energy-Charts-
->   Antwort, bevor unser Merge etwas anfasst (im Archiv-Snapshot des
->   auslösenden Fetch-Laufs verifiziert) — vermutlich ein Wechsel des
->   Prognosemodells bei Energy Charts an der Kalendertagesgrenze (Tag-1- vs.
->   Tag-2-Forecast). Live gegen die API nicht verifizierbar (kein
->   Netzwerkzugriff auf `api.energy-charts.info` aus der Remote-Execution-Umgebung).
->
-> `detectAnomalies()` in `scripts/merge-market-data.js` erkennt solche Sprünge
-> bereits korrekt als `warning` (Schwelle 20 pp/15 Min), macht sie aber nirgends
-> sichtbar (nur CI-Log). Bewusst **nicht** behoben — Werte sind nicht
-> nachweisbar falsch, ein Fix würde nur raten, welcher der beiden Werte
-> „richtig" ist. Vor einer erneuten Untersuchung: Diagnose-Details in
-> [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-19--mitternachts-sprung-in-preis-und-erneuerbaren-anteil-kein-bug).
+> **„Mitternachts-Sprung" in Preis UND Erneuerbaren-Anteil ist kein Bug**, sondern
+> zwei unabhängige, erklärbare Effekte: der Preissprung ist reine Merge-Folge
+> (aWATTar-Preis füllt Slots ohne Energy-Charts-Day-Ahead-Preis), der
+> Erneuerbaren-Sprung steht bereits so in der rohen Energy-Charts-Antwort
+> (vermutlich Modellwechsel an der Kalendertagesgrenze). `detectAnomalies()`
+> erkennt solche Sprünge als `warning` im CI-Log, macht sie aber bewusst
+> **nicht** sichtbarer — ein Fix würde nur raten, welcher Wert „richtig" ist.
+> → [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-19--mitternachts-sprung-in-preis-und-erneuerbaren-anteil-kein-bug).
 
-> **Ersetzt die Commit-Message-Heuristik aus #406**
-> (`grep -Eq "@ ${TODAY}T(1[3-9]) UTC"`). Die prüfte nur, *ob* committet wurde,
-> nicht *ob Daten fehlen* — im 429-Fall vom 2026-09-02 hätte sie den Fallback
-> fälschlich übersprungen, weil ein Commit (mit Preisen, ohne Erneuerbare)
-> existierte. Nicht wieder einführen.
+> **Ersetzt die frühere Commit-Message-Heuristik** (`grep` auf einen festen
+> UTC-Stundenbereich): Die prüfte nur, *ob* committet wurde, nicht *ob Daten
+> fehlen* — nicht wieder einführen.
 
 **1c. Der `Data health check` liegt in `scripts/data-health-check.js` (#435/#445, schließt #417).**
 Letzter Step im `update`-Job, `if: always()`, also **nach** dem Commit — die
@@ -421,41 +343,26 @@ Semantik-Absicherung: `scripts/__tests__/data-health-check.test.js`.
 Nicht-fatal (nur `::warning::`, Run bleibt grün): `source == "awattar"` für DE
 und jedes **Beta-Land** mit 0 Erneuerbaren-Punkten.
 
-> ⚠️ **Datenlücken färben den Run NICHT rot** (geändert mit der Retrospektive
-> zu #445). Der Befund geht in ein automatisch verwaltetes Issue mit Label
-> `data-health` (öffnen / höchstens ein Kommentar pro Tag / schließen bei
-> Erholung). Grund: Solange ein Datenausfall den Run rot färbte, war **rot
-> mehrdeutig** — Upstream-Ausfall oder echter Defekt. Genau dadurch blieb der
-> Exit-9-Dauerfehler aus #445 stundenlang unentdeckt: Ein Dauer-Rot sah aus wie
-> ein funktionierender Alarm.
->
-> **Seither gilt: rot = der Workflow ist defekt.** Diese Eindeutigkeit ist der
-> eigentliche Wert — nicht wieder aufweichen, indem fachliche Befunde in den
-> Exit-Code wandern.
+> ⚠️ **Datenlücken färben den Run NICHT rot.** Der Befund geht stattdessen in
+> ein automatisch verwaltetes Issue mit Label `data-health` (öffnen /
+> höchstens ein Kommentar pro Tag / schließen bei Erholung). **Rot = der
+> Workflow ist defekt** — diese Eindeutigkeit nicht wieder aufweichen, indem
+> fachliche Befunde in den Exit-Code wandern (rot war vorher mehrdeutig
+> zwischen Upstream-Ausfall und echtem Defekt).
+> → [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-0203--datenpipeline-steht-13-stunden-445-446).
 
 > ⚠️ **Kein Apostroph in `node -e '…'`-Inline-Blöcken — und lieber gar keine
-> mehrzeiligen `node -e`-Blöcke mehr (#445).** Der Health-Check war ursprünglich
-> inline geschrieben und enthielt im deutschen Fehlertext
-> `die App zeigt 'Erneuerbare: --'`. Die einfachen Quotes schlossen den
-> `node -e '…'`-String vorzeitig, `node` bekam `--` als Option und starb mit
-> **Exit 9, bevor eine einzige Prüfung lief** — der Step färbte damit **jeden**
-> Run rot, unabhängig von der Datenlage, und machte den Alarm aus #417 wertlos
-> (ein Dauer-Rot ist von einem echten Ausfall nicht unterscheidbar).
-> Deutsche Texte in `fetch.yml` sind voller Anführungszeichen; jede nennenswerte
-> Logik gehört deshalb in eine Datei unter `scripts/` (wie
-> `fetch-energy-charts.sh`), nicht in einen Inline-Block.
->
-> **Seit der Retrospektive maschinell durchgesetzt** — `npm run lint:workflows`
-> (`scripts/lint-workflows.js`), im CI-Job `⚙️ Workflow Linting` und im
-> Pre-Commit-Hook, sobald `.github/workflows/**` gestaged ist.
->
-> ⚠️ **`actionlint`/`shellcheck` finden diese Fehlerklasse NICHT** — nicht darauf
-> verlassen. Nachgemessen am 2026-09-03 gegen die fehlerhafte Fassung
-> (`9abdda2`): 48 Findings, kein einziges auf dem Bug. Der Grund ist subtil: Ein
-> Apostroph im Body ist für die Shell **syntaktisch korrekt**, aus einem String
-> werden nur mehrere Wörter — an der Stelle meldet shellcheck bloß `SC2016`
-> (info), das bei jedem `node -e` normal ist. Der Fehler ist semantisch, nicht
-> syntaktisch. Deshalb der eigene Guard **zusätzlich** zu actionlint.
+> mehrzeiligen `node -e`-Blöcke mehr.** Ein Apostroph in deutschem Fehlertext
+> schließt den `node -e '…'`-String vorzeitig und lässt den Step mit Exit 9
+> sterben, **bevor eine einzige Prüfung läuft** — der Alarm wird dadurch
+> wertlos (Dauer-Rot ist von echtem Ausfall nicht unterscheidbar). Deutsche
+> Texte in `fetch.yml` sind voller Anführungszeichen; jede nennenswerte Logik
+> gehört deshalb in eine Datei unter `scripts/`, nicht in einen Inline-Block.
+> **`actionlint`/`shellcheck` finden diese Fehlerklasse NICHT** (Apostroph im
+> Body ist für die Shell syntaktisch korrekt) — deshalb maschinell zusätzlich
+> durchgesetzt via `npm run lint:workflows`, im CI-Job `⚙️ Workflow Linting`
+> und im Pre-Commit-Hook, sobald `.github/workflows/**` gestaged ist.
+> → [`docs/INCIDENTS.md`](docs/INCIDENTS.md#ursache-2-ein-apostroph-legte-den-health-check-lahm-445).
 
 **2. `ren_share_forecast` ist in ALLEN Ländern non-fatal (`|| true`), `price` bleibt required.**
 Vorher hatten DE und NL `|| exit 1`. Ein Ausfall dieses **einen** Endpunkts
@@ -494,20 +401,17 @@ renewable.ren_share)` **passiert sogar** — `[]` ist in JS truthy. Der Workflow
 endet grün. Der Ausfall ist länderspezifisch.
 → [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-08-31--ren_share_forecast-liefert-http-200-mit-leeren-arrays)
 
-> **Guard-Ort seit #435:** `scripts/fetch-energy-charts.sh` validiert die Payload
-> direkt nach dem Download —
-> `jq -e '(.unix_seconds|length) > 0 and (.ren_share|length) > 0'` (für `price`
-> analog mit `.price`). Schlägt das fehl, zählt der Versuch als Fehlschlag und
-> wird wiederholt; nach dem letzten Versuch wird die Datei **gelöscht**, damit
-> der `fs.existsSync(...)`-Guard im Process-Step greift, statt stillschweigend
-> `null`-Werte zu schreiben. Retries sind hier entgegen der früheren Annahme
-> **nicht** sinnlos: der Endpunkt erholt sich erfahrungsgemäß.
+> **Guard-Ort:** `scripts/fetch-energy-charts.sh` validiert die Payload direkt
+> nach dem Download — `jq -e '(.unix_seconds|length) > 0 and (.ren_share|length) > 0'`
+> (für `price` analog mit `.price`). Schlägt das fehl, zählt der Versuch als
+> Fehlschlag und wird wiederholt; nach dem letzten Versuch wird die Datei
+> **gelöscht**, damit der `fs.existsSync(...)`-Guard im Process-Step greift,
+> statt stillschweigend `null`-Werte zu schreiben.
 > **Offener Bug (#425, `priority: high`):** Nur DE merged über
 > `scripts/merge-market-data.js` mit der bestehenden Datei. Die sechs anderen
 > Länder überschreiben ihre `marketdata.json` vollständig — ein einziger
 > ausbleibender `ren_share_forecast` löscht dort die **gesamte**
-> Erneuerbaren-Historie. Am 2026-08-31 standen NL/CH/FR/BE/DK auf 0 Werten,
-> DE dank Merge noch auf 651.
+> Erneuerbaren-Historie.
 
 #### Diagnose-Reihenfolge bei „Website zeigt alte Daten"
 
@@ -523,22 +427,18 @@ sorgen dafür, dass fast nichts hart fehlschlägt. In dieser Reihenfolge prüfen
 4. Erst dann Workflow-Logs auf `curl:`-Fehler durchsuchen.
 
 > ⚠️ **Eine sinkende Gesamtzahl der Erneuerbaren-Punkte ist NICHT automatisch
-> Datenverlust.** `marketdata.json` ist ein **rollierendes Fenster fester Größe**
-> (aktuell 767 Punkte): kommen vorne neue dazu, fallen hinten alte heraus. Am
-> 2026-09-02 fiel die Zahl bei einem Lauf von 515 auf 503 — Start *und* Ende
-> waren dabei um exakt 3 h gewandert, die Gesamtzahl blieb bei 767. Völlig
-> normal. Vor jeder Verlust-Diagnose beide Fenstergrenzen vergleichen, nicht nur
-> die Punktezahl:
+> Datenverlust.** `marketdata.json` ist ein **rollierendes Fenster fester Größe**:
+> kommen vorne neue dazu, fallen hinten alte heraus. Vor jeder Verlust-Diagnose
+> beide Fenstergrenzen vergleichen, nicht nur die Punktezahl:
 > ```bash
 > jq -r '"von: \([.data[].start_timestamp]|min|./1000|todate)  bis: \([.data[].start_timestamp]|max|./1000|todate)  ren: \([.data[]|select(.renewable_share!=null)]|length)  gesamt: \(.data|length)"' public/data/marketdata.json
 > ```
 > Echter Verlust liegt nur vor, wenn die Punkte **innerhalb** des unveränderten
-> Fensters weniger werden.
-
-> **Die maßgebliche Kennzahl ist „Erneuerbaren-Punkte **für heute** (Europe/Berlin)",
-> nicht die Gesamtzahl.** Genau die prüft der `Data health check`, und genau die
-> war beim Vorfall am 2026-09-02 `0`, während die Gesamtzahl bei über 500 lag.
-> Eine gesunde Gesamtzahl sagt über den sichtbaren Ausfall in der App nichts aus.
+> Fensters weniger werden. Die maßgebliche Kennzahl ist ohnehin „Erneuerbaren-
+> Punkte **für heute** (Europe/Berlin)", nicht die Gesamtzahl — die prüft der
+> `Data health check`. Eine gesunde Gesamtzahl sagt über einen sichtbaren
+> Ausfall in der App nichts aus.
+> → [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-02--sinkende-erneuerbaren-punktezahl-war-kein-datenverlust).
 
 ### Deploy (Unified): transienter TLS-Fehler in `actions/deploy-pages@v4`
 
@@ -609,42 +509,18 @@ Husky-Hooks —, die in `jest.config.js` konfigurierten Coverage-Schwellen
 > Beim erneuten Hinzufügen (z. B. „der Robustheit halber") wird der Type-Check
 > wieder wirkungslos — nicht zurückbauen.
 
-### `eslint.config.mjs`: Jeder matchende Flat-Config-Block braucht sein eigenes Plugin (PR #474)
-
-`npm run lint` crashte für den **gesamten** Lauf mit `could not find plugin
-"@typescript-eslint"`. Ursache: Der Block für Testdateien (`**/__tests__/**`,
-`**/*.test.ts(x)`) setzt `@typescript-eslint/no-explicit-any` und
-`@typescript-eslint/no-non-null-assertion`, registriert das Plugin selbst aber
-nicht.
-
-Für `.ts`/`.tsx`-Testdateien fiel das nie auf: ESLints Flat-Config mergt für
-eine Datei **alle** passenden Config-Objekte, und der TS/TSX-Basis-Block (der
-`@typescript-eslint` registriert) matcht über seine eigenen `files`-Globs
-zusätzlich. `scripts/__tests__/*.test.js` ist aber `.js`, erreicht den
-Basis-Block nicht, landet nur im Testblock — und riss damit den kompletten
-Lauf über alle Dateien, nicht nur die Prüfung dieser drei:
-```
-scripts/__tests__/data-health-check.test.js
-scripts/__tests__/lint-workflows.test.js
-scripts/__tests__/write-status.test.js
-```
-Alle drei sind über `"scripts/**/*.js"` im `lint`-Skript eingeschlossen.
+### `eslint.config.mjs`: Jeder matchende Flat-Config-Block braucht sein eigenes Plugin
 
 **Regel:** Ein Config-Block, der eine `<plugin>/<rule>` setzt, muss dieses
 Plugin selbst in seinem eigenen `plugins`-Objekt registrieren — auch wenn ein
 anderer Block im selben File es bereits registriert. Man kann sich nicht
-darauf verlassen, dass ein anderer Block für **dieselben** Dateien matcht.
-
-> ⚠️ **Blieb monatelang unbemerkt, weil `ci-cd.yml` den Lint-Job nur auf
-> PRs gegen `main` triggert** (siehe „Checks je Ziel-Branch" oben). Ein
-> `testing`-PR hat nur `review-gate` + `mergeability`, kein Lint. Der
-> Pre-Commit-Hook läuft über `lint-staged`, das ESLint **pro Datei** mit
-> `--fix` aufruft — nie die volle `scripts/**/*.js`-Menge auf einmal, also
-> nie in der Konstellation, die den Crash auslöst. Erst ein manuelles
-> `npm run lint` (oder der `main`-Lint-Job) deckt es auf. Nach jeder Änderung
-> an `eslint.config.mjs` deshalb **immer** `npm run lint` lokal gegen den
-> vollen Scope laufen lassen, nicht nur gegen einzelne geänderte Dateien.
-> → [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-08--eslintconfigmjs-testblock-ohne-eigene-plugin-registrierung-crashte-npm-run-lint-474)
+darauf verlassen, dass ein anderer Block für **dieselben** Dateien matcht,
+sonst crasht `npm run lint` für den gesamten Lauf, sobald eine Datei nur den
+unvollständigen Block trifft. Nach jeder Änderung an `eslint.config.mjs`
+deshalb **immer** `npm run lint` lokal gegen den vollen Scope laufen lassen,
+nicht nur gegen einzelne geänderte Dateien — der `testing`-Lint-Job und der
+Pre-Commit-Hook (`lint-staged`, pro Datei) decken diese Fehlerklasse nicht auf.
+→ [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-08--eslintconfigmjs-testblock-ohne-eigene-plugin-registrierung-crashte-npm-run-lint-474)
 
 ## Critical Areas
 
@@ -681,16 +557,13 @@ darauf verlassen, dass ein anderer Block für **dieselben** Dateien matcht.
    - **Title overflow (Issue #355, PR #380):** title wrapper needs `flex: 1` + the `<Text>` needs
      `numberOfLines={2}`/`ellipsizeMode="tail"` — otherwise long titles (e.g. regional renewable
      title) clip on small screens instead of wrapping.
-   - **Ausfall-Kaschierung durch Fenster-Ø (PR #473, 08.09.2026):** Ein Teilausfall von
-     `renewable_share` (0 Punkte für heute) blieb unsichtbar, weil `RenewableBarChart`s
-     Ø-Linie über das **gesamte** Chart-Fenster mittelt, unabhängig vom Tag — bei nur 28
-     von ~180 Punkten (Rest des Vortags) zeigte sie plausible „Ø 45.0 %", während die
-     maßgebliche Kennzahl (Erneuerbaren-Punkte für heute) bei 0 lag. `avgValue` wird jetzt
-     nur noch gezeichnet, wenn ≥ `AVERAGE_MIN_COVERAGE_RATIO` (50 %) der Punkte im Fenster
-     einen Wert haben; darunter erscheint `labels.averageLowCoverage` („Kein Ø: nur {valid}
-     von {total} Werten") an ihrer Stelle. Bei jeder neuen Fenster-Statistik (Ø/Min/Max über
-     mehrere Datenpunkte) diese Abdeckungs-Guard-Logik als Vorbild nehmen, nicht stillschweigend
-     über Lücken hinweg mitteln.
+   - **Ausfall-Kaschierung durch Fenster-Ø (PR #473):** `RenewableBarChart`s Ø-Linie mittelt
+     über das **gesamte** Chart-Fenster, unabhängig vom Tag — bei geringer Tagesabdeckung
+     kaschierte das einen Totalausfall der Erneuerbaren-Daten mit einem plausiblen Ø. `avgValue`
+     wird jetzt nur noch gezeichnet, wenn ≥ `AVERAGE_MIN_COVERAGE_RATIO` (50 %) der Punkte im
+     Fenster einen Wert haben; darunter erscheint `labels.averageLowCoverage` an ihrer Stelle.
+     Bei jeder neuen Fenster-Statistik (Ø/Min/Max über mehrere Datenpunkte) diese
+     Abdeckungs-Guard-Logik als Vorbild nehmen, nicht stillschweigend über Lücken hinweg mitteln.
      → [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-08--erneuerbaren-ausfall-in-der-ui-kaschiert-statt-angezeigt-473)
    - **`0` statt `null` bei fehlenden Tageswerten ist eine Falschaussage (PR #473).**
      `calculateMetrics` (`utils/metrics.ts`) gab bei 0 heutigen Renewable-Datenpunkten `0`
@@ -723,18 +596,14 @@ darauf verlassen, dass ein anderer Block für **dieselben** Dateien matcht.
      damit `ChartSection`s externe Legende (im Detail-Modal) dieselbe Farbe verwendet statt
      sie zu duplizieren.
    - ⚠️ **Der gesamte Fallback-Pfad löst derzeit praktisch nie aus — „heute"-Bias (#487).**
-     Er hängt an `hasLimitedRenewableData` (`App.tsx`), und das ist
+     Er hängt an `hasLimitedRenewableData` (`App.tsx`) =
      `metrics.today.coverage.priceCount > 0 && renewableCount === 0` — also **nur heute**.
-     Bei der real häufigsten Lage (heute 88 von 96 Punkten, morgen 0) ist die Bedingung
-     `false`, `renewableFallback` bleibt `null`, und weder Kachel noch Chart zeigen einen
-     Ersatzwert. Zusätzlich filtert `summarize()` in `renewableFallback.ts` auf
-     `todaySamples` — die `series` enthält also **nie** Punkte für morgen und könnte
-     Lücke B (s. `fetch.yml`-Abschnitt oben) selbst dann nicht schließen, wenn sie
-     auslöste. Wer den Fallback fürs Chart nutzbar machen will, muss **beide** Stellen
-     auf das tatsächlich gezeigte Chart-Fenster umstellen, nicht auf den Kalendertag.
-     Vorher prüfen, ob nach dem Pipeline-Fix (#487) überhaupt noch eine Lücke bleibt,
-     die einen Ortswert rechtfertigt — ein Ortswert für *morgen* ist eine Prognose für
-     einen einzelnen Netzbereich, dargestellt anstelle eines Bundeswerts.
+     In der real häufigsten Lage (heute fast vollständig, morgen 0) bleibt die Bedingung
+     `false` und `renewableFallback` `null`. `summarize()` in `renewableFallback.ts` filtert
+     zudem auf `todaySamples` — die `series` enthält also **nie** Punkte für morgen. Wer den
+     Fallback fürs Chart nutzbar machen will, muss **beide** Stellen auf das tatsächlich
+     gezeigte Chart-Fenster umstellen, nicht auf den Kalendertag — vorher prüfen, ob nach dem
+     Pipeline-Fix (#487) überhaupt noch eine Lücke bleibt, die einen Ortswert rechtfertigt.
 
 5. **Historical Data (`services/historicalDataStore.ts`) – Issues #307/#1/#3 (PR #309):**
    - **Device cache is the primary source.** Every successful national fetch in

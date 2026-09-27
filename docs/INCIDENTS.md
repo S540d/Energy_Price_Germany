@@ -197,6 +197,30 @@ committet wurde, nicht *ob Daten fehlen*. Ersetzt durch das datenbasierte Gate.
 
 ---
 
+## 2026-09-02 — Sinkende Erneuerbaren-Punktezahl war kein Datenverlust
+
+Bei der Diagnose des HTTP-429-Vorfalls (#435, siehe oben) fiel die Zahl der
+Erneuerbaren-Punkte in `marketdata.json` bei einem Lauf von 515 auf 503 —
+zunächst als weiterer Datenverlust interpretiert.
+
+**Befund:** `marketdata.json` ist ein rollierendes Fenster fester Größe
+(damals 767 Punkte gesamt). Start *und* Ende des Fensters waren um exakt 3h
+gewandert, die Gesamtzahl blieb bei 767 — völlig normal, kein Verlust.
+
+**Lehre:** Vor jeder Verlust-Diagnose beide Fenstergrenzen vergleichen, nicht
+nur die Punktezahl:
+```bash
+jq -r '"von: \([.data[].start_timestamp]|min|./1000|todate)  bis: \([.data[].start_timestamp]|max|./1000|todate)  ren: \([.data[]|select(.renewable_share!=null)]|length)  gesamt: \(.data|length)"' public/data/marketdata.json
+```
+Echter Verlust liegt nur vor, wenn die Punkte **innerhalb** des unveränderten
+Fensters weniger werden. Die maßgebliche Kennzahl ist ohnehin „Erneuerbaren-
+Punkte **für heute** (Europe/Berlin)", nicht die Gesamtzahl — genau die war
+beim Vorfall `0`, während die Gesamtzahl bei über 500 lag.
+
+→ Regel in `CLAUDE.md`: „Diagnose-Reihenfolge bei „Website zeigt alte Daten"".
+
+---
+
 ## 2026-08 — CI-Laufzeit: Daten-Commits lösten volle App-Builds aus (#394, #400)
 
 Jeder Fetch-Commit löste App-Build, Quality-Check und Security-Scan aus.
@@ -539,6 +563,30 @@ danach mit ins Release `testing → main` (1.11.2).
 
 → Regel in `CLAUDE.md`: „Dependabot-PRs: gruppierte Sammel-Bumps gegen
 `testing`".
+
+## 2026-09-14 — Versions-Bump im Feature-PR vergessen (#493/#494)
+
+Der Fix-PR für Issue #482 wurde ohne Versions-Bump nach `testing` gemergt —
+die Regel „Versions-Bump gehört in denselben PR wie der `[Unreleased]`-Eintrag"
+war zu diesem Zeitpunkt bereits dokumentiert, wurde aber beim eigentlichen
+Feature-PR schlicht vergessen. Erst beim Vorbereiten des Release-PRs
+`testing → main` fiel der `[Unreleased]`-Rest in `CHANGELOG.md` auf und wurde
+in einem eigenen Nachzieh-PR (#494) nachgeholt, bevor nach `main` released
+wurde.
+
+Zuvor war zwischen 1.9.0 (27.06.2026) und 1.10.0 (05.09.2026) bereits ein
+größerer Fall aufgetreten: **fünf** Releases `testing → main` (#421–#458)
+liefen, ohne dass jemand `version`/`versionCode` angehoben hatte —
+`[Unreleased]` wuchs über zwei Monate an, inklusive eines potenziell
+absturzrelevanten Fixes (#376), der so ungenutzt blieb.
+
+**Lehre:** Die Erkennung darf nicht davon abhängen, dass sie beim Release
+zufällig nachgeholt wird. Die Prüfbefehle (`git show origin/main:app.json`,
+`git show origin/testing:CHANGELOG.md`) gehören deshalb nicht nur „vor jedem
+Release-PR", sondern als letzter Schritt in **jeden** PR, der einen
+`[Unreleased]`-Eintrag setzt.
+
+→ Regel in `CLAUDE.md`: „Versions-Bump ist kein Automatismus".
 
 ## 2026-09-19 — Mitternachts-Sprung in Preis und Erneuerbaren-Anteil: kein Bug
 
