@@ -5,11 +5,7 @@
   "description": "Aktuelle Börsenstrompreise (Day-Ahead) und Ökostrom-Anteil in Deutschland – kostenlos, ohne Werbung und ohne Tracking.",
   "lang": "de",
   "dir": "ltr",
-  "categories": [
-    "utilities",
-    "news",
-    "productivity"
-  ],
+  "categories": ["utilities", "news", "productivity"],
   "icons": [
     {
       "src": "/Energy_Price_Germany/icon-180.png",
@@ -44,6 +40,6 @@
     }
   ],
   "prefer_related_applications": false,
-  "version": "1.11.3",
-  "build_date": "2026-10-03"
+  "version": "1.6.0",
+  "build_date": "2026-06-02"
 }
