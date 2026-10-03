@@ -1,5 +1,4 @@
-import React, { useMemo } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import React from 'react';
 import { Line } from 'react-native-svg';
 import { scaleToX } from './chartScale';
 
@@ -45,52 +44,4 @@ export function NowMarkerLine({
       strokeDasharray="5,5"
     />
   );
-}
-
-interface NowMarkerLabelProps {
-  now: number;
-  minTime: number;
-  timeRange: number;
-  chartWidth: number;
-  chartHeight: number;
-  leftPadding: number;
-  rightPadding: number;
-  bottomPadding: number;
-  label: string;
-}
-
-/** Text label for the "now" marker - rendered as absolute positioned Text */
-export function NowMarkerLabel({
-  now,
-  minTime,
-  timeRange,
-  chartWidth,
-  chartHeight,
-  leftPadding,
-  rightPadding,
-  bottomPadding,
-  label,
-}: NowMarkerLabelProps) {
-  const x = scaleToX(now, {
-    domainMin: minTime,
-    domainRange: timeRange,
-    chartWidth,
-    leftPadding,
-    rightPadding,
-  });
-  const style = useMemo(
-    () =>
-      StyleSheet.create({
-        label: {
-          position: 'absolute',
-          left: x - 15,
-          top: chartHeight - bottomPadding + 20,
-          fontSize: 12,
-          color: 'red',
-          fontWeight: 'bold',
-        },
-      }).label,
-    [x, chartHeight, bottomPadding]
-  );
-  return <Text style={style}>{label}</Text>;
 }

@@ -144,6 +144,18 @@ function AppContent() {
 
   const metrics = useMemo(() => calculateMetrics(filteredEnergyData), [filteredEnergyData]);
 
+  const calculatorPriceData = useMemo(
+    () =>
+      filteredEnergyData
+        .filter(item => item.marketPrice !== null)
+        .map(item => ({
+          start_timestamp: item.timestamp,
+          marketprice: item.marketPrice ?? 0,
+          renewable_share: item.renewableShare ?? undefined,
+        })),
+    [filteredEnergyData]
+  );
+
   const alertState = useMemo(
     () =>
       checkPriceAlert(
@@ -429,13 +441,7 @@ function AppContent() {
         <CostCalculatorView
           visible={calculatorVisible}
           onClose={() => setCalculatorVisible(false)}
-          priceData={filteredEnergyData
-            .filter(item => item.marketPrice !== null)
-            .map(item => ({
-              start_timestamp: item.timestamp,
-              marketprice: item.marketPrice ?? 0,
-              renewable_share: item.renewableShare ?? undefined,
-            }))}
+          priceData={calculatorPriceData}
           gridFees={gridFees}
         />
 

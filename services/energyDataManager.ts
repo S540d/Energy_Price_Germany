@@ -2,7 +2,7 @@ import type { EnergyData } from '../utils/metrics';
 import { Platform } from 'react-native';
 import { isValidPostalCode } from '../utils/postalCodeUtils';
 import { validateMarketDataResponse, fetchWithTimeout } from '../utils/apiValidation';
-import type { RegionalDataResponse } from '../utils/apiValidation';
+import type { RegionalDataResponse, MarketDataResponse } from '../utils/apiValidation';
 import { RegionalDataCache } from './regionalDataCache';
 import { mergeRegionalData } from './dataMerger';
 import { historicalDataStoreForCountry } from './historicalDataStore';
@@ -13,22 +13,6 @@ import { COUNTRIES, DEFAULT_COUNTRY } from '../utils/countries';
  * Datenquelle-Typen
  */
 export type DataSource = 'energy-charts' | 'awattar' | 'none';
-
-/**
- * API Response Types
- */
-interface MarketDataItem {
-  start_timestamp: number;
-  end_timestamp: number;
-  marketprice: number | null;
-  renewable_share: number | null;
-  interpolated?: boolean;
-}
-
-interface MarketDataResponse {
-  source: string;
-  data: MarketDataItem[];
-}
 
 /**
  * Cache-Konfiguration

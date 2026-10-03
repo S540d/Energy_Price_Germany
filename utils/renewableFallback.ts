@@ -24,10 +24,8 @@
  */
 
 import type { EnergyData } from './metrics';
+import { isToday, findClosestSample } from './metrics';
 import type { RegionalDataResponse } from './apiValidation';
-
-/** Zeitfenster um „jetzt“, in dem ein Datenpunkt als aktueller Wert gilt. */
-const CURRENT_TOLERANCE_MS = 30 * 60 * 1000;
 
 /**
  * Herkunft des Ersatzwerts – entscheidet über die Beschriftung in der UI.
@@ -59,11 +57,6 @@ export interface Sample {
   value: number;
 }
 
-function isToday(timestamp: number, now: Date): boolean {
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  return timestamp >= start && timestamp < start + 24 * 60 * 60 * 1000;
-}
-
 function summarize(
   samples: Sample[],
   source: RenewableFallbackSource,
@@ -72,9 +65,7 @@ function summarize(
   if (samples.length === 0) return null;
 
   const nowMs = now.getTime();
-  const currentSample = samples
-    .filter(s => Math.abs(s.timestamp - nowMs) < CURRENT_TOLERANCE_MS)
-    .sort((a, b) => Math.abs(a.timestamp - nowMs) - Math.abs(b.timestamp - nowMs))[0];
+  const currentSample = findClosestSample(samples, nowMs);
 
   const todaySamples = samples.filter(s => isToday(s.timestamp, now));
 

@@ -107,35 +107,3 @@ export const Storage = {
     }
   },
 };
-
-/**
- * Prüft ob eine Web API sicher verwendet werden kann
- * Wirft einen Fehler wenn die API auf der aktuellen Plattform nicht verfügbar ist
- */
-export function assertWebAPI(apiName: string): void {
-  if (!isWeb) {
-    throw new Error(
-      `Web API "${apiName}" is not available on ${Platform.OS}. ` +
-        `Use Platform-specific code or polyfills.`
-    );
-  }
-}
-
-/**
- * Sichere Web API Calls mit Fallback
- */
-export function safeWebAPI<T>(callback: () => T, fallback: T, apiName?: string): T {
-  if (!isWeb) {
-    if (apiName && __DEV__) {
-    }
-    return fallback;
-  }
-
-  try {
-    return callback();
-  } catch (error) {
-    if (__DEV__) {
-    }
-    return fallback;
-  }
-}

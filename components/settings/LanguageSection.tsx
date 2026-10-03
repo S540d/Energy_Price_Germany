@@ -20,40 +20,26 @@ export function LanguageSection() {
     <View style={styles.menuSection}>
       <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t.language}</Text>
       <View style={styles.languageToggle}>
-        <TouchableOpacity
-          style={[
-            styles.languageButton,
-            language === 'en' && styles.languageButtonActive,
-            { backgroundColor: language === 'en' ? colors.primary : colors.gridLine },
-          ]}
-          onPress={() => setLanguage('en')}
-        >
-          <Text
+        {(['en', 'de'] as const).map(code => (
+          <TouchableOpacity
+            key={code}
             style={[
-              styles.languageButtonLabel,
-              { color: language === 'en' ? ACTIVE_LANGUAGE_TEXT_COLOR : colors.text },
+              styles.languageButton,
+              language === code && styles.languageButtonActive,
+              { backgroundColor: language === code ? colors.primary : colors.gridLine },
             ]}
+            onPress={() => setLanguage(code)}
           >
-            {t.english}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.languageButton,
-            language === 'de' && styles.languageButtonActive,
-            { backgroundColor: language === 'de' ? colors.primary : colors.gridLine },
-          ]}
-          onPress={() => setLanguage('de')}
-        >
-          <Text
-            style={[
-              styles.languageButtonLabel,
-              { color: language === 'de' ? ACTIVE_LANGUAGE_TEXT_COLOR : colors.text },
-            ]}
-          >
-            {t.german}
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.languageButtonLabel,
+                { color: language === code ? ACTIVE_LANGUAGE_TEXT_COLOR : colors.text },
+              ]}
+            >
+              {code === 'en' ? t.english : t.german}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
     </View>
   );
