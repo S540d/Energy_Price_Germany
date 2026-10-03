@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import type { Metrics } from '../utils/metrics';
 import { GRID_FEES_AND_TAXES } from '../utils/metrics';
 import type { ThemeColors } from '../utils/theme';
@@ -69,6 +69,34 @@ function createStyles(colors: ThemeColors, renewableAvg: number) {
     bubbleValue: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
     bubbleCaption: { color: colors.textSecondary, fontSize: 10, marginTop: 4 },
   });
+}
+
+interface PriceStatsBlockProps {
+  label: string;
+  stats: { avg: number; min: number; max: number };
+  styles: ReturnType<typeof createStyles>;
+  style?: StyleProp<ViewStyle>;
+}
+
+function PriceStatsBlock({ label, stats, styles, style }: PriceStatsBlockProps) {
+  const columns = [
+    { caption: 'Durchschnitt', value: stats.avg },
+    { caption: 'Minimum', value: stats.min },
+    { caption: 'Maximum', value: stats.max },
+  ];
+  return (
+    <View style={style}>
+      <Text style={styles.sectionLabel}>{label}</Text>
+      <View style={styles.statsRow}>
+        {columns.map(({ caption, value }) => (
+          <View key={caption} style={styles.statColumn}>
+            <Text style={styles.statCaption}>{caption}</Text>
+            <Text style={styles.statValue}>{value.toFixed(2)} ¢</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
 }
 
 export function MetricsView({ metrics, colors }: MetricsViewProps) {
@@ -191,42 +219,19 @@ export function MetricsView({ metrics, colors }: MetricsViewProps) {
       </View>
 
       {/* Börsenstrompreis */}
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Börsenstrompreis (Cent/kWh)</Text>
-        <View style={styles.statsRow}>
-          <View style={styles.statColumn}>
-            <Text style={styles.statCaption}>Durchschnitt</Text>
-            <Text style={styles.statValue}>{displayMetrics.marketPrice.avg.toFixed(2)} ¢</Text>
-          </View>
-          <View style={styles.statColumn}>
-            <Text style={styles.statCaption}>Minimum</Text>
-            <Text style={styles.statValue}>{displayMetrics.marketPrice.min.toFixed(2)} ¢</Text>
-          </View>
-          <View style={styles.statColumn}>
-            <Text style={styles.statCaption}>Maximum</Text>
-            <Text style={styles.statValue}>{displayMetrics.marketPrice.max.toFixed(2)} ¢</Text>
-          </View>
-        </View>
-      </View>
+      <PriceStatsBlock
+        label="Börsenstrompreis (Cent/kWh)"
+        stats={displayMetrics.marketPrice}
+        styles={styles}
+        style={styles.section}
+      />
 
       {/* Endkundenstrompreis (inkl. Netzentgelte) */}
-      <View>
-        <Text style={styles.sectionLabel}>Endkundenstrompreis (Cent/kWh)</Text>
-        <View style={styles.statsRow}>
-          <View style={styles.statColumn}>
-            <Text style={styles.statCaption}>Durchschnitt</Text>
-            <Text style={styles.statValue}>{displayMetrics.endCustomerPrice.avg.toFixed(2)} ¢</Text>
-          </View>
-          <View style={styles.statColumn}>
-            <Text style={styles.statCaption}>Minimum</Text>
-            <Text style={styles.statValue}>{displayMetrics.endCustomerPrice.min.toFixed(2)} ¢</Text>
-          </View>
-          <View style={styles.statColumn}>
-            <Text style={styles.statCaption}>Maximum</Text>
-            <Text style={styles.statValue}>{displayMetrics.endCustomerPrice.max.toFixed(2)} ¢</Text>
-          </View>
-        </View>
-      </View>
+      <PriceStatsBlock
+        label="Endkundenstrompreis (Cent/kWh)"
+        stats={displayMetrics.endCustomerPrice}
+        styles={styles}
+      />
     </View>
   );
 }

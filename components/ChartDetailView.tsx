@@ -87,114 +87,81 @@ export function ChartDetailView({
     // Check if this is price chart (has marketPrice/endCustomerPrice)
     const isPriceChart = 'marketPrice' in metrics && 'endCustomerPrice' in metrics;
 
-    if (isPriceChart) {
-      // Detail view always shows both price sections
-      const sections: { data: typeof metrics.marketPrice; accentColor: string; label: string }[] = [
-        { data: metrics.marketPrice, accentColor: '#4CAF50', label: t.priceDisplayMarketOnly },
-        {
-          data: metrics.endCustomerPrice,
-          accentColor: colors.primary,
-          label: t.priceDisplayWithFees,
-        },
-      ];
+    type StatSection = {
+      data: { current?: number | null; min: number; avg: number; max: number };
+      accentColor: string;
+      digits: number;
+      label?: string;
+    };
 
-      return (
-        <View style={[styles.metricsContainer, { backgroundColor: colors.surfaceSecondary }]}>
-          <Text style={[styles.metricsTitle, { color: colors.text }]}>{metrics.label}</Text>
+    // Detail view of the price chart always shows both price sections;
+    // other charts render a single, unlabelled section.
+    const sections: StatSection[] = isPriceChart
+      ? [
+          {
+            data: metrics.marketPrice,
+            accentColor: '#4CAF50',
+            digits: 2,
+            label: t.priceDisplayMarketOnly,
+          },
+          {
+            data: metrics.endCustomerPrice,
+            accentColor: colors.primary,
+            digits: 2,
+            label: t.priceDisplayWithFees,
+          },
+        ]
+      : [
+          {
+            data: metrics,
+            accentColor: accentColor ?? colors.primary,
+            digits: chartType === 'renewable' ? 1 : 2,
+          },
+        ];
 
-          {sections.map(({ data, accentColor: sectionAccentColor, label }) => (
-            <View key={label} style={styles.sectionMarginTop}>
-              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>{label}</Text>
+    const statItems = [
+      { label: t.metricMin, key: 'min' },
+      { label: t.metricAvg, key: 'avg' },
+      { label: t.metricMax, key: 'max' },
+    ] as const;
 
-              {data.current !== null && data.current !== undefined && (
-                <View
-                  style={[
-                    styles.currentValueContainer,
-                    styles.currentValueBorder,
-                    { backgroundColor: colors.surface, borderLeftColor: sectionAccentColor },
-                  ]}
-                >
-                  <Text style={[styles.currentLabel, { color: colors.text }]}>
-                    {t.metricCurrent}
-                  </Text>
-                  <Text style={[styles.currentValue, { color: sectionAccentColor }]}>
-                    {data.current.toFixed(2)} {metrics.unit}
-                  </Text>
-                </View>
-              )}
-
-              <View style={styles.statsContainer}>
-                <View style={styles.statItem}>
-                  <Text style={[styles.statLabel, { color: colors.text }]}>{t.metricMin}</Text>
-                  <Text style={[styles.statValue, { color: sectionAccentColor }]}>
-                    {data.min.toFixed(2)} {metrics.unit}
-                  </Text>
-                </View>
-
-                <View style={styles.statItem}>
-                  <Text style={[styles.statLabel, { color: colors.text }]}>{t.metricAvg}</Text>
-                  <Text style={[styles.statValue, { color: sectionAccentColor }]}>
-                    {data.avg.toFixed(2)} {metrics.unit}
-                  </Text>
-                </View>
-
-                <View style={styles.statItem}>
-                  <Text style={[styles.statLabel, { color: colors.text }]}>{t.metricMax}</Text>
-                  <Text style={[styles.statValue, { color: sectionAccentColor }]}>
-                    {data.max.toFixed(2)} {metrics.unit}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          ))}
-        </View>
-      );
-    }
-
-    // Existing single-value rendering for renewable chart
     return (
       <View style={[styles.metricsContainer, { backgroundColor: colors.surfaceSecondary }]}>
         <Text style={[styles.metricsTitle, { color: colors.text }]}>{metrics.label}</Text>
 
-        {/* Current Value if available */}
-        {metrics.current !== null && metrics.current !== undefined && (
-          <View
-            style={[
-              styles.currentValueContainer,
-              styles.currentValueBorder,
-              { backgroundColor: colors.surface, borderLeftColor: accentColor ?? colors.primary },
-            ]}
-          >
-            <Text style={[styles.currentLabel, { color: colors.text }]}>{t.metricCurrent}</Text>
-            <Text style={[styles.currentValue, { color: accentColor ?? colors.primary }]}>
-              {metrics.current.toFixed(chartType === 'renewable' ? 1 : 2)} {metrics.unit}
-            </Text>
-          </View>
-        )}
+        {sections.map(({ data, accentColor: sectionAccentColor, digits, label }) => (
+          <View key={label ?? 'single'} style={label ? styles.sectionMarginTop : undefined}>
+            {label && (
+              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>{label}</Text>
+            )}
 
-        {/* Min/Max/Avg Values */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={[styles.statLabel, { color: colors.text }]}>{t.metricMin}</Text>
-            <Text style={[styles.statValue, { color: accentColor ?? colors.primary }]}>
-              {metrics.min.toFixed(chartType === 'renewable' ? 1 : 2)} {metrics.unit}
-            </Text>
-          </View>
+            {data.current !== null && data.current !== undefined && (
+              <View
+                style={[
+                  styles.currentValueContainer,
+                  styles.currentValueBorder,
+                  { backgroundColor: colors.surface, borderLeftColor: sectionAccentColor },
+                ]}
+              >
+                <Text style={[styles.currentLabel, { color: colors.text }]}>{t.metricCurrent}</Text>
+                <Text style={[styles.currentValue, { color: sectionAccentColor }]}>
+                  {data.current.toFixed(digits)} {metrics.unit}
+                </Text>
+              </View>
+            )}
 
-          <View style={styles.statItem}>
-            <Text style={[styles.statLabel, { color: colors.text }]}>{t.metricAvg}</Text>
-            <Text style={[styles.statValue, { color: accentColor ?? colors.primary }]}>
-              {metrics.avg.toFixed(chartType === 'renewable' ? 1 : 2)} {metrics.unit}
-            </Text>
+            <View style={styles.statsContainer}>
+              {statItems.map(({ label: statLabel, key }) => (
+                <View key={key} style={styles.statItem}>
+                  <Text style={[styles.statLabel, { color: colors.text }]}>{statLabel}</Text>
+                  <Text style={[styles.statValue, { color: sectionAccentColor }]}>
+                    {data[key].toFixed(digits)} {metrics.unit}
+                  </Text>
+                </View>
+              ))}
+            </View>
           </View>
-
-          <View style={styles.statItem}>
-            <Text style={[styles.statLabel, { color: colors.text }]}>{t.metricMax}</Text>
-            <Text style={[styles.statValue, { color: accentColor ?? colors.primary }]}>
-              {metrics.max.toFixed(chartType === 'renewable' ? 1 : 2)} {metrics.unit}
-            </Text>
-          </View>
-        </View>
+        ))}
       </View>
     );
   };
