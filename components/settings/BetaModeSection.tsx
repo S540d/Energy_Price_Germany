@@ -4,7 +4,7 @@ import { useLanguageContext } from '../../context/LanguageContext';
 import { getThemeColors } from '../../utils/theme';
 import { useSettingsContext } from '../../context/SettingsContext';
 import * as Updates from 'expo-updates';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Storage } from '../../utils/platform';
 
 const BETA_MODE_KEY = '@energy_price_germany:beta_mode';
 
@@ -28,7 +28,7 @@ export function BetaModeSection() {
 
   const loadBetaMode = async () => {
     try {
-      const storedValue = await AsyncStorage.getItem(BETA_MODE_KEY);
+      const storedValue = await Storage.getItem(BETA_MODE_KEY);
       setBetaModeEnabled(storedValue === 'true');
     } catch (error) {
       // Silent fail - default to false
@@ -42,7 +42,7 @@ export function BetaModeSection() {
 
     try {
       // Save to storage
-      await AsyncStorage.setItem(BETA_MODE_KEY, String(newValue));
+      await Storage.setItem(BETA_MODE_KEY, String(newValue));
       setBetaModeEnabled(newValue);
 
       // Show restart alert (channel switch requires app restart)

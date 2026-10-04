@@ -7,16 +7,24 @@
 
 import { Platform } from 'react-native';
 
-// Import AsyncStorage only on mobile platforms
-let AsyncStorage: {
+type AsyncStorageLike = {
   getItem: (key: string) => Promise<string | null>;
   setItem: (key: string, value: string) => Promise<void>;
   removeItem: (key: string) => Promise<void>;
-} | null = null;
-if (Platform.OS !== 'web') {
-  try {
-    AsyncStorage = require('@react-native-async-storage/async-storage').default;
-  } catch (e) {}
+};
+
+// AsyncStorage wird erst beim ersten nativen Zugriff geladen (nie auf Web).
+let asyncStorageCache: AsyncStorageLike | null | undefined;
+function getAsyncStorage(): AsyncStorageLike | null {
+  if (asyncStorageCache === undefined) {
+    try {
+      const mod = require('@react-native-async-storage/async-storage');
+      asyncStorageCache = mod.default ?? mod;
+    } catch (e) {
+      asyncStorageCache = null;
+    }
+  }
+  return asyncStorageCache ?? null;
 }
 
 // Platform Detection
@@ -80,62 +88,25 @@ export function addSystemThemeChangeListener(callback: (isDark: boolean) => void
  */
 export const Storage = {
   async getItem(key: string): Promise<string | null> {
-    if (isWeb && typeof localStorage !== 'undefined') {
-      return localStorage.getItem(key); // platform-safe
-    } else if (AsyncStorage) {
-      return await AsyncStorage.getItem(key);
-    } else {
-      return null;
+    if (Platform.OS === 'web') {
+      return typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null; // platform-safe
     }
+    return (await getAsyncStorage()?.getItem(key)) ?? null;
   },
 
   async setItem(key: string, value: string): Promise<void> {
-    if (isWeb && typeof localStorage !== 'undefined') {
-      localStorage.setItem(key, value); // platform-safe
-    } else if (AsyncStorage) {
-      await AsyncStorage.setItem(key, value);
-    } else {
+    if (Platform.OS === 'web') {
+      if (typeof localStorage !== 'undefined') localStorage.setItem(key, value); // platform-safe
+      return;
     }
+    await getAsyncStorage()?.setItem(key, value);
   },
 
   async removeItem(key: string): Promise<void> {
-    if (isWeb && typeof localStorage !== 'undefined') {
-      localStorage.removeItem(key); // platform-safe
-    } else if (AsyncStorage) {
-      await AsyncStorage.removeItem(key);
-    } else {
+    if (Platform.OS === 'web') {
+      if (typeof localStorage !== 'undefined') localStorage.removeItem(key); // platform-safe
+      return;
     }
+    await getAsyncStorage()?.removeItem(key);
   },
 };
-
-/**
- * Prüft ob eine Web API sicher verwendet werden kann
- * Wirft einen Fehler wenn die API auf der aktuellen Plattform nicht verfügbar ist
- */
-export function assertWebAPI(apiName: string): void {
-  if (!isWeb) {
-    throw new Error(
-      `Web API "${apiName}" is not available on ${Platform.OS}. ` +
-        `Use Platform-specific code or polyfills.`
-    );
-  }
-}
-
-/**
- * Sichere Web API Calls mit Fallback
- */
-export function safeWebAPI<T>(callback: () => T, fallback: T, apiName?: string): T {
-  if (!isWeb) {
-    if (apiName && __DEV__) {
-    }
-    return fallback;
-  }
-
-  try {
-    return callback();
-  } catch (error) {
-    if (__DEV__) {
-    }
-    return fallback;
-  }
-}

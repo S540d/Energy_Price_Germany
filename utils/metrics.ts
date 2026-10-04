@@ -61,7 +61,30 @@ export interface Metrics {
 
 // Constants
 export const GRID_FEES_AND_TAXES = 20; // Cent/kWh - Netzentgelte und Steuern
-const CURRENT_HOUR_TOLERANCE_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
+/** Zeitfenster um „jetzt“, in dem ein Datenpunkt als aktueller Wert gilt. */
+export const CURRENT_HOUR_TOLERANCE_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
+
+/** Beginn des lokalen Kalendertags von `now` (ms). */
+function startOfLocalDay(now: Date): number {
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+}
+
+/** Liegt `timestamp` im lokalen Kalendertag von `now`? */
+export function isToday(timestamp: number, now: Date): boolean {
+  const start = startOfLocalDay(now);
+  return timestamp >= start && timestamp < start + 24 * 60 * 60 * 1000;
+}
+
+/** Nächstgelegener Punkt zu `nowMs` innerhalb der Toleranz (sonst `undefined`). */
+export function findClosestSample<T extends { timestamp: number }>(
+  samples: T[],
+  nowMs: number,
+  toleranceMs: number = CURRENT_HOUR_TOLERANCE_MS
+): T | undefined {
+  return samples
+    .filter(s => Math.abs(s.timestamp - nowMs) < toleranceMs)
+    .sort((a, b) => Math.abs(a.timestamp - nowMs) - Math.abs(b.timestamp - nowMs))[0];
+}
 
 /**
  * Berechnet Metriken aus Energiedaten
@@ -74,18 +97,13 @@ export function calculateMetrics(data: EnergyData[]): Metrics | null {
 
   // Get today's data (current day in local time)
   const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const todayEnd = todayStart + 24 * 60 * 60 * 1000;
-
-  const todayData = data.filter(d => d.timestamp >= todayStart && d.timestamp < todayEnd);
+  const todayData = data.filter(d => isToday(d.timestamp, now));
   const todayValidRenewable = todayData.filter(d => d.renewableShare !== null);
   const todayValidPrice = todayData.filter(d => d.marketPrice !== null);
 
   // Find current hour's data (closest to now)
   const nowMs = now.getTime();
-  const currentHourData = data
-    .filter(d => Math.abs(d.timestamp - nowMs) < CURRENT_HOUR_TOLERANCE_MS)
-    .sort((a, b) => Math.abs(a.timestamp - nowMs) - Math.abs(b.timestamp - nowMs))[0];
+  const currentHourData = findClosestSample(data, nowMs);
 
   // Calculate today's market price stats (reused for end customer price)
   const todayMarketPriceAvg =
