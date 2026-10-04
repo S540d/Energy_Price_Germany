@@ -6,6 +6,7 @@ import { getPriceColor } from '../../utils/chartHelpers';
 import { useChartDimensions } from '../../utils/chartUtils';
 import { ChartCard } from './shared';
 import { useSettingsContext } from '../../context/SettingsContext';
+import { eurPerMwhToCtPerKwh } from '../../utils/priceUnits';
 
 interface ClockChartProps {
   data: Array<{
@@ -93,8 +94,8 @@ function ClockChartComponent({
       if (d.marketPrice === null) continue;
       const date = new Date(d.timestamp);
       const hour = date.getHours();
-      // Convert to ¢/kWh – same as PriceBarChart (marketPrice * 0.1)
-      const priceCentsPerKwh = d.marketPrice * 0.1;
+      // Convert to ¢/kWh – same as PriceBarChart (eurPerMwhToCtPerKwh(marketPrice))
+      const priceCentsPerKwh = eurPerMwhToCtPerKwh(d.marketPrice);
       buckets[hour].prices.push(priceCentsPerKwh);
       buckets[hour].interpolated.push(d.isMarketPriceInterpolated ?? false);
     }

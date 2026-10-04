@@ -1,4 +1,5 @@
 import { arrayMin, arrayMax } from './mathUtils';
+import { eurPerMwhToCtPerKwh } from './priceUnits';
 
 export type EnergyData = {
   timestamp: number;
@@ -108,13 +109,17 @@ export function calculateMetrics(data: EnergyData[]): Metrics | null {
   // Calculate today's market price stats (reused for end customer price)
   const todayMarketPriceAvg =
     todayValidPrice.length > 0
-      ? todayValidPrice.reduce((sum, d) => sum + (d.marketPrice ?? 0) * 0.1, 0) /
+      ? todayValidPrice.reduce((sum, d) => sum + eurPerMwhToCtPerKwh(d.marketPrice ?? 0), 0) /
         todayValidPrice.length
       : 0;
   const todayMarketPriceMin =
-    todayValidPrice.length > 0 ? arrayMin(todayValidPrice.map(d => d.marketPrice ?? 0)) * 0.1 : 0;
+    todayValidPrice.length > 0
+      ? eurPerMwhToCtPerKwh(arrayMin(todayValidPrice.map(d => d.marketPrice ?? 0)))
+      : 0;
   const todayMarketPriceMax =
-    todayValidPrice.length > 0 ? arrayMax(todayValidPrice.map(d => d.marketPrice ?? 0)) * 0.1 : 0;
+    todayValidPrice.length > 0
+      ? eurPerMwhToCtPerKwh(arrayMax(todayValidPrice.map(d => d.marketPrice ?? 0)))
+      : 0;
 
   const todayMetrics =
     todayData.length > 0
@@ -151,7 +156,7 @@ export function calculateMetrics(data: EnergyData[]): Metrics | null {
             max: todayMarketPriceMax,
             current:
               currentHourData?.marketPrice !== null && currentHourData?.marketPrice !== undefined
-                ? currentHourData.marketPrice * 0.1
+                ? eurPerMwhToCtPerKwh(currentHourData.marketPrice)
                 : null,
           },
           endCustomerPrice: {
@@ -160,7 +165,7 @@ export function calculateMetrics(data: EnergyData[]): Metrics | null {
             max: todayMarketPriceMax + GRID_FEES_AND_TAXES,
             current:
               currentHourData?.marketPrice !== null && currentHourData?.marketPrice !== undefined
-                ? currentHourData.marketPrice * 0.1 + GRID_FEES_AND_TAXES
+                ? eurPerMwhToCtPerKwh(currentHourData.marketPrice) + GRID_FEES_AND_TAXES
                 : null,
           },
         }
@@ -189,13 +194,17 @@ export function calculateMetrics(data: EnergyData[]): Metrics | null {
     marketPrice: {
       avg:
         validPriceData.length > 0
-          ? validPriceData.reduce((sum, d) => sum + (d.marketPrice ?? 0) * 0.1, 0) /
+          ? validPriceData.reduce((sum, d) => sum + eurPerMwhToCtPerKwh(d.marketPrice ?? 0), 0) /
             validPriceData.length
           : 0,
       min:
-        validPriceData.length > 0 ? arrayMin(validPriceData.map(d => d.marketPrice ?? 0)) * 0.1 : 0,
+        validPriceData.length > 0
+          ? eurPerMwhToCtPerKwh(arrayMin(validPriceData.map(d => d.marketPrice ?? 0)))
+          : 0,
       max:
-        validPriceData.length > 0 ? arrayMax(validPriceData.map(d => d.marketPrice ?? 0)) * 0.1 : 0,
+        validPriceData.length > 0
+          ? eurPerMwhToCtPerKwh(arrayMax(validPriceData.map(d => d.marketPrice ?? 0)))
+          : 0,
     },
     today: todayMetrics,
   };
