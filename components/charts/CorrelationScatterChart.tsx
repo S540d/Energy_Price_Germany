@@ -15,6 +15,7 @@ import {
   ZoomResetBadge,
 } from './shared';
 import { scaleToX, scaleToY } from './shared/chartScale';
+import { eurPerMwhToCtPerKwh } from '../../utils/priceUnits';
 
 interface CorrelationScatterChartProps {
   title: string;
@@ -96,7 +97,7 @@ function CorrelationScatterChartComponent({
 
     if (validData.length === 0) return null;
 
-    const priceInCentValues = validData.map(d => (d.marketPrice ?? 0) * 0.1);
+    const priceInCentValues = validData.map(d => eurPerMwhToCtPerKwh(d.marketPrice ?? 0));
     const renewableValues = validData.map(d => d.renewableShare ?? 0);
 
     const minRenewable = 0;
@@ -183,7 +184,7 @@ function CorrelationScatterChartComponent({
       priceRange: pRange,
     } = chartCalcs;
     return vd.map((d, index) => {
-      const priceInCent = (d.marketPrice ?? 0) * 0.1;
+      const priceInCent = eurPerMwhToCtPerKwh(d.marketPrice ?? 0);
       const x = scaleToX(d.renewableShare ?? 0, {
         domainMin: minR,
         domainRange: rRange,

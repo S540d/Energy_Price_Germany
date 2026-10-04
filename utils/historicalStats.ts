@@ -1,4 +1,5 @@
 import type { EnergyData } from './metrics';
+import { eurPerMwhToCtPerKwh } from './priceUnits';
 
 /**
  * Statistik-Auswertung für historische Energiedaten (Issue #3).
@@ -98,7 +99,7 @@ function extractValues(data: EnergyData[]): { price: number[]; renewable: number
   const renewable: number[] = [];
   for (const d of data) {
     if (d.marketPrice !== null && d.marketPrice !== undefined) {
-      price.push(d.marketPrice * 0.1);
+      price.push(eurPerMwhToCtPerKwh(d.marketPrice));
     }
     if (d.renewableShare !== null && d.renewableShare !== undefined) {
       renewable.push(d.renewableShare);
@@ -148,7 +149,7 @@ export function computePeriodComparison(
 
 /**
  * Berechnet Preis- und Erneuerbaren-Statistiken über den gegebenen Datensatz.
- * Preis wird in ¢/kWh ausgegeben (Marktpreis * 0.1).
+ * Preis wird in ¢/kWh ausgegeben (EUR/MWh → ct/kWh via eurPerMwhToCtPerKwh).
  */
 export function computeHistoricalStats(data: EnergyData[]): HistoricalStats {
   const sorted = [...data].sort((a, b) => a.timestamp - b.timestamp);
@@ -157,7 +158,7 @@ export function computeHistoricalStats(data: EnergyData[]): HistoricalStats {
   const renewablePoints: Point[] = [];
   for (const d of sorted) {
     if (d.marketPrice !== null && d.marketPrice !== undefined) {
-      pricePoints.push({ value: d.marketPrice * 0.1, timestamp: d.timestamp });
+      pricePoints.push({ value: eurPerMwhToCtPerKwh(d.marketPrice), timestamp: d.timestamp });
     }
     if (d.renewableShare !== null && d.renewableShare !== undefined) {
       renewablePoints.push({ value: d.renewableShare, timestamp: d.timestamp });
