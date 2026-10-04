@@ -14,520 +14,50 @@ Energy Price Germany - A visualization app for German electricity market prices 
 - GitHub Pages (web deployment)
 
 ## Key Project Documents
-- [Architecture](../docs/ARCHITECTURE.md) - System architecture and data flow
-- [Data Merge Strategy](../docs/DATA-MERGE-STRATEGY.md) - How data from multiple sources is combined
-- [Changelog](../CHANGELOG.md) - Version history
-- [Vorfallsarchiv](docs/INCIDENTS.md) - Chronik der Betriebsvorfälle, aus denen die Regeln unten entstanden sind
-- [Build Guide](../docs/BUILD.md) - Build and deployment instructions
-- [Privacy Policy](../PRIVACY_POLICY.md) - Data privacy information
-- [Store Description](../docs/STORE_DESCRIPTION.md) - Play Store listing text
+- [Architecture](docs/ARCHITECTURE.md) - System architecture and data flow
+- [Git & Workflow Details](docs/GIT-WORKFLOW.md) - Ausführliche Begründungen zu den Kernregeln unten
+- [Data Merge Strategy](docs/DATA-MERGE-STRATEGY.md) - How data from multiple sources is combined
+- [Changelog](CHANGELOG.md) - Version history
+- [Vorfallsarchiv](docs/private/INCIDENTS.md) - Chronik der Betriebsvorfälle (gitignored, lokal)
+- [Build Guide](docs/BUILD.md) - Build and deployment instructions
+- [Privacy Policy](PRIVACY_POLICY.md) - Data privacy information
+- [Store Description](docs/STORE_DESCRIPTION.md) - Play Store listing text
 
 ## Workflow & Git Management
-### Branch Strategy & PR Workflow
 
-**Gilt für ALLE Änderungen, sofern nicht ausdrücklich anders gesagt:**
-
-1. **Immer einen PR** — auch für Kleinigkeiten.
-2. **Ziel-Branch ist `testing`** — nie direkt auf `main`/`staging` committen.
-3. **In Claude-Code-Remote-Sessions zuerst umbranchen.** Die vorgegebene
-   Arbeits-Branch zweigt von `main` ab, nicht von `testing`:
-   ```bash
-   git fetch origin testing && git checkout -B <branch> origin/testing
-   ```
-   Ohne das entsteht ein riesiger, irreführender Diff gegen `testing`, und dort
-   bereits vorhandene Fixes werden dupliziert oder überschrieben.
-4. **`testing` kann bei `fetch.yml` HINTER `main` liegen.** Hotfixes gehen
-   gelegentlich direkt auf `main` und werden nicht zurückgemergt. Vor dem
-   Anfassen von `fetch.yml` prüfen:
-   ```bash
-   git show origin/main:.github/workflows/fetch.yml    | grep -c fetch-energy-charts.sh
-   git show origin/testing:.github/workflows/fetch.yml | grep -c fetch-energy-charts.sh
-   ```
-5. **Bei Konflikten in `fetch.yml`: messen, nicht raten.** Nicht pauschal eine
-   Seite nehmen — die Obermenge über Marker bestimmen:
-   ```bash
-   for m in merge-history.js NEW_REN OLD_REN merge-market-data.js \
-            fetch-energy-charts.sh data-health-check.js; do
-     printf '%-24s main=%s testing=%s\n' "$m" \
-       "$(git show origin/main:.github/workflows/fetch.yml    | grep -c "$m")" \
-       "$(git show origin/testing:.github/workflows/fetch.yml | grep -c "$m")"
-   done
-   ```
-   Die Seite, die bei **allen** Markern ≥ der anderen liegt, ist die Obermenge.
-   Liegt jede Seite bei irgendeinem Marker vorn, ist es ein echter inhaltlicher
-   Konflikt — dann Hand anlegen, nicht `--ours`/`--theirs`.
-6. **Ein Sync-PR `main → testing` muss als „Create a merge commit" gemergt
-   werden, nicht als Squash.** Squash verwirft den zweiten Parent, `main` wird
-   nie Vorfahre von `testing`, und der nächste Release-PR ist wieder
-   konfliktbehaftet.
-   ```bash
-   git log --format='%h parents=%p' -1 origin/testing   # zwei Parents = angekommen
-   git merge-base --is-ancestor origin/main origin/testing && echo OK
-   ```
-   → Hintergrund und Symptome: [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-02--squash-only-blockierte-den-release-438-439).
-   Zentrale Abhilfe in **#450**.
-
-> ⚠️ **`fatal: refusing to merge unrelated histories` = shallow clone**, nicht
-> umgeschriebene History. **Niemals `--allow-unrelated-histories`** verwenden:
-> ```bash
-> git rev-parse --is-shallow-repository   # true = genau dieser Fall
-> git fetch --unshallow origin
-> ```
-> → [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-02--shallow-clone-sieht-aus-wie-umgeschriebene-history)
-
-### Pull Request Requirements
-
-- Titel referenziert die Issue-Nummer (z. B. „Fix #145: Jest configuration")
-- Body erklärt **was** und **warum**
-- Ziel-Branch: **immer `testing`** (sofern nicht anders gesagt)
-- CI abwarten; nie bei rotem CI mergen
-
-### Dependabot-PRs: gruppierte Sammel-Bumps gegen `testing` — dort läuft KEIN Lint/Test (#479/#492, 2026-09-14)
-
-> ⚠️ **Frühere Fassung dieses Abschnitts war überholt.** Sie behauptete, es
-> gäbe keine `.github/dependabot.yml` und Dependabot ziele immer auf `main`.
-> Seit Issue #60 existiert die Datei und setzt `target-branch: testing` für
-> **beide** konfigurierten Ökosysteme — geprüft am realen Zustand, nicht
-> vermutet.
-
-`.github/dependabot.yml` bündelt **alle** Updates pro Ökosystem monatlich in
-je einem Gruppen-PR gegen `testing` — **ohne** `update-types`-Filter, Majors
-also inklusive:
-
-- `npm-all` (npm/yarn/pnpm, ein PR für z. B. 32 Pakete auf einmal)
-- `actions-all` (GitHub Actions)
-
-- Solche PRs referenzieren **keine** GitHub-Issues — nach dem Merge gibt es
-  nichts zum Schließen.
-- Da Ziel-Branch `testing` ist, greift „Checks je Ziel-Branch" unten
-  **ungebremst**: nur `review-gate` + `mergeability`, **kein** Lint, kein
-  `tsc --noEmit`, keine Tests, kein Build. Ein grüner Dependabot-Gruppen-PR
-  sagt über Kompatibilität nichts aus.
-- **Vorfall (PR #479, 2026-09-14):** Der 32-Paket-`npm-all`-Bump hob
-  gleichzeitig `typescript` 5.9→7.0 (inkompatibel mit
-  `@typescript-eslint@8.70` → `npm run lint` crasht komplett), `eslint`
-  9→10 (inkompatibel mit `eslint-plugin-react` → `npm ci` schlägt ohne
-  `--legacy-peer-deps` fehl) und `@testing-library/react-native` 13→14
-  (`render()`/`renderHook()` wurden async → mehrere Testdateien kompilieren
-  nicht mehr). Der PR merged trotzdem glatt durch (`review-gate` grün) und
-  machte `testing` lokal und für jeden Folge-PR unbrauchbar, bis ein
-  unabhängiger Commit-Versuch auf einem Feature-Branch den kaputten
-  Pre-Commit-Hook offenlegte. Fix: vollständiger Revert in #492 (nicht
-  einzelne Pakete zurückpinnen — mehrere der 32 Bumps hingen zusammen, z. B.
-  Expo 55→57 mit `@testing-library/react-native` 14).
-- **Regel:** Vor dem Mergen eines Dependabot-Gruppen-PRs (Branch-Muster
-  `dependabot/.../testing/<gruppe>-...`) **immer lokal** gegen den PR-Branch
-  prüfen: `npm ci` (**ohne** `--legacy-peer-deps`, sonst wird ein
-  ERESOLVE-Konflikt stillschweigend übertüncht), `npx tsc --noEmit`,
-  `npm run lint`, `npm run test:coverage`. Bei einem Major-Sprung in
-  `typescript`, `eslint` oder einer Testing-Library immer zuerst prüfen, ob
-  die jeweiligen Plugin-/Peer-Pakete (`@typescript-eslint/*`,
-  `eslint-plugin-*`) bereits eine kompatible Version unterstützen, bevor
-  gemergt wird.
-
-> ⚠️ **Ausnahme:** GitHub-eigene Security-Alert-PRs (einzelne CVE-Fixes,
-> nicht die gruppierten Sammel-Bumps) **ignorieren `target-branch`** laut
-> Kommentar in `dependabot.yml` und landen weiterhin direkt gegen `main` —
-> dort greifen alle ~15 `ci-cd.yml`-Checks und die reguläre
-> `main`-Freigabepflicht.
-> **Beobachtung (2026-09-03, PRs #440–#442):** Der Merge lief über die
-> GitHub-API glatt durch, **ohne** `--admin` und ohne vorheriges Approval —
-> obwohl das `Main`-Ruleset laut Doku oben „Required Approvals = 1" verlangt.
-> Nicht als Freibrief für menschliche PRs missverstehen: naheliegende
-> Erklärung ist, dass das Ruleset Bot-Autoren (`dependabot[bot]`) oder
-> reine Squash-Merges über die API anders behandelt als PRs mit
-> Code-Änderungen von Menschen/Claude. Nicht verifiziert — vor der nächsten
-> Regeländerung am Ruleset gezielt gegenprüfen.
-
-### Merge-Gate: `review-gate` kommt von `mergeability.yml`
-
-Den required Status-Check **`review-gate`** setzt der kostenlose Workflow
-`mergeability.yml` (aus project-templates). Er prüft Konfliktfreiheit und
-Ziel-Branch-Policy — **kein** inhaltliches Code-Review, **kein** Autofix. Wer
-darauf wartet, dass ein Agent Findings selbst wegfixt, wartet vergeblich.
-
-Der KI-Review liegt in `pr-review.yml` und läuft **nur on-demand** über das Label
-`ai-review` (kostet metered API-Token). Kostenlos und bevorzugt: `/review` aus
-Claude Code.
-
-**Checks je Ziel-Branch:** `ci-cd.yml` triggert bewusst nur auf PRs gegen `main`.
-Ein PR gegen `testing` hat daher nur 2 Checks (`review-gate` + `mergeability`),
-einer gegen `main` rund 15. Das Fehlen von `🔍 Code Quality & Linting` auf einem
-`testing`-PR ist **kein** Defekt.
-
-### Versions-Bump ist kein Automatismus (Session vom 05.09.2026)
-
-Zwischen 1.9.0 (27.06.2026) und 1.10.0 (05.09.2026) liefen **fünf** Releases
-`testing → main` (#421–#458), ohne dass jemand `version`/`versionCode`
-angehoben hat — `[Unreleased]` in `CHANGELOG.md` wuchs über zwei Monate an,
-inkl. eines potenziell absturzrelevanten Fixes (#376), der so ungenutzt blieb.
-
-**Vor jedem Release-PR `testing → main` prüfen:**
-```bash
-git show origin/main:app.json | grep -E '"version"|versionCode'
-git show origin/testing:CHANGELOG.md | grep -n '^## \['
-```
-Steht unter `## [Unreleased]` etwas User-Relevantes, gehört ein Versions-Bump
-(`package.json`, `app.json` `version`+`versionCode`, `App.tsx` `APP_VERSION`,
-`package-lock.json`) **in denselben PR**, der nach `testing` geht — nicht erst
-im Release-PR nach `main` nachgezogen.
-
-> ⚠️ **Fast wieder passiert (2026-09-14, #493/#494).** Der Fix-PR für #482
-> wurde ohne Versions-Bump nach `testing` gemergt — die Regel wurde beim
-> eigentlichen Feature-PR schlicht vergessen, obwohl dokumentiert. Erst beim
-> Vorbereiten des Release-PRs `testing → main` fiel der `[Unreleased]`-Rest
-> in `CHANGELOG.md` auf und wurde in einem eigenen Nachzieh-PR (#494)
-> nachgeholt, bevor nach `main` released wurde. **Konsequenz:** die
-> Prüfbefehle oben gehören nicht nur „vor jedem Release-PR", sondern als
-> letzter Schritt in **jeden** PR, der einen `[Unreleased]`-Eintrag setzt —
-> sonst hängt die Erkennung allein davon ab, dass sie beim Release zufällig
-> nachgeholt wird.
-
-### Release-PRs testing → main
-
-`main` liegt unter dem `Main`-Ruleset mit **Required Approvals = 1**. Als Solo-Dev
-kann man den eigenen PR nicht approven → Admin-Bypass nötig:
-
-```bash
-gh pr merge <nr> --squash --admin      # KEIN --delete-branch: testing ist der Head!
-```
-
-> **Nur mit ausdrücklicher schriftlicher Freigabe.** Das ist der bewusste manuelle
-> Release-Schritt, nicht mit dem `review-gate` zu verwechseln.
-
-**Nach dem Merge prüfen:**
-```bash
-git ls-remote --heads origin | grep testing    # muss existieren
-```
-
-> ⚠️ **Branch-Protection: Eine aktive Regel beweist nichts.** Immer zusätzlich die
-> Bypass-Actors prüfen — eine Regel mit `bypass_mode: always` für die eigene Rolle
-> ist Dekoration. Der belastbare Test ist ein echter Versuch, kein Blick ins UI:
-> ```bash
-> git push origin --delete testing     # muss GH013 liefern
-> ```
-> Umgekehrt gilt: **Ein Bypass ist nicht nur ein Risiko, sondern eine
-> Abhängigkeit.** Vor dem Entfernen prüfen, *wer* außer Menschen darüber schreibt
-> — hier pusht `fetch.yml` mit einem User-PAT bis zu 6× täglich direkt auf `main`.
-> Beide Lehren stammen aus realen Ausfällen:
-> [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-0203--datenpipeline-steht-13-stunden-445-446).
-
-> ⚠️ **`github-actions[bot]` ist in Rulesets NICHT als Bypass-Actor wählbar.**
-> GitHub lässt das prinzipiell nicht zu. Wählbar sind Rollen, Teams, installierte
-> GitHub Apps und **Deploy Keys**. Wer danach im UI sucht, sucht vergeblich.
-
-### Git-Operationen aus der Remote-Execution-Umgebung
-
-**Push auf Feature-Branches funktioniert normal** (`git push -u origin HEAD:<branch>`).
-
-Auf `testing`/`main` lehnt das **Ruleset** ab — nicht die Authentifizierung:
-```
-remote: error: GH013: Repository rule violations found for refs/heads/testing.
-remote: - Changes must be made through a pull request.
-```
-Der Unterschied ist praktisch relevant: **GH013 heißt „nimm den PR-Weg"**, nicht
-„nimm die API" — die MCP-API trifft dieselbe Regel. Ein echtes **403** („Resource
-not accessible by integration") kommt dagegen von zu engen Token-Scopes und
-betrifft u. a. `mcp__github__actions_run_trigger` (workflow_dispatch,
-`rerun_failed_jobs`); solche Läufe muss ein Mensch im UI anstoßen.
-
-**Branches löschen ist aus dieser Umgebung nicht möglich.**
-`git push origin --delete <branch>` schlägt fehl, **meldet aber Exit-Code 0** und
-„Everything up-to-date" — nicht als Erfolg werten. Ein MCP-Tool zum Löschen einer
-Ref gibt es nicht (nur `create_branch`). Stattdessen den fertigen Befehl zur
-lokalen Ausführung ausgeben. Vorher prüfen, ob der Branch wirklich gemergt ist:
-**nicht** über `git merge-base --is-ancestor` (bei Squash-Merges falsch-negativ),
-sondern über das PR-Feld `merged_at` (nicht `merged` — das steht in MCP-Antworten
-öfter fälschlich auf `false`, siehe project-templates#101).
-
-**Einzelne Dateien direkt auf einem Branch** (wo erlaubt):
-`mcp__github__create_or_update_file` (Blob-SHA nötig: `git rev-parse
-origin/<branch>:<path>`) bzw. `mcp__github__push_files`. Für den Branch-HEAD
-(Commit-SHA) `git rev-parse origin/<branch>` ohne Pfad.
-
-### Sicherheitshinweis: MCP-Token und KI-gesteuerte Pushes
-
-- MCP-GitHub-Token mit **minimalen Scopes** (empfohlen: `repo` ohne `admin`)
-- KI-gesteuerte Direktpushes auf `main`/`testing` bergen dieselben Risiken wie
-  manuelle Force-Pushes — im Zweifel den PR-Weg nehmen
-- Nach MCP-Push-Sitzungen das **Audit-Log** prüfen (Settings → Audit log)
-
-### CI-Laufzeit: Daten-Commits sind vom App-Build entkoppelt (#394, #400)
-
-Vier Vorkehrungen verhindern, dass jeder Daten-Commit einen vollen App-Build
-auslöst. **Alle vier lassen sich versehentlich leicht wieder aushebeln:**
-
-**1. `ci-cd.yml`: `paths-ignore: ['public/data/**']` — nur am `push`-Trigger.**
-Der `pull_request`-Trigger hat bewusst **kein** `paths-ignore`, damit der required
-Check `🔍 Code Quality & Linting` jeden PR gated. Ergänzt man es dort „der
-Symmetrie halber", fällt der Merge-Gate aus.
-
-**2. `deploy-unified.yml`: der Job `refresh-data` überspringt Daten-Commits.**
-```yaml
-if: github.ref == 'refs/heads/main' &&
-    (github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'Update marketdata.json'))
-```
-Ohne diesen Guard entsteht eine Rückkopplung Daten-Commit → Deploy → Fetch → …
-> ⚠️ Die Bedingung hängt an der **exakten Commit-Message** aus `fetch.yml`. Wer
-> sie ändert, reaktiviert die Schleife **still** — kein Fehler, kein Hinweis.
-
-**3. `deploy-unified.yml`: Cron 1× täglich (`30 3 * * *`), nicht 5×.**
-
-**4. CodeQL läuft über `.github/workflows/codeql.yml`** (Advanced Setup), damit
-`paths-ignore` überhaupt greifen kann — im GitHub-verwalteten *Default Setup* ist
-es über keine Datei im Repo steuerbar.
-
-**❌ Kein `paths-ignore` in `deploy-unified.yml`!** Naheliegend, würde aber die
-Datenauslieferung brechen: `public/data/**` gelangt ausschließlich über den Deploy
-ins Pages-Artefakt. Der geplante schlanke Daten-Deploy steht in **#452**.
-
-**Wirkung immer messen statt schätzen** (`list_workflow_runs` + `jq` nach
-`created_at`/`event` gruppieren). Gemessene Wirkung der vier Maßnahmen und die
-Fallstricke der CodeQL-Umstellung:
-[`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-08--ci-laufzeit-daten-commits-lösten-volle-app-builds-aus-394-400).
-
-> ### ⚠️ Workflow-Semantik — gilt für den GESAMTEN Inhalt, nicht nur für Trigger
->
-> Der `push`-Trigger wird aus der Workflow-Datei **des gepushten Branches**
-> gelesen, `schedule` immer aus dem **Default-Branch** (`main`) — und zwar
-> **jede Zeile** des Workflows, nicht nur die `on:`-Sektion.
->
-> **Konsequenz für `fetch.yml`:** Ein Fix, der nur auf `testing` liegt, ist
-> **vollständig wirkungslos**. Er wird erst mit dem Release nach `main` scharf.
-> Bereits dreimal passiert (#418, #435, #445).
->
-> **Prüfbefehl vor jeder Wirksamkeits-Annahme:**
-> ```bash
-> git show origin/main:.github/workflows/fetch.yml | grep -c "<neues-Element>"
-> ```
-> Liefert das `0`, ist der Fix noch nicht scharf — egal wie grün `testing` aussieht.
-
-### `fetch.yml`: Resilienz-Konventionen — nicht zurückbauen (Issues #418, #423, #425, #435)
-
-Fünf Vorkehrungen halten die Datenpipeline stabil. Alle sehen nach
-Redundanz aus und sind es nicht:
-
-**1. Alle Energy-Charts-Calls laufen über `scripts/fetch-energy-charts.sh` (#435).**
-```yaml
-- name: Try fetching from Energy Charts API (preferred source)
-  id: energy_charts
-  continue-on-error: true
-  run: scripts/fetch-energy-charts.sh de public/data
-```
-Aufruf: `scripts/fetch-energy-charts.sh <country-code> <output-dir>`. Das Skript
-schreibt `<output-dir>/price_raw.json` und `<output-dir>/renewable_raw.json` —
-genau die Pfade, die die nachgelagerten `node -e`-Process-Steps lesen.
-
-Vertrag des Skripts:
-- **Exponentielles Backoff 5 s / 15 s / 45 s** statt des früheren fixen
-  `--retry-delay 5`. Drei Versuche im 5-s-Abstand laufen gegen ein Rate-Limit,
-  das minutenlang hält, wirkungslos ins Leere.
-- **`Retry-After` wird respektiert** (bei 429/503, gedeckelt auf 60 s). Das ist
-  der eigentliche Fix für den Vorfall vom 2026-09-02.
-- **Retry-würdig:** HTTP 429/5xx sowie curl-Exit 7, 28, 35, 52, 55, 56. Alles
-  andere (DNS, URL-Fehler) bricht sofort ab — ein Retry heilt es nicht.
-- **Payload-Validierung** per `jq` nach jedem erfolgreichen Download; schlägt sie
-  fehl, gilt der Versuch als fehlgeschlagen (siehe „stummer Ausfall" unten).
-- **Semantik unverändert:** `price` required (Exit ≠ 0), `ren_share_forecast`
-  non-fatal. `success=true` nach `$GITHUB_OUTPUT`, sobald `price` valide ist.
-- Env-Overrides nur für Tests: `ENERGY_CHARTS_API_BASE`, `FETCH_MAX_ATTEMPTS`,
-  `FETCH_BACKOFF_DELAYS`, `FETCH_RETRY_AFTER_CAP`.
-
-> ⚠️ **Die Retry-Logik nicht wieder in die einzelnen Länder-Blöcke zurückziehen.**
-> Vor #435 stand sie als `CURL_OPTS` siebenfach dupliziert im Workflow. `CURL_OPTS`
-> existiert nur noch für den **aWATTar**-Call und darf nicht wieder auf die
-> Energy-Charts-Blöcke ausgedehnt werden.
-
-**1b. 8 Cron-Slots mit datenbasiertem Gate (#435, seit #481: 04/05 UTC ergänzt).**
-`- cron: '0 3,4,5,6,9,13,16,19 * * *'`. Nur **03 und 13 UTC laufen unbedingt**
-(Nacht-Update / primärer Day-Ahead-Slot); 04, 05, 06, 09, 16 und 19 UTC gehen
-durch den `gate`-Job und starten den ~90 s teuren `update`-Job nur, wenn sie
-etwas verbessern würden. Das Gate fetcht dazu zwei billige DE-Calls (dasselbe
-Skript, in `$RUNNER_TEMP`) und setzt `run-fetch=true`, wenn **eines** zutrifft:
-1. `max(unix_seconds)` der API **>** `max(start_timestamp)/1000` der committeten
-   Datei (neue Preis-Abdeckung), **oder**
-2. Zahl der Punkte mit `ren_share != null` **für heute (Europe/Berlin)** aus der
-   API **>** derselbe Wert aus der Datei (Erneuerbaren-Lücke schließt sich).
-
-Fehlt die Probe-Datei, entscheidet das Gate **fail open** (`run-fetch=true`) —
-der `update`-Job kann mit eigenen Retries und aWATTar-Fallback mehr ausrichten.
-
-> **ZWEI verschiedene Erneuerbaren-Lücken — nicht verwechseln (#481 / #487).**
->
-> **Lücke A „Morgenlücke" (#481):** Beim 03-UTC-Lauf fehlen die Werte für den
-> laufenden Tag noch. Preise sind da (`source: energy-charts`), keine 429/5xx.
-> Belegt durch die Alarm-Issues #472 (offen 03:07–15:34 UTC) und #480
-> (03:08–09:06 UTC). Dagegen helfen die zusätzlichen Slots 04/05 UTC.
->
-> **Lücke B „Zukunftslücke" (#487):** Für **morgen** gibt es Preise, aber keine
-> nationalen Erneuerbaren-Werte. Ursache ist **nicht** die API — die liefert ab
-> ca. 15 UTC volle 192 Punkte bis morgen 23:45 Berlin (am 2026-09-10 live
-> nachgemessen). Der Ablauf:
-> 1. Um 13 UTC hat `ren_share_forecast` erst 96 Punkte (nur heute). Die Preise
->    für morgen kommen an dieser Stelle aus **aWATTar** und tragen per Design
->    `renewable_share: null`.
-> 2. Später erweitert Energy Charts die Prognose auf 192 Punkte.
-> 3. Die Slots 16/19 UTC würden das holen — **das Gate blockte sie**, weil sein
->    Erneuerbaren-Kriterium nur „heute" zählte (96 vs. 96) und das
->    Preis-Kriterium keine neue Abdeckung sah (die Datei reichte via aWATTar
->    bereits weiter).
->
-> Ergebnis: Seit Einführung des Gates (#435) endete `renewable_share` **täglich**
-> um 23:45 Berlin. Vor dem Gate lief der Abend-Slot unbedingt durch und holte die
-> Morgen-Werte (belegt: Lauf 2026-08-31, 22:26 UTC, Delta 0h). Behoben in #487
-> durch das zeitstempel-basierte Kriterium.
->
-> ⚠️ **Mehr Cron-Slots allein hätten Lücke B nie behoben** — mit dem alten
-> „heute"-Kriterium hätten auch 04/05 UTC geblockt, sobald heute vollständig
-> war. Die Slot-Anzahl ist nicht der Hebel, das Gate-Kriterium ist es.
-
-> **Ersetzt die Commit-Message-Heuristik aus #406**
-> (`grep -Eq "@ ${TODAY}T(1[3-9]) UTC"`). Die prüfte nur, *ob* committet wurde,
-> nicht *ob Daten fehlen* — im 429-Fall vom 2026-09-02 hätte sie den Fallback
-> fälschlich übersprungen, weil ein Commit (mit Preisen, ohne Erneuerbare)
-> existierte. Nicht wieder einführen.
-
-**1c. Der `Data health check` liegt in `scripts/data-health-check.js` (#435/#445, schließt #417).**
-Letzter Step im `update`-Job, `if: always()`, also **nach** dem Commit — die
-Daten werden in jedem Fall veröffentlicht. Hat DE **0 Punkte mit
-`renewable_share != null` für heute (Europe/Berlin)**, setzt das Skript
-`::error::` und `exit 1`; GitHub verschickt daraufhin die Standard-„workflow run
-failed"-Mail. Das ist der Benachrichtigungsweg aus #417 — ohne Webhook, Secret
-oder Kosten. Der Workflow-Step ist nur noch `run: node scripts/data-health-check.js`.
-Semantik-Absicherung: `scripts/__tests__/data-health-check.test.js`.
-
-Nicht-fatal (nur `::warning::`, Run bleibt grün): `source == "awattar"` für DE
-und jedes **Beta-Land** mit 0 Erneuerbaren-Punkten.
-
-> ⚠️ **Datenlücken färben den Run NICHT rot** (geändert mit der Retrospektive
-> zu #445). Der Befund geht in ein automatisch verwaltetes Issue mit Label
-> `data-health` (öffnen / höchstens ein Kommentar pro Tag / schließen bei
-> Erholung). Grund: Solange ein Datenausfall den Run rot färbte, war **rot
-> mehrdeutig** — Upstream-Ausfall oder echter Defekt. Genau dadurch blieb der
-> Exit-9-Dauerfehler aus #445 stundenlang unentdeckt: Ein Dauer-Rot sah aus wie
-> ein funktionierender Alarm.
->
-> **Seither gilt: rot = der Workflow ist defekt.** Diese Eindeutigkeit ist der
-> eigentliche Wert — nicht wieder aufweichen, indem fachliche Befunde in den
-> Exit-Code wandern.
-
-> ⚠️ **Kein Apostroph in `node -e '…'`-Inline-Blöcken — und lieber gar keine
-> mehrzeiligen `node -e`-Blöcke mehr (#445).** Der Health-Check war ursprünglich
-> inline geschrieben und enthielt im deutschen Fehlertext
-> `die App zeigt 'Erneuerbare: --'`. Die einfachen Quotes schlossen den
-> `node -e '…'`-String vorzeitig, `node` bekam `--` als Option und starb mit
-> **Exit 9, bevor eine einzige Prüfung lief** — der Step färbte damit **jeden**
-> Run rot, unabhängig von der Datenlage, und machte den Alarm aus #417 wertlos
-> (ein Dauer-Rot ist von einem echten Ausfall nicht unterscheidbar).
-> Deutsche Texte in `fetch.yml` sind voller Anführungszeichen; jede nennenswerte
-> Logik gehört deshalb in eine Datei unter `scripts/` (wie
-> `fetch-energy-charts.sh`), nicht in einen Inline-Block.
->
-> **Seit der Retrospektive maschinell durchgesetzt** — `npm run lint:workflows`
-> (`scripts/lint-workflows.js`), im CI-Job `⚙️ Workflow Linting` und im
-> Pre-Commit-Hook, sobald `.github/workflows/**` gestaged ist.
->
-> ⚠️ **`actionlint`/`shellcheck` finden diese Fehlerklasse NICHT** — nicht darauf
-> verlassen. Nachgemessen am 2026-09-03 gegen die fehlerhafte Fassung
-> (`9abdda2`): 48 Findings, kein einziges auf dem Bug. Der Grund ist subtil: Ein
-> Apostroph im Body ist für die Shell **syntaktisch korrekt**, aus einem String
-> werden nur mehrere Wörter — an der Stelle meldet shellcheck bloß `SC2016`
-> (info), das bei jedem `node -e` normal ist. Der Fehler ist semantisch, nicht
-> syntaktisch. Deshalb der eigene Guard **zusätzlich** zu actionlint.
-
-**2. `ren_share_forecast` ist in ALLEN Ländern non-fatal (`|| true`), `price` bleibt required.**
-Vorher hatten DE und NL `|| exit 1`. Ein Ausfall dieses **einen** Endpunkts
-verwarf damit auch die validen Day-Ahead-Preise und zwang den ganzen Block in
-den aWATTar-Fallback. Wer das „der Strenge halber" zurückdreht, reaktiviert
-genau diesen Fehler.
-
-**3. Commit-Erkennung zählt zusätzlich die Erneuerbaren-Abdeckung.**
-```bash
-if [ "$OLD_TS" != "$NEW_TS" ] || [ "$NEW_REN" -gt "$OLD_REN" ]; then
-```
-Der reine Zeitstempel-Vergleich reichte nicht: Nach einem aWATTar-Fallback
-reicht der Datensatz bereits bis zum Ende des Folgetages, ein späterer
-erfolgreicher Energy-Charts-Lauf liefert denselben `max(start_timestamp)` und
-wurde samt seiner frisch geholten Erneuerbaren-Werte verworfen.
-> Bewusst `-gt` (Zunahme), nicht `!=`: Ein Rückgang bedeutet einen Fallback ohne
-> Erneuerbaren-Daten und darf vorhandene Werte nicht überschreiben. Ein Wechsel
-> von `source` allein ist aus demselben Grund **kein** Auslöser —
-> `energy-charts → awattar` wäre eine Verschlechterung.
-
-#### Zwei Fallstricke der Datenquelle
-
-**Der aWATTar-Fallback liefert per Design KEINE Erneuerbaren-Daten.**
-`interpolateAwattarData()` setzt `renewable_share: null` — hart, für jeden
-Punkt. Symptom in der App: Kachel „Erneuerbare jetzt" zeigt `--` und
-„Tages-Ø 0.0 %", während die Preise völlig normal aussehen. Wer diesen
-Symptomen begegnet, prüft als Erstes `jq -r .source public/data/marketdata.json`.
-
-**`ren_share_forecast` kann HTTP 200 mit leeren Arrays liefern.**
-```json
-{"unix_seconds":[],"ren_share":[],...,"substitute":false,"deprecated":false}
-```
-Das ist der **stumme** Ausfall und der gefährlichere: `curl -f` meldet Erfolg,
-`JSON.parse` läuft durch, und der Guard `if (renewable.unix_seconds &&
-renewable.ren_share)` **passiert sogar** — `[]` ist in JS truthy. Der Workflow
-endet grün. Der Ausfall ist länderspezifisch.
-→ [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-08-31--ren_share_forecast-liefert-http-200-mit-leeren-arrays)
-
-> **Guard-Ort seit #435:** `scripts/fetch-energy-charts.sh` validiert die Payload
-> direkt nach dem Download —
-> `jq -e '(.unix_seconds|length) > 0 and (.ren_share|length) > 0'` (für `price`
-> analog mit `.price`). Schlägt das fehl, zählt der Versuch als Fehlschlag und
-> wird wiederholt; nach dem letzten Versuch wird die Datei **gelöscht**, damit
-> der `fs.existsSync(...)`-Guard im Process-Step greift, statt stillschweigend
-> `null`-Werte zu schreiben. Retries sind hier entgegen der früheren Annahme
-> **nicht** sinnlos: der Endpunkt erholt sich erfahrungsgemäß.
-> **Offener Bug (#425, `priority: high`):** Nur DE merged über
-> `scripts/merge-market-data.js` mit der bestehenden Datei. Die sechs anderen
-> Länder überschreiben ihre `marketdata.json` vollständig — ein einziger
-> ausbleibender `ren_share_forecast` löscht dort die **gesamte**
-> Erneuerbaren-Historie. Am 2026-08-31 standen NL/CH/FR/BE/DK auf 0 Werten,
-> DE dank Merge noch auf 651.
-
-#### Diagnose-Reihenfolge bei „Website zeigt alte Daten"
-
-Ein grüner Workflow bedeutet **nicht**, dass Daten ankamen — die Fallbacks
-sorgen dafür, dass fast nichts hart fehlschlägt. In dieser Reihenfolge prüfen:
-
-1. `jq -r .source public/data/marketdata.json` — `awattar` heißt: Energy Charts
-   ist ausgefallen, keine Erneuerbaren-Daten.
-2. Abdeckung statt Fehler prüfen: Zahl der Punkte mit `renewable_share != null`
-   und wie weit sie reichen — nicht nur `max(start_timestamp)`.
-3. Im Job-Log die Zeile `- Renewable points: N` je Land; `0` bei grünem Lauf ist
-   der stumme Fall oben.
-4. Erst dann Workflow-Logs auf `curl:`-Fehler durchsuchen.
-
-> ⚠️ **Eine sinkende Gesamtzahl der Erneuerbaren-Punkte ist NICHT automatisch
-> Datenverlust.** `marketdata.json` ist ein **rollierendes Fenster fester Größe**
-> (aktuell 767 Punkte): kommen vorne neue dazu, fallen hinten alte heraus. Am
-> 2026-09-02 fiel die Zahl bei einem Lauf von 515 auf 503 — Start *und* Ende
-> waren dabei um exakt 3 h gewandert, die Gesamtzahl blieb bei 767. Völlig
-> normal. Vor jeder Verlust-Diagnose beide Fenstergrenzen vergleichen, nicht nur
-> die Punktezahl:
-> ```bash
-> jq -r '"von: \([.data[].start_timestamp]|min|./1000|todate)  bis: \([.data[].start_timestamp]|max|./1000|todate)  ren: \([.data[]|select(.renewable_share!=null)]|length)  gesamt: \(.data|length)"' public/data/marketdata.json
-> ```
-> Echter Verlust liegt nur vor, wenn die Punkte **innerhalb** des unveränderten
-> Fensters weniger werden.
-
-> **Die maßgebliche Kennzahl ist „Erneuerbaren-Punkte **für heute** (Europe/Berlin)",
-> nicht die Gesamtzahl.** Genau die prüft der `Data health check`, und genau die
-> war beim Vorfall am 2026-09-02 `0`, während die Gesamtzahl bei über 500 lag.
-> Eine gesunde Gesamtzahl sagt über den sichtbaren Ausfall in der App nichts aus.
-
-### Deploy (Unified): transienter TLS-Fehler in `actions/deploy-pages@v4`
-
-Vereinzelt schlägt `Creating Pages deployment` mit `HttpError: self-signed
-certificate` fehl — auf **beiden** Versuchen, da beide denselben Infra-Hänger auf
-GitHubs Seite treffen. Kein Code-/Config-Fehler im Repo.
-
-**Abhilfe:** manuellen `workflow_dispatch`-Lauf anstoßen (`rerun_failed_jobs`
-scheitert an den Token-Scopes). Das ist ein *neuer* Run — der rote Eintrag bleibt
-in der Historie stehen, das ist kein weiteres Problem.
-→ [`docs/INCIDENTS.md`](docs/INCIDENTS.md#wiederkehrend--transienter-tls-fehler-in-actionsdeploy-pagesv4)
+**Gilt für ALLE Änderungen, sofern nicht ausdrücklich anders gesagt.**
+Vollständige Begründungen, Befehle und Konfliktlösung:
+[`docs/GIT-WORKFLOW.md`](docs/GIT-WORKFLOW.md).
+
+1. **Immer einen PR**, Ziel-Branch **immer `testing`** — nie direkt auf `main`/`staging`.
+2. **In Remote-Sessions zuerst umbranchen:** `git fetch origin testing && git checkout -B <branch> origin/testing`.
+3. **Sync-PR `main → testing` als „Create a merge commit" mergen, nie Squash.**
+4. **Dependabot-Gruppen-PRs gegen `testing` laufen ohne Lint/Test/Build** — vor
+   dem Mergen immer lokal `npm ci` (ohne `--legacy-peer-deps`), `tsc --noEmit`,
+   `lint`, `test:coverage` gegen den PR-Branch prüfen.
+5. **`review-gate`** (`mergeability.yml`) prüft nur Konfliktfreiheit/Ziel-Branch,
+   **kein** Code-Review. KI-Review: `/review` oder Label `ai-review`.
+   PRs gegen `testing` haben nur 2 Checks, gegen `main` ~15 — das ist kein Defekt.
+6. **Versions-Bump gehört in denselben PR** wie ein `[Unreleased]`-Eintrag,
+   nicht erst ins Release-PR (Prüfbefehle: siehe `docs/GIT-WORKFLOW.md`).
+7. **Release-PR `testing → main`:** `gh pr merge <nr> --squash --admin` (KEIN
+   `--delete-branch`), **nur mit ausdrücklicher schriftlicher Freigabe**.
+8. **Feature-Branch-Pushes funktionieren aus Remote-Sessions**, `testing`/`main`
+   lehnt das Ruleset ab (GH013 = „nimm den PR-Weg", kein Auth-Fehler). Branches
+   löschen ist aus dieser Umgebung nicht möglich (Details: `docs/GIT-WORKFLOW.md`).
+
+### CI-Laufzeit & `fetch.yml`-Resilienz
+
+Daten-Commits sind bewusst vom App-Build entkoppelt. `fetch.yml` hat mehrere
+Resilienz-Konventionen (Backoff/Retry-After, datenbasiertes Cron-Gate, Data
+Health Check, Fallstricke der Datenquelle) — **nicht zurückbauen, sieht nach
+Redundanz aus und ist es nicht**. Details, Diagnose-Reihenfolge:
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#fetchyml-resilienz-konventionen-nicht-zurückbauen).
+
+**Workflow-Semantik:** `push` liest die Workflow-Datei des gepushten Branches,
+`schedule` immer den Default-Branch (`main`) — jede Zeile, nicht nur `on:`.
+Ein Fix nur auf `testing` ist für `fetch.yml` wirkungslos, bis er nach `main`
+released ist. Prüfen: `git show origin/main:.github/workflows/fetch.yml | grep -c "<neues-Element>"`.
 
 ---
 
@@ -587,42 +117,18 @@ Husky-Hooks —, die in `jest.config.js` konfigurierten Coverage-Schwellen
 > Beim erneuten Hinzufügen (z. B. „der Robustheit halber") wird der Type-Check
 > wieder wirkungslos — nicht zurückbauen.
 
-### `eslint.config.mjs`: Jeder matchende Flat-Config-Block braucht sein eigenes Plugin (PR #474)
-
-`npm run lint` crashte für den **gesamten** Lauf mit `could not find plugin
-"@typescript-eslint"`. Ursache: Der Block für Testdateien (`**/__tests__/**`,
-`**/*.test.ts(x)`) setzt `@typescript-eslint/no-explicit-any` und
-`@typescript-eslint/no-non-null-assertion`, registriert das Plugin selbst aber
-nicht.
-
-Für `.ts`/`.tsx`-Testdateien fiel das nie auf: ESLints Flat-Config mergt für
-eine Datei **alle** passenden Config-Objekte, und der TS/TSX-Basis-Block (der
-`@typescript-eslint` registriert) matcht über seine eigenen `files`-Globs
-zusätzlich. `scripts/__tests__/*.test.js` ist aber `.js`, erreicht den
-Basis-Block nicht, landet nur im Testblock — und riss damit den kompletten
-Lauf über alle Dateien, nicht nur die Prüfung dieser drei:
-```
-scripts/__tests__/data-health-check.test.js
-scripts/__tests__/lint-workflows.test.js
-scripts/__tests__/write-status.test.js
-```
-Alle drei sind über `"scripts/**/*.js"` im `lint`-Skript eingeschlossen.
+### `eslint.config.mjs`: Jeder matchende Flat-Config-Block braucht sein eigenes Plugin
 
 **Regel:** Ein Config-Block, der eine `<plugin>/<rule>` setzt, muss dieses
 Plugin selbst in seinem eigenen `plugins`-Objekt registrieren — auch wenn ein
 anderer Block im selben File es bereits registriert. Man kann sich nicht
-darauf verlassen, dass ein anderer Block für **dieselben** Dateien matcht.
-
-> ⚠️ **Blieb monatelang unbemerkt, weil `ci-cd.yml` den Lint-Job nur auf
-> PRs gegen `main` triggert** (siehe „Checks je Ziel-Branch" oben). Ein
-> `testing`-PR hat nur `review-gate` + `mergeability`, kein Lint. Der
-> Pre-Commit-Hook läuft über `lint-staged`, das ESLint **pro Datei** mit
-> `--fix` aufruft — nie die volle `scripts/**/*.js`-Menge auf einmal, also
-> nie in der Konstellation, die den Crash auslöst. Erst ein manuelles
-> `npm run lint` (oder der `main`-Lint-Job) deckt es auf. Nach jeder Änderung
-> an `eslint.config.mjs` deshalb **immer** `npm run lint` lokal gegen den
-> vollen Scope laufen lassen, nicht nur gegen einzelne geänderte Dateien.
-> → [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-08--eslintconfigmjs-testblock-ohne-eigene-plugin-registrierung-crashte-npm-run-lint-474)
+darauf verlassen, dass ein anderer Block für **dieselben** Dateien matcht,
+sonst crasht `npm run lint` für den gesamten Lauf, sobald eine Datei nur den
+unvollständigen Block trifft. Nach jeder Änderung an `eslint.config.mjs`
+deshalb **immer** `npm run lint` lokal gegen den vollen Scope laufen lassen,
+nicht nur gegen einzelne geänderte Dateien — der `testing`-Lint-Job und der
+Pre-Commit-Hook (`lint-staged`, pro Datei) decken diese Fehlerklasse nicht auf.
+→ [`docs/private/INCIDENTS.md`](docs/private/INCIDENTS.md#2026-09-08--eslintconfigmjs-testblock-ohne-eigene-plugin-registrierung-crashte-npm-run-lint-474)
 
 ## Critical Areas
 
@@ -642,149 +148,21 @@ darauf verlassen, dass ein anderer Block für **dieselben** Dateien matcht.
    - Updates `public/marketdata.json`
    - Runs every 2 hours
 
-4. **Chart Components (components/charts/):**
-   - Custom SVG charts with react-native-svg (PriceBarChart, RenewableBarChart, CorrelationScatterChart)
-   - Shared components in `components/charts/shared/` (ChartGrid, ChartCard, ChartTooltip, NowMarker)
-   - Performance-optimized with useMemo/useCallback/React.memo
-   - Responsive design via `useChartDimensions()` hook
-   - Touch/hover interactions (platform-aware)
-   - **Pinch/scroll zoom (Issue #355, PR #380):** all three charts (+ `ChartDetailView`) get zoom
-     via the shared `useChartZoom(viewportWidth)` hook (`components/charts/shared/useChartZoom.ts`).
-     `contentWidth` replaces `chartWidth` for all internal x-position math and is wrapped in a
-     horizontal `ScrollView`; Y-axis labels are deliberately rendered *outside* that ScrollView
-     (pinned overlay) so they don't scroll away. Web zooms via `onWheel`, native via a 2-touch
-     `PanResponder` (no `react-native-gesture-handler` dependency added). `ZoomResetBadge.tsx`
-     shows a ⟲ reset control when `isZoomed`. Tooltip `x` must go through `toViewportX()` before
-     `getTooltipLeft()` so it stays aligned with the current scroll offset.
-   - **Title overflow (Issue #355, PR #380):** title wrapper needs `flex: 1` + the `<Text>` needs
-     `numberOfLines={2}`/`ellipsizeMode="tail"` — otherwise long titles (e.g. regional renewable
-     title) clip on small screens instead of wrapping.
-   - **Ausfall-Kaschierung durch Fenster-Ø (PR #473, 08.09.2026):** Ein Teilausfall von
-     `renewable_share` (0 Punkte für heute) blieb unsichtbar, weil `RenewableBarChart`s
-     Ø-Linie über das **gesamte** Chart-Fenster mittelt, unabhängig vom Tag — bei nur 28
-     von ~180 Punkten (Rest des Vortags) zeigte sie plausible „Ø 45.0 %", während die
-     maßgebliche Kennzahl (Erneuerbaren-Punkte für heute) bei 0 lag. `avgValue` wird jetzt
-     nur noch gezeichnet, wenn ≥ `AVERAGE_MIN_COVERAGE_RATIO` (50 %) der Punkte im Fenster
-     einen Wert haben; darunter erscheint `labels.averageLowCoverage` („Kein Ø: nur {valid}
-     von {total} Werten") an ihrer Stelle. Bei jeder neuen Fenster-Statistik (Ø/Min/Max über
-     mehrere Datenpunkte) diese Abdeckungs-Guard-Logik als Vorbild nehmen, nicht stillschweigend
-     über Lücken hinweg mitteln.
-     → [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-09-08--erneuerbaren-ausfall-in-der-ui-kaschiert-statt-angezeigt-473)
-   - **`0` statt `null` bei fehlenden Tageswerten ist eine Falschaussage (PR #473).**
-     `calculateMetrics` (`utils/metrics.ts`) gab bei 0 heutigen Renewable-Datenpunkten `0`
-     zurück statt `null` — „keine Daten" las sich als „keine Erneuerbaren im Netz"
-     (`Tages-Ø 0.0 %`). `today.renewable.{avg,min,max}` sind jetzt `number | null`; UI-Code
-     muss `null` explizit auf `--`/`—` abbilden, nicht auf `0` casten. Gleiches Prinzip gilt
-     für jede neue aggregierte Kennzahl: fehlende Daten sind `null`, nicht `0`.
-   - **`renewableShareRegional` wird in keiner Kennzahl ausgewertet — nur gezeichnet (PR #473).**
-     National (`ren_share_forecast`, via `fetch.yml`, statisch ausgeliefert) und regional
-     (Signal API, via Cloudflare Worker, live im Client) sind zwei unabhängige Quellen mit
-     unabhängigen Ausfällen. Fällt nur die nationale aus, liegt trotzdem ein gültiger
-     Regionalwert vor. `utils/renewableFallback.ts` (`resolveRenewableKpi`) nutzt ihn jetzt
-     als Fallback für die Kachel „Erneuerbare jetzt" — **immer sichtbar als Ortswert markiert**
-     (nie als Bundeswert), da die Streuung zwischen Netzregionen regelmäßig über Faktor 2
-     liegt. Reihenfolge: eigene PLZ → `CountryConfig.fallbackPostalCode` (DE: Berlin,
-     `10115`) → `--`. Nationale und Fallback-Werte werden nie gemischt (kein aktueller
-     Ortswert neben nationalem Tages-Ø).
-   - **Ortswert-Fallback jetzt auch im Chart, nicht nur in der KPI-Kachel (Issue #481).**
-     `RenewableFallback` (`utils/renewableFallback.ts`) trägt zusätzlich ein optionales
-     Feld `series` (Zeitstempel + Wert je heutigem Ortswert-Punkt), nicht mehr nur
-     `current`/`avg`. `RenewableBarChart` bekommt diese Reihe über die neue Prop
-     `fallbackSeries`; für jeden Balken **ohne** nationalen Wert wird per
-     `findFallbackValue()` (±20 Min. Toleranz) ein passender Ortswert gesucht und, falls
-     gefunden, als eigener Balken gezeichnet — visuell klar abgesetzt (gestrichelter
-     violetter Rahmen `FALLBACK_BAR_STROKE`, reduzierte Deckkraft, eigener
-     Legenden-Eintrag und Tooltip „Ortswert (Berlin)"), niemals identisch zum nationalen
-     Balken. Nationale Werte haben weiterhin immer Vorrang und werden nie überschrieben —
-     dieselbe Nie-mischen-Regel wie oben gilt unverändert, nur jetzt auch fürs Chart statt
-     nur für die Kachel. `FALLBACK_BAR_STROKE` ist aus `RenewableBarChart.tsx` exportiert,
-     damit `ChartSection`s externe Legende (im Detail-Modal) dieselbe Farbe verwendet statt
-     sie zu duplizieren.
-   - ⚠️ **Der gesamte Fallback-Pfad löst derzeit praktisch nie aus — „heute"-Bias (#487).**
-     Er hängt an `hasLimitedRenewableData` (`App.tsx`), und das ist
-     `metrics.today.coverage.priceCount > 0 && renewableCount === 0` — also **nur heute**.
-     Bei der real häufigsten Lage (heute 88 von 96 Punkten, morgen 0) ist die Bedingung
-     `false`, `renewableFallback` bleibt `null`, und weder Kachel noch Chart zeigen einen
-     Ersatzwert. Zusätzlich filtert `summarize()` in `renewableFallback.ts` auf
-     `todaySamples` — die `series` enthält also **nie** Punkte für morgen und könnte
-     Lücke B (s. `fetch.yml`-Abschnitt oben) selbst dann nicht schließen, wenn sie
-     auslöste. Wer den Fallback fürs Chart nutzbar machen will, muss **beide** Stellen
-     auf das tatsächlich gezeigte Chart-Fenster umstellen, nicht auf den Kalendertag.
-     Vorher prüfen, ob nach dem Pipeline-Fix (#487) überhaupt noch eine Lücke bleibt,
-     die einen Ortswert rechtfertigt — ein Ortswert für *morgen* ist eine Prognose für
-     einen einzelnen Netzbereich, dargestellt anstelle eines Bundeswerts.
+4. **Chart Components (components/charts/):** Custom SVG charts
+   (react-native-svg), shared building blocks in `components/charts/shared/`,
+   Zoom/Fallback-Logik für fehlende Erneuerbaren-Daten (Ortswert-Fallback,
+   Ausfall-Kaschierung durch Fenster-Ø). Details:
+   [`docs/ARCHITECTURE.md#11-chart-components--renewable-fallbacks`](docs/ARCHITECTURE.md#11-chart-components--renewable-fallbacks).
 
-5. **Historical Data (`services/historicalDataStore.ts`) – Issues #307/#1/#3 (PR #309):**
-   - **Device cache is the primary source.** Every successful national fetch in
-     `EnergyDataManager.performDataLoad` records a per-day snapshot
-     (`recordSnapshot`, deferred/fire-and-forget) into `Storage` (localStorage/AsyncStorage).
-   - **Storage layout** (versioned like `energy_regional_cache_v1`):
-     `energy_history_v1:<YYYY-MM-DD>` per day + `energy_history_index_v1` index
-     (date + byte size per day for fast range/size queries).
-   - **Day keys are Europe/Berlin** (`dayStringFromTimestamp` via `Intl`/`formatToParts`),
-     NOT device-local — must match the Berlin-dated `public/data/history/YYYY-MM-DD.json`.
-   - **MB-based eviction:** user sets `historyCacheLimitMb` (5/10/25/50; default 10) in the
-     Customize modal (`HistoryCacheSection`); `App.tsx` forwards it via
-     `energyDataManager.setHistoryLimitBytes`; `enforceLimit` drops oldest days over budget.
-   - **Server fallback:** `getRange(from, to, allowServerFallback=true, resolution='raw')` loads
-     missing *past* days from `data/history/<date>.json` (validated via `apiValidation`) into the
-     cache; 404/errors ignored; `serverFetchAttempted` avoids repeat misses per session.
-   - **Hourly pre-aggregation (Issue #334, PR #380):** `resolution: 'hourly'` fetches the smaller
-     pre-aggregated `data/history/<date>-hourly.json` instead (~75% smaller, ~24 pts/day vs. 96),
-     generated per-day in `fetch.yml` (all countries) right after the raw history file. Falls back
-     to the raw file automatically if the hourly variant 404s (e.g. older dates predating this
-     feature). `HistoricalDataView` passes `'hourly'` only for the 30d range (already
-     daily-bucketed client-side via `dataAggregation.ts`); 24h/48h/7d stay `'raw'`. A day already
-     cached (e.g. from a live snapshot) is never re-fetched, so it keeps whatever resolution it
-     has — don't assume every cached day is full 15-min resolution when reasoning about stats.
-   - **UI:** `HistoricalDataView` (Settings → "Verlauf") = range selector 24h/48h/7d/30d (#1),
-     charts aggregated via `dataAggregation.ts` (15min/hourly/daily), stats via
-     `historicalStats.ts` (#3). The live main screen is intentionally unchanged.
-   - **Period comparison (#311):** `HistoricalDataView` also loads the equally long
-     *previous* period `[from - window, from)` (parallel `getRange`) and shows a
-     "vs. Vorperiode" row per stat block via `computePeriodComparison` in
-     `historicalStats.ts` (Δ avg absolute + %, direction). Each series (price/renewable)
-     is `null` only when that series has no data in one of the periods; when
-     `previousAvg == 0` the object is still returned and only `deltaPct` is `null`.
-     i18n key `historyStatVsPrev` (must exist in BOTH `en`+`de`).
+5. **Historical Data (`services/historicalDataStore.ts`):** Device-Cache
+   als primäre Quelle, Server-Fallback, Hourly-Pre-Aggregation, Period
+   Comparison. Details:
+   [`docs/ARCHITECTURE.md#11b-historical-data-serviceshistoricaldatastorets`](docs/ARCHITECTURE.md#11b-historical-data-serviceshistoricaldatastorets).
 
-6. **Multi-Country / Europäische Datenexpansion (`utils/countries.ts`) – Issues #356/#368:**
-   - **Country Registry is the single source of truth.** `COUNTRIES: Record<CountryCode, CountryConfig>`
-     (currently `de` | `nl` | `at` | `ch` | `fr` | `be` | `dk`) derives data paths, timezone,
-     `hasRegionalData`, default grid fees, plus (since PR #473) `fallbackPostalCode` /
-     `fallbackPostalCodeLabel` — the location used as a KPI-tile stand-in when the national
-     renewable share is missing (DE: `10115` / „Berlin"); see Chart Components above for why
-     it must always be labelled as a location value. Adding a country = one registry entry +
-     one pipeline block in `fetch.yml`, no scattered `if country === 'de'` checks.
-     `DEFAULT_COUNTRY = 'de'`.
-   - **BETA countries** (NL, AT, CH, FR, BE, DK): `beta: true`, no regional/PLZ UI, no aWATTar,
-     data under `data/<code>/marketdata.json` + `data/<code>/history/`.
-   - **Active country** lives in `context/CountryContext.tsx` + `hooks/useCountry.ts`
-     (persisted under storage key `country`, validated via `isCountryCode`). Independent from
-     the UI language. Selector UI: `components/customize/CountrySection.tsx`.
-   - **DE stays on legacy flat paths** (`data/marketdata.json`, `data/history/`) for backward
-     compat with deployed clients; new countries live under `data/<code>/`.
-   - **Data load is country-aware** (`energyDataManager`): fetch path from
-     `COUNTRIES[country].marketDataPath`; cache keyed by `dataCountry` (switch invalidates);
-     regional/PLZ fetch only when `hasRegionalData` (non-DE countries hide PLZ UI entirely).
-   - **In-flight de-dup is scoped to the request** (`loadingCountry`/`loadingPostalCode`).
-     A load only piggybacks on the running promise when **country AND postal code match**;
-     a request for a different country awaits the in-flight load, then starts fresh. Do NOT
-     revert to an unconditional `if (isLoading) return loadingPromise` — that caused the
-     start-up race where the default DE load handed German data to the NL request. The `finally`
-     only clears load state when `loadingPromise` is still the current one.
-   - **Pipeline** (`fetch.yml`): each non-DE country has its own block (Fetch → Process →
-     Validate → Compare → Archive + History → Cleanup), `continue-on-error` so failures don't
-     block DE; `sleep 5` rate-limit guard; `ren_share_forecast` non-fatal (`|| true`).
-   - **History store is country-namespaced** (#356 Step 3): keys
-     `energy_history_v1_<country>:<date>` + `energy_history_index_v1_<country>`; server-fallback
-     URL from `historyPathPrefix`; `dayStringFromTimestamp(ts, timezone?)` uses the registry tz.
-     Use the factory `historicalDataStoreForCountry(country)`; the `historicalDataStore`
-     singleton is just the DE alias (used by `HistoryCacheSection`).
-   - **`HistoricalDataView` ("Verlauf") takes a `country` prop** and reads from
-     `historicalDataStoreForCountry(country)` — must NOT use the bare DE singleton.
-   - i18n keys (EN+DE): `country`, `countryGermany`, `countryNetherlands`, `countryAustria`,
-     `countrySwitzerland`, `countryFrance`, `countryBelgium`, `countryDenmark`, `countryBeta`.
+6. **Multi-Country (`utils/countries.ts`):** Country Registry als Single
+   Source of Truth, BETA-Länder ohne PLZ/aWATTar, country-aware Datenladen
+   mit scoped In-flight-Dedup. Details:
+   [`docs/ARCHITECTURE.md#12-multi-country-architektur-utilscountriests`](docs/ARCHITECTURE.md#12-multi-country-architektur-utilscountriests).
 
 ## Common Tasks
 
@@ -845,7 +223,7 @@ cd android && ./gradlew bundleRelease --no-daemon --console=plain \
 - `/android` directory is NOT tracked in git (generated by `expo prebuild`)
 - **After each `expo prebuild --clean`**: manually add `signingConfigs.release` block to `android/app/build.gradle` and change the release buildType to use `signingConfigs.release` (not `debug`)
 - `keystore/` directory is gitignored (Issue #276) – Signing-Docs lokal halten, nie committen
-- **RESOLVED (Security-Audit, Aug 2026):** `keystore/keystores.md` ist in der Git-History erreichbar, enthielt aber nie echte Credentials — nur Platzhalter und den **öffentlichen** Signing-Cert-Fingerprint (kein Secret). Ein `filter-repo`-Rewrite wurde bewusst **nicht** durchgeführt. → [`docs/INCIDENTS.md`](docs/INCIDENTS.md#2026-08--security-audit-keystorekeystoresmd-in-der-git-history)
+- **RESOLVED (Security-Audit, Aug 2026):** `keystore/keystores.md` ist in der Git-History erreichbar, enthielt aber nie echte Credentials — nur Platzhalter und den **öffentlichen** Signing-Cert-Fingerprint (kein Secret). Ein `filter-repo`-Rewrite wurde bewusst **nicht** durchgeführt. → [`docs/private/INCIDENTS.md`](docs/private/INCIDENTS.md#2026-08--security-audit-keystorekeystoresmd-in-der-git-history)
 - **Large-Screen-Kompatibilität (Issue #381):** Da `AndroidManifest.xml` generiert/gitignored ist, werden Manifest-Attribute ohne eigenes Expo-Config-Schema-Feld (z.B. `android:resizeableActivity`) über Config-Plugins in `plugins/` gesetzt (siehe `withAndroidResizeableActivity.js`, registriert in `app.config.js` → `plugins`). Gleiches Muster für künftige Manifest-Anpassungen verwenden statt `/android` manuell zu patchen.
 
 ### Reanimated 4 Upgrade (Issue #247, resolved)
@@ -869,73 +247,8 @@ cd android && ./gradlew bundleRelease --no-daemon --console=plain \
 
 ## Architecture Notes
 
-### Module Structure
-```
-App.tsx                           # Main app (data fetching, state, UI)
-components/
-├── charts/
-│   ├── PriceBarChart.tsx         # Electricity price bar chart
-│   ├── RenewableBarChart.tsx     # Renewable energy share bar chart
-│   ├── CorrelationScatterChart.tsx # Price vs renewable scatter plot
-│   └── shared/                   # Reusable chart building blocks
-│       ├── ChartGrid.tsx         # SVG grid lines
-│       ├── ChartCard.tsx         # Card wrapper with shadow + fade-in animation
-│       ├── ChartTooltip.tsx      # Tooltip with boundary clamping + scale/fade animation
-│       ├── NowMarker.tsx         # "Jetzt" time marker (line + label)
-│       ├── useChartZoom.ts       # Pinch/scroll zoom hook (#355)
-│       ├── ZoomResetBadge.tsx    # ⟲ reset control shown while zoomed (#355)
-│       ├── chartScale.ts         # Shared coordinate math (scaleToX/scaleToY/getBarWidth/getBarHeight)
-│       └── index.ts              # Barrel exports
-├── settings/
-│   ├── AppearanceSection.tsx     # Theme pill selector with spring animation
-│   └── SettingsMenu.tsx          # Settings panel (slide-up/down animation; "Verlauf" entry)
-├── customize/
-│   └── HistoryCacheSection.tsx   # History cache size (MB) selector + "Cache leeren" (#307)
-├── ui/
-│   ├── Button.tsx                # Scale-spring on press
-│   ├── SkeletonLoader.tsx        # Shimmer skeleton (LinearGradient + Reanimated)
-│   ├── ChartSkeleton.tsx         # Chart loading placeholder
-│   ├── Chip.tsx                  # Animated chip/badge element
-│   └── Badge.tsx                 # Animated badge element
-├── ChartDetailView.tsx           # Expandable detail modal with share button
-├── CostCalculator.tsx            # Cost calculator logic
-├── CostCalculatorView.tsx        # Full-screen cost calculator view
-├── HistoricalDataView.tsx        # Full-screen history view: range select + charts + stats (#1/#3/#307)
-└── LoadingIndicator.tsx          # Loading states
-
-utils/
-├── chartUtils.ts         # useChartDimensions hook, label generators
-├── chartHelpers.ts       # Y-axis label styling
-├── apiValidation.ts      # API response validation & types
-├── dataInterpolation.ts  # Data gap interpolation
-├── metrics.ts            # EnergyData type, constants
-├── platform.ts           # Cross-platform storage abstraction
-├── theme.ts              # Color management
-├── translations.ts       # i18n support (DE/EN)
-├── postalCodeUtils.ts    # PLZ validation
-├── historicalStats.ts    # Stats over EnergyData[] (avg/min/max/median/trend) + period comparison (#3/#311)
-├── dataAggregation.ts    # Bucket EnergyData[] hourly/daily for long ranges (#1)
-└── designSystem.ts       # Design tokens
-
-services/
-├── energyDataManager.ts  # Data orchestration (fetch, cache, process)
-├── regionalDataCache.ts  # Dual-layer regional cache (memory + persistent)
-├── historicalDataStore.ts # Persistent per-day history in device cache (#307)
-└── dataMerger.ts         # Regional-to-national data merge
-
-scripts/
-├── post-build.js         # Build post-processing
-└── validate-release.sh   # Release validation
-```
-
-### Data Flow
-1. App mounts → Fetch Energy Charts data
-2. Check coverage → Supplement with aWATTar if needed
-3. User enters PLZ → Fetch regional data via Cloudflare
-4. Merge all data → Display in charts
-5. Cache in AsyncStorage for offline use
-6. Record per-day snapshot into the historical store (#307); the "Verlauf" view
-   reads it back (with server fallback) for 24h/48h/7d/30d ranges + statistics
+Modulstruktur (Komponenten/utils/services-Baum) und Data-Flow-Diagramm:
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#module-structure-aktuell).
 
 ## Do's and Don'ts
 

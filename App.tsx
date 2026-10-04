@@ -43,7 +43,7 @@ import {
 
 SplashScreenModule.preventAutoHideAsync().catch(() => {});
 
-const APP_VERSION = '1.11.2';
+const APP_VERSION = '1.11.3';
 const TRANSPARENT = 'transparent';
 
 function AppContent() {
@@ -143,6 +143,18 @@ function AppContent() {
   );
 
   const metrics = useMemo(() => calculateMetrics(filteredEnergyData), [filteredEnergyData]);
+
+  const calculatorPriceData = useMemo(
+    () =>
+      filteredEnergyData
+        .filter(item => item.marketPrice !== null)
+        .map(item => ({
+          start_timestamp: item.timestamp,
+          marketprice: item.marketPrice ?? 0,
+          renewable_share: item.renewableShare ?? undefined,
+        })),
+    [filteredEnergyData]
+  );
 
   const alertState = useMemo(
     () =>
@@ -429,13 +441,7 @@ function AppContent() {
         <CostCalculatorView
           visible={calculatorVisible}
           onClose={() => setCalculatorVisible(false)}
-          priceData={filteredEnergyData
-            .filter(item => item.marketPrice !== null)
-            .map(item => ({
-              start_timestamp: item.timestamp,
-              marketprice: item.marketPrice ?? 0,
-              renewable_share: item.renewableShare ?? undefined,
-            }))}
+          priceData={calculatorPriceData}
           gridFees={gridFees}
         />
 

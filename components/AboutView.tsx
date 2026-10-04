@@ -90,10 +90,7 @@ export function AboutView({
 
           {/* Legal: Impressum & Datenschutz */}
           <View style={styles.section}>
-            <TouchableOpacity
-              onPress={() => openExternalUrl(IMPRESSUM_URL)}
-              style={styles.link}
-            >
+            <TouchableOpacity onPress={() => openExternalUrl(IMPRESSUM_URL)} style={styles.link}>
               <Text style={[styles.linkText, { color: colors.primary }]}>{t.impressum}</Text>
             </TouchableOpacity>
             <TouchableOpacity

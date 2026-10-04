@@ -219,9 +219,10 @@ export class HistoricalDataStore {
       if (byDay.size === 0) return;
 
       const index = await this.loadIndex();
-      for (const [day, points] of byDay) {
-        await this.mergeAndWriteDay(day, points, index);
-      }
+      // Tage sind unabhängig (eigener Storage-Key); saveIndex sortiert den Index.
+      await Promise.all(
+        Array.from(byDay, ([day, points]) => this.mergeAndWriteDay(day, points, index))
+      );
       await this.saveIndex(index);
       await this.enforceLimit(limitBytes);
     } catch {
@@ -368,9 +369,7 @@ export class HistoricalDataStore {
           d => d < today && !cachedDays.has(d) && !this.serverFetchAttempted.has(d)
         );
         if (missing.length) {
-          for (const d of missing) {
-            await this.loadServerDayIntoStore(d, index, resolution);
-          }
+          await Promise.all(missing.map(d => this.loadServerDayIntoStore(d, index, resolution)));
           await this.saveIndex(index);
           index = await this.loadIndex();
         }
@@ -379,8 +378,8 @@ export class HistoricalDataStore {
       const relevantDays = index.days.filter(d => d.date >= fromDay && d.date <= toDay);
 
       const result: EnergyData[] = [];
-      for (const d of relevantDays) {
-        const entry = await this.loadDay(d.date);
+      const entries = await Promise.all(relevantDays.map(d => this.loadDay(d.date)));
+      for (const entry of entries) {
         if (!entry) continue;
         for (const point of entry.data) {
           if (point.timestamp >= fromTs && point.timestamp <= toTs) {

@@ -14,6 +14,7 @@ import {
   NowMarkerLine,
   useChartZoom,
   ZoomResetBadge,
+  XAxisHourLabels,
 } from './shared';
 import { scaleToX, scaleToY, getBarWidth, getBarHeight, getPlotHeight } from './shared/chartScale';
 import type { Sample as FallbackSample } from '../../utils/renewableFallback';
@@ -735,43 +736,18 @@ function RenewableBarChartComponent({
             )}
 
             {/* X-axis labels (every 6 hours) */}
-            {(() => {
-              const xAxisLabels = [];
-              const startDate = new Date(minTime);
-              const endDate = new Date(maxTime);
-
-              const startHour = Math.ceil(startDate.getHours() / 6) * 6;
-              const current = new Date(startDate);
-              current.setHours(startHour, 0, 0, 0);
-
-              while (current <= endDate) {
-                const timestamp = current.getTime();
-                const x = scaleToX(timestamp, {
-                  domainMin: minTime,
-                  domainRange: timeRange,
-                  chartWidth,
-                  leftPadding,
-                  rightPadding,
-                });
-                const hour = current.getHours();
-
-                xAxisLabels.push(
-                  <Text
-                    key={`xlabel-${timestamp}`}
-                    style={[
-                      styles.xAxisLabel,
-                      { left: x - 10, top: chartHeight - bottomPadding + 5, color: textColor },
-                    ]}
-                  >
-                    {hour}h
-                  </Text>
-                );
-
-                current.setHours(current.getHours() + 6);
-              }
-
-              return xAxisLabels;
-            })()}
+            <XAxisHourLabels
+              minTime={minTime}
+              maxTime={maxTime}
+              timeRange={timeRange}
+              chartWidth={chartWidth}
+              chartHeight={chartHeight}
+              leftPadding={leftPadding}
+              rightPadding={rightPadding}
+              bottomPadding={bottomPadding}
+              textColor={textColor}
+              labelStyle={styles.xAxisLabel}
+            />
           </View>
         </ScrollView>
 

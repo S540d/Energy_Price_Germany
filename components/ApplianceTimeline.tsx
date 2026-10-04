@@ -4,6 +4,7 @@ import { useLanguageContext } from '../context/LanguageContext';
 import { getThemeColors } from '../utils/theme';
 import { useSettingsContext } from '../context/SettingsContext';
 import type { Appliance } from './CostCalculator';
+import { eurPerMwhToCtPerKwh } from '../utils/priceUnits';
 
 interface PricePoint {
   start_timestamp: number;
@@ -56,7 +57,7 @@ function buildHourSlots(
     if (item.start_timestamp < currentHourStartMs) return;
     const date = new Date(item.start_timestamp);
     const hour = date.getHours();
-    const priceCtPerKwh = item.marketprice * 0.1 + gridFees;
+    const priceCtPerKwh = eurPerMwhToCtPerKwh(item.marketprice) + gridFees;
     const existing = hourMap.get(hour) ?? [];
     existing.push(priceCtPerKwh);
     hourMap.set(hour, existing);

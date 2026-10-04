@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [1.11.3] - 2026-10-03
+
+### Changed
+- **Interne Aufräumarbeiten aus dem `/simplify`-Audit (#503).** Der Verlauf („Verlauf" → 30 Tage) lädt fehlende Tage jetzt parallel statt nacheinander vom Server und sollte beim ersten Öffnen spürbar schneller erscheinen. `Storage` ist die einzige Storage-Abstraktion (`usePersistence` und `BetaModeSection` nutzen sie; letzteres behebt einen latenten Web-Fehler beim Beta-Schalter). Ungenutzter Code entfernt (`assertWebAPI`, `safeWebAPI`, `NowMarkerLabel`), doppelte Typen und Tageslogik (`isToday`, nächster Messpunkt) zusammengeführt, Kostenrechner-Daten werden memoisiert.
+
 ## [1.11.2] - 2026-09-14
 
 ### Changed

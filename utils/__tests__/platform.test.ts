@@ -12,8 +12,6 @@ import {
   getSystemDarkModePreference,
   addSystemThemeChangeListener,
   Storage,
-  assertWebAPI,
-  safeWebAPI,
 } from '../platform';
 import { Platform as _Platform } from 'react-native';
 
@@ -144,66 +142,6 @@ describe('platform', () => {
           expect(localStorage.getItem(key)).toBeNull(); // platform-safe
         }
       });
-    });
-  });
-
-  describe('assertWebAPI', () => {
-    beforeEach(() => {
-      jest.clearAllMocks();
-    });
-
-    it('should have consistent behavior based on platform', () => {
-      // In web environment: should not throw
-      // In mobile environment: would throw
-      // Test verifies the function exists and is callable
-      expect(typeof assertWebAPI).toBe('function');
-
-      if (isWeb) {
-        // Only test happy path on web - non-web is unreachable in this environment
-        expect(() => assertWebAPI('fetch')).not.toThrow();
-      }
-    });
-
-    it('should pass API name to error message if thrown', () => {
-      if (!isWeb) {
-        try {
-          assertWebAPI('localStorage');
-          // If we reach here, we're on web and it didn't throw (expected)
-          expect(true).toBe(true);
-        } catch (error: unknown) {
-          // If it did throw, verify message includes API name
-          expect((error as Error).message).toContain('localStorage');
-        }
-      }
-    });
-  });
-
-  describe('safeWebAPI', () => {
-    beforeEach(() => {
-      jest.clearAllMocks();
-    });
-
-    it('should execute callback on web', () => {
-      if (isWeb) {
-        const callback = jest.fn(() => 'success');
-        const result = safeWebAPI(callback, 'fallback', 'fetch');
-        expect(result).toBe('success');
-      }
-    });
-
-    it('should return fallback when callback fails', () => {
-      const callback = jest.fn(() => {
-        throw new Error('API Error');
-      });
-
-      const result = safeWebAPI(callback, 'fallback', 'fetch');
-      expect(result).toBe('fallback');
-    });
-
-    it('should work with generic types', () => {
-      const callback = jest.fn(() => ({ data: 'value' }));
-      const result = safeWebAPI<{ data: string }>(callback, { data: 'default' });
-      expect(result.data).toBe('value');
     });
   });
 

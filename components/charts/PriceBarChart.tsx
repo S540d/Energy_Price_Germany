@@ -16,8 +16,10 @@ import {
   NowMarkerLine,
   useChartZoom,
   ZoomResetBadge,
+  XAxisHourLabels,
 } from './shared';
 import { scaleToX, getBarWidth, getBarHeight, getPlotHeight } from './shared/chartScale';
+import { eurPerMwhToCtPerKwh } from '../../utils/priceUnits';
 
 interface PriceBarChartProps {
   title: string;
@@ -116,7 +118,7 @@ function PriceBarChartComponent({
     const validData = data.filter(d => d.marketPrice !== null);
     if (validData.length === 0) return null;
 
-    const pricesInCent = validData.map(d => (d.marketPrice ?? 0) * 0.1);
+    const pricesInCent = validData.map(d => eurPerMwhToCtPerKwh(d.marketPrice ?? 0));
     const maxPrice = arrayMax(pricesInCent);
     const min = 0;
     const maxMarketPrice = Math.ceil(maxPrice / 5) * 5;
@@ -138,7 +140,7 @@ function PriceBarChartComponent({
     if (!chartCalcs) return [];
     const { minTime: cMinTime, timeRange: cTimeRange, min: cMin, range: cRange } = chartCalcs;
     return data.map((d, index) => {
-      const marketPrice = d.marketPrice !== null ? d.marketPrice * 0.1 : null;
+      const marketPrice = d.marketPrice !== null ? eurPerMwhToCtPerKwh(d.marketPrice) : null;
       const x = scaleToX(d.timestamp, {
         domainMin: cMinTime,
         domainRange: cTimeRange,
@@ -219,7 +221,7 @@ function PriceBarChartComponent({
           const item = data[selectedIndex];
           if (!item || item.marketPrice === null) return null;
 
-          const marketPriceCent = item.marketPrice * 0.1;
+          const marketPriceCent = eurPerMwhToCtPerKwh(item.marketPrice);
           const totalPrice = marketPriceCent + gridFees;
 
           const x = scaleToX(item.timestamp, {
@@ -484,43 +486,18 @@ function PriceBarChartComponent({
             </Text>
 
             {/* X-axis labels (every 6 hours) */}
-            {(() => {
-              const xAxisLabels = [];
-              const startDate = new Date(minTime);
-              const endDate = new Date(maxTime);
-
-              const startHour = Math.ceil(startDate.getHours() / 6) * 6;
-              const current = new Date(startDate);
-              current.setHours(startHour, 0, 0, 0);
-
-              while (current <= endDate) {
-                const timestamp = current.getTime();
-                const x = scaleToX(timestamp, {
-                  domainMin: minTime,
-                  domainRange: timeRange,
-                  chartWidth,
-                  leftPadding,
-                  rightPadding,
-                });
-                const hour = current.getHours();
-
-                xAxisLabels.push(
-                  <Text
-                    key={`xlabel-${timestamp}`}
-                    style={[
-                      styles.xAxisLabel,
-                      { left: x - 10, top: chartHeight - bottomPadding + 5, color: textColor },
-                    ]}
-                  >
-                    {hour}h
-                  </Text>
-                );
-
-                current.setHours(current.getHours() + 6);
-              }
-
-              return xAxisLabels;
-            })()}
+            <XAxisHourLabels
+              minTime={minTime}
+              maxTime={maxTime}
+              timeRange={timeRange}
+              chartWidth={chartWidth}
+              chartHeight={chartHeight}
+              leftPadding={leftPadding}
+              rightPadding={rightPadding}
+              bottomPadding={bottomPadding}
+              textColor={textColor}
+              labelStyle={styles.xAxisLabel}
+            />
 
             {/* End-of-chart label */}
             <Text style={[styles.endOfChartLabel, { bottom: bottomPadding + 4, color: textColor }]}>
