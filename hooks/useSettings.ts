@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { usePersistence } from './usePersistence';
 import type { Theme } from '../utils/theme';
 import { GRID_FEES_AND_TAXES } from '../utils/metrics';
@@ -95,104 +95,45 @@ export function useSettings() {
     loadSettings();
   }, [getItem]);
 
-  // Save postal code when it changes
-  useEffect(() => {
-    if (!isInitialized) return;
-
-    async function savePostalCode() {
+  // Persist a setting whenever its serialized value changes (after initial load)
+  const persist = useCallback(
+    async (key: string, value: string) => {
       try {
-        await setItem('postalCode', postalCode);
+        await setItem(key, value);
       } catch (error) {}
-    }
+    },
+    [setItem]
+  );
 
-    savePostalCode();
-  }, [postalCode, isInitialized, setItem]);
-
-  // Save grid fees when they change
   useEffect(() => {
-    if (!isInitialized) return;
+    if (isInitialized) persist('postalCode', postalCode);
+  }, [postalCode, isInitialized, persist]);
 
-    async function saveGridFees() {
-      try {
-        await setItem('gridFees', gridFees.toString());
-      } catch (error) {}
-    }
-
-    saveGridFees();
-  }, [gridFees, isInitialized, setItem]);
-
-  // Save theme when it changes
   useEffect(() => {
-    if (!isInitialized) return;
+    if (isInitialized) persist('gridFees', gridFees.toString());
+  }, [gridFees, isInitialized, persist]);
 
-    async function saveTheme() {
-      try {
-        await setItem('theme', theme);
-      } catch (error) {}
-    }
-
-    saveTheme();
-  }, [theme, isInitialized, setItem]);
-
-  // Save price alert low when it changes
   useEffect(() => {
-    if (!isInitialized) return;
+    if (isInitialized) persist('theme', theme);
+  }, [theme, isInitialized, persist]);
 
-    async function saveAlertLow() {
-      try {
-        if (priceAlertLow === null) {
-          await setItem('priceAlertLow', '');
-        } else {
-          await setItem('priceAlertLow', priceAlertLow.toString());
-        }
-      } catch (error) {}
-    }
-
-    saveAlertLow();
-  }, [priceAlertLow, isInitialized, setItem]);
-
-  // Save price alert high when it changes
   useEffect(() => {
-    if (!isInitialized) return;
+    if (isInitialized)
+      persist('priceAlertLow', priceAlertLow === null ? '' : priceAlertLow.toString());
+  }, [priceAlertLow, isInitialized, persist]);
 
-    async function saveAlertHigh() {
-      try {
-        if (priceAlertHigh === null) {
-          await setItem('priceAlertHigh', '');
-        } else {
-          await setItem('priceAlertHigh', priceAlertHigh.toString());
-        }
-      } catch (error) {}
-    }
-
-    saveAlertHigh();
-  }, [priceAlertHigh, isInitialized, setItem]);
-
-  // Save price display mode when it changes
   useEffect(() => {
-    if (!isInitialized) return;
+    if (isInitialized)
+      persist('priceAlertHigh', priceAlertHigh === null ? '' : priceAlertHigh.toString());
+  }, [priceAlertHigh, isInitialized, persist]);
 
-    async function savePriceDisplayMode() {
-      try {
-        await setItem('priceDisplayMode', priceDisplayMode);
-      } catch (error) {}
-    }
-
-    savePriceDisplayMode();
-  }, [priceDisplayMode, isInitialized, setItem]);
-
-  // Save history cache limit when it changes
   useEffect(() => {
-    if (!isInitialized) return;
+    if (isInitialized) persist('priceDisplayMode', priceDisplayMode);
+  }, [priceDisplayMode, isInitialized, persist]);
 
-    async function saveHistoryCacheLimit() {
-      try {
-        await setItem('historyCacheLimitMb', historyCacheLimitMb.toString());
-      } catch (error) {}
-    }
-
-    saveHistoryCacheLimit();
-  }, [historyCacheLimitMb, isInitialized, setItem]);
+  useEffect(() => {
+    if (isInitialized) persist('historyCacheLimitMb', historyCacheLimitMb.toString());
+  }, [historyCacheLimitMb, isInitialized, persist]);
 
   // Debounce postal code for API calls
   useEffect(() => {

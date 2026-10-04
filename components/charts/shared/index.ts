@@ -14,3 +14,4 @@ export {
   getBarHeight,
 } from './chartScale';
 export type { XScale, YScale } from './chartScale';
+export { XAxisHourLabels } from './XAxisHourLabels';
