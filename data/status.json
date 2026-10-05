@@ -1,69 +1,69 @@
 {
-  "generatedAt": "2026-10-05T13:14:20.604Z",
+  "generatedAt": "2026-10-05T15:04:31.002Z",
   "berlinDay": "2026-10-05",
   "countries": {
     "de": {
       "available": true,
-      "source": "awattar",
+      "source": "energy-charts",
       "points": 767,
-      "renewablePointsToday": 0,
-      "coverageFrom": "2026-09-28T13:15:00.000Z",
-      "coverageUntil": "2026-10-06T12:45:00.000Z",
-      "coverageAgeHours": -23.5
+      "renewablePointsToday": 96,
+      "coverageFrom": "2026-09-28T15:15:00.000Z",
+      "coverageUntil": "2026-10-06T14:45:00.000Z",
+      "coverageAgeHours": -23.7
     },
     "nl": {
       "available": true,
       "source": "energy-charts",
-      "points": 786,
-      "renewablePointsToday": 0,
-      "coverageFrom": "2026-09-26T17:30:00.000Z",
-      "coverageUntil": "2026-10-04T21:45:00.000Z",
-      "coverageAgeHours": 15.5
+      "points": 795,
+      "renewablePointsToday": 96,
+      "coverageFrom": "2026-09-28T15:15:00.000Z",
+      "coverageUntil": "2026-10-06T21:45:00.000Z",
+      "coverageAgeHours": -30.7
     },
     "at": {
       "available": true,
       "source": "energy-charts",
-      "points": 882,
+      "points": 891,
       "renewablePointsToday": 96,
-      "coverageFrom": "2026-09-26T17:30:00.000Z",
-      "coverageUntil": "2026-10-05T21:45:00.000Z",
-      "coverageAgeHours": -8.5
+      "coverageFrom": "2026-09-28T15:15:00.000Z",
+      "coverageUntil": "2026-10-07T21:45:00.000Z",
+      "coverageAgeHours": -54.7
     },
     "ch": {
       "available": true,
       "source": "energy-charts",
-      "points": 739,
-      "renewablePointsToday": 0,
-      "coverageFrom": "2026-09-27T05:15:00.000Z",
-      "coverageUntil": "2026-10-04T21:45:00.000Z",
-      "coverageAgeHours": 15.5
+      "points": 699,
+      "renewablePointsToday": 24,
+      "coverageFrom": "2026-09-28T15:15:00.000Z",
+      "coverageUntil": "2026-10-05T21:45:00.000Z",
+      "coverageAgeHours": -6.7
     },
     "fr": {
       "available": true,
       "source": "energy-charts",
-      "points": 786,
-      "renewablePointsToday": 0,
-      "coverageFrom": "2026-09-26T17:30:00.000Z",
-      "coverageUntil": "2026-10-04T21:45:00.000Z",
-      "coverageAgeHours": 15.5
+      "points": 699,
+      "renewablePointsToday": 96,
+      "coverageFrom": "2026-09-28T15:15:00.000Z",
+      "coverageUntil": "2026-10-05T21:45:00.000Z",
+      "coverageAgeHours": -6.7
     },
     "be": {
       "available": true,
       "source": "energy-charts",
-      "points": 739,
-      "renewablePointsToday": 0,
-      "coverageFrom": "2026-09-27T05:15:00.000Z",
-      "coverageUntil": "2026-10-04T21:45:00.000Z",
-      "coverageAgeHours": 15.5
+      "points": 723,
+      "renewablePointsToday": 24,
+      "coverageFrom": "2026-09-28T15:15:00.000Z",
+      "coverageUntil": "2026-10-06T21:00:00.000Z",
+      "coverageAgeHours": -29.9
     },
     "dk": {
       "available": true,
       "source": "energy-charts",
-      "points": 786,
-      "renewablePointsToday": 0,
-      "coverageFrom": "2026-09-26T17:30:00.000Z",
-      "coverageUntil": "2026-10-04T21:45:00.000Z",
-      "coverageAgeHours": 15.5
+      "points": 699,
+      "renewablePointsToday": 96,
+      "coverageFrom": "2026-09-28T15:15:00.000Z",
+      "coverageUntil": "2026-10-05T21:45:00.000Z",
+      "coverageAgeHours": -6.7
     }
   }
 }
