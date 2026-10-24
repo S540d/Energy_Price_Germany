@@ -170,4 +170,37 @@ describe('RenewableBarChart', () => {
       expect(UNSAFE_root).toBeTruthy();
     });
   });
+
+  describe('Ende der nationalen Reihe (#489)', () => {
+    const forecastLabels = { ...labels, forecastEnd: 'Prognose endet hier' };
+
+    it('markiert das Ende, wenn auf den letzten Wert noch Zeitpunkte ohne Wert folgen', () => {
+      // Preise für 24 h, Erneuerbare nur für die ersten 16 h (typisch: morgen fehlt).
+      const { getByText } = renderChart({
+        labels: forecastLabels,
+        data: buildData(24, i => (i >= 16 ? { renewableShare: null } : {})),
+      });
+      expect(getByText('Prognose endet hier')).toBeTruthy();
+    });
+
+    it('zeigt keine Markierung, wenn die Reihe bis zum Ende reicht', () => {
+      const { queryByText } = renderChart({ labels: forecastLabels, data: buildData(24) });
+      expect(queryByText('Prognose endet hier')).toBeNull();
+    });
+
+    it('zeigt keine Markierung bei einer Lücke nur in der Mitte', () => {
+      const { queryByText } = renderChart({
+        labels: forecastLabels,
+        data: buildData(24, i => (i >= 8 && i < 12 ? { renewableShare: null } : {})),
+      });
+      expect(queryByText('Prognose endet hier')).toBeNull();
+    });
+
+    it('zeigt keine Markierung ohne Label', () => {
+      const { queryByText } = renderChart({
+        data: buildData(24, i => (i >= 16 ? { renewableShare: null } : {})),
+      });
+      expect(queryByText('Prognose endet hier')).toBeNull();
+    });
+  });
 });
