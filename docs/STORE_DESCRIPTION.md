@@ -40,7 +40,7 @@ Energy Prices Germany provides instant access to electricity market prices and r
 - No user accounts required
 - No personal data collection
 - No ads or tracking
-- Open source (MIT License)
+- Source available (PolyForm Noncommercial 1.0.0)
 
 **📱 Perfect For:**
 - Homeowners with solar panels or battery storage
@@ -68,7 +68,7 @@ This is a free, open-source app developed by an independent developer. If you fi
 **🔗 Links:**
 - Source Code: https://github.com/S540d/Energy_Price_Germany
 - Report Issues: https://github.com/S540d/Energy_Price_Germany/issues
-- Privacy Policy: https://github.com/S540d/Energy_Price_Germany/blob/main/PRIVACY_POLICY.md
+- Privacy Policy: https://s540d.github.io/Energy_Price_Germany/PRIVACY_POLICY.html
 
 ---
 
@@ -82,7 +82,7 @@ energy, electricity, prices, renewable, germany, solar, wind, market, EPEX, spot
 Everyone
 
 ## Privacy Policy URL
-https://github.com/S540d/Energy_Price_Germany/blob/main/PRIVACY_POLICY.md
+https://s540d.github.io/Energy_Price_Germany/PRIVACY_POLICY.html
 
 ## Website
 https://s540d.github.io/Energy_Price_Germany/
@@ -134,7 +134,7 @@ Energy Prices Germany bietet sofortigen Zugriff auf Börsenstrompreise und Erneu
 - Keine Benutzerkonten erforderlich
 - Keine Erhebung persönlicher Daten
 - Keine Werbung oder Tracking
-- Open Source (MIT-Lizenz)
+- Quellcode öffentlich (PolyForm Noncommercial 1.0.0)
 
 **📱 Perfekt für:**
 - Hausbesitzer mit Solaranlagen oder Batteriespeicher
@@ -162,4 +162,4 @@ Dies ist eine kostenlose Open-Source-App, entwickelt von einem unabhängigen Ent
 **🔗 Links:**
 - Quellcode: https://github.com/S540d/Energy_Price_Germany
 - Probleme melden: https://github.com/S540d/Energy_Price_Germany/issues
-- Datenschutzerklärung: https://github.com/S540d/Energy_Price_Germany/blob/main/PRIVACY_POLICY.md
+- Datenschutzerklärung: https://s540d.github.io/Energy_Price_Germany/PRIVACY_POLICY.html

@@ -337,7 +337,7 @@ js/modules/
 #### Data Flow (aktuell)
 1. App mounts → Fetch Energy Charts data
 2. Check coverage → Supplement with aWATTar if needed
-3. User enters PLZ → Fetch regional data via Cloudflare
+3. User enters PLZ → Fetch regional data (Web: via Cloudflare, native: direkt, #521)
 4. Merge all data → Display in charts
 5. Cache in AsyncStorage for offline use
 6. Record per-day snapshot into the historical store; the "Verlauf" view
@@ -510,7 +510,10 @@ Siehe [BUILD.md](BUILD.md) für detaillierte Build-Anleitung.
 
 ### Cloudflare Worker (CORS Proxy for Regional Data)
 
-The application uses a **Cloudflare Worker** to enable regional data fetching from the Energy Charts Signal API.
+The **web** build uses a **Cloudflare Worker** to enable regional data fetching from the Energy Charts Signal API.
+Native apps (Android) call `api.energy-charts.info/signal` **directly** since #521 — they are not subject to CORS,
+and this keeps IP address and postal code away from Cloudflare. URL selection: `getRegionalDataUrl()` in
+`services/regionalDataCache.ts` (also validates the postal code, `/^\d{5}$/`).
 
 #### Problem Solved
 The Energy Charts Signal API (`/signal` endpoint) does **not include CORS headers**, which prevents direct browser access due to browser security policies. A proxy with CORS support is required.
@@ -557,7 +560,7 @@ Cloudflare Worker (/api/regional?plz=12345)
 - ✅ No authentication required (public data)
 - ✅ No credentials stored in code
 - ✅ CORS allows requests from any origin (safe for public data)
-- ✅ User postal code only sent to Energy Charts API (via Worker proxy)
+- ✅ User postal code only sent to Energy Charts API (web: via Worker proxy, which also sees IP + PLZ; native: directly)
 - ✅ No additional data collection or tracking
 
 #### Deployment

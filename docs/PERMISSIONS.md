@@ -16,12 +16,12 @@ Die folgenden Berechtigungen sind in `app.json` unter `expo.android.permissions`
 - Laden von Marktdaten für Day-Ahead Preise
 - Abrufen von Daten zum Anteil erneuerbarer Energien
 
-**Verwendete APIs:**
-- Energy Charts (Fraunhofer ISE): `https://api.energy-charts.info`
-- aWATTar: `https://api.awattar.de`
+**Kontaktierte Server:**
+- GitHub Pages: `https://s540d.github.io` (aufbereitete Markt- und Erneuerbaren-Daten; aWATTar und Energy Charts werden dafür nur von GitHub Actions abgefragt, nicht von der App)
+- Energy Charts (Fraunhofer ISE): `https://api.energy-charts.info/signal`, nur für regionale Werte per Postleitzahl (Android direkt seit 1.11.5, #521)
 
 **Datenschutz:**
-Es werden keine personenbezogenen Daten übertragen. Die App sendet nur anonyme HTTP/HTTPS-Anfragen für öffentliche Marktdaten.
+Die App erhebt selbst keine personenbezogenen Daten. Die kontaktierten Server erhalten technisch die IP-Adresse, Energy Charts bei regionalen Werten zusätzlich die Postleitzahl. Details: [Datenschutzerklärung](https://s540d.github.io/Energy_Price_Germany/PRIVACY_POLICY.html).
 
 ---
 
@@ -147,7 +147,7 @@ Angaben für die "Data Safety" Sektion im Play Store:
 
 Bei Fragen zu Berechtigungen:
 - **GitHub Issues:** https://github.com/S540d/Energy_Price_Germany/issues
-- **Datenschutz:** Siehe PRIVACY_POLICY.md
+- **Datenschutz:** https://s540d.github.io/Energy_Price_Germany/PRIVACY_POLICY.html
 
 ---
 

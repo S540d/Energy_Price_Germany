@@ -34,7 +34,7 @@ Behalten Sie die Entwicklung der Strompreise und den Anteil erneuerbarer Energie
 • Erneuerbare Energien: Visualisierung des Anteils erneuerbarer Energien im Stromnetz
 • Interaktive Charts: Detaillierte Diagramme mit bis zu 43+ Stunden Vorhersage
 • Korrelationsanalyse: Zusammenhang zwischen Strompreisen und erneuerbaren Energien
-• Datenexport: Exportieren Sie Daten als CSV oder JSON für eigene Analysen
+• Diagramme teilen: Charts als Bild teilen
 • Dark/Light Mode: Automatische Anpassung an Ihr System-Theme
 
 📊 DATENQUELLEN
@@ -79,7 +79,7 @@ Ihre Privatsphäre ist uns wichtig:
 
 🆓 KOSTENLOS & WERBEFREI
 
-Energy Prices Germany ist komplett kostenlos und enthält keine Werbung. Open-Source-Projekt unter MIT-Lizenz.
+Energy Prices Germany ist komplett kostenlos und enthält keine Werbung. Quellcode öffentlich auf GitHub (PolyForm Noncommercial 1.0.0).
 
 ⭐ UNTERSTÜTZEN SIE DAS PROJEKT
 
@@ -107,7 +107,7 @@ Track electricity price developments and the share of renewable energy in German
 • Renewable Energy: Visualization of renewable energy share in the power grid
 • Interactive Charts: Detailed diagrams with up to 43+ hours of forecast
 • Correlation Analysis: Relationship between electricity prices and renewable energy
-• Data Export: Export data as CSV or JSON for your own analysis
+• Share charts: share charts as an image
 • Dark/Light Mode: Automatic adaptation to your system theme
 
 📊 DATA SOURCES
@@ -152,7 +152,7 @@ Your privacy matters:
 
 🆓 FREE & AD-FREE
 
-Energy Prices Germany is completely free and contains no advertising. Open-source project under MIT license.
+Energy Prices Germany is completely free and contains no advertising. Source code publicly available on GitHub (PolyForm Noncommercial 1.0.0).
 
 ⭐ SUPPORT THE PROJECT
 

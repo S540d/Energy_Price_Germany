@@ -20,7 +20,7 @@ Energy Price Germany - A visualization app for German electricity market prices 
 - [Changelog](CHANGELOG.md) - Version history
 - [Vorfallsarchiv](docs/private/INCIDENTS.md) - Chronik der Betriebsvorfälle (gitignored, lokal)
 - [Build Guide](docs/BUILD.md) - Build and deployment instructions
-- [Privacy Policy](PRIVACY_POLICY.md) - Data privacy information
+- [Privacy Policy](PRIVACY_POLICY.md) - Spiegel von `public/PRIVACY_POLICY.html` (maßgeblich, in App/Play Store verlinkt) — beide synchron halten
 - [Store Description](docs/STORE_DESCRIPTION.md) - Play Store listing text
 
 ## Workflow & Git Management
@@ -78,7 +78,7 @@ released ist. Prüfen: `git show origin/main:.github/workflows/fetch.yml | grep 
    - Interpolated to 15-minute intervals
 
 3. **Energy Charts Signal API** - Regional data (postal code based)
-   - Via Cloudflare Worker (CORS proxy)
+   - Web: via Cloudflare Worker (CORS proxy); native: direkt (#521, Datenschutz)
    - Cached for 15 minutes
 
 4. **Mock Data** - Fallback when APIs fail
@@ -135,7 +135,7 @@ Pre-Commit-Hook (`lint-staged`, pro Datei) decken diese Fehlerklasse nicht auf.
 1. **Data Fetching (App.tsx):**
    - Complex merge logic for multiple data sources
    - Fallback chain: Energy Charts → aWATTar → Mock Data
-   - Regional data via Cloudflare Worker
+   - Regional data: Web via Cloudflare Worker, native direkt (#521)
    - See DATA-MERGE-STRATEGY.md for details
 
 2. **Cloudflare Worker (cloudflare-worker.js):**
