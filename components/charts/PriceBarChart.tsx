@@ -50,6 +50,12 @@ interface PriceBarChartProps {
   showLegend?: boolean;
   forceStacked?: boolean;
   accentColor?: string;
+  /**
+   * Rechter Abstand der Titelspalte. Im Hauptscreen liegt der „Details“-Button
+   * von `ChartDetailView` absolut über dieser Zeile; ohne Reserve läuft ein
+   * langer Titel darunter.
+   */
+  titleRightInset?: number;
 }
 
 function PriceBarChartComponent({
@@ -66,6 +72,7 @@ function PriceBarChartComponent({
   showLegend = true,
   forceStacked = false,
   accentColor,
+  titleRightInset = 8,
 }: PriceBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const { priceDisplayMode } = useSettingsContext();
@@ -280,7 +287,7 @@ function PriceBarChartComponent({
           );
         })()}
       <View style={styles.headerRow}>
-        <View style={styles.titleColumn}>
+        <View style={[styles.titleColumn, { marginRight: titleRightInset }]}>
           <Text
             style={[isPhone ? styles.titlePhone : styles.titleDefault, { color: textColor }]}
             numberOfLines={2}
@@ -572,7 +579,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 0,
   },
-  titleColumn: { flex: 1, marginRight: 8 },
+  titleColumn: { flex: 1 },
   titlePhone: { fontSize: 17, fontWeight: '800', marginBottom: 0 },
   titleDefault: { fontSize: 20, fontWeight: '800', marginBottom: 0 },
   subtitle: { fontSize: 11, opacity: 0.7, marginBottom: 2, fontWeight: '600' },

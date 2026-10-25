@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [1.11.6] - 2026-10-25
+
+### Fixed
+- **Diagrammtitel liefen auf dem Handy unter den „Details“-Button.** Der Button liegt absolut über der Titelzeile, der Titel hielt aber nur 8 px Abstand. Besonders betroffen war der Erneuerbaren-Titel mit PLZ („… an der Last (National & Region (Beta))“). Die Titelzeile reserviert jetzt Platz für den Button (`titleRightInset`). Die Titel sind kürzer: „Erneuerbare an der Last“ / „Renewable Share of Load“ und „Strompreis“ / „Electricity Price“. Der Hinweis auf National- und Regionaldaten steht jetzt in der Unterzeile.
+
 ## [1.11.5] - 2026-10-24
 
 ### Changed
