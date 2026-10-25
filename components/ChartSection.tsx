@@ -20,6 +20,9 @@ type Metrics = ReturnType<typeof calculateMetrics>;
 
 const ACTIVE_VIEW_TOGGLE_TEXT_COLOR = '#fff';
 
+/** Platz für den „Details“-Button, der über der Titelzeile der Charts liegt. */
+const DETAILS_BUTTON_INSET = 96;
+
 type Props = {
   filteredEnergyData: EnergyData[];
   hourlyEnergyData: EnergyData[];
@@ -68,9 +71,11 @@ export function ChartSection({
       ? `${t.timeRange}: ${formatDate(data[0].timestamp)} - ${formatDate(data[data.length - 1].timestamp)}`
       : t.loadingData;
 
-  const renewableTitle = showRegional
-    ? `${t.renewableTitle} (${t.nationalData} & ${t.regionalData})`
-    : t.renewableTitle;
+  // Der Hinweis auf die Regionaldaten steht in der Unterzeile, nicht im Titel –
+  // sonst wird der Titel auf dem Handy zu lang.
+  const renewableTitle = t.renewableTitle;
+  const renewableSubtitle = (data: EnergyData[]) =>
+    showRegional ? `${timeRange(data)} · ${t.nationalData} & ${t.regionalData}` : timeRange(data);
 
   const renewableLabels = {
     yAxis: t.renewablePercent,
@@ -179,7 +184,7 @@ export function ChartSection({
           detailChildren={
             <RenewableBarChart
               title={renewableTitle}
-              subtitle={timeRange(filteredEnergyData)}
+              subtitle={renewableSubtitle(filteredEnergyData)}
               data={filteredEnergyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
@@ -195,7 +200,7 @@ export function ChartSection({
         >
           <RenewableBarChart
             title={renewableTitle}
-            subtitle={timeRange(hourlyEnergyData)}
+            subtitle={renewableSubtitle(hourlyEnergyData)}
             data={hourlyEnergyData}
             backgroundColor={colors.surface}
             textColor={colors.text}
@@ -206,6 +211,7 @@ export function ChartSection({
             showRegionalLine={showRegional}
             showLegend={false}
             accentColor={colors.accentGreen}
+            titleRightInset={DETAILS_BUTTON_INSET}
           />
         </ChartDetailView>
 
@@ -396,6 +402,7 @@ export function ChartSection({
               gridFees={gridFees}
               showLegend={false}
               accentColor={colors.accentAmber}
+              titleRightInset={DETAILS_BUTTON_INSET}
             />
           )}
         </Animated.View>

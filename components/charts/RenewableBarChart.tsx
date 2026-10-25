@@ -65,6 +65,12 @@ interface RenewableBarChartProps {
   showRegionalLine?: boolean; // Zeigt gestrichelte Linie für regionale Daten
   showLegend?: boolean;
   accentColor?: string;
+  /**
+   * Rechter Abstand der Titelspalte. Im Hauptscreen liegt der „Details“-Button
+   * von `ChartDetailView` absolut über dieser Zeile; ohne Reserve läuft ein
+   * langer Titel darunter.
+   */
+  titleRightInset?: number;
 }
 
 function RenewableBarChartComponent({
@@ -81,6 +87,7 @@ function RenewableBarChartComponent({
   showRegionalLine = false,
   showLegend = true,
   accentColor,
+  titleRightInset = 8,
 }: RenewableBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const { t } = useLanguageContext();
@@ -327,7 +334,7 @@ function RenewableBarChartComponent({
           );
         })()}
       <View style={styles.headerRow}>
-        <View style={styles.titleColumn}>
+        <View style={[styles.titleColumn, { marginRight: titleRightInset }]}>
           <Text
             style={[isPhone ? styles.titlePhone : styles.titleDefault, { color: textColor }]}
             numberOfLines={2}
@@ -733,7 +740,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 0,
   },
-  titleColumn: { flex: 1, marginRight: 8 },
+  titleColumn: { flex: 1 },
   titlePhone: { fontSize: 16, fontWeight: 'bold', marginBottom: 0 },
   titleDefault: { fontSize: 18, fontWeight: 'bold', marginBottom: 0 },
   subtitle: { fontSize: 12, opacity: 0.7, marginBottom: 2 },

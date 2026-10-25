@@ -104,8 +104,8 @@ export const translations = {
     costTimelineSave: 'save vs. now',
     // Other
     loadingData: 'Loading energy data...',
-    renewableTitle: 'Share of Renewable Energy in Load',
-    priceTitle: 'Market and End Customer Electricity Price',
+    renewableTitle: 'Renewable Share of Load',
+    priceTitle: 'Electricity Price',
     correlationTitle: 'Correlation: Price vs. Renewables',
     correlationInsight: '💡 High renewable share correlates with lower market prices',
     timeRange: 'Time Range',
@@ -278,8 +278,8 @@ export const translations = {
     costTimelineSave: 'ggü. jetzt sparen',
     // Other
     loadingData: 'Lade Energiedaten...',
-    renewableTitle: 'Anteil Erneuerbarer Energien an der Last',
-    priceTitle: 'Börsen- und Endkundenstrompreis',
+    renewableTitle: 'Erneuerbare an der Last',
+    priceTitle: 'Strompreis',
     correlationTitle: 'Korrelation: Preis vs. Erneuerbare',
     correlationInsight: '💡 Hoher Erneuerbaren-Anteil korreliert mit niedrigem Börsenpreis',
     timeRange: 'Zeitraum',
