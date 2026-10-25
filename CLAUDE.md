@@ -150,8 +150,8 @@ Pre-Commit-Hook (`lint-staged`, pro Datei) decken diese Fehlerklasse nicht auf.
 
 4. **Chart Components (components/charts/):** Custom SVG charts
    (react-native-svg), shared building blocks in `components/charts/shared/`,
-   Zoom/Fallback-Logik für fehlende Erneuerbaren-Daten (Ortswert-Fallback,
-   Ausfall-Kaschierung durch Fenster-Ø). Details:
+   Zoom, Umgang mit fehlenden Erneuerbaren-Daten („Prognose endet hier“
+   statt Ortswert-Ersatz, Ausfall-Kaschierung durch Fenster-Ø). Details:
    [`docs/ARCHITECTURE.md#11-chart-components--renewable-fallbacks`](docs/ARCHITECTURE.md#11-chart-components--renewable-fallbacks).
 
 5. **Historical Data (`services/historicalDataStore.ts`):** Device-Cache

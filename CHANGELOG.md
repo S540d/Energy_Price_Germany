@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [1.11.4] - 2026-10-24
+
+### Changed
+- **Erneuerbaren-Chart: „Prognose endet hier“ statt Ortswert-Ersatzbalken (#489).** Liegen Preise für Zeitpunkte vor, für die es noch keine bundesweite Erneuerbaren-Prognose gibt (typisch: Preise für morgen ab ca. 15 Uhr, Prognose erst später), markiert eine gestrichelte senkrechte Linie mit Beschriftung jetzt das Ende der nationalen Reihe. Die mit #481 eingeführten Ortswert-Ersatzbalken (gestrichelter violetter Rahmen, eigene Legende/Tooltip) sind entfernt. Eine Messung über alle Daten-Commits vom 14.09. bis 24.10. hat gezeigt, dass sie in keinem Fall ausgelöst hätten: Für heute fehlten die nationalen Werte nie außerhalb echter Ausfälle, und für morgen konnte der Ortswert per Konstruktion keine Werte liefern. Die Ortswert-Überbrückung der Kachel „Erneuerbare jetzt“ (#473) bleibt unverändert.
+
 ## [1.11.3] - 2026-10-03
 
 ### Changed
