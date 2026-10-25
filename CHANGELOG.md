@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 - **Android ruft Regionaldaten direkt bei Energy Charts ab statt über den Cloudflare Worker (#521).** Der Worker ist ein reiner CORS-Proxy und wird nur im Browser gebraucht. In der App sieht Cloudflare damit weder IP-Adresse noch Postleitzahl. Die Web-Version nutzt den Worker weiterhin, da die Signal API keine CORS-Header sendet. Die PLZ wird jetzt auch clientseitig auf genau fünf Ziffern geprüft (bisher nur im Worker). Der 15-Minuten-Cache bleibt unverändert.
+- **Datenschutzerklärung überarbeitet (#521).** Die bisherige Fassung (November 2025) behauptete, außer Energy Charts finde keine Netzwerkkommunikation statt und es würden keine personenbezogenen Daten übertragen, und nannte aWATTar als von der App kontaktierten Dienst. Die neue Fassung (DE/EN, `public/PRIVACY_POLICY.html`, gespiegelt in `PRIVACY_POLICY.md`) listet alle tatsächlich kontaktierten Server (GitHub Pages, Energy Charts, im Web Cloudflare), wann die Postleitzahl übertragen wird (einschließlich der Ersatz-PLZ Berlin), was lokal gespeichert wird und dass Server technisch die IP-Adresse erhalten.
+- **Doku korrigiert:** README, `docs/PERMISSIONS.md`, `docs/STORE_DESCRIPTION.md` und `play-store-assets/store-listing.md` nannten einen CSV-/JSON-Export, den es nicht mehr gibt (zuletzt in der ungenutzten `MetricsView`, entfernt in #503), sowie die MIT-Lizenz. Maßgeblich ist `LICENSE` (PolyForm Noncommercial 1.0.0), `package.json` ist entsprechend angepasst.
 
 ## [1.11.4] - 2026-10-24
 

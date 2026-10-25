@@ -20,7 +20,7 @@ Energy Price Germany - A visualization app for German electricity market prices 
 - [Changelog](CHANGELOG.md) - Version history
 - [Vorfallsarchiv](docs/private/INCIDENTS.md) - Chronik der Betriebsvorfälle (gitignored, lokal)
 - [Build Guide](docs/BUILD.md) - Build and deployment instructions
-- [Privacy Policy](PRIVACY_POLICY.md) - Data privacy information
+- [Privacy Policy](PRIVACY_POLICY.md) - Spiegel von `public/PRIVACY_POLICY.html` (maßgeblich, in App/Play Store verlinkt) — beide synchron halten
 - [Store Description](docs/STORE_DESCRIPTION.md) - Play Store listing text
 
 ## Workflow & Git Management

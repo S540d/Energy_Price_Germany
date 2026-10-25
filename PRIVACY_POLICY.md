@@ -1,121 +1,74 @@
-# Privacy Policy - Energy Prices Germany
+# Privacy Policy / Datenschutzerklärung – Energy Price Germany
 
-**Last updated: November 11, 2025**
+> The authoritative, published version is [`public/PRIVACY_POLICY.html`](public/PRIVACY_POLICY.html)
+> (https://s540d.github.io/Energy_Price_Germany/PRIVACY_POLICY.html, linked in the app and on Google Play).
+> This file mirrors its content. Keep both in sync.
 
-## Overview
+**Last updated: October 25, 2026** (applies from app version 1.11.5)
 
-Energy Prices Germany ("we", "our", or "the app") is committed to protecting your privacy. This Privacy Policy explains how we handle information when you use our mobile application.
+## Summary
 
-## Data Collection
+No account. No tracking. No ads. No analytics. The app itself does not collect personal data. As with any request over the internet, the servers contacted technically receive your IP address (see "Network connections").
 
-**We do NOT collect, store, or process any personal data.**
+## Controller
 
-The app:
-- ✅ Does NOT require user accounts or login
-- ✅ Does NOT collect personal information (name, email, phone, etc.)
-- ✅ Does NOT track your location
-- ✅ Does NOT use cookies or tracking technologies
-- ✅ Does NOT share data with third parties
-- ✅ Does NOT contain advertising or analytics SDKs
+See the [Legal Notice (Impressum)](https://s540d.github.io/impressum.html). Contact: [GitHub Issues](https://github.com/S540d/Energy_Price_Germany/issues).
 
-## Data Used
+## Data stored locally
 
-The app uses:
-- **Public energy market data** from Energy Charts (Fraunhofer ISE) via their public API
-- **Display preferences** (theme, language) stored locally on your device only
+Stored **only on your device** (Android: app storage, web: browser storage), never transmitted to us:
 
-All settings are stored locally on your device using React Native's AsyncStorage and are never transmitted to any server.
+- Settings: language, appearance, country, grid fee display
+- Postal code, if you enter one for regional data
+- Price alert thresholds, if set
+- Cached data: prices, renewable share, history, regional values
 
-## Internet Permissions
+Delete it by uninstalling the app, clearing app storage, or clearing site data in the browser.
 
-The app requires internet access to:
-- Fetch publicly available energy market data from Energy Charts API (api.energy-charts.info)
-- No other network communication occurs
+## Network connections
 
-## Third-Party Services
+Your **IP address** is transmitted to each server contacted; logging is governed by the provider's own policy.
 
-### Data Sources
-- **Energy Charts (Fraunhofer ISE)**: We fetch public energy market data from their API
-  - Website: https://energy-charts.info
-  - Their data is licensed under CC BY 4.0
-  - No personal data is transmitted to this service
+| Service | When | Data beyond the IP address |
+|---|---|---|
+| **GitHub Pages** (`s540d.github.io`) | Web version and every data request (also Android) | none. Prices/renewables are prepared by GitHub Actions from Energy Charts and aWATTar; the app does not contact those for this data. |
+| **Energy Charts** (Fraunhofer ISE, `api.energy-charts.info`) | With your postal code; without one only if nationwide values for today are missing (fixed substitute postal code Berlin 10115). Android contacts it directly | the postal code used |
+| **Cloudflare** (`energypricegermany.sven4321.workers.dev`) | Web version only, same requests as Energy Charts (browsers cannot query the Energy Charts interface directly) | postal code; response cached up to 1 h per postal code, without IP reference |
 
-## Children's Privacy
+Without your own postal code, no information about your location is transmitted.
 
-This app does not knowingly collect information from children under 13 years of age. No data collection occurs regardless of age.
+## Permissions (Android)
 
-## Changes to This Policy
+- `INTERNET`: retrieve the data above
+- `ACCESS_NETWORK_STATE`: check connectivity
 
-We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated "Last updated" date.
+Web: browser notification permission is requested only when a price alert is used; notifications are created locally while the page is open, no push service.
 
-## Open Source
+## No tracking
 
-This app is open source. You can review the complete source code at:
-https://github.com/S540d/Energy_Price_Germany
+No analytics, no ads or ad trackers, no crash reporting, no cookies, no user account.
 
-## Contact
+## External links
 
-If you have questions about this Privacy Policy, please contact:
-- GitHub Issues: https://github.com/S540d/Energy_Price_Germany/issues
+Links (GitHub, Google Play, Ko-fi) open in the browser; the providers' privacy policies apply.
+
+## Your rights
+
+We hold no personal data about you. Local data can be deleted by you at any time. Questions: see "Controller".
 
 ---
 
-## Datenschutzerklärung - Energy Prices Germany
+## Datenschutzerklärung (Kurzfassung)
 
-**Zuletzt aktualisiert: 11. November 2025**
+**Zuletzt aktualisiert: 25. Oktober 2026** (gilt ab App-Version 1.11.5). Maßgeblich ist die veröffentlichte Fassung in [`public/PRIVACY_POLICY.html`](public/PRIVACY_POLICY.html).
 
-## Übersicht
-
-Energy Prices Germany ("wir", "unsere" oder "die App") verpflichtet sich zum Schutz Ihrer Privatsphäre. Diese Datenschutzerklärung erklärt, wie wir mit Informationen umgehen, wenn Sie unsere mobile Anwendung nutzen.
-
-## Datenerhebung
-
-**Wir erheben, speichern oder verarbeiten KEINE personenbezogenen Daten.**
-
-Die App:
-- ✅ Erfordert KEINE Benutzerkonten oder Anmeldung
-- ✅ Sammelt KEINE persönlichen Informationen (Name, E-Mail, Telefon, etc.)
-- ✅ Verfolgt NICHT Ihren Standort
-- ✅ Verwendet KEINE Cookies oder Tracking-Technologien
-- ✅ Teilt KEINE Daten mit Dritten
-- ✅ Enthält KEINE Werbe- oder Analyse-SDKs
-
-## Verwendete Daten
-
-Die App verwendet:
-- **Öffentliche Energiemarktdaten** von Energy Charts (Fraunhofer ISE) über deren öffentliche API
-- **Anzeigeeinstellungen** (Theme, Sprache), die nur lokal auf Ihrem Gerät gespeichert werden
-
-Alle Einstellungen werden lokal auf Ihrem Gerät mit React Native's AsyncStorage gespeichert und niemals an einen Server übertragen.
-
-## Internet-Berechtigungen
-
-Die App benötigt Internetzugriff für:
-- Abrufen öffentlich verfügbarer Energiemarktdaten von der Energy Charts API (api.energy-charts.info)
-- Keine weitere Netzwerkkommunikation findet statt
-
-## Drittanbieterdienste
-
-### Datenquellen
-- **Energy Charts (Fraunhofer ISE)**: Wir rufen öffentliche Energiemarktdaten von deren API ab
-  - Website: https://energy-charts.info
-  - Deren Daten sind unter CC BY 4.0 lizenziert
-  - Es werden keine personenbezogenen Daten an diesen Dienst übertragen
-
-## Datenschutz für Kinder
-
-Diese App sammelt wissentlich keine Informationen von Kindern unter 13 Jahren. Es erfolgt unabhängig vom Alter keine Datenerfassung.
-
-## Änderungen dieser Richtlinie
-
-Wir können diese Datenschutzerklärung von Zeit zu Zeit aktualisieren. Alle Änderungen werden auf dieser Seite mit einem aktualisierten "Zuletzt aktualisiert"-Datum veröffentlicht.
-
-## Open Source
-
-Diese App ist Open Source. Sie können den vollständigen Quellcode einsehen unter:
-https://github.com/S540d/Energy_Price_Germany
-
-## Kontakt
-
-Bei Fragen zu dieser Datenschutzerklärung wenden Sie sich bitte an:
-- GitHub Issues: https://github.com/S540d/Energy_Price_Germany/issues
+- **Kein Konto, kein Tracking, keine Werbung, keine Analyse-Tools.** Die App erhebt selbst keine personenbezogenen Daten.
+- **Verantwortlicher:** siehe [Impressum](https://s540d.github.io/impressum.html), Kontakt über [GitHub Issues](https://github.com/S540d/Energy_Price_Germany/issues).
+- **Lokal gespeichert** (nur auf dem Gerät): Einstellungen, ggf. Postleitzahl, Preisalarm-Schwellen, zwischengespeicherte Daten. Löschbar durch Deinstallation, Leeren des App-Speichers oder der Website-Daten.
+- **Netzwerkverbindungen** (dabei wird jeweils technisch die IP-Adresse übermittelt):
+  - **GitHub Pages** (`s540d.github.io`): Web-Version und alle Datenabrufe, auch in der Android-App.
+  - **Energy Charts** (Fraunhofer ISE): mit Ihrer Postleitzahl (wird übermittelt); ohne eigene Postleitzahl nur, wenn bundesweite Werte für heute fehlen, dann mit der festen Ersatz-PLZ Berlin (10115). Die Android-App fragt direkt an.
+  - **Cloudflare**: nur in der Web-Version, für dieselben Anfragen (Weiterleitung, da Browser die Schnittstelle nicht direkt abfragen können); erhält Postleitzahl und IP-Adresse, Zwischenspeicherung bis 1 h je Postleitzahl ohne IP-Bezug.
+  - Ohne eigene Postleitzahl werden keine Angaben zu Ihrem Standort übermittelt.
+- **Berechtigungen (Android):** `INTERNET`, `ACCESS_NETWORK_STATE`. Web: Benachrichtigungen nur bei Preisalarm, lokal im Browser, kein Push-Dienst.
+- **Externe Links** (GitHub, Google Play, Ko-fi): Es gelten die Bestimmungen der Anbieter.

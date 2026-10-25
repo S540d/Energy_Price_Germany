@@ -15,14 +15,19 @@ Aktuelle Börsenstrompreise und Ökostrom-Anteil in Deutschland — kostenlos, w
 - **Anteil erneuerbarer Energien** im deutschen Netz — optional **regional per Postleitzahl**
 - **Interaktive Diagramme** zu Preis- und Ökostrom-Verlauf, dazu der Zusammenhang beider Werte
 - **Verlauf und Statistiken** über frühere Tage
-- **Export** als CSV oder JSON
+- **Diagramme als Bild teilen**
+- **Preisalarm** bei frei wählbaren Schwellen
 - Hell/Dunkel, Deutsch/Englisch, offlinefähig
 - Weitere Länder (Beta): Niederlande, Österreich, Schweiz, Frankreich, Belgien, Dänemark
 
 ## Datenquellen
 
-[Energy Charts (Fraunhofer ISE)](https://www.energy-charts.info/) und aWATTar (EPEX Spot).
+[Energy Charts (Fraunhofer ISE)](https://www.energy-charts.info/) und aWATTar (EPEX Spot). Preise und bundesweiter Ökostrom-Anteil werden mehrmals täglich per GitHub Actions abgerufen und über GitHub Pages ausgeliefert. Regionale Werte kommen live aus der Energy-Charts-Schnittstelle.
+
+## Datenschutz
+
+Kein Konto, kein Tracking, keine Werbung. Welche Server die App kontaktiert und welche Daten dabei anfallen: [Datenschutzerklärung](https://s540d.github.io/Energy_Price_Germany/PRIVACY_POLICY.html).
 
 ## Lizenz
 
-MIT — siehe [LICENSE](LICENSE).
+PolyForm Noncommercial 1.0.0 — siehe [LICENSE](LICENSE).
