@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [1.11.7] - 2026-10-27
+
+### Changed
+- **Android-Release-Builds laufen jetzt durch R8 (Code-Minifizierung und Resource-Shrinking).** Die Play Console hatte die DEX-Codeoptimierung von 1.11.0 als „niedrig“ bewertet und die App deshalb herabgestuft. Bisher lief der Release-Build ohne R8, weil das Expo-Template `minifyEnabled` standardmäßig aus lässt. Aktiviert wird R8 über `expo-build-properties` in `app.config.js` (`enableMinifyInReleaseBuilds`, `enableShrinkResourcesInReleaseBuilds`), dadurch bleibt die Einstellung auch nach `expo prebuild --clean` erhalten.
+
 ## [1.11.6] - 2026-10-25
 
 ### Fixed

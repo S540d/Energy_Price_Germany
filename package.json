@@ -1,6 +1,6 @@
 {
   "name": "energypricegermany",
-  "version": "1.11.6",
+  "version": "1.11.7",
   "description": "Energy price visualization for Germany with market data and renewable energy share",
   "main": "index.ts",
   "homepage": "https://s540d.github.io/Energy_Price_Germany/",
@@ -44,6 +44,7 @@
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
     "expo": "~55.0.30",
+    "expo-build-properties": "~55.0.18",
     "expo-linear-gradient": "~55.0.9",
     "expo-splash-screen": "~55.0.12",
     "expo-status-bar": "~55.0.4",
