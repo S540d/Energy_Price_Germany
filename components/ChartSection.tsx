@@ -2,10 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import type { AnimatedStyle } from 'react-native-reanimated';
 import Animated from 'react-native-reanimated';
-import {
-  RenewableBarChart,
-  FALLBACK_BAR_STROKE as RENEWABLE_FALLBACK_CHART_COLOR,
-} from './charts/RenewableBarChart';
+import { RenewableBarChart } from './charts/RenewableBarChart';
 import { PriceBarChart } from './charts/PriceBarChart';
 import { ClockChart } from './charts/ClockChart';
 import { CorrelationScatterChart } from './charts/CorrelationScatterChart';
@@ -22,6 +19,9 @@ import { colors as designColors } from '../utils/designSystem';
 type Metrics = ReturnType<typeof calculateMetrics>;
 
 const ACTIVE_VIEW_TOGGLE_TEXT_COLOR = '#fff';
+
+/** Platz für den „Details“-Button, der über der Titelzeile der Charts liegt. */
+const DETAILS_BUTTON_INSET = 96;
 
 type Props = {
   filteredEnergyData: EnergyData[];
@@ -71,9 +71,11 @@ export function ChartSection({
       ? `${t.timeRange}: ${formatDate(data[0].timestamp)} - ${formatDate(data[data.length - 1].timestamp)}`
       : t.loadingData;
 
-  const renewableTitle = showRegional
-    ? `${t.renewableTitle} (${t.nationalData} & ${t.regionalData})`
-    : t.renewableTitle;
+  // Der Hinweis auf die Regionaldaten steht in der Unterzeile, nicht im Titel –
+  // sonst wird der Titel auf dem Handy zu lang.
+  const renewableTitle = t.renewableTitle;
+  const renewableSubtitle = (data: EnergyData[]) =>
+    showRegional ? `${timeRange(data)} · ${t.nationalData} & ${t.regionalData}` : timeRange(data);
 
   const renewableLabels = {
     yAxis: t.renewablePercent,
@@ -81,7 +83,7 @@ export function ChartSection({
     average: t.average,
     averageLowCoverage: t.averageLowCoverage,
     regional: t.regionalData,
-    fallback: t.renewableFallbackChartLabel?.replace('{location}', renewableFallbackLocation),
+    forecastEnd: t.forecastEndLabel,
   };
 
   // Nationale Werte haben Vorrang; der Ortswert tritt nur ein, wenn heute
@@ -167,32 +169,22 @@ export function ChartSection({
               : undefined
           }
           legend={
-            showRegional || renewableFallback?.series?.length ? (
+            showRegional ? (
               <View style={styles.legendContainer}>
                 <Text style={[styles.legendTitle, { color: colors.text }]}>{t.legend}</Text>
-                {showRegional && (
-                  <View style={styles.legendRow}>
-                    <View style={styles.legendLineRegional} />
-                    <Text style={[styles.legendLabel, { color: colors.text }]}>
-                      {t.regionalDataLabel}
-                    </Text>
-                  </View>
-                )}
-                {!!renewableFallback?.series?.length && (
-                  <View style={styles.legendRow}>
-                    <View style={styles.legendSwatchFallback} />
-                    <Text style={[styles.legendLabel, { color: colors.text }]}>
-                      {renewableLabels.fallback}
-                    </Text>
-                  </View>
-                )}
+                <View style={styles.legendRow}>
+                  <View style={styles.legendLineRegional} />
+                  <Text style={[styles.legendLabel, { color: colors.text }]}>
+                    {t.regionalDataLabel}
+                  </Text>
+                </View>
               </View>
             ) : undefined
           }
           detailChildren={
             <RenewableBarChart
               title={renewableTitle}
-              subtitle={timeRange(filteredEnergyData)}
+              subtitle={renewableSubtitle(filteredEnergyData)}
               data={filteredEnergyData}
               backgroundColor={colors.surface}
               textColor={colors.text}
@@ -203,13 +195,12 @@ export function ChartSection({
               showRegionalLine={showRegional}
               showLegend={false}
               accentColor={colors.accentGreen}
-              fallbackSeries={renewableFallback?.series}
             />
           }
         >
           <RenewableBarChart
             title={renewableTitle}
-            subtitle={timeRange(hourlyEnergyData)}
+            subtitle={renewableSubtitle(hourlyEnergyData)}
             data={hourlyEnergyData}
             backgroundColor={colors.surface}
             textColor={colors.text}
@@ -220,7 +211,7 @@ export function ChartSection({
             showRegionalLine={showRegional}
             showLegend={false}
             accentColor={colors.accentGreen}
-            fallbackSeries={renewableFallback?.series}
+            titleRightInset={DETAILS_BUTTON_INSET}
           />
         </ChartDetailView>
 
@@ -411,6 +402,7 @@ export function ChartSection({
               gridFees={gridFees}
               showLegend={false}
               accentColor={colors.accentAmber}
+              titleRightInset={DETAILS_BUTTON_INSET}
             />
           )}
         </Animated.View>
@@ -467,14 +459,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   legendSquareGray: { width: 16, height: 16, backgroundColor: '#757575', borderRadius: 2 },
-  legendSwatchFallback: {
-    width: 16,
-    height: 16,
-    borderRadius: 2,
-    borderWidth: 2,
-    borderColor: RENEWABLE_FALLBACK_CHART_COLOR,
-    borderStyle: 'dashed',
-  },
   legendLabel: { fontSize: 12 },
   viewToggleRow: { flexDirection: 'row', gap: 6 },
   viewToggleButton: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },

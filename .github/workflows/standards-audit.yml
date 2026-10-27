@@ -21,12 +21,12 @@ permissions:
 
 jobs:
   security-scan:
-    uses: S540d/project-templates/.github/workflows/reusable-security-scan.yml@v1
+    uses: S540d/project-templates/.github/workflows/reusable-security-scan.yml@v2
     with:
       fail_on_findings: true
 
   gitignore-audit:
-    uses: S540d/project-templates/.github/workflows/reusable-gitignore-audit.yml@v1
+    uses: S540d/project-templates/.github/workflows/reusable-gitignore-audit.yml@v2
     with:
       fail_on_missing: true
 
@@ -35,4 +35,4 @@ jobs:
   # auf uses:-Jobs nicht erlaubt – die Non-Blocking-Semantik muss daher im Template
   # bleiben; security-scan und gitignore-audit (fail_on_*: true) gaten den Merge.
   dev-standards-audit:
-    uses: S540d/project-templates/.github/workflows/reusable-dev-standards-audit.yml@v1
+    uses: S540d/project-templates/.github/workflows/reusable-dev-standards-audit.yml@v2

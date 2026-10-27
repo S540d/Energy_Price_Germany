@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [1.11.6] - 2026-10-25
+
+### Fixed
+- **Diagrammtitel liefen auf dem Handy unter den „Details“-Button.** Der Button liegt absolut über der Titelzeile, der Titel hielt aber nur 8 px Abstand. Besonders betroffen war der Erneuerbaren-Titel mit PLZ („… an der Last (National & Region (Beta))“). Die Titelzeile reserviert jetzt Platz für den Button (`titleRightInset`). Die Titel sind kürzer: „Erneuerbare an der Last“ / „Renewable Share of Load“ und „Strompreis“ / „Electricity Price“. Der Hinweis auf National- und Regionaldaten steht jetzt in der Unterzeile.
+
+## [1.11.5] - 2026-10-24
+
+### Changed
+- **Android ruft Regionaldaten direkt bei Energy Charts ab statt über den Cloudflare Worker (#521).** Der Worker ist ein reiner CORS-Proxy und wird nur im Browser gebraucht. In der App sieht Cloudflare damit weder IP-Adresse noch Postleitzahl. Die Web-Version nutzt den Worker weiterhin, da die Signal API keine CORS-Header sendet. Die PLZ wird jetzt auch clientseitig auf genau fünf Ziffern geprüft (bisher nur im Worker). Der 15-Minuten-Cache bleibt unverändert.
+- **Datenschutzerklärung überarbeitet (#521).** Die bisherige Fassung (November 2025) behauptete, außer Energy Charts finde keine Netzwerkkommunikation statt und es würden keine personenbezogenen Daten übertragen, und nannte aWATTar als von der App kontaktierten Dienst. Die neue Fassung (DE/EN, `public/PRIVACY_POLICY.html`, gespiegelt in `PRIVACY_POLICY.md`) listet alle tatsächlich kontaktierten Server (GitHub Pages, Energy Charts, im Web Cloudflare), wann die Postleitzahl übertragen wird (einschließlich der Ersatz-PLZ Berlin), was lokal gespeichert wird und dass Server technisch die IP-Adresse erhalten.
+- **Doku korrigiert:** README, `docs/PERMISSIONS.md`, `docs/STORE_DESCRIPTION.md` und `play-store-assets/store-listing.md` nannten einen CSV-/JSON-Export, den es nicht mehr gibt (zuletzt in der ungenutzten `MetricsView`, entfernt in #503), sowie die MIT-Lizenz. Maßgeblich ist `LICENSE` (PolyForm Noncommercial 1.0.0), `package.json` ist entsprechend angepasst.
+
+## [1.11.4] - 2026-10-24
+
+### Changed
+- **Erneuerbaren-Chart: „Prognose endet hier“ statt Ortswert-Ersatzbalken (#489).** Liegen Preise für Zeitpunkte vor, für die es noch keine bundesweite Erneuerbaren-Prognose gibt (typisch: Preise für morgen ab ca. 15 Uhr, Prognose erst später), markiert eine gestrichelte senkrechte Linie mit Beschriftung jetzt das Ende der nationalen Reihe. Die mit #481 eingeführten Ortswert-Ersatzbalken (gestrichelter violetter Rahmen, eigene Legende/Tooltip) sind entfernt. Eine Messung über alle Daten-Commits vom 14.09. bis 24.10. hat gezeigt, dass sie in keinem Fall ausgelöst hätten: Für heute fehlten die nationalen Werte nie außerhalb echter Ausfälle, und für morgen konnte der Ortswert per Konstruktion keine Werte liefern. Die Ortswert-Überbrückung der Kachel „Erneuerbare jetzt“ (#473) bleibt unverändert.
+
 ## [1.11.3] - 2026-10-03
 
 ### Changed

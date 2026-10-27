@@ -337,7 +337,7 @@ js/modules/
 #### Data Flow (aktuell)
 1. App mounts → Fetch Energy Charts data
 2. Check coverage → Supplement with aWATTar if needed
-3. User enters PLZ → Fetch regional data via Cloudflare
+3. User enters PLZ → Fetch regional data (Web: via Cloudflare, native: direkt, #521)
 4. Merge all data → Display in charts
 5. Cache in AsyncStorage for offline use
 6. Record per-day snapshot into the historical store; the "Verlauf" view
@@ -510,7 +510,10 @@ Siehe [BUILD.md](BUILD.md) für detaillierte Build-Anleitung.
 
 ### Cloudflare Worker (CORS Proxy for Regional Data)
 
-The application uses a **Cloudflare Worker** to enable regional data fetching from the Energy Charts Signal API.
+The **web** build uses a **Cloudflare Worker** to enable regional data fetching from the Energy Charts Signal API.
+Native apps (Android) call `api.energy-charts.info/signal` **directly** since #521 — they are not subject to CORS,
+and this keeps IP address and postal code away from Cloudflare. URL selection: `getRegionalDataUrl()` in
+`services/regionalDataCache.ts` (also validates the postal code, `/^\d{5}$/`).
 
 #### Problem Solved
 The Energy Charts Signal API (`/signal` endpoint) does **not include CORS headers**, which prevents direct browser access due to browser security policies. A proxy with CORS support is required.
@@ -557,7 +560,7 @@ Cloudflare Worker (/api/regional?plz=12345)
 - ✅ No authentication required (public data)
 - ✅ No credentials stored in code
 - ✅ CORS allows requests from any origin (safe for public data)
-- ✅ User postal code only sent to Energy Charts API (via Worker proxy)
+- ✅ User postal code only sent to Energy Charts API (web: via Worker proxy, which also sees IP + PLZ; native: directly)
 - ✅ No additional data collection or tracking
 
 #### Deployment
@@ -678,19 +681,17 @@ Success? ──Yes──→ ✅ Complete
   (Streuung zwischen Netzregionen oft > Faktor 2). Reihenfolge: eigene PLZ →
   `CountryConfig.fallbackPostalCode` (DE: Berlin, `10115`) → `--`. Nationale
   und Fallback-Werte werden nie gemischt.
-- **Ortswert-Fallback auch im Chart** (nicht nur KPI-Kachel):
-  `RenewableFallback.series` (Zeitstempel + Wert je heutigem Ortswert-Punkt)
-  über die Prop `fallbackSeries`; für jeden Balken ohne nationalen Wert
-  sucht `findFallbackValue()` (±20 Min Toleranz) einen Ersatzwert — visuell
-  klar abgesetzt (gestrichelter Rahmen `FALLBACK_BAR_STROKE`, reduzierte
-  Deckkraft, eigene Legende/Tooltip). Nationale Werte haben immer Vorrang.
-  ⚠️ **Der Fallback-Pfad löst praktisch nie aus** — er hängt an
-  `hasLimitedRenewableData` = `priceCount > 0 && renewableCount === 0` für
-  **heute**; in der häufigsten Lage (heute fast vollständig, morgen 0)
-  bleibt er `null`. `summarize()` filtert zudem auf `todaySamples`, die
-  `series` enthält nie Punkte für morgen. Wer das nutzbar machen will, muss
-  beide Stellen auf das tatsächliche Chart-Fenster umstellen, nicht auf den
-  Kalendertag.
+- **Kein Ortswert im Chart, sondern „Prognose endet hier“ (#489).** Die
+  Ortswert-Ersatzbalken aus #481 wurden entfernt. Sie lösten praktisch nie
+  aus: Der Fallback hängt an `hasLimitedRenewableData` (heute = 0 Punkte),
+  und `summarize()` liefert nur Werte für heute, nie für morgen. Gemessen
+  wurden 14.09.–24.10.2026, die Messung steht in #489. Stattdessen berechnet
+  `RenewableBarChart` in `chartCalcs.forecastEndTime` den Übergang vom
+  letzten Balken mit Wert zu nachfolgenden Zeitpunkten ohne Wert und zeichnet
+  dort eine gestrichelte Linie mit `labels.forecastEnd`. Lücken in der Mitte
+  der Reihe werden nicht markiert. Die eigentliche Ursache der Morgen-Lücke
+  (Veröffentlichungszeit von `ren_share_forecast` vs. Cron-Slots) liegt in
+  der Pipeline, siehe #522.
 
 ### 11b. Historical Data (`services/historicalDataStore.ts`)
 

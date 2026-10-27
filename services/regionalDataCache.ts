@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { Storage } from '../utils/platform';
 import { validateRegionalDataResponse, fetchWithTimeout } from '../utils/apiValidation';
 import type { RegionalDataResponse } from '../utils/apiValidation';
@@ -25,6 +26,27 @@ interface PersistentRegionalCacheEntry {
 const REGIONAL_CACHE_STORAGE_KEY = 'energy_regional_cache_v1';
 const REGIONAL_CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
 const SERVERLESS_PROXY_URL = 'https://energypricegermany.sven4321.workers.dev/';
+const SIGNAL_API_URL = 'https://api.energy-charts.info/signal';
+const POSTAL_CODE_PATTERN = /^\d{5}$/;
+
+/**
+ * URL für den Abruf der Regionaldaten (#521).
+ *
+ * Der Cloudflare Worker ist ein reiner CORS-Proxy (Antwort unverändert
+ * durchgereicht) und wird nur im Browser gebraucht. Native Apps unterliegen
+ * keiner CORS-Beschränkung und rufen die Signal API direkt ab – damit sieht
+ * Cloudflare bei ihnen weder IP-Adresse noch PLZ. Das Rate-Limit der API gilt
+ * pro Client-IP (/signal: 20/min), der 15-Minuten-Cache unten bleibt bestehen.
+ *
+ * Gibt `null` zurück, wenn die PLZ nicht genau fünf Ziffern hat; die
+ * Validierung übernahm bisher nur der Worker.
+ */
+export function getRegionalDataUrl(postalCode: string, os: string = Platform.OS): string | null {
+  if (!POSTAL_CODE_PATTERN.test(postalCode)) return null;
+  return os === 'web'
+    ? `${SERVERLESS_PROXY_URL}?plz=${postalCode}`
+    : `${SIGNAL_API_URL}?country=de&postal_code=${postalCode}`;
+}
 
 /**
  * Returns current date in YYYY-MM-DD format (local time)
@@ -84,7 +106,7 @@ export class RegionalDataCache {
   }
 
   /**
-   * Fetches regional renewable data via serverless proxy
+   * Fetches regional renewable data (web: serverless proxy, native: direct, #521)
    * Uses dual-layer caching: persistent storage (daily) + memory (15 min)
    */
   async fetchRegionalData(postalCode: string): Promise<RegionalDataResponse | null> {
@@ -103,7 +125,8 @@ export class RegionalDataCache {
       }
 
       // STEP 3: Fetch from API with timeout (8 seconds)
-      const url = `${SERVERLESS_PROXY_URL}?plz=${encodeURIComponent(postalCode)}`;
+      const url = getRegionalDataUrl(postalCode);
+      if (!url) return null;
       const response = await fetchWithTimeout(url, {}, 8000);
 
       if (!response.ok) {

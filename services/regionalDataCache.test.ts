@@ -1,4 +1,4 @@
-import { RegionalDataCache } from './regionalDataCache';
+import { RegionalDataCache, getRegionalDataUrl } from './regionalDataCache';
 import { Storage } from '../utils/platform';
 
 jest.mock('../utils/platform');
@@ -164,6 +164,31 @@ describe('RegionalDataCache', () => {
     it('should not throw when Storage.removeItem fails', async () => {
       (Storage.removeItem as jest.Mock).mockRejectedValueOnce(new Error('Storage error'));
       await expect(cache.invalidate()).resolves.not.toThrow();
+    });
+  });
+
+  describe('getRegionalDataUrl (#521)', () => {
+    it('nutzt im Browser den CORS-Proxy', () => {
+      expect(getRegionalDataUrl('10115', 'web')).toBe(
+        'https://energypricegermany.sven4321.workers.dev/?plz=10115'
+      );
+    });
+
+    it('ruft auf Android die Signal API direkt ab', () => {
+      expect(getRegionalDataUrl('10115', 'android')).toBe(
+        'https://api.energy-charts.info/signal?country=de&postal_code=10115'
+      );
+    });
+
+    it.each(['1011', '101155', 'abcde', '10115&x=1', ''])('lehnt ungültige PLZ "%s" ab', plz => {
+      expect(getRegionalDataUrl(plz, 'android')).toBeNull();
+      expect(getRegionalDataUrl(plz, 'web')).toBeNull();
+    });
+
+    it('ruft bei ungültiger PLZ nichts ab', async () => {
+      const result = await cache.fetchRegionalData('abc');
+      expect(result).toBeNull();
+      expect(global.fetch).not.toHaveBeenCalled();
     });
   });
 });

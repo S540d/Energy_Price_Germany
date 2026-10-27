@@ -17,25 +17,12 @@ import {
   XAxisHourLabels,
 } from './shared';
 import { scaleToX, scaleToY, getBarWidth, getBarHeight, getPlotHeight } from './shared/chartScale';
-import type { Sample as FallbackSample } from '../../utils/renewableFallback';
 
 /**
  * Mindestanteil der Punkte im Fenster, die einen Wert haben müssen, damit ein
  * Mittelwert über das Fenster überhaupt als aussagekräftig gilt.
  */
 const AVERAGE_MIN_COVERAGE_RATIO = 0.5;
-
-/**
- * Wie weit ein Ortswert-Zeitstempel von einem fehlenden nationalen Balken
- * entfernt sein darf, um ihn noch zu ersetzen (#481). Die Signal-API tickt
- * nicht notwendigerweise im selben 15-Minuten-Raster wie die nationalen Daten.
- */
-const FALLBACK_MATCH_TOLERANCE_MS = 20 * 60 * 1000;
-
-/** Farbe für den Ortswert-Ersatzbalken – bewusst nicht Grün/Orange, die schon für
- * die Erneuerbaren-Skala bzw. die eigene Regionallinie stehen. Exportiert, damit
- * `ChartSection`s externe Legende dieselbe Farbe für ihren Schwatch verwendet. */
-export const FALLBACK_BAR_STROKE = '#7E57C2';
 
 /**
  * Type alias for renewable share data keys in EnergyData
@@ -67,8 +54,11 @@ interface RenewableBarChartProps {
      */
     averageLowCoverage?: string;
     regional?: string; // Label für regionale Linie
-    /** Legenden-/Balken-Label für den Ortswert-Ersatz, z.B. "Ortswert (Berlin)". */
-    fallback?: string;
+    /**
+     * Markierung am Ende der nationalen Reihe, wenn danach noch Zeitpunkte
+     * ohne Wert folgen (#489), z.B. "Prognose endet hier".
+     */
+    forecastEnd?: string;
   };
   interactionHint?: string;
   dataKey?: RenewableDataKey;
@@ -76,30 +66,11 @@ interface RenewableBarChartProps {
   showLegend?: boolean;
   accentColor?: string;
   /**
-   * Ortswert-Zeitreihe, mit der fehlende nationale Balken für heute ersetzt
-   * werden (#481 – Berlin-Fallback aus `utils/renewableFallback.ts`). Nur
-   * Balken, an denen kein nationaler Wert vorliegt, werden ersetzt; ein
-   * nationaler Wert hat immer Vorrang und wird nie überschrieben.
+   * Rechter Abstand der Titelspalte. Im Hauptscreen liegt der „Details“-Button
+   * von `ChartDetailView` absolut über dieser Zeile; ohne Reserve läuft ein
+   * langer Titel darunter.
    */
-  fallbackSeries?: FallbackSample[];
-}
-
-/** Nächstgelegener Ortswert für `timestamp` innerhalb der Toleranz, sonst `null`. */
-function findFallbackValue(
-  timestamp: number,
-  fallbackSeries: FallbackSample[] | undefined
-): number | null {
-  if (!fallbackSeries || fallbackSeries.length === 0) return null;
-  let closest: FallbackSample | null = null;
-  let closestDiff = Infinity;
-  for (const sample of fallbackSeries) {
-    const diff = Math.abs(sample.timestamp - timestamp);
-    if (diff < closestDiff) {
-      closestDiff = diff;
-      closest = sample;
-    }
-  }
-  return closest && closestDiff <= FALLBACK_MATCH_TOLERANCE_MS ? closest.value : null;
+  titleRightInset?: number;
 }
 
 function RenewableBarChartComponent({
@@ -116,7 +87,7 @@ function RenewableBarChartComponent({
   showRegionalLine = false,
   showLegend = true,
   accentColor,
-  fallbackSeries,
+  titleRightInset = 8,
 }: RenewableBarChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const { t } = useLanguageContext();
@@ -187,6 +158,22 @@ function RenewableBarChartComponent({
     const hasReliableAverage =
       totalCount > 0 && validCount / totalCount >= AVERAGE_MIN_COVERAGE_RATIO;
 
+    // Ende der nationalen Reihe (#489): Folgen auf den letzten Wert noch
+    // Zeitpunkte ohne Wert (typisch: Preise für morgen liegen vor, die
+    // Erneuerbaren-Prognose noch nicht), wird die Grenze markiert, statt die
+    // Lücke mit Ersatzwerten zu füllen. Zeitstempel = Mitte zwischen letztem
+    // Balken mit Wert und erstem Balken danach.
+    let forecastEndTime: number | null = null;
+    for (let i = data.length - 1; i >= 0; i--) {
+      const v = data[i][dataKey];
+      if (v !== null && v !== undefined) {
+        if (i < data.length - 1) {
+          forecastEndTime = (data[i].timestamp + data[i + 1].timestamp) / 2;
+        }
+        break;
+      }
+    }
+
     return {
       minTime,
       maxTime,
@@ -199,6 +186,7 @@ function RenewableBarChartComponent({
       validCount,
       totalCount,
       hasReliableAverage,
+      forecastEndTime,
     };
   }, [data, dataKey]);
 
@@ -219,30 +207,6 @@ function RenewableBarChartComponent({
       const timestamp = d.timestamp;
 
       if (value === null || value === undefined) {
-        const fallbackValue = findFallbackValue(timestamp, fallbackSeries);
-        if (fallbackValue !== null) {
-          const yScale = {
-            domainMin: cMin,
-            domainRange: cRange,
-            chartHeight,
-            padding,
-            bottomPadding,
-          };
-          const clampedFallback = Math.min(fallbackValue, 100);
-          const fallbackHeight = getBarHeight(clampedFallback, yScale);
-          const fallbackY = chartHeight - bottomPadding - fallbackHeight;
-          return {
-            index,
-            x,
-            barWidth,
-            value: null,
-            isInterpolated: false,
-            timestamp,
-            fallbackValue,
-            fallbackHeight,
-            fallbackY,
-          };
-        }
         return {
           index,
           x,
@@ -302,13 +266,10 @@ function RenewableBarChartComponent({
     rightPadding,
     padding,
     bottomPadding,
-    fallbackSeries,
   ]);
 
   // Guard against invalid data
   if (!chartCalcs) return null;
-
-  const hasFallbackBars = barData.some(bar => bar.fallbackValue != null);
 
   const {
     minTime,
@@ -322,7 +283,19 @@ function RenewableBarChartComponent({
     validCount,
     totalCount,
     hasReliableAverage,
+    forecastEndTime,
   } = chartCalcs;
+
+  const forecastEndX =
+    forecastEndTime !== null && labels.forecastEnd
+      ? scaleToX(forecastEndTime, {
+          domainMin: minTime,
+          domainRange: timeRange,
+          chartWidth,
+          leftPadding,
+          rightPadding,
+        })
+      : null;
 
   return (
     <ChartCard
@@ -360,41 +333,8 @@ function RenewableBarChartComponent({
             </ChartTooltip>
           );
         })()}
-      {selectedIndex !== null &&
-        (data[selectedIndex]?.[dataKey] === null || data[selectedIndex]?.[dataKey] === undefined) &&
-        (() => {
-          const bar = barData[selectedIndex];
-          if (!bar || bar.fallbackValue == null) return null;
-
-          const x = scaleToX(bar.timestamp, {
-            domainMin: minTime,
-            domainRange: timeRange,
-            chartWidth,
-            leftPadding,
-            rightPadding,
-          });
-          const tooltipLeft = getTooltipLeft(toViewportX(x), 80, viewportWidth);
-
-          return (
-            <ChartTooltip
-              tooltipLeft={tooltipLeft}
-              cardPadding={cardPadding}
-              backgroundColor={backgroundColor}
-              colors={colors}
-            >
-              <Text style={[styles.tooltipValue, { color: colors.text }]}>
-                {bar.fallbackValue.toFixed(1)}%
-              </Text>
-              {labels.fallback && (
-                <Text style={[styles.tooltipFallbackNote, { color: colors.textSecondary }]}>
-                  {labels.fallback}
-                </Text>
-              )}
-            </ChartTooltip>
-          );
-        })()}
       <View style={styles.headerRow}>
-        <View style={styles.titleColumn}>
+        <View style={[styles.titleColumn, { marginRight: titleRightInset }]}>
           <Text
             style={[isPhone ? styles.titlePhone : styles.titleDefault, { color: textColor }]}
             numberOfLines={2}
@@ -426,12 +366,6 @@ function RenewableBarChartComponent({
                 <Text style={[styles.legendLabel, { color: textColor }]}>{labels.regional}</Text>
               </View>
             )}
-            {hasFallbackBars && labels.fallback && (
-              <View style={styles.legendItem}>
-                <View style={styles.legendSwatchFallback} />
-                <Text style={[styles.legendLabel, { color: textColor }]}>{labels.fallback}</Text>
-              </View>
-            )}
           </View>
         )}
       </View>
@@ -459,27 +393,6 @@ function RenewableBarChartComponent({
             {/* Bars (SVG) - Using pre-calculated bar data for performance */}
             <Svg width={chartWidth} height={chartHeight}>
               {barData.map(bar => {
-                // Ortswert-Ersatzbalken (#481): visuell klar vom nationalen Balken
-                // abgesetzt (violetter Rahmen + gestrichelt), nie identisch gefärbt,
-                // damit er nicht als nationaler Wert missverstanden wird.
-                if (bar.value === null && bar.fallbackValue != null) {
-                  const isSelected = selectedIndex === bar.index;
-                  return (
-                    <Rect
-                      key={bar.index}
-                      x={bar.x - bar.barWidth / 2}
-                      y={bar.fallbackY}
-                      width={bar.barWidth}
-                      height={bar.fallbackHeight}
-                      fill={getRenewableColor(bar.fallbackValue)}
-                      opacity={isSelected ? 0.55 : 0.35}
-                      stroke={FALLBACK_BAR_STROKE}
-                      strokeWidth={2}
-                      strokeDasharray="4,3"
-                    />
-                  );
-                }
-
                 // Render gray fading bar for missing data
                 if (bar.value === null) {
                   // Seeded random for consistent but varied heights
@@ -655,6 +568,20 @@ function RenewableBarChartComponent({
                   );
                 })()}
 
+              {/* Ende der nationalen Reihe (#489) */}
+              {forecastEndX !== null && (
+                <Line
+                  x1={forecastEndX}
+                  y1={padding}
+                  x2={forecastEndX}
+                  y2={chartHeight - bottomPadding}
+                  stroke={textColor}
+                  strokeWidth="1.5"
+                  strokeDasharray="2,4"
+                  opacity={0.6}
+                />
+              )}
+
               {/* "Jetzt" Markierung */}
               {now >= minTime && now <= maxTime && (
                 <NowMarkerLine
@@ -673,11 +600,7 @@ function RenewableBarChartComponent({
 
             {/* Invisible touch/hover areas for bars - Using pre-calculated positions */}
             {barData.map(bar => {
-              const isFallback = bar.value === null && bar.fallbackValue != null;
-              if (bar.value === null && !isFallback) return null;
-
-              const top = isFallback ? bar.fallbackY : bar.y;
-              const height = isFallback ? bar.fallbackHeight : bar.barHeight;
+              if (bar.value === null) return null;
 
               return (
                 <View
@@ -686,9 +609,9 @@ function RenewableBarChartComponent({
                     Platform.OS === 'web' ? styles.touchAreaWeb : styles.touchArea,
                     {
                       left: bar.x - bar.barWidth / 2,
-                      top,
+                      top: bar.y,
                       width: bar.barWidth,
-                      height,
+                      height: bar.barHeight,
                     },
                   ]}
                   onStartShouldSetResponder={() => true}
@@ -700,6 +623,22 @@ function RenewableBarChartComponent({
                 />
               );
             })}
+
+            {forecastEndX !== null && (
+              <Text
+                style={[
+                  styles.forecastEndLabel,
+                  // In der rechten Hälfte links von der Linie, sonst läuft das
+                  // Label über den Rand (typisch: nur die letzten Stunden fehlen).
+                  forecastEndX > chartWidth / 2
+                    ? { right: chartWidth - forecastEndX + 4, textAlign: 'right' as const }
+                    : { left: forecastEndX + 4 },
+                  { top: padding + 16, color: textColor },
+                ]}
+              >
+                {labels.forecastEnd}
+              </Text>
+            )}
 
             {/* Durchschnittslinie Label bzw. Abdeckungshinweis an ihrer Stelle */}
             {hasReliableAverage ? (
@@ -795,14 +734,13 @@ export const RenewableBarChart = React.memo(RenewableBarChartComponent);
 
 const styles = StyleSheet.create({
   tooltipValue: { fontSize: 14, fontWeight: 'bold' },
-  tooltipFallbackNote: { fontSize: 11, marginTop: 2 },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 0,
   },
-  titleColumn: { flex: 1, marginRight: 8 },
+  titleColumn: { flex: 1 },
   titlePhone: { fontSize: 16, fontWeight: 'bold', marginBottom: 0 },
   titleDefault: { fontSize: 18, fontWeight: 'bold', marginBottom: 0 },
   subtitle: { fontSize: 12, opacity: 0.7, marginBottom: 2 },
@@ -811,15 +749,6 @@ const styles = StyleSheet.create({
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendLine: { width: 12, height: 2, opacity: 0.5 },
   legendLineRegional: { width: 12, height: 2, backgroundColor: '#FF9800', opacity: 0.8 },
-  legendSwatchFallback: {
-    width: 12,
-    height: 12,
-    borderRadius: 2,
-    borderWidth: 2,
-    borderColor: FALLBACK_BAR_STROKE,
-    borderStyle: 'dashed',
-    opacity: 0.8,
-  },
   legendLabel: { fontSize: 12, opacity: 0.7 },
   relative: { position: 'relative' },
   regionalLabel: {
@@ -832,6 +761,7 @@ const styles = StyleSheet.create({
   touchArea: { position: 'absolute', zIndex: 10 },
   touchAreaWeb: { position: 'absolute', zIndex: 10, cursor: 'pointer' },
   averageLabel: { position: 'absolute', fontSize: 12, fontWeight: '600', opacity: 0.7 },
+  forecastEndLabel: { position: 'absolute', fontSize: 10, fontWeight: '500', opacity: 0.6 },
   averageLowCoverageLabel: { fontSize: 10, fontWeight: '500', opacity: 0.6, maxWidth: 180 },
   xAxisLabel: { position: 'absolute', fontSize: 12, opacity: 0.6 },
   yAxisLabelPhone: {
