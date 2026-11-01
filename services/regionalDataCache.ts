@@ -38,6 +38,10 @@ const POSTAL_CODE_PATTERN = /^\d{5}$/;
  * Cloudflare bei ihnen weder IP-Adresse noch PLZ. Das Rate-Limit der API gilt
  * pro Client-IP (/signal: 20/min), der 15-Minuten-Cache unten bleibt bestehen.
  *
+ * Web bleibt beim Proxy: `api.energy-charts.info` antwortet (geprüft 2026-11-01)
+ * mit `access-control-allow-origin: https://www.api.energy-charts.info`, nicht
+ * mit `*` – ein Direktaufruf aus dem Browser scheitert an CORS.
+ *
  * Gibt `null` zurück, wenn die PLZ nicht genau fünf Ziffern hat; die
  * Validierung übernahm bisher nur der Worker.
  */
