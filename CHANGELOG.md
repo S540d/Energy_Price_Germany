@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Changed
+- **Datenabruf: zwei zusätzliche Abend-Slots (21 und 22 UTC) für die Erneuerbaren-Prognose von morgen (#522).** Seit dem 21.10.2026 veröffentlicht Energy Charts die Erneuerbaren-Werte für morgen erst nach dem 19-UTC-Lauf, die Lücke im Chart wuchs dadurch auf rund 14 Stunden. Die Slots laufen durch das bestehende Gate und starten den vollen Abruf nur bei neuen Daten.
+
 ## [1.11.7] - 2026-10-27
 
 ### Changed

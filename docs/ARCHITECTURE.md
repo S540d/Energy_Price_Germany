@@ -139,7 +139,7 @@ See [DATA-MERGE-STRATEGY.md](DATA-MERGE-STRATEGY.md) for detailed algorithm.
 - ✅ Automatic retry handling by GitHub
 
 > ⚠️ Das Diagramm oben ist der ursprüngliche Entwurf. Der tatsächliche Stand
-> (8 Cron-Slots mit datenbasiertem Gate, `deploy-unified.yml`) steht im
+> (10 Cron-Slots mit datenbasiertem Gate, `deploy-unified.yml`) steht im
 > Abschnitt „`fetch.yml`: Resilienz-Konventionen" unten.
 
 #### `fetch.yml`: Resilienz-Konventionen (nicht zurückbauen)
@@ -162,7 +162,7 @@ Alle Energy-Charts-Calls laufen über `scripts/fetch-energy-charts.sh
 - `CURL_OPTS` existiert nur noch für den aWATTar-Call, nicht für
   Energy-Charts-Blöcke (vorher siebenfach dupliziert).
 
-**Cron-Gate:** `- cron: '0 3,4,5,6,9,13,16,19 * * *'`. Nur 03 und 13 UTC
+**Cron-Gate:** `- cron: '0 3,4,5,6,9,13,16,19,21,22 * * *'`. Nur 03 und 13 UTC
 laufen unbedingt; die übrigen Slots gehen durch einen `gate`-Job, der den
 ~90s teuren `update`-Job nur startet, wenn `max(unix_seconds)` der API >
 `max(start_timestamp)` der Datei ODER die Zahl der Punkte mit `ren_share !=
