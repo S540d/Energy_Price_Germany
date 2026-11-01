@@ -14,6 +14,7 @@ import type { EnergyData } from '../utils/metrics';
 import { resolveRenewableKpi } from '../utils/renewableFallback';
 import type { RenewableFallback } from '../utils/renewableFallback';
 import type { calculateMetrics } from '../utils/metrics';
+import { calculatePriceTrend } from '../utils/priceTrend';
 import { colors as designColors } from '../utils/designSystem';
 
 type Metrics = ReturnType<typeof calculateMetrics>;
@@ -98,6 +99,18 @@ export function ChartSection({
         .trim()
     : undefined;
 
+  // Tendenz „morgen vs. heute“ (#67): nur sichtbar, wenn beide Tage genug Preise haben.
+  const priceTrend = calculatePriceTrend(filteredEnergyData);
+  const priceTrendNote = priceTrend
+    ? {
+        cheaper: t.trendCheaper,
+        pricier: t.trendPricier,
+        similar: t.trendSimilar,
+      }[priceTrend.direction]
+        ?.replace('{avg}', priceTrend.tomorrowAvg.toFixed(1))
+        .replace('{diff}', priceTrend.diff.toFixed(1))
+    : undefined;
+
   const priceLabels = {
     yAxis: t.pricePerKwh,
     now: t.now,
@@ -141,6 +154,7 @@ export function ChartSection({
           unit="¢"
           avg={metrics?.today?.marketPrice.avg}
           avgLabel={t.dailyAvg}
+          note={priceTrendNote}
           accentColor={colors.accentAmber}
           isDark={isDark}
           surfaceColor={colors.surface}
