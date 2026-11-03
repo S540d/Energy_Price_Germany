@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-11-03
+
 ### Added
 - **Tendenz „Morgen günstiger/teurer“ unter der Preis-Kachel (#67).** Sobald die Day-Ahead-Preise für morgen vorliegen, vergleicht die App den durchschnittlichen Börsenpreis von morgen mit dem von heute und zeigt die Differenz an (ähnlich bei weniger als 0,3 ¢).
 
