@@ -90,6 +90,19 @@ module.exports = {
     runtimeVersion: {
       policy: 'appVersion'
     },
-    plugins: ['./plugins/withAndroidResizeableActivity.js']
+    plugins: [
+      './plugins/withAndroidResizeableActivity.js',
+      // R8 für Release-Builds (Play Console: „DEX-Codeoptimierung niedrig“).
+      // Landet in android/gradle.properties und überlebt so `prebuild --clean`.
+      [
+        'expo-build-properties',
+        {
+          android: {
+            enableMinifyInReleaseBuilds: true,
+            enableShrinkResourcesInReleaseBuilds: true
+          }
+        }
+      ]
+    ]
   }
 };

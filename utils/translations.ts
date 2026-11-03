@@ -151,6 +151,9 @@ export const translations = {
     renewableNow: 'Renewables now',
     priceNow: 'Price now',
     dailyAvg: 'Daily avg',
+    trendCheaper: 'Tomorrow cheaper: avg {avg}¢ ({diff}¢)',
+    trendPricier: 'Tomorrow pricier: avg {avg}¢ (+{diff}¢)',
+    trendSimilar: 'Tomorrow similar: avg {avg}¢',
     // Metrics labels
     metricCurrent: 'Current',
     metricMin: 'Minimum',
@@ -326,6 +329,9 @@ export const translations = {
     renewableNow: 'Erneuerbare jetzt',
     priceNow: 'Börsenpreis jetzt',
     dailyAvg: 'Tages-Ø',
+    trendCheaper: 'Morgen günstiger: Ø {avg}¢ ({diff}¢)',
+    trendPricier: 'Morgen teurer: Ø {avg}¢ (+{diff}¢)',
+    trendSimilar: 'Morgen ähnlich: Ø {avg}¢',
     // Metrics labels
     metricCurrent: 'Aktuell',
     metricMin: 'Minimum',

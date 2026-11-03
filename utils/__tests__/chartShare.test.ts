@@ -177,5 +177,26 @@ describe('chartShare (web)', () => {
       expect(clickSpy).toHaveBeenCalledTimes(1);
       clickSpy.mockRestore();
     });
+
+    it('downloads without calling navigator.share when canShare rejects files', async () => {
+      mockToPng.mockResolvedValue(VALID_DATA_URL);
+      global.fetch = jest.fn().mockResolvedValue({
+        blob: async () => new Blob(['fake'], { type: 'image/png' }),
+      }) as unknown as typeof fetch;
+
+      const shareMock = jest.fn().mockResolvedValue(undefined);
+      const canShareMock = jest.fn().mockReturnValue(false);
+      Object.defineProperty(navigator, 'share', { value: shareMock, configurable: true });
+      Object.defineProperty(navigator, 'canShare', { value: canShareMock, configurable: true });
+      const clickSpy = jest
+        .spyOn(HTMLAnchorElement.prototype, 'click')
+        .mockImplementation(() => {});
+
+      await shareChart(makeRef(), 'My Chart');
+
+      expect(shareMock).not.toHaveBeenCalled();
+      expect(clickSpy).toHaveBeenCalledTimes(1);
+      clickSpy.mockRestore();
+    });
   });
 });
