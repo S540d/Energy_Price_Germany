@@ -1,0 +1,8 @@
+{
+  "_comment": "Befristete Ausnahmen für scripts/audit-gate.mjs (Vorlage: DrawFromMemory, project-templates#171). Nur Findings ohne kurzfristigen Fix aufnehmen, jeweils mit Begründung und Ablaufdatum. Nach Ablauf schlägt das Gate fehl -> neu bewerten.",
+  "advisories": [
+    { "id": "GHSA-5p2g-fcmc-qvqq", "package": "image-size", "reason": "DoS (Endlosschleife) in JXL/HEIF-Parser, transitiv über metro; nur lokaler/CI-Build, nicht im App-Bundle. Noch kein Upstream-Fix (alle Versionen <=2.0.2 betroffen), Tracking in #265.", "expires": "2027-02-28" },
+    { "id": "GHSA-w3rx-r6r6-pgpr", "package": "image-size", "reason": "DoS (Endlosschleife) im ICNS-Parser, transitiv über metro; nur Build-Tooling. Noch kein Upstream-Fix, Tracking in #265.", "expires": "2027-02-28" },
+    { "id": "GHSA-mrhx-c7xc-m3w5", "package": "zod", "reason": "Speicher-DoS bei übergroßen Collections. Nur zod@3.25.76 via expo -> @expo/cli (Build-Tooling, nicht im App-Bundle); kein gepatchter 3.x-Release. Löst sich mit dem Expo-SDK-58-Upgrade (#542).", "expires": "2026-12-31" }
+  ]
+}
