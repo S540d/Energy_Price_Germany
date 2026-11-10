@@ -47,20 +47,20 @@
     "@react-native-async-storage/async-storage": "^2.2.0",
     "expo": "~55.0.30",
     "expo-build-properties": "~55.0.18",
-    "expo-linear-gradient": "~55.0.9",
-    "expo-splash-screen": "~55.0.12",
-    "expo-status-bar": "~55.0.4",
-    "expo-updates": "~55.0.15",
+    "expo-linear-gradient": "~55.0.18",
+    "expo-splash-screen": "~55.0.25",
+    "expo-status-bar": "~55.0.6",
+    "expo-updates": "~55.0.33",
     "html-to-image": "^1.11.13",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
-    "react-native": "0.83.2",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
+    "react-native": "0.83.10",
     "react-native-reanimated": "4.2.3",
     "react-native-safe-area-context": "~5.6.2",
-    "react-native-svg": "15.15.4",
+    "react-native-svg": "15.15.5",
     "react-native-view-shot": "^4.0.3",
     "react-native-web": "~0.21.4",
-    "react-native-worklets": "0.8.1"
+    "react-native-worklets": "0.8.3"
   },
   "devDependencies": {
     "@eslint/compat": "^2.1.1",
@@ -90,7 +90,7 @@
     "jest-environment-jsdom": "~30.5.2",
     "lint-staged": "^16.4.0",
     "prettier": "^3.9.10",
-    "react-test-renderer": "19.2.0",
+    "react-test-renderer": "19.2.9",
     "typescript": "~5.9.2"
   },
   "overrides": {
