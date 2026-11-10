@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [1.12.1] - 2026-11-10
+
+Dies ist der erste Android-Build mit R8 (aus #530), der hochgeladen wird. 1.11.7 (vc32) und 1.12.0 (vc33) wurden nie gebaut. Der Build soll die Play-Console-Warnung „DEX-Codeoptimierung: Verschleierung 1 %“ von vc31 beheben (#540).
+
+### Added
+- **Prüfung des Android-Release-Builds auf R8 vor dem Upload (#540).** `npm run verify:aab` prüft das gebaute AAB. Das Skript bricht ab, wenn das Bundle `d8.json` statt `r8.json` enthält (Build lief ohne R8) oder wenn das Obfuskations-Mapping `proguard.map` fehlt. Es gibt die DEX-Größe und eine geschätzte Verschleierungsquote aus dem Mapping aus und warnt unter 25 %. `npm run android:prebuild` führt `expo prebuild --clean` aus und prüft direkt danach, ob `android/gradle.properties` die R8-Schalter enthält. vc31 war ohne R8 gebaut worden, das fiel erst Tage nach dem Upload in der Play Console auf.
+
+### Changed
+- **`npm run validate` neu geschrieben.** Das Skript stammte aus einem anderen Projekt: Es suchte `Android/app/build.gradle.kts` und eine „1x1-trainer“-AAB und prüfte deshalb hier nichts Sinnvolles. Jetzt prüft es die Versionen in package.json, package-lock.json, app.json und App.tsx, ob CHANGELOG einen Abschnitt für die Version hat und ob der versionCode größer ist als beim letzten Release-Tag. Außerdem prüft es die R8-Einstellungen in `app.config.js`, ein gebautes AAB (falls vorhanden), Typecheck, Lint, Tests mit Coverage-Schwellen, das Audit-Gate und den Git-Status.
+- **Abhängigkeiten:** `react-native-web` 0.21.2 → 0.21.4, Minor- und Patch-Updates der Dev-Tools (Jest 30.5, typescript-eslint 8.72, Prettier 3.9 u. a.) (#541).
+- **CI:** `npm audit` blockiert jetzt bei High/Critical. Ausnahmen stehen mit Frist in `.audit-allowlist.json` (#547). Dependabot gruppiert Minor/Patch und Major getrennt und ignoriert an das Expo-SDK gebundene Pakete (#544).
+
+### Fixed
+- **Web-Deploy:** Build-Reste, die von Git ignoriert werden, bleiben nach dem Checkout von `gh-pages` nicht mehr liegen (#545).
+
 ## [1.12.0] - 2026-11-03
 
 ### Added

@@ -91,6 +91,12 @@ jobs:
           git reset --hard
           git clean -fd
           git checkout gh-pages
+          # Gitignorierte Build-Reste aus dem main-Workspace (.expo/, node_modules/,
+          # dist/) überleben den Checkout. Auf gh-pages gibt es keine .gitignore,
+          # `git add -A` unten hat sie sonst eingecheckt (Testing-Deploys: .expo/
+          # im Root, S540d/S540d.github.io#31). Der Build liegt sicher in
+          # /tmp/build-artifacts, daher hier alles Untracked inkl. Ignored entfernen.
+          git clean -ffdx
 
       - name: Assemble Pages content
         run: |

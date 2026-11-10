@@ -321,7 +321,8 @@ services/
 
 scripts/
 ├── post-build.js         # Build post-processing
-└── validate-release.sh   # Release validation
+├── validate-release.sh   # Release-Prüfung (npm run validate)
+└── verify-aab.js         # R8-Prüfung des Android-AAB (npm run verify:aab, #540)
 ```
 
 #### Legacy Module Structure (dist/, historisch)

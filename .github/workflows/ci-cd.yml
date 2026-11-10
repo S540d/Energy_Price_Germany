@@ -272,8 +272,10 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run npm audit
-        run: npm audit --audit-level=moderate || true
+      # Gate mit befristeter Allowlist (.audit-allowlist.json), Vorlage: DrawFromMemory / project-templates#171.
+      # Blockiert bei high/critical-Advisories ohne Allowlist-Eintrag und bei abgelaufenen Ausnahmen.
+      - name: Run npm audit (Gate)
+        run: node scripts/audit-gate.mjs --level=high
 
       - name: Check for sensitive data
         run: |
