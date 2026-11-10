@@ -38,10 +38,10 @@
 **Schritt 1: Android-Projekt generieren**
 
 ```bash
-EXPO_ENV=production npx expo prebuild --platform android --clean
+npm run android:prebuild
 ```
 
-> Das `/android`-Verzeichnis wird neu generiert (nicht in Git).
+> Führt `EXPO_ENV=production expo prebuild --platform android --clean` aus und prüft danach, ob `android/gradle.properties` die R8-Schalter `android.enableMinifyInReleaseBuilds=true` und `android.enableShrinkResourcesInReleaseBuilds=true` enthält (#540). Das `/android`-Verzeichnis wird neu generiert (nicht in Git). Ohne `--clean` bleibt eine alte `gradle.properties` liegen, der Build läuft dann ohne R8.
 
 **Schritt 2: Signierten AAB bauen**
 
@@ -60,6 +60,14 @@ Werte aus `credentials.json` entnehmen.
 ```
 android/app/build/outputs/bundle/release/app-release.aab
 ```
+
+**Schritt 3: AAB vor dem Upload prüfen (Pflicht)**
+
+```bash
+npm run verify:aab            # oder: npm run verify:aab -- pfad/zum.aab
+```
+
+Bricht ab, wenn das Bundle nur mit D8 gebaut wurde (`BUNDLE-METADATA/com.android.tools/d8.json` statt `r8.json`) oder `proguard.map` fehlt. Ein solcher Build war vc31: Die Play Console meldete „Verschleierung 1 %“ (Grenzwert 25 %, #540). Das Mapping liest die Play Console automatisch aus dem Bundle, ein separater Upload ist nicht nötig. Die ausgegebene Verschleierungsquote ist eine Schätzung, weil die Play Console ihre Berechnung nicht offenlegt. Liegt sie unter 25 %, die Keep-Regeln prüfen (#540, Schritt 5). Danach den Funktionstest des Release-Builds auf einem Gerät machen: R8 kann Klassen entfernen, die nur per Reflection oder JNI genutzt werden.
 
 ---
 

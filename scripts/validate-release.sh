@@ -1,235 +1,113 @@
 #!/bin/bash
-
 # ==============================================================================
-# 🚀 Release Validation Script
+# Release-Prüfung vor Release-PR testing → main bzw. vor dem Android-Build
+# Usage: npm run validate
+#
+# Prüft nur, was CI und Pre-Commit-Hook nicht abdecken oder was vor einem
+# Release zusätzlich gelten muss. Lint, Tests und Typecheck laufen hier
+# trotzdem, weil PRs gegen testing in CI nur 2 Checks haben.
+# Fehler → Exit 1. Warnungen → Exit 0.
 # ==============================================================================
-# Automatisierte Prüfung aller Release-Anforderungen
-# Usage: ./scripts/validate-release.sh
-# ==============================================================================
 
-set -e  # Exit on error
+set -u
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-cd "$PROJECT_ROOT"
-
-echo "=================================================="
-echo "🚀 Release Validation für 1x1 Trainer"
-echo "=================================================="
-echo ""
-
-# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 ERRORS=0
 WARNINGS=0
+ok()   { echo -e "${GREEN}✅ $1${NC}"; }
+warn() { echo -e "${YELLOW}⚠️  $1${NC}"; WARNINGS=$((WARNINGS + 1)); }
+fail() { echo -e "${RED}❌ $1${NC}"; ERRORS=$((ERRORS + 1)); }
 
-# ==============================================================================
-# 1. VERSION CONSISTENCY
-# ==============================================================================
-echo "📦 Checking version consistency..."
+# --- 1. Versionen --------------------------------------------------------------
+echo "📦 Versionen"
+PKG=$(node -p "require('./package.json').version")
+APP_JSON=$(node -p "require('./app.json').expo.version")
+APP_TSX=$(sed -nE "s/^const APP_VERSION = '([^']+)';.*/\1/p" App.tsx)
+LOCK=$(node -p "require('./package-lock.json').version")
+CODE=$(node -p "require('./app.json').expo.android.versionCode")
+echo "   package.json $PKG · package-lock.json $LOCK · app.json $APP_JSON (vc$CODE) · App.tsx $APP_TSX"
 
-PACKAGE_VERSION=$(node -p "require('./package.json').version")
-APP_JSON_VERSION=$(node -p "require('./app.json').expo.version")
-APP_VERSION=$(grep "APP_VERSION = " App.tsx | sed -E "s/.*'(.*)'.*/\1/")
-GRADLE_VERSION=$(grep "versionName = " Android/app/build.gradle.kts | sed -E 's/.*"(.*)".*/\1/')
-GRADLE_CODE=$(grep "versionCode = " Android/app/build.gradle.kts | sed -E 's/.*= ([0-9]+).*/\1/')
-APP_JSON_CODE=$(node -p "require('./app.json').expo.android.versionCode")
-
-echo "  package.json:     v$PACKAGE_VERSION"
-echo "  app.json:         v$APP_JSON_VERSION (versionCode: $APP_JSON_CODE)"
-echo "  App.tsx:          v$APP_VERSION"
-echo "  build.gradle.kts: v$GRADLE_VERSION (versionCode: $GRADLE_CODE)"
-
-if [ "$PACKAGE_VERSION" != "$APP_JSON_VERSION" ] || \
-   [ "$PACKAGE_VERSION" != "$APP_VERSION" ] || \
-   [ "$PACKAGE_VERSION" != "$GRADLE_VERSION" ]; then
-  echo -e "${RED}❌ ERROR: Version mismatch!${NC}"
-  ERRORS=$((ERRORS + 1))
+if [ "$PKG" = "$APP_JSON" ] && [ "$PKG" = "$APP_TSX" ] && [ "$PKG" = "$LOCK" ]; then
+  ok "Versionen konsistent"
 else
-  echo -e "${GREEN}✅ All versions consistent${NC}"
+  fail "Versionen weichen voneinander ab"
 fi
 
-if [ "$GRADLE_CODE" != "$APP_JSON_CODE" ]; then
-  echo -e "${RED}❌ ERROR: Android versionCode mismatch!${NC}"
-  ERRORS=$((ERRORS + 1))
+if grep -qE "^## \[$PKG\]" CHANGELOG.md; then
+  ok "CHANGELOG enthält Abschnitt [$PKG]"
 else
-  echo -e "${GREEN}✅ Android versionCode consistent${NC}"
+  fail "CHANGELOG.md hat keinen Abschnitt [$PKG]"
 fi
 
-echo ""
-
-# ==============================================================================
-# 2. CODE QUALITY CHECKS
-# ==============================================================================
-echo "🔍 Code Quality Checks..."
-
-# Check for console.log
-if grep -r "console\.log\|console\.debug" App.tsx 2>/dev/null; then
-  echo -e "${RED}❌ ERROR: Found console.log/debug in production code!${NC}"
-  ERRORS=$((ERRORS + 1))
+# Vergleich mit dem zuletzt veröffentlichten Stand (Git-Tag = Play-Store-Upload)
+git fetch -q --tags origin 2>/dev/null || true
+LAST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -1)
+if [ -z "$LAST_TAG" ]; then
+  warn "kein Git-Tag v* gefunden – versionCode nicht gegen letztes Release geprüft"
 else
-  echo -e "${GREEN}✅ No console.log found${NC}"
-fi
-
-# Check for unsafe Web APIs
-if grep -n "window\." App.tsx | grep -v "Platform.OS === 'web'" | grep -v "// platform-safe"; then
-  echo -e "${RED}❌ ERROR: Found window.* without Platform.OS check!${NC}"
-  ERRORS=$((ERRORS + 1))
-else
-  echo -e "${GREEN}✅ All window.* calls are platform-safe${NC}"
-fi
-
-if grep -n "localStorage\." App.tsx | grep -v "Platform.OS === 'web'" | grep -v "// platform-safe"; then
-  echo -e "${RED}❌ ERROR: Found localStorage without Platform.OS check!${NC}"
-  ERRORS=$((ERRORS + 1))
-else
-  echo -e "${GREEN}✅ All localStorage calls are platform-safe${NC}"
-fi
-
-echo ""
-
-# ==============================================================================
-# 3. UX GUIDELINES COMPLIANCE
-# ==============================================================================
-echo "🎨 UX Guidelines Compliance..."
-
-# Check for gear emoji (should use three dots)
-if grep -q "⚙" App.tsx; then
-  echo -e "${RED}❌ ERROR: Found gear emoji! Use three vertical dots (⋮) instead${NC}"
-  ERRORS=$((ERRORS + 1))
-else
-  echo -e "${GREEN}✅ Settings icon correct (three dots)${NC}"
-fi
-
-# Check for Light theme (should only have System/Dark)
-if grep -q "themeMode === 'light'" App.tsx; then
-  echo -e "${YELLOW}⚠️  WARNING: Light theme found. Consider System/Dark toggle only${NC}"
-  WARNINGS=$((WARNINGS + 1))
-fi
-
-echo ""
-
-# ==============================================================================
-# 4. BUILD TESTS
-# ==============================================================================
-echo "🔨 Build Tests..."
-
-# Web Build
-echo "  Testing Web build..."
-if npm run build:web >/dev/null 2>&1; then
-  echo -e "${GREEN}  ✅ Web build successful${NC}"
-else
-  echo -e "${RED}  ❌ Web build failed!${NC}"
-  ERRORS=$((ERRORS + 1))
-fi
-
-# Android Build
-echo "  Testing Android build..."
-if cd Android && ./gradlew assembleRelease --quiet >/dev/null 2>&1; then
-  echo -e "${GREEN}  ✅ Android build successful${NC}"
-  cd ..
-else
-  echo -e "${RED}  ❌ Android build failed!${NC}"
-  ERRORS=$((ERRORS + 1))
-  cd ..
-fi
-
-echo ""
-
-# ==============================================================================
-# 5. FILE EXISTENCE CHECKS
-# ==============================================================================
-echo "📄 Required Files..."
-
-REQUIRED_FILES=(
-  "RELEASE_CHECKLIST.md"
-  "POSTMORTEM_ANDROID_CRASH.md"
-  ".github/PULL_REQUEST_TEMPLATE.md"
-  "utils/platform.ts"
-  "Android/release/1x1-trainer-v$PACKAGE_VERSION-signed.aab"
-)
-
-for file in "${REQUIRED_FILES[@]}"; do
-  if [ -f "$file" ]; then
-    echo -e "${GREEN}  ✅ $file${NC}"
+  LAST_CODE=$(git show "$LAST_TAG:app.json" 2>/dev/null | node -e \
+    "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s).expo.android.versionCode)}catch{console.log('')}})")
+  if [ -z "$LAST_CODE" ]; then
+    warn "versionCode aus $LAST_TAG nicht lesbar"
+  elif [ "$CODE" -gt "$LAST_CODE" ]; then
+    ok "versionCode $CODE > $LAST_CODE ($LAST_TAG)"
   else
-    echo -e "${YELLOW}  ⚠️  Missing: $file${NC}"
-    WARNINGS=$((WARNINGS + 1))
+    fail "versionCode $CODE ist nicht größer als $LAST_CODE ($LAST_TAG) – Play Store lehnt den Upload ab"
   fi
-done
+  if git rev-parse -q --verify "refs/tags/v$PKG" >/dev/null; then
+    warn "Tag v$PKG existiert bereits – Version vor dem Release erhöhen?"
+  fi
+fi
 
+# --- 2. R8 (#540) ----------------------------------------------------------------
 echo ""
+echo "🤖 Android R8"
+if node -e "const c=require('./app.config.js');const cfg=(typeof c==='function'?c({config:require('./app.json').expo}):c);const p=(cfg.expo||cfg).plugins||[];const b=p.find(x=>Array.isArray(x)&&x[0]==='expo-build-properties');process.exit(b&&b[1].android&&b[1].android.enableMinifyInReleaseBuilds===true&&b[1].android.enableShrinkResourcesInReleaseBuilds===true?0:1)" 2>/dev/null; then
+  ok "app.config.js aktiviert Minify und Resource-Shrinking"
+else
+  fail "app.config.js: expo-build-properties ohne enableMinifyInReleaseBuilds/enableShrinkResourcesInReleaseBuilds"
+fi
+AAB=android/app/build/outputs/bundle/release/app-release.aab
+if [ -f "$AAB" ]; then
+  if node scripts/verify-aab.js "$AAB"; then ok "AAB geprüft"; else fail "AAB-Prüfung fehlgeschlagen"; fi
+else
+  echo "   (kein AAB gebaut – nach dem Build: npm run verify:aab)"
+fi
 
-# ==============================================================================
-# 6. GIT STATUS
-# ==============================================================================
-echo "🔀 Git Status..."
+# --- 3. Code-Qualität ----------------------------------------------------------
+echo ""
+echo "🔍 Typecheck, Lint, Tests"
+if npx tsc --noEmit >/dev/null 2>&1; then ok "tsc --noEmit"; else fail "tsc --noEmit (Details: npx tsc --noEmit)"; fi
+if npm run -s lint >/dev/null 2>&1; then ok "lint"; else fail "lint (Details: npm run lint)"; fi
+if npm run -s test:coverage >/dev/null 2>&1; then ok "test:coverage inkl. Schwellen"; else fail "test:coverage (Details: npm run test:coverage)"; fi
+if node scripts/audit-gate.mjs --level=high >/dev/null 2>&1; then
+  ok "Audit-Gate (high)"
+else
+  fail "Audit-Gate (Details: node scripts/audit-gate.mjs --level=high)"
+fi
 
+# --- 4. Git ----------------------------------------------------------------------
+echo ""
+echo "🔀 Git"
 if [ -n "$(git status --porcelain)" ]; then
-  echo -e "${YELLOW}⚠️  WARNING: You have uncommitted changes${NC}"
+  warn "uncommittete Änderungen"
   git status --short
-  WARNINGS=$((WARNINGS + 1))
 else
-  echo -e "${GREEN}✅ Working directory clean${NC}"
+  ok "Arbeitsverzeichnis sauber"
 fi
 
+# --- Ergebnis --------------------------------------------------------------------
 echo ""
-
-# ==============================================================================
-# 7. DEPENDENCY AUDIT
-# ==============================================================================
-echo "🔒 Security Audit..."
-
-if npm audit --audit-level=high 2>&1 | grep -q "found 0 vulnerabilities"; then
-  echo -e "${GREEN}✅ No high-severity vulnerabilities${NC}"
-else
-  echo -e "${YELLOW}⚠️  WARNING: Vulnerabilities found${NC}"
-  npm audit --audit-level=high
-  WARNINGS=$((WARNINGS + 1))
-fi
-
-echo ""
-
-# ==============================================================================
-# SUMMARY
-# ==============================================================================
-echo "=================================================="
-echo "📊 VALIDATION SUMMARY"
-echo "=================================================="
-echo ""
-
-if [ $ERRORS -eq 0 ] && [ $WARNINGS -eq 0 ]; then
-  echo -e "${GREEN}🎉 ALL CHECKS PASSED!${NC}"
-  echo ""
-  echo "✅ Ready for release v$PACKAGE_VERSION"
-  echo ""
-  echo "Next steps:"
-  echo "  1. Test on physical Android device"
-  echo "  2. Test on web browser"
-  echo "  3. Create git tag: git tag v$PACKAGE_VERSION"
-  echo "  4. Push: git push origin v$PACKAGE_VERSION"
-  echo "  5. Upload AAB to Play Store"
-  echo "  6. Deploy web: npm run deploy"
-  exit 0
-elif [ $ERRORS -eq 0 ]; then
-  echo -e "${YELLOW}⚠️  CHECKS PASSED WITH WARNINGS${NC}"
-  echo ""
-  echo "Errors: $ERRORS"
-  echo "Warnings: $WARNINGS"
-  echo ""
-  echo "Review warnings before releasing."
-  exit 0
-else
-  echo -e "${RED}❌ VALIDATION FAILED${NC}"
-  echo ""
-  echo "Errors: $ERRORS"
-  echo "Warnings: $WARNINGS"
-  echo ""
-  echo "Fix errors before releasing."
+if [ $ERRORS -gt 0 ]; then
+  echo -e "${RED}❌ Release-Prüfung fehlgeschlagen: $ERRORS Fehler, $WARNINGS Warnung(en)${NC}"
   exit 1
 fi
+echo -e "${GREEN}🎉 Release-Prüfung für v$PKG bestanden${NC} ($WARNINGS Warnung(en))"
+echo "Danach: Release-PR testing → main (nur mit Freigabe), Android-Build mit"
+echo "npm run android:prebuild → bundleRelease → npm run verify:aab, Upload, git tag v$PKG"
