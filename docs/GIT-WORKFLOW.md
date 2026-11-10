@@ -118,8 +118,14 @@ im Release-PR nach `main` nachgezogen.
 kann man den eigenen PR nicht approven → Admin-Bypass nötig:
 
 ```bash
-gh pr merge <nr> --squash --admin      # KEIN --delete-branch: testing ist der Head!
+gh pr merge <nr> --merge --admin       # KEIN --delete-branch: testing ist der Head!
 ```
+
+> **Merge-Commit statt Squash (seit Release 1.12.1, #550).** Squash-Merges sind
+> in den Repo-Einstellungen deaktiviert, `--squash` scheitert mit
+> `405 Squash merges are not allowed on this repository`. Der Merge-Commit
+> macht `testing` zum Vorfahren von `main`; der Sync-PR `main → testing` bleibt
+> trotzdem nötig, weil `fetch.yml` Daten-Commits direkt auf `main` schreibt.
 
 > **Nur mit ausdrücklicher schriftlicher Freigabe.** Das ist der bewusste manuelle
 > Release-Schritt, nicht mit dem `review-gate` zu verwechseln.
