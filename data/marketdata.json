@@ -3,582 +3,6 @@
   "source": "energy-charts",
   "data": [
     {
-      "start_timestamp": 1793906100000,
-      "end_timestamp": 1793907000000,
-      "marketprice": 329.47,
-      "renewable_share": 40.8,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793907000000,
-      "end_timestamp": 1793907900000,
-      "marketprice": 311.62,
-      "renewable_share": 40.9,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793907900000,
-      "end_timestamp": 1793908800000,
-      "marketprice": 304,
-      "renewable_share": 40.8,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793908800000,
-      "end_timestamp": 1793909700000,
-      "marketprice": 307.98,
-      "renewable_share": 40.9,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793909700000,
-      "end_timestamp": 1793910600000,
-      "marketprice": 295.96,
-      "renewable_share": 41,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793910600000,
-      "end_timestamp": 1793911500000,
-      "marketprice": 292.62,
-      "renewable_share": 41,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793911500000,
-      "end_timestamp": 1793912400000,
-      "marketprice": 280.83,
-      "renewable_share": 41.1,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793912400000,
-      "end_timestamp": 1793913300000,
-      "marketprice": 284.05,
-      "renewable_share": 40.9,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793913300000,
-      "end_timestamp": 1793914200000,
-      "marketprice": 274.85,
-      "renewable_share": 40.8,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793914200000,
-      "end_timestamp": 1793915100000,
-      "marketprice": 273.84,
-      "renewable_share": 40.8,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793915100000,
-      "end_timestamp": 1793916000000,
-      "marketprice": 260.09,
-      "renewable_share": 40.8,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793916000000,
-      "end_timestamp": 1793916900000,
-      "marketprice": 258.76,
-      "renewable_share": 41.3,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793916900000,
-      "end_timestamp": 1793917800000,
-      "marketprice": 252.16,
-      "renewable_share": 41.3,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793917800000,
-      "end_timestamp": 1793918700000,
-      "marketprice": 248.83,
-      "renewable_share": 41.4,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793918700000,
-      "end_timestamp": 1793919600000,
-      "marketprice": 237.59,
-      "renewable_share": 41.3,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793919600000,
-      "end_timestamp": 1793920500000,
-      "marketprice": 247.25,
-      "renewable_share": 41.4,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793920500000,
-      "end_timestamp": 1793921400000,
-      "marketprice": 235.81,
-      "renewable_share": 41.5,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793921400000,
-      "end_timestamp": 1793922300000,
-      "marketprice": 230.59,
-      "renewable_share": 41.5,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793922300000,
-      "end_timestamp": 1793923200000,
-      "marketprice": 229.11,
-      "renewable_share": 41.2,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793923200000,
-      "end_timestamp": 1793924100000,
-      "marketprice": 238.98,
-      "renewable_share": 41.1,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793924100000,
-      "end_timestamp": 1793925000000,
-      "marketprice": 235,
-      "renewable_share": 41.1,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793925000000,
-      "end_timestamp": 1793925900000,
-      "marketprice": 231.34,
-      "renewable_share": 40.9,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793925900000,
-      "end_timestamp": 1793926800000,
-      "marketprice": 229.28,
-      "renewable_share": 40.6,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793926800000,
-      "end_timestamp": 1793927700000,
-      "marketprice": 226.56,
-      "renewable_share": 40.3,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793927700000,
-      "end_timestamp": 1793928600000,
-      "marketprice": 227.91,
-      "renewable_share": 40,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793928600000,
-      "end_timestamp": 1793929500000,
-      "marketprice": 226.37,
-      "renewable_share": 39.8,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793929500000,
-      "end_timestamp": 1793930400000,
-      "marketprice": 222.91,
-      "renewable_share": 39.8,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793930400000,
-      "end_timestamp": 1793931300000,
-      "marketprice": 223.18,
-      "renewable_share": 39.7,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793931300000,
-      "end_timestamp": 1793932200000,
-      "marketprice": 224.31,
-      "renewable_share": 39.5,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793932200000,
-      "end_timestamp": 1793933100000,
-      "marketprice": 221.95,
-      "renewable_share": 39.3,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793933100000,
-      "end_timestamp": 1793934000000,
-      "marketprice": 220.07,
-      "renewable_share": 39.2,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793934000000,
-      "end_timestamp": 1793934900000,
-      "marketprice": 225.17,
-      "renewable_share": 38.8,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793934900000,
-      "end_timestamp": 1793935800000,
-      "marketprice": 223.77,
-      "renewable_share": 38.8,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793935800000,
-      "end_timestamp": 1793936700000,
-      "marketprice": 223.85,
-      "renewable_share": 38.6,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793936700000,
-      "end_timestamp": 1793937600000,
-      "marketprice": 226,
-      "renewable_share": 38.4,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793937600000,
-      "end_timestamp": 1793938500000,
-      "marketprice": 230.49,
-      "renewable_share": 37.7,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793938500000,
-      "end_timestamp": 1793939400000,
-      "marketprice": 225.49,
-      "renewable_share": 37.1,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793939400000,
-      "end_timestamp": 1793940300000,
-      "marketprice": 231.78,
-      "renewable_share": 36.6,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793940300000,
-      "end_timestamp": 1793941200000,
-      "marketprice": 230.83,
-      "renewable_share": 36.1,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793941200000,
-      "end_timestamp": 1793942100000,
-      "marketprice": 243.19,
-      "renewable_share": 35.5,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793942100000,
-      "end_timestamp": 1793943000000,
-      "marketprice": 284.99,
-      "renewable_share": 35.1,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793943000000,
-      "end_timestamp": 1793943900000,
-      "marketprice": 310.21,
-      "renewable_share": 34.5,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793943900000,
-      "end_timestamp": 1793944800000,
-      "marketprice": 308.76,
-      "renewable_share": 34.1,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793944800000,
-      "end_timestamp": 1793945700000,
-      "marketprice": 322.82,
-      "renewable_share": 33.9,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793945700000,
-      "end_timestamp": 1793946600000,
-      "marketprice": 324.44,
-      "renewable_share": 34.2,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793946600000,
-      "end_timestamp": 1793947500000,
-      "marketprice": 324.6,
-      "renewable_share": 35,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793947500000,
-      "end_timestamp": 1793948400000,
-      "marketprice": 320.38,
-      "renewable_share": 36.5,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793948400000,
-      "end_timestamp": 1793949300000,
-      "marketprice": 339.14,
-      "renewable_share": 37.3,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793949300000,
-      "end_timestamp": 1793950200000,
-      "marketprice": 326.27,
-      "renewable_share": 38.5,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793950200000,
-      "end_timestamp": 1793951100000,
-      "marketprice": 314.22,
-      "renewable_share": 40.4,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793951100000,
-      "end_timestamp": 1793952000000,
-      "marketprice": 294.53,
-      "renewable_share": 42.3,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793952000000,
-      "end_timestamp": 1793952900000,
-      "marketprice": 311,
-      "renewable_share": 44.4,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793952900000,
-      "end_timestamp": 1793953800000,
-      "marketprice": 290,
-      "renewable_share": 46.4,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793953800000,
-      "end_timestamp": 1793954700000,
-      "marketprice": 280.92,
-      "renewable_share": 48.1,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793954700000,
-      "end_timestamp": 1793955600000,
-      "marketprice": 250.08,
-      "renewable_share": 49.7,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793955600000,
-      "end_timestamp": 1793956500000,
-      "marketprice": 282.37,
-      "renewable_share": 51.2,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793956500000,
-      "end_timestamp": 1793957400000,
-      "marketprice": 254.59,
-      "renewable_share": 52.2,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793957400000,
-      "end_timestamp": 1793958300000,
-      "marketprice": 237.59,
-      "renewable_share": 53.5,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793958300000,
-      "end_timestamp": 1793959200000,
-      "marketprice": 231.82,
-      "renewable_share": 54.1,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793959200000,
-      "end_timestamp": 1793960100000,
-      "marketprice": 237.06,
-      "renewable_share": 54.9,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793960100000,
-      "end_timestamp": 1793961000000,
-      "marketprice": 229.81,
-      "renewable_share": 55.7,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793961000000,
-      "end_timestamp": 1793961900000,
-      "marketprice": 228.23,
-      "renewable_share": 56.3,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793961900000,
-      "end_timestamp": 1793962800000,
-      "marketprice": 230.82,
-      "renewable_share": 56.9,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793962800000,
-      "end_timestamp": 1793963700000,
-      "marketprice": 228.17,
-      "renewable_share": 57.2,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793963700000,
-      "end_timestamp": 1793964600000,
-      "marketprice": 227.2,
-      "renewable_share": 57.4,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793964600000,
-      "end_timestamp": 1793965500000,
-      "marketprice": 228.8,
-      "renewable_share": 57.1,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793965500000,
-      "end_timestamp": 1793966400000,
-      "marketprice": 223.71,
-      "renewable_share": 57.2,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793966400000,
-      "end_timestamp": 1793967300000,
-      "marketprice": 228.58,
-      "renewable_share": 57,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793967300000,
-      "end_timestamp": 1793968200000,
-      "marketprice": 229.85,
-      "renewable_share": 56.8,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793968200000,
-      "end_timestamp": 1793969100000,
-      "marketprice": 235.01,
-      "renewable_share": 55.8,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793969100000,
-      "end_timestamp": 1793970000000,
-      "marketprice": 234.57,
-      "renewable_share": 54.3,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
-      "start_timestamp": 1793970000000,
-      "end_timestamp": 1793970900000,
-      "marketprice": 236.97,
-      "renewable_share": 52.3,
-      "unit": "Eur/MWh",
-      "interpolated": false
-    },
-    {
       "start_timestamp": 1793970900000,
       "end_timestamp": 1793971800000,
       "marketprice": 243.95,
@@ -5501,770 +4925,1218 @@
     {
       "start_timestamp": 1794524400000,
       "end_timestamp": 1794525300000,
-      "marketprice": 144.47,
-      "renewable_share": 85.2,
+      "marketprice": 145.39,
+      "renewable_share": 79.6,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794525300000,
       "end_timestamp": 1794526200000,
-      "marketprice": 144.47,
-      "renewable_share": 86.6,
+      "marketprice": 145.4,
+      "renewable_share": 79.5,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794526200000,
       "end_timestamp": 1794527100000,
-      "marketprice": 144.47,
-      "renewable_share": 87.6,
+      "marketprice": 144.68,
+      "renewable_share": 80.8,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794527100000,
       "end_timestamp": 1794528000000,
-      "marketprice": 144.47,
-      "renewable_share": 87.8,
+      "marketprice": 142.41,
+      "renewable_share": 80.7,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794528000000,
       "end_timestamp": 1794528900000,
-      "marketprice": 144.02,
-      "renewable_share": 88,
+      "marketprice": 147.14,
+      "renewable_share": 81.7,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794528900000,
       "end_timestamp": 1794529800000,
-      "marketprice": 144.02,
-      "renewable_share": 88.9,
+      "marketprice": 143.92,
+      "renewable_share": 82.1,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794529800000,
       "end_timestamp": 1794530700000,
-      "marketprice": 144.02,
-      "renewable_share": 89.6,
+      "marketprice": 143.62,
+      "renewable_share": 81.9,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794530700000,
       "end_timestamp": 1794531600000,
-      "marketprice": 144.02,
-      "renewable_share": 89.9,
+      "marketprice": 141.41,
+      "renewable_share": 80.8,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794531600000,
       "end_timestamp": 1794532500000,
-      "marketprice": 137.57,
-      "renewable_share": 91,
+      "marketprice": 140,
+      "renewable_share": 81.2,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794532500000,
       "end_timestamp": 1794533400000,
-      "marketprice": 137.57,
-      "renewable_share": 91.1,
+      "marketprice": 136.63,
+      "renewable_share": 80.7,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794533400000,
       "end_timestamp": 1794534300000,
-      "marketprice": 137.57,
-      "renewable_share": 91.4,
+      "marketprice": 136.44,
+      "renewable_share": 81.1,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794534300000,
       "end_timestamp": 1794535200000,
-      "marketprice": 137.57,
-      "renewable_share": 91.6,
+      "marketprice": 137.19,
+      "renewable_share": 81.5,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794535200000,
       "end_timestamp": 1794536100000,
-      "marketprice": 136.05,
-      "renewable_share": 91.4,
+      "marketprice": 136.9,
+      "renewable_share": 82.6,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794536100000,
       "end_timestamp": 1794537000000,
-      "marketprice": 136.05,
-      "renewable_share": 91.2,
+      "marketprice": 135.01,
+      "renewable_share": 82.8,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794537000000,
       "end_timestamp": 1794537900000,
-      "marketprice": 136.05,
-      "renewable_share": 91.3,
+      "marketprice": 135.53,
+      "renewable_share": 83.2,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794537900000,
       "end_timestamp": 1794538800000,
-      "marketprice": 136.05,
-      "renewable_share": 91,
+      "marketprice": 136.74,
+      "renewable_share": 83,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794538800000,
       "end_timestamp": 1794539700000,
-      "marketprice": 136.77,
-      "renewable_share": 90.2,
+      "marketprice": 135.98,
+      "renewable_share": 82.2,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794539700000,
       "end_timestamp": 1794540600000,
-      "marketprice": 136.77,
-      "renewable_share": 89.7,
+      "marketprice": 136.07,
+      "renewable_share": 81.8,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794540600000,
       "end_timestamp": 1794541500000,
-      "marketprice": 136.77,
-      "renewable_share": 88.9,
+      "marketprice": 136.27,
+      "renewable_share": 81.6,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794541500000,
       "end_timestamp": 1794542400000,
-      "marketprice": 136.77,
-      "renewable_share": 88.1,
+      "marketprice": 138.76,
+      "renewable_share": 80.3,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794542400000,
       "end_timestamp": 1794543300000,
-      "marketprice": 144.55,
-      "renewable_share": 86.1,
+      "marketprice": 140.88,
+      "renewable_share": 78.7,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794543300000,
       "end_timestamp": 1794544200000,
-      "marketprice": 144.55,
-      "renewable_share": 85,
+      "marketprice": 140.06,
+      "renewable_share": 77.6,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794544200000,
       "end_timestamp": 1794545100000,
-      "marketprice": 144.55,
-      "renewable_share": 82.6,
+      "marketprice": 145.53,
+      "renewable_share": 75.4,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794545100000,
       "end_timestamp": 1794546000000,
-      "marketprice": 144.55,
-      "renewable_share": 80.6,
+      "marketprice": 151.72,
+      "renewable_share": 73.9,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794546000000,
       "end_timestamp": 1794546900000,
-      "marketprice": 170.8,
-      "renewable_share": 79.1,
+      "marketprice": 160.1,
+      "renewable_share": 73.7,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794546900000,
       "end_timestamp": 1794547800000,
-      "marketprice": 170.8,
-      "renewable_share": 76.5,
+      "marketprice": 167.92,
+      "renewable_share": 71,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794547800000,
       "end_timestamp": 1794548700000,
-      "marketprice": 170.8,
-      "renewable_share": 74.6,
+      "marketprice": 172.57,
+      "renewable_share": 68.6,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794548700000,
       "end_timestamp": 1794549600000,
-      "marketprice": 170.8,
-      "renewable_share": 72.9,
+      "marketprice": 182.6,
+      "renewable_share": 65.8,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794549600000,
       "end_timestamp": 1794550500000,
-      "marketprice": 201.15,
-      "renewable_share": 71,
+      "marketprice": 193.63,
+      "renewable_share": 64.2,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794550500000,
       "end_timestamp": 1794551400000,
-      "marketprice": 201.15,
-      "renewable_share": 70.3,
+      "marketprice": 198.19,
+      "renewable_share": 63,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794551400000,
       "end_timestamp": 1794552300000,
-      "marketprice": 201.15,
-      "renewable_share": 70.1,
+      "marketprice": 204.71,
+      "renewable_share": 62.8,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794552300000,
       "end_timestamp": 1794553200000,
-      "marketprice": 201.15,
-      "renewable_share": 70.6,
+      "marketprice": 208.06,
+      "renewable_share": 62.1,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794553200000,
       "end_timestamp": 1794554100000,
-      "marketprice": 202.17,
-      "renewable_share": 72.1,
+      "marketprice": 211.81,
+      "renewable_share": 63.3,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794554100000,
       "end_timestamp": 1794555000000,
-      "marketprice": 202.17,
-      "renewable_share": 74.1,
+      "marketprice": 207.53,
+      "renewable_share": 64,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794555000000,
       "end_timestamp": 1794555900000,
-      "marketprice": 202.17,
-      "renewable_share": 76.2,
+      "marketprice": 200.16,
+      "renewable_share": 65.7,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794555900000,
       "end_timestamp": 1794556800000,
-      "marketprice": 202.17,
-      "renewable_share": 78.6,
+      "marketprice": 189.17,
+      "renewable_share": 67.9,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794556800000,
       "end_timestamp": 1794557700000,
-      "marketprice": 150.41,
-      "renewable_share": 81.1,
+      "marketprice": 170.13,
+      "renewable_share": 69.5,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794557700000,
       "end_timestamp": 1794558600000,
-      "marketprice": 150.41,
-      "renewable_share": 83.3,
+      "marketprice": 162.91,
+      "renewable_share": 71.5,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794558600000,
       "end_timestamp": 1794559500000,
-      "marketprice": 150.41,
-      "renewable_share": 85.3,
+      "marketprice": 143.42,
+      "renewable_share": 73.1,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794559500000,
       "end_timestamp": 1794560400000,
-      "marketprice": 150.41,
-      "renewable_share": 87.2,
+      "marketprice": 125.17,
+      "renewable_share": 75.5,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794560400000,
       "end_timestamp": 1794561300000,
-      "marketprice": 114.36,
-      "renewable_share": 89.1,
+      "marketprice": 136.05,
+      "renewable_share": 78.1,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794561300000,
       "end_timestamp": 1794562200000,
-      "marketprice": 114.36,
-      "renewable_share": 90.9,
+      "marketprice": 122.69,
+      "renewable_share": 80.4,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794562200000,
       "end_timestamp": 1794563100000,
-      "marketprice": 114.36,
-      "renewable_share": 93,
+      "marketprice": 103.95,
+      "renewable_share": 82.7,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794563100000,
       "end_timestamp": 1794564000000,
-      "marketprice": 114.36,
-      "renewable_share": 94.3,
+      "marketprice": 94.75,
+      "renewable_share": 85,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794564000000,
       "end_timestamp": 1794564900000,
-      "marketprice": 93.48,
-      "renewable_share": 95.7,
+      "marketprice": 100.7,
+      "renewable_share": 86.3,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794564900000,
       "end_timestamp": 1794565800000,
-      "marketprice": 93.48,
-      "renewable_share": 96.8,
+      "marketprice": 94.4,
+      "renewable_share": 87.7,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794565800000,
       "end_timestamp": 1794566700000,
-      "marketprice": 93.48,
-      "renewable_share": 98,
+      "marketprice": 89.99,
+      "renewable_share": 88.5,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794566700000,
       "end_timestamp": 1794567600000,
-      "marketprice": 93.48,
-      "renewable_share": 98.7,
+      "marketprice": 88.81,
+      "renewable_share": 90,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794567600000,
       "end_timestamp": 1794568500000,
-      "marketprice": 90.51,
-      "renewable_share": 99.5,
+      "marketprice": 92.01,
+      "renewable_share": 90.5,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794568500000,
       "end_timestamp": 1794569400000,
-      "marketprice": 90.51,
-      "renewable_share": 99.9,
+      "marketprice": 91.32,
+      "renewable_share": 91.3,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794569400000,
       "end_timestamp": 1794570300000,
-      "marketprice": 90.51,
-      "renewable_share": 100.3,
+      "marketprice": 90.05,
+      "renewable_share": 91.6,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794570300000,
       "end_timestamp": 1794571200000,
-      "marketprice": 90.51,
-      "renewable_share": 100.3,
+      "marketprice": 88.64,
+      "renewable_share": 91.5,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794571200000,
       "end_timestamp": 1794572100000,
-      "marketprice": 100.2,
-      "renewable_share": 99.7,
+      "marketprice": 100.25,
+      "renewable_share": 91,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794572100000,
       "end_timestamp": 1794573000000,
-      "marketprice": 100.2,
-      "renewable_share": 98.3,
+      "marketprice": 103.74,
+      "renewable_share": 89.5,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794573000000,
       "end_timestamp": 1794573900000,
-      "marketprice": 100.2,
-      "renewable_share": 97.3,
+      "marketprice": 100,
+      "renewable_share": 88.4,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794573900000,
       "end_timestamp": 1794574800000,
-      "marketprice": 100.2,
-      "renewable_share": 95.9,
+      "marketprice": 96.79,
+      "renewable_share": 86.9,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794574800000,
       "end_timestamp": 1794575700000,
-      "marketprice": 125.8,
-      "renewable_share": 94.2,
+      "marketprice": 100.07,
+      "renewable_share": 84.9,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794575700000,
       "end_timestamp": 1794576600000,
-      "marketprice": 125.8,
-      "renewable_share": 92.2,
+      "marketprice": 118,
+      "renewable_share": 82.8,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794576600000,
       "end_timestamp": 1794577500000,
-      "marketprice": 125.8,
-      "renewable_share": 89.6,
+      "marketprice": 135.4,
+      "renewable_share": 80.3,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794577500000,
       "end_timestamp": 1794578400000,
-      "marketprice": 125.8,
-      "renewable_share": 86.6,
+      "marketprice": 149.71,
+      "renewable_share": 77.4,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794578400000,
       "end_timestamp": 1794579300000,
-      "marketprice": 164.03,
-      "renewable_share": 83.1,
+      "marketprice": 142.89,
+      "renewable_share": 74.1,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794579300000,
       "end_timestamp": 1794580200000,
-      "marketprice": 164.03,
-      "renewable_share": 79.8,
+      "marketprice": 156.98,
+      "renewable_share": 70.9,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794580200000,
       "end_timestamp": 1794581100000,
-      "marketprice": 164.03,
-      "renewable_share": 76.5,
+      "marketprice": 172.27,
+      "renewable_share": 69.1,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794581100000,
       "end_timestamp": 1794582000000,
-      "marketprice": 164.03,
-      "renewable_share": 73.3,
+      "marketprice": 183.98,
+      "renewable_share": 66.2,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794582000000,
       "end_timestamp": 1794582900000,
-      "marketprice": 206.74,
-      "renewable_share": 71.3,
+      "marketprice": 187.28,
+      "renewable_share": 64,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794582900000,
       "end_timestamp": 1794583800000,
-      "marketprice": 206.74,
-      "renewable_share": 69.5,
+      "marketprice": 209.35,
+      "renewable_share": 62.3,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794583800000,
       "end_timestamp": 1794584700000,
-      "marketprice": 206.74,
-      "renewable_share": 68.5,
+      "marketprice": 215.1,
+      "renewable_share": 61.4,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794584700000,
       "end_timestamp": 1794585600000,
-      "marketprice": 206.74,
-      "renewable_share": 67.4,
+      "marketprice": 215.23,
+      "renewable_share": 60.5,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794585600000,
       "end_timestamp": 1794586500000,
-      "marketprice": 226.2,
-      "renewable_share": 66.7,
+      "marketprice": 221.04,
+      "renewable_share": 59.8,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794586500000,
       "end_timestamp": 1794587400000,
-      "marketprice": 226.2,
-      "renewable_share": 66.1,
+      "marketprice": 223.6,
+      "renewable_share": 60,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794587400000,
       "end_timestamp": 1794588300000,
-      "marketprice": 226.2,
-      "renewable_share": 65.7,
+      "marketprice": 228.67,
+      "renewable_share": 59.8,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794588300000,
       "end_timestamp": 1794589200000,
-      "marketprice": 226.2,
-      "renewable_share": 65.1,
+      "marketprice": 231.49,
+      "renewable_share": 59.5,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794589200000,
       "end_timestamp": 1794590100000,
-      "marketprice": 220.06,
-      "renewable_share": 64.6,
+      "marketprice": 219.3,
+      "renewable_share": 59.2,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794590100000,
       "end_timestamp": 1794591000000,
-      "marketprice": 220.06,
-      "renewable_share": 64.3,
+      "marketprice": 220.92,
+      "renewable_share": 59,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794591000000,
       "end_timestamp": 1794591900000,
-      "marketprice": 220.06,
-      "renewable_share": 64.1,
+      "marketprice": 220.39,
+      "renewable_share": 58.8,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794591900000,
       "end_timestamp": 1794592800000,
-      "marketprice": 220.06,
-      "renewable_share": 63.9,
+      "marketprice": 219.61,
+      "renewable_share": 58.7,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794592800000,
       "end_timestamp": 1794593700000,
-      "marketprice": 215.31,
-      "renewable_share": 63.9,
+      "marketprice": 219.8,
+      "renewable_share": 58.8,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794593700000,
       "end_timestamp": 1794594600000,
-      "marketprice": 215.31,
-      "renewable_share": 64.1,
+      "marketprice": 215.76,
+      "renewable_share": 58.8,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794594600000,
       "end_timestamp": 1794595500000,
-      "marketprice": 215.31,
-      "renewable_share": 64.4,
+      "marketprice": 213.94,
+      "renewable_share": 59,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794595500000,
       "end_timestamp": 1794596400000,
-      "marketprice": 215.31,
-      "renewable_share": 64.7,
+      "marketprice": 211.72,
+      "renewable_share": 59.2,
       "unit": "Eur/MWh",
-      "interpolated": true
+      "interpolated": false
     },
     {
       "start_timestamp": 1794596400000,
       "end_timestamp": 1794597300000,
-      "marketprice": null,
-      "renewable_share": 65.8,
+      "marketprice": 213.95,
+      "renewable_share": 60,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794597300000,
       "end_timestamp": 1794598200000,
-      "marketprice": null,
-      "renewable_share": 66.4,
+      "marketprice": 207.99,
+      "renewable_share": 60.6,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794598200000,
       "end_timestamp": 1794599100000,
-      "marketprice": null,
-      "renewable_share": 66.6,
+      "marketprice": 198.53,
+      "renewable_share": 60.7,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794599100000,
       "end_timestamp": 1794600000000,
-      "marketprice": null,
-      "renewable_share": 66.9,
+      "marketprice": 182.94,
+      "renewable_share": 61,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794600000000,
       "end_timestamp": 1794600900000,
-      "marketprice": null,
-      "renewable_share": 67.6,
+      "marketprice": 194.41,
+      "renewable_share": 61.6,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794600900000,
       "end_timestamp": 1794601800000,
-      "marketprice": null,
-      "renewable_share": 67.6,
+      "marketprice": 179.26,
+      "renewable_share": 61.5,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794601800000,
       "end_timestamp": 1794602700000,
-      "marketprice": null,
-      "renewable_share": 68,
+      "marketprice": 166.12,
+      "renewable_share": 61.9,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794602700000,
       "end_timestamp": 1794603600000,
-      "marketprice": null,
-      "renewable_share": 68,
+      "marketprice": 149.13,
+      "renewable_share": 61.8,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794603600000,
       "end_timestamp": 1794604500000,
-      "marketprice": null,
-      "renewable_share": 67.4,
+      "marketprice": 214.04,
+      "renewable_share": 61.3,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794604500000,
       "end_timestamp": 1794605400000,
-      "marketprice": null,
-      "renewable_share": 67.6,
+      "marketprice": 206.53,
+      "renewable_share": 61.5,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794605400000,
       "end_timestamp": 1794606300000,
-      "marketprice": null,
-      "renewable_share": 68.2,
+      "marketprice": 198.1,
+      "renewable_share": 62,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794606300000,
       "end_timestamp": 1794607200000,
-      "marketprice": null,
-      "renewable_share": 68.6,
+      "marketprice": 190.89,
+      "renewable_share": 62.4,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794607200000,
       "end_timestamp": 1794608100000,
-      "marketprice": null,
-      "renewable_share": 69.3,
+      "marketprice": 192,
+      "renewable_share": 62.9,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794608100000,
       "end_timestamp": 1794609000000,
-      "marketprice": null,
-      "renewable_share": 69.6,
+      "marketprice": 179.31,
+      "renewable_share": 63.2,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794609000000,
       "end_timestamp": 1794609900000,
-      "marketprice": null,
-      "renewable_share": 69.9,
+      "marketprice": 178.17,
+      "renewable_share": 63.5,
       "unit": "Eur/MWh",
       "interpolated": false
     },
     {
       "start_timestamp": 1794609900000,
       "end_timestamp": 1794610800000,
-      "marketprice": null,
-      "renewable_share": 70.1,
+      "marketprice": 176.77,
+      "renewable_share": 63.6,
       "unit": "Eur/MWh",
       "interpolated": false
+    },
+    {
+      "start_timestamp": 1794610800000,
+      "end_timestamp": 1794611700000,
+      "marketprice": 191.39,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": false
+    },
+    {
+      "start_timestamp": 1794611700000,
+      "end_timestamp": 1794612600000,
+      "marketprice": 191.39,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794612600000,
+      "end_timestamp": 1794613500000,
+      "marketprice": 191.39,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794613500000,
+      "end_timestamp": 1794614400000,
+      "marketprice": 191.39,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794614400000,
+      "end_timestamp": 1794615300000,
+      "marketprice": 186.44,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": false
+    },
+    {
+      "start_timestamp": 1794615300000,
+      "end_timestamp": 1794616200000,
+      "marketprice": 186.44,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794616200000,
+      "end_timestamp": 1794617100000,
+      "marketprice": 186.44,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794617100000,
+      "end_timestamp": 1794618000000,
+      "marketprice": 186.44,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794618000000,
+      "end_timestamp": 1794618900000,
+      "marketprice": 180.12,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": false
+    },
+    {
+      "start_timestamp": 1794618900000,
+      "end_timestamp": 1794619800000,
+      "marketprice": 180.12,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794619800000,
+      "end_timestamp": 1794620700000,
+      "marketprice": 180.12,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794620700000,
+      "end_timestamp": 1794621600000,
+      "marketprice": 180.12,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794621600000,
+      "end_timestamp": 1794622500000,
+      "marketprice": 181.56,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": false
+    },
+    {
+      "start_timestamp": 1794622500000,
+      "end_timestamp": 1794623400000,
+      "marketprice": 181.56,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794623400000,
+      "end_timestamp": 1794624300000,
+      "marketprice": 181.56,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794624300000,
+      "end_timestamp": 1794625200000,
+      "marketprice": 181.56,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794625200000,
+      "end_timestamp": 1794626100000,
+      "marketprice": 178.76,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": false
+    },
+    {
+      "start_timestamp": 1794626100000,
+      "end_timestamp": 1794627000000,
+      "marketprice": 178.76,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794627000000,
+      "end_timestamp": 1794627900000,
+      "marketprice": 178.76,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794627900000,
+      "end_timestamp": 1794628800000,
+      "marketprice": 178.76,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794628800000,
+      "end_timestamp": 1794629700000,
+      "marketprice": 179.77,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": false
+    },
+    {
+      "start_timestamp": 1794629700000,
+      "end_timestamp": 1794630600000,
+      "marketprice": 179.77,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794630600000,
+      "end_timestamp": 1794631500000,
+      "marketprice": 179.77,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794631500000,
+      "end_timestamp": 1794632400000,
+      "marketprice": 179.77,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794632400000,
+      "end_timestamp": 1794633300000,
+      "marketprice": 193.57,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": false
+    },
+    {
+      "start_timestamp": 1794633300000,
+      "end_timestamp": 1794634200000,
+      "marketprice": 193.57,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794634200000,
+      "end_timestamp": 1794635100000,
+      "marketprice": 193.57,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794635100000,
+      "end_timestamp": 1794636000000,
+      "marketprice": 193.57,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794636000000,
+      "end_timestamp": 1794636900000,
+      "marketprice": 224.39,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": false
+    },
+    {
+      "start_timestamp": 1794636900000,
+      "end_timestamp": 1794637800000,
+      "marketprice": 224.39,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794637800000,
+      "end_timestamp": 1794638700000,
+      "marketprice": 224.39,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794638700000,
+      "end_timestamp": 1794639600000,
+      "marketprice": 224.39,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794639600000,
+      "end_timestamp": 1794640500000,
+      "marketprice": 220.07,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": false
+    },
+    {
+      "start_timestamp": 1794640500000,
+      "end_timestamp": 1794641400000,
+      "marketprice": 220.07,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794641400000,
+      "end_timestamp": 1794642300000,
+      "marketprice": 220.07,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794642300000,
+      "end_timestamp": 1794643200000,
+      "marketprice": 220.07,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794643200000,
+      "end_timestamp": 1794644100000,
+      "marketprice": 180.76,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": false
+    },
+    {
+      "start_timestamp": 1794644100000,
+      "end_timestamp": 1794645000000,
+      "marketprice": 180.76,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794645000000,
+      "end_timestamp": 1794645900000,
+      "marketprice": 180.76,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794645900000,
+      "end_timestamp": 1794646800000,
+      "marketprice": 180.76,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794646800000,
+      "end_timestamp": 1794647700000,
+      "marketprice": 163.84,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": false
+    },
+    {
+      "start_timestamp": 1794647700000,
+      "end_timestamp": 1794648600000,
+      "marketprice": 163.84,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794648600000,
+      "end_timestamp": 1794649500000,
+      "marketprice": 163.84,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794649500000,
+      "end_timestamp": 1794650400000,
+      "marketprice": 163.84,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794650400000,
+      "end_timestamp": 1794651300000,
+      "marketprice": 148,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": false
+    },
+    {
+      "start_timestamp": 1794651300000,
+      "end_timestamp": 1794652200000,
+      "marketprice": 148,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794652200000,
+      "end_timestamp": 1794653100000,
+      "marketprice": 148,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794653100000,
+      "end_timestamp": 1794654000000,
+      "marketprice": 148,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794654000000,
+      "end_timestamp": 1794654900000,
+      "marketprice": 146.28,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": false
+    },
+    {
+      "start_timestamp": 1794654900000,
+      "end_timestamp": 1794655800000,
+      "marketprice": 146.28,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794655800000,
+      "end_timestamp": 1794656700000,
+      "marketprice": 146.28,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794656700000,
+      "end_timestamp": 1794657600000,
+      "marketprice": 146.28,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794657600000,
+      "end_timestamp": 1794658500000,
+      "marketprice": 156.7,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": false
+    },
+    {
+      "start_timestamp": 1794658500000,
+      "end_timestamp": 1794659400000,
+      "marketprice": 156.7,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794659400000,
+      "end_timestamp": 1794660300000,
+      "marketprice": 156.7,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
+    },
+    {
+      "start_timestamp": 1794660300000,
+      "end_timestamp": 1794661200000,
+      "marketprice": 156.7,
+      "renewable_share": null,
+      "unit": "Eur/MWh",
+      "interpolated": true
     }
   ]
 }
