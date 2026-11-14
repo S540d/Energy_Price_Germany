@@ -1,110 +1,96 @@
 # Dependabot – Variante für Expo-/React-Native-Projekte.
-# Quelle: project-templates/automation-templates/dependabot.expo.yml
 #
-# Basis ist dependabot.yml (gleiche Drosselung, gleiche zwei npm-Gruppen,
-# Kommentare dort). Zusätzlich: ignore für SDK-gebundene Pakete
-# (Energy_Price_Germany#543, DrawFromMemory#389).
+# Basis ist dependabot.yml (gleiche Drosselung, eine npm-Gruppe
+# npm-minor-patch, Majors per ignore aus – Kommentare dort). Zusätzlich:
+# SDK-gebundene Pakete bekommen GAR KEINE Dependabot-Updates.
 #
-# Warum: Dependabot kennt die Bindung an das Expo-SDK nicht. Es hebt
-# Pakete über den Stand von bundledNativeModules.json hinaus an (expo-router 58
-# auf SDK 55, async-storage 3 obwohl auch SDK 58 bei 2.x bleibt) — solche PRs
-# sind selbst nach einem SDK-Upgrade inhaltlich falsch.
-# SDK-gebundene Pakete werden NUR im Rahmen eines geplanten SDK-Upgrades
-# angehoben: `npx expo install expo@^<N> && npx expo install --fix`, mit
-# Gerätetest, als eigenes Issue.
+# Warum: Dependabot kennt die Bindung an das Expo-SDK nicht.
+#   - Es hebt Pakete über den SDK-Stand hinaus an (expo-router 58 auf SDK 55,
+#     async-storage 3 obwohl auch SDK 58 bei 2.x bleibt;
+#     Energy_Price_Germany#543, DrawFromMemory#389).
+#   - Auch Patches sind nicht harmlos: Expo pinnt in bundledNativeModules.json
+#     EXAKT (SDK 55: react 19.2.0, react-native-reanimated 4.2.1). Ein Patch-Bump
+#     weicht vom SDK-Stand ab; react 19.2.0 → 19.2.9 ohne react-test-renderer
+#     ließ alle Testsuites scheitern (DrawFromMemory#399, 2026-11-14).
 #
-# Was weiter über Dependabot läuft:
-#   - Patches aller Pakete (auch react-native-*, react) – innerhalb eines SDK
-#     unkritisch
-#   - Minors von expo/expo-* (SDK-intern, z. B. 55.0.6 → 55.1.0)
-#   - Dev-Tooling (eslint, jest, prettier …) in npm-minor-patch / npm-major
+# SDK-gebundene Pakete bewegt NUR Expo selbst:
+#   - innerhalb des SDK:  `npx expo install --check` → `npx expo install <pakete>`
+#     (gezielt; kein pauschales --fix, das schlägt auch Tooling-Majors vor)
+#   - SDK-Upgrade:        `npx expo install expo@^<N> && npx expo install --fix`,
+#     mit Gerätetest, als eigenes Issue.
+#   Der monatliche Major-Report (monthly-major-report.yml) zeigt je Repo den
+#   SDK-Stand an, damit beides nicht in Vergessenheit gerät.
 #
-# Bei react-native (0.x) sind Minor-Sprünge breaking (0.83 → 0.88), bei
-# react / react-native-* hängen Minors am SDK – deshalb dort Minor mit ignorieren.
+# Was weiter über Dependabot läuft: Minor/Patch aller NICHT SDK-gebundenen
+#   Pakete (Dev-Tooling, Lottie-Web, Sentry-Minor …) in npm-minor-patch.
+#   Achtung bei 0.x-Paketen: dort zählt Dependabot 0.13 → 0.22 als „minor“,
+#   semantisch ist das oft breaking (z. B. @lottiefiles/dotlottie-react).
 #
-# Security-Updates sind davon NICHT betroffen (GitHub-Doku, Stand 2026-11):
-# update-types wirkt nur auf Version-Updates, und mit gesetztem target-branch
-# gilt die ganze Konfiguration nicht für Security-PRs. Die kommen also weiter,
-# allerdings gegen main (Umleitung nach testing: siehe project-templates#185).
-# Ein Security-Fix, der nur per SDK-Major lösbar ist, wird über das Audit-Gate
-# befristet erlaubt und mit dem SDK-Upgrade aufgelöst.
+# Security-Updates sind von ignore NICHT betroffen (GitHub-Doku, Stand 2026-11):
+# Mit gesetztem target-branch gilt die ganze Konfiguration nicht für
+# Security-PRs. Die kommen also weiter, allerdings gegen main (per Mini-PR nach
+# testing ersetzen, siehe project-templates#185). Ein Security-Fix, der nur per
+# SDK-Major lösbar ist, wird über das Audit-Gate befristet erlaubt und mit dem
+# SDK-Upgrade aufgelöst.
 #
-# Repo-spezifische Zusätze (z. B. typescript-Major wegen ts-jest-peer) unten
-# im ignore-Block mit Begründung + Issue-Verweis ergänzen.
+# Repo-spezifische Zusätze unten im ignore-Block mit Begründung + Issue-Verweis.
 
 version: 2
 updates:
-  - package-ecosystem: 'github-actions'
-    directory: '/'
-    target-branch: 'testing'
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "testing"
     schedule:
-      interval: 'monthly'
+      interval: "monthly"
     open-pull-requests-limit: 5
     commit-message:
-      prefix: 'ci'
+      prefix: "ci"
     groups:
       # Kein update-types-Filter → Major landet mit im Sammel-PR.
       actions-all:
         patterns:
-          - '*'
+          - "*"
 
-  - package-ecosystem: 'npm'
-    directory: '/'
-    target-branch: 'testing'
+  - package-ecosystem: "npm"
+    directory: "/"
+    target-branch: "testing"
     schedule:
-      interval: 'monthly'
+      interval: "monthly"
     open-pull-requests-limit: 5
     commit-message:
-      prefix: 'chore'
+      prefix: "chore"
     groups:
-      # Minor/Patch gesammelt – blockiert nicht mehr durch einen einzelnen Major.
+      # Minor/Patch gesammelt – ein PR pro Monat.
       npm-minor-patch:
-        update-types: ['minor', 'patch']
+        update-types: ["minor", "patch"]
         patterns:
-          - '*'
-      # Majors gesammelt – Breaking Changes stehen im PR-Body, dort prüfen.
-      npm-major:
-        update-types: ['major']
-        patterns:
-          - '*'
+          - "*"
     ignore:
-      # ── Expo-SDK: Majors nur per SDK-Upgrade ────────────────────────────
-      - dependency-name: 'expo'
-        update-types: ['version-update:semver-major']
-      - dependency-name: 'expo-*'
-        update-types: ['version-update:semver-major']
-      - dependency-name: '@expo/*'
-        update-types: ['version-update:semver-major']
-      - dependency-name: 'babel-preset-expo'
-        update-types: ['version-update:semver-major']
-      - dependency-name: 'jest-expo'
-        update-types: ['version-update:semver-major']
-      # ── React / React Native: Major + Minor ans SDK gebunden ────────────
-      - dependency-name: 'react'
-        update-types: ['version-update:semver-major', 'version-update:semver-minor']
-      - dependency-name: 'react-dom'
-        update-types: ['version-update:semver-major', 'version-update:semver-minor']
-      - dependency-name: 'react-test-renderer'
-        update-types: ['version-update:semver-major', 'version-update:semver-minor']
-      - dependency-name: '@types/react'
-        update-types: ['version-update:semver-major', 'version-update:semver-minor']
-      - dependency-name: 'react-native'
-        update-types: ['version-update:semver-major', 'version-update:semver-minor']
-      - dependency-name: '@react-native/*'
-        update-types: ['version-update:semver-major', 'version-update:semver-minor']
-      # ── Native Module aus bundledNativeModules.json ─────────────────────
-      # Generische Muster statt Paketliste, damit neue Module automatisch
-      # erfasst sind. Nebenwirkung: auch react-native-web hängt am SDK – passt.
-      - dependency-name: 'react-native-*'
-        update-types: ['version-update:semver-major', 'version-update:semver-minor']
-      - dependency-name: '@react-native-async-storage/*'
-        update-types: ['version-update:semver-major', 'version-update:semver-minor']
-      - dependency-name: '@react-native-community/*'
-        update-types: ['version-update:semver-major', 'version-update:semver-minor']
-      - dependency-name: '@react-native-picker/*'
-        update-types: ['version-update:semver-major', 'version-update:semver-minor']
-      - dependency-name: '@shopify/react-native-skia'
-        update-types: ['version-update:semver-major', 'version-update:semver-minor']
-      - dependency-name: 'lottie-react-native'
-        update-types: ['version-update:semver-major', 'version-update:semver-minor']
+      # ── Majors nie über Dependabot (Major-Report, s. dependabot.yml) ────
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+      # ── SDK-gebunden: keine Updates (ohne update-types = alle) ──────────
+      # Expo selbst
+      - dependency-name: "expo"
+      - dependency-name: "expo-*"
+      - dependency-name: "@expo/*"
+      - dependency-name: "babel-preset-expo"
+      - dependency-name: "jest-expo"
+      - dependency-name: "eslint-config-expo"
+      # React / React Native (exakt gepinnt; Test-Renderer + Typen laufen mit)
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "react-test-renderer"
+      - dependency-name: "@types/react"
+      - dependency-name: "react-native"
+      - dependency-name: "@react-native/*"
+      # Native Module aus bundledNativeModules.json. Generische Muster statt
+      # Paketliste, damit neue Module automatisch erfasst sind. Nebenwirkung:
+      # auch react-native-web hängt am SDK – passt.
+      - dependency-name: "react-native-*"
+      - dependency-name: "@react-native-async-storage/*"
+      - dependency-name: "@react-native-community/*"
+      - dependency-name: "@react-native-picker/*"
+      - dependency-name: "@shopify/react-native-skia"
+      - dependency-name: "lottie-react-native"
       # ── Repo-spezifisch (mit Begründung + Issue) ────────────────────────
