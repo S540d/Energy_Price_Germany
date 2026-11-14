@@ -40,8 +40,9 @@ Vollständige Begründungen, Befehle und Konfliktlösung:
    PRs gegen `testing` haben nur 2 Checks, gegen `main` ~15 — das ist kein Defekt.
 6. **Versions-Bump gehört in denselben PR** wie ein `[Unreleased]`-Eintrag,
    nicht erst ins Release-PR (Prüfbefehle: siehe `docs/GIT-WORKFLOW.md`).
-7. **Release-PR `testing → main`:** `gh pr merge <nr> --squash --admin` (KEIN
-   `--delete-branch`), **nur mit ausdrücklicher schriftlicher Freigabe**.
+7. **Release-PR `testing → main`:** `gh pr merge <nr> --merge --admin` (KEIN
+   `--delete-branch`, Squash ist im Repo deaktiviert, seit #550), **nur mit
+   ausdrücklicher schriftlicher Freigabe**.
 8. **Feature-Branch-Pushes funktionieren aus Remote-Sessions**, `testing`/`main`
    lehnt das Ruleset ab (GH013 = „nimm den PR-Weg", kein Auth-Fehler). Branches
    löschen ist aus dieser Umgebung nicht möglich (Details: `docs/GIT-WORKFLOW.md`).
