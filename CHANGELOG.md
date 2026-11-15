@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Fixed
+- **Preisalarm (#559):** Die Berechtigung für Benachrichtigungen wird nicht mehr beim Start abgefragt, sondern erst, wenn du einen Schwellwert setzt. Ein aktiver Alarm endet erst 0,5 ¢/kWh jenseits der Schwelle, so dass er an der Grenze nicht mehr flackert.
 - **Preisalarm: Schwellwerte lassen sich als Dezimalzahl eingeben.** Zwischenstände wie „0.“ oder „2.“ wurden vorher verworfen, und ein Komma („12,5“) wurde zu „125“. Jetzt gelten Komma und Punkt als Dezimaltrenner, und auf Mobilgeräten erscheint die Dezimaltastatur.
 
 ## [1.12.1] - 2026-11-10

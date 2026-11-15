@@ -4,6 +4,7 @@ import { useLanguageContext } from '../../context/LanguageContext';
 import { getThemeColors } from '../../utils/theme';
 import { useSettingsContext } from '../../context/SettingsContext';
 import { parseThresholdInput } from '../../utils/priceAlertUtils';
+import { requestAlertNotificationPermission } from '../../hooks/usePriceAlertNotification';
 
 /**
  * Price alert thresholds section in Customize modal.
@@ -47,12 +48,14 @@ export function PriceAlertSection() {
     const { text, value } = parseThresholdInput(raw);
     setLowText(text);
     setPriceAlertLow(value);
+    if (value !== null) requestAlertNotificationPermission();
   };
 
   const handleHighChange = (raw: string) => {
     const { text, value } = parseThresholdInput(raw);
     setHighText(text);
     setPriceAlertHigh(value);
+    if (value !== null) requestAlertNotificationPermission();
   };
 
   const handleReset = () => {

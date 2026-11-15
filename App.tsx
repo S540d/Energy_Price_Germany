@@ -26,8 +26,8 @@ import { useEnergyData } from './hooks/useEnergyData';
 import { useLanguageContext } from './context/LanguageContext';
 import { useSettingsContext } from './context/SettingsContext';
 import { useCountryContext } from './context/CountryContext';
-import { checkPriceAlert } from './utils/priceAlertUtils';
 import { usePriceAlertNotification } from './hooks/usePriceAlertNotification';
+import { usePriceAlertState } from './hooks/usePriceAlertState';
 import { ChartSkeleton } from './components/ui/ChartSkeleton';
 import { SplashScreen } from './components/ui/SplashScreen';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -156,14 +156,10 @@ function AppContent() {
     [filteredEnergyData]
   );
 
-  const alertState = useMemo(
-    () =>
-      checkPriceAlert(
-        metrics?.today?.endCustomerPrice?.current ?? null,
-        priceAlertLow,
-        priceAlertHigh
-      ),
-    [metrics, priceAlertLow, priceAlertHigh]
+  const alertState = usePriceAlertState(
+    metrics?.today?.endCustomerPrice?.current ?? null,
+    priceAlertLow,
+    priceAlertHigh
   );
 
   usePriceAlertNotification(

@@ -1,4 +1,4 @@
-import { checkPriceAlert, parseThresholdInput } from '../priceAlertUtils';
+import { checkPriceAlert, parseThresholdInput, ALERT_HYSTERESIS } from '../priceAlertUtils';
 import type { AlertState } from '../priceAlertUtils';
 
 describe('priceAlertUtils', () => {
@@ -101,5 +101,33 @@ describe('parseThresholdInput', () => {
   it('returns null for empty or zero input', () => {
     expect(parseThresholdInput('')).toEqual({ text: '', value: null });
     expect(parseThresholdInput('0')).toEqual({ text: '0', value: null });
+  });
+});
+
+describe('checkPriceAlert hysteresis', () => {
+  it('keeps an active high alert slightly below the threshold', () => {
+    expect(checkPriceAlert(39.8, 20, 40, 'high')).toBe('high');
+    expect(checkPriceAlert(40 - ALERT_HYSTERESIS, 20, 40, 'high')).toBe('high');
+  });
+
+  it('ends a high alert once the price is further away', () => {
+    expect(checkPriceAlert(39.4, 20, 40, 'high')).toBe('none');
+  });
+
+  it('keeps an active low alert slightly above the threshold', () => {
+    expect(checkPriceAlert(20.3, 20, 40, 'low')).toBe('low');
+  });
+
+  it('ends a low alert once the price is further away', () => {
+    expect(checkPriceAlert(20.6, 20, 40, 'low')).toBe('none');
+  });
+
+  it('does not start an alert inside the hysteresis band', () => {
+    expect(checkPriceAlert(39.8, 20, 40, 'none')).toBe('none');
+    expect(checkPriceAlert(20.3, 20, 40, 'none')).toBe('none');
+  });
+
+  it('ends the alert when its threshold was removed', () => {
+    expect(checkPriceAlert(39.8, 20, null, 'high')).toBe('none');
   });
 });

@@ -1,5 +1,8 @@
-import { renderHook, act, waitFor } from '@testing-library/react-native';
-import { usePriceAlertNotification } from '../usePriceAlertNotification';
+import { renderHook, act } from '@testing-library/react-native';
+import {
+  usePriceAlertNotification,
+  requestAlertNotificationPermission,
+} from '../usePriceAlertNotification';
 
 const NotificationConstructor = jest.fn();
 const mockNotification = {
@@ -83,7 +86,7 @@ describe('usePriceAlertNotification', () => {
     expect(NotificationConstructor).toHaveBeenCalledTimes(1);
   });
 
-  it('requests permission when default and fires on grant', async () => {
+  it('does not request permission itself and skips while undecided', () => {
     mockNotification.permission = 'default';
     Object.defineProperty(window, 'Notification', {
       writable: true,
@@ -100,13 +103,26 @@ describe('usePriceAlertNotification', () => {
       rerender({ alertState: 'high' });
     });
 
-    await waitFor(() => {
-      expect(mockNotification.requestPermission).toHaveBeenCalled();
-      expect(NotificationConstructor).toHaveBeenCalledWith('Strompreis', {
-        body: 'Teuer',
-        icon: '/favicon.ico',
-      });
+    expect(mockNotification.requestPermission).not.toHaveBeenCalled();
+    expect(NotificationConstructor).not.toHaveBeenCalled();
+  });
+
+  it('requestAlertNotificationPermission asks only while undecided', () => {
+    mockNotification.permission = 'default';
+    Object.defineProperty(window, 'Notification', {
+      writable: true,
+      value: Object.assign(NotificationConstructor, mockNotification),
     });
+    requestAlertNotificationPermission();
+    expect(mockNotification.requestPermission).toHaveBeenCalledTimes(1);
+
+    mockNotification.permission = 'granted';
+    Object.defineProperty(window, 'Notification', {
+      writable: true,
+      value: Object.assign(NotificationConstructor, mockNotification),
+    });
+    requestAlertNotificationPermission();
+    expect(mockNotification.requestPermission).toHaveBeenCalledTimes(1);
   });
 
   it('silently skips when permission is denied', () => {
