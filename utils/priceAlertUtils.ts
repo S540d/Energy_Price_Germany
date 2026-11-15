@@ -21,3 +21,21 @@ export function checkPriceAlert(
   if (alertLow !== null && currentPrice <= alertLow) return 'low';
   return 'none';
 }
+
+/**
+ * Normalizes raw text input of a price threshold field.
+ * - accepts comma or dot as decimal separator (German keyboards)
+ * - strips everything except digits and one decimal separator
+ * - `text` is what the field should display (keeps "2." / "0." while typing)
+ * - `value` is the committed threshold: null for empty or non-positive input
+ */
+export function parseThresholdInput(raw: string): { text: string; value: number | null } {
+  const cleaned = raw.replace(',', '.').replace(/[^0-9.]/g, '');
+  const firstDot = cleaned.indexOf('.');
+  const text =
+    firstDot === -1
+      ? cleaned
+      : cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/\./g, '');
+  const parsed = parseFloat(text);
+  return { text, value: !isNaN(parsed) && parsed > 0 ? parsed : null };
+}

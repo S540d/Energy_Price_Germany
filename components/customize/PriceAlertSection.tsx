@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import { useLanguageContext } from '../../context/LanguageContext';
 import { getThemeColors } from '../../utils/theme';
 import { useSettingsContext } from '../../context/SettingsContext';
+import { parseThresholdInput } from '../../utils/priceAlertUtils';
 
 /**
  * Price alert thresholds section in Customize modal.
@@ -16,28 +17,42 @@ export function PriceAlertSection() {
   const systemTheme = useColorScheme();
   const colors = useMemo(() => getThemeColors(theme, systemTheme || 'light'), [theme, systemTheme]);
 
-  const handleLowChange = (text: string) => {
-    const sanitized = text.replace(/[^0-9.]/g, '');
-    if (sanitized === '') {
-      setPriceAlertLow(null);
-      return;
-    }
-    const value = parseFloat(sanitized);
-    if (!isNaN(value) && value > 0) {
-      setPriceAlertLow(value);
-    }
+  // Draft text keeps intermediate input like "0." or "2." that the numeric value cannot represent
+  const [lowText, setLowText] = useState(priceAlertLow !== null ? priceAlertLow.toString() : '');
+  const [highText, setHighText] = useState(
+    priceAlertHigh !== null ? priceAlertHigh.toString() : ''
+  );
+
+  // Re-sync drafts when the stored value changes from outside (e.g. reset, async settings load)
+  useEffect(() => {
+    setLowText(prev =>
+      parseThresholdInput(prev).value === priceAlertLow
+        ? prev
+        : priceAlertLow !== null
+          ? priceAlertLow.toString()
+          : ''
+    );
+  }, [priceAlertLow]);
+  useEffect(() => {
+    setHighText(prev =>
+      parseThresholdInput(prev).value === priceAlertHigh
+        ? prev
+        : priceAlertHigh !== null
+          ? priceAlertHigh.toString()
+          : ''
+    );
+  }, [priceAlertHigh]);
+
+  const handleLowChange = (raw: string) => {
+    const { text, value } = parseThresholdInput(raw);
+    setLowText(text);
+    setPriceAlertLow(value);
   };
 
-  const handleHighChange = (text: string) => {
-    const sanitized = text.replace(/[^0-9.]/g, '');
-    if (sanitized === '') {
-      setPriceAlertHigh(null);
-      return;
-    }
-    const value = parseFloat(sanitized);
-    if (!isNaN(value) && value > 0) {
-      setPriceAlertHigh(value);
-    }
+  const handleHighChange = (raw: string) => {
+    const { text, value } = parseThresholdInput(raw);
+    setHighText(text);
+    setPriceAlertHigh(value);
   };
 
   const handleReset = () => {
@@ -85,9 +100,9 @@ export function PriceAlertSection() {
             ]}
             placeholder={t.priceAlertLowPlaceholder}
             placeholderTextColor={colors.textSecondary}
-            value={priceAlertLow !== null ? priceAlertLow.toString() : ''}
+            value={lowText}
             onChangeText={handleLowChange}
-            keyboardType="numeric"
+            keyboardType="decimal-pad"
           />
         </View>
         <View style={styles.inputGroup}>
@@ -105,9 +120,9 @@ export function PriceAlertSection() {
             ]}
             placeholder={t.priceAlertHighPlaceholder}
             placeholderTextColor={colors.textSecondary}
-            value={priceAlertHigh !== null ? priceAlertHigh.toString() : ''}
+            value={highText}
             onChangeText={handleHighChange}
-            keyboardType="numeric"
+            keyboardType="decimal-pad"
           />
         </View>
       </View>
