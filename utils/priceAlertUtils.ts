@@ -5,20 +5,33 @@
 
 export type AlertState = 'none' | 'low' | 'high';
 
+/** Distance (¢/kWh) an active alert keeps holding beyond its threshold, to avoid flapping. */
+export const ALERT_HYSTERESIS = 0.5;
+
 /**
  * Checks whether the current price triggers an alert.
  * - 'low': price is at or below alertLow → price is cheap, good time to use power
  * - 'high': price is at or above alertHigh → price is expensive
  * - 'none': no alert active or insufficient data
+ *
+ * With `previous` set, an already active alert only ends once the price moved
+ * ALERT_HYSTERESIS beyond its threshold (prevents flapping around the threshold).
  */
 export function checkPriceAlert(
   currentPrice: number | null,
   alertLow: number | null,
-  alertHigh: number | null
+  alertHigh: number | null,
+  previous: AlertState = 'none'
 ): AlertState {
   if (currentPrice === null) return 'none';
   if (alertHigh !== null && currentPrice >= alertHigh) return 'high';
   if (alertLow !== null && currentPrice <= alertLow) return 'low';
+  if (previous === 'high' && alertHigh !== null && currentPrice >= alertHigh - ALERT_HYSTERESIS) {
+    return 'high';
+  }
+  if (previous === 'low' && alertLow !== null && currentPrice <= alertLow + ALERT_HYSTERESIS) {
+    return 'low';
+  }
   return 'none';
 }
 

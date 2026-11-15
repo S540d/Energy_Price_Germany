@@ -3,8 +3,22 @@ import { Platform } from 'react-native';
 import type { AlertState } from '../utils/priceAlertUtils';
 
 /**
+ * Asks for the Web Notification permission. Call it from a user action (e.g. when
+ * the user sets a price threshold), never on app start. No-op if not on web,
+ * unsupported, or the permission was already decided.
+ */
+export function requestAlertNotificationPermission() {
+  if (Platform.OS !== 'web') return;
+  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    Notification.requestPermission().catch(() => undefined);
+  }
+}
+
+/**
  * Triggers a Web Notification when the alert state changes (foreground only).
- * Only runs on web platform. No-op on Android/iOS.
+ * Only runs on web platform and only with an already granted permission
+ * (see requestAlertNotificationPermission). No-op on Android/iOS.
  *
  * Note: Notifications only appear while the browser tab is open.
  * For background notifications, see GitHub Issue #191.
@@ -33,17 +47,9 @@ export function usePriceAlertNotification(
 
     const body = current === 'low' ? notificationLow : notificationHigh;
 
-    if (Notification.permission === 'granted') {
-      // eslint-disable-next-line no-new
-      new Notification(notificationTitle, { body, icon: '/favicon.ico' });
-    } else if (Notification.permission === 'default') {
-      Notification.requestPermission().then(permission => {
-        if (permission === 'granted') {
-          // eslint-disable-next-line no-new
-          new Notification(notificationTitle, { body, icon: '/favicon.ico' });
-        }
-      });
-    }
-    // If permission === 'denied', we silently skip (graceful degradation)
+    // Permission is requested elsewhere, on user action; without it we skip silently
+    if (Notification.permission !== 'granted') return;
+    // eslint-disable-next-line no-new
+    new Notification(notificationTitle, { body, icon: '/favicon.ico' });
   }, [alertState, notificationTitle, notificationLow, notificationHigh]);
 }
