@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Fixed
+- **Preisalarm: Schwellwerte lassen sich als Dezimalzahl eingeben.** Zwischenstände wie „0.“ oder „2.“ wurden vorher verworfen, und ein Komma („12,5“) wurde zu „125“. Jetzt gelten Komma und Punkt als Dezimaltrenner, und auf Mobilgeräten erscheint die Dezimaltastatur.
+
 ## [1.12.1] - 2026-11-10
 
 Dies ist der erste Android-Build mit R8 (aus #530), der hochgeladen wird. 1.11.7 (vc32) und 1.12.0 (vc33) wurden nie gebaut. Der Build soll die Play-Console-Warnung „DEX-Codeoptimierung: Verschleierung 1 %“ von vc31 beheben (#540).

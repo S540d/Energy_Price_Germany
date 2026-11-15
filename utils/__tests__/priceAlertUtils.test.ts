@@ -1,4 +1,4 @@
-import { checkPriceAlert } from '../priceAlertUtils';
+import { checkPriceAlert, parseThresholdInput } from '../priceAlertUtils';
 import type { AlertState } from '../priceAlertUtils';
 
 describe('priceAlertUtils', () => {
@@ -80,5 +80,26 @@ describe('priceAlertUtils', () => {
         expect(checkPriceAlert(999, null, 100)).toBe<AlertState>('high');
       });
     });
+  });
+});
+
+describe('parseThresholdInput', () => {
+  it('keeps intermediate decimal input while typing', () => {
+    expect(parseThresholdInput('2.')).toEqual({ text: '2.', value: 2 });
+    expect(parseThresholdInput('0.')).toEqual({ text: '0.', value: null });
+    expect(parseThresholdInput('0.5')).toEqual({ text: '0.5', value: 0.5 });
+  });
+
+  it('accepts comma as decimal separator', () => {
+    expect(parseThresholdInput('12,5')).toEqual({ text: '12.5', value: 12.5 });
+  });
+
+  it('strips invalid characters and extra dots', () => {
+    expect(parseThresholdInput('1a2.3.4')).toEqual({ text: '12.34', value: 12.34 });
+  });
+
+  it('returns null for empty or zero input', () => {
+    expect(parseThresholdInput('')).toEqual({ text: '', value: null });
+    expect(parseThresholdInput('0')).toEqual({ text: '0', value: null });
   });
 });
