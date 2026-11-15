@@ -328,6 +328,7 @@ Refer to documentation in root directory or check GitHub issues:
 - **Vor jedem Push: lokale Tests ausführen** (`npm test` bzw. projektspezifischer Test-Befehl) – kein Push ohne grüne lokale Tests
 - **Kein Merge bei CI-Fail** – Branch Protection erzwingt das technisch; nie mit `--admin` umgehen außer auf explizite Bitte
 - **Zugehöriges Issue beim Merge schließen** (Issue #111): `Closes #X` im PR-Body greift nur beim Merge in den Default-Branch (`main`) — bei PRs nach `testing` also **nie**. Das Issue nach dem Merge manuell schließen (`gh issue close <N> -c "Umgesetzt in #<PR>, gemergt nach \`testing\`."`), sonst bleiben erledigte Issues offen liegen. Ausnahme: Sammel-/Meta-Issues, die ein Teil-PR nur anteilig abarbeitet — die bleiben offen. `Closes #X` trotzdem im PR-Body lassen: es erzeugt die sichtbare Verknüpfung.
+- **Vor dem Start an einem offenen Issue** (Issue #152): prüfen, ob ein Branch/PR `feature/issue-<N>-*` existiert und bereits in `testing` gemergt ist (`gh pr list --state all --search "issue-<N>"`). Offene Checkboxen ≠ offene Arbeit — sonst wird Erledigtes doppelt umgesetzt.
 
 ## [ANDROID BUILD – PFLICHTREGELN]
 
@@ -359,4 +360,10 @@ Refer to documentation in root directory or check GitHub issues:
 ## [CI – CACHE-CLEANUP]
 
 - **Cache-Cleanup-Workflow** (`.github/workflows/cache-cleanup.yml`) in jedem Repo mit GitHub-Actions-Caches: löscht wöchentlich (So 03:00 UTC) bzw. on-demand alle Action-Caches älter als der jeweils letzte Lauf. GitHub-Limit ist 10 GB pro Repo – ohne Cleanup laufen Build-Caches (node_modules, Gradle, Expo) voll und verdrängen frische Einträge. Vorlage: `cache-cleanup.yml` in project-templates.
+
+## [COMMUNITY-STANDARDS]
+
+- **Einheitliche Community-Dateien** (Issue #196): `CODE_OF_CONDUCT.md` und `CONTRIBUTING.md` liegen **zentral** in `S540d/.github` und gelten für alle Repos ohne eigene Datei — keine projekteigenen Kopien anlegen. `SECURITY.md` (Vorlage `automation-templates/SECURITY.md`) und `LICENSE` liegen je Repo. Lizenz-Standard ist **PolyForm Noncommercial 1.0.0** (`package.json`: `PolyForm-Noncommercial-1.0.0`); Drittinhalte mit eigener Lizenz separat ausweisen.
+- **Keine Issue-/PR-Templates** (`.github/ISSUE_TEMPLATE/`, `PULL_REQUEST_TEMPLATE*`): werden nicht genutzt und nicht angelegt. Checklisten gehören nach `docs/`, nicht nach `.github/ISSUE_TEMPLATE/`.
+- **Repo-Description** (GitHub-Einstellung) ist gesetzt und enthält **nur funktionale Hinweise für Anwender** (eine Zeile, kein Tech-Stack, keine Setup-/Clone-Hinweise).
 <!-- GLOBAL POLICY:END -->
