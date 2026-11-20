@@ -18,7 +18,6 @@ module.exports = {
       'react-native-reanimated|' +
       'react-native-worklets|' +
       'expo-status-bar|' +
-      'expo-updates|' +
       'expo-splash-screen|' +
       'expo-linear-gradient' +
       ')/)',
