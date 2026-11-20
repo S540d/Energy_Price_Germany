@@ -9,6 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Removed
 - **Android: `expo-updates` entfernt (#564).** Die App prüfte bei jedem Start auf Over-the-Air-Updates über EAS Update. Seit EAS nicht mehr genutzt wird (#204), wurden dort keine Updates mehr veröffentlicht, der Check lief also immer ins Leere. Die mitgelieferte native Bibliothek `libexpo-updates.so` war die einzige im Bundle, die mit einer älteren NDK-Version (27.0) gebaut war. Sie ist der wahrscheinliche Auslöser der Play-Console-Warnung zur 16-KB-Speicherseitengröße von vc31. Die seit Längerem nicht mehr eingebundene Beta-Kanal-Einstellung (`BetaModeSection`) samt Übersetzungen ist ebenfalls entfernt.
 
+### Changed
+- React Native 0.83.2 → 0.83.10 sowie `expo-linear-gradient`/`expo-status-bar` auf den Sollstand von Expo SDK 55 (Patch-Updates, kein Funktionsunterschied).
+
 ### Fixed
 - **Preisalarm (#559):** Die Berechtigung für Benachrichtigungen wird nicht mehr beim Start abgefragt, sondern erst, wenn du einen Schwellwert setzt. Ein aktiver Alarm endet erst 0,5 ¢/kWh jenseits der Schwelle, so dass er an der Grenze nicht mehr flackert.
 - **Preisalarm: Schwellwerte lassen sich als Dezimalzahl eingeben.** Zwischenstände wie „0.“ oder „2.“ wurden vorher verworfen, und ein Komma („12,5“) wurde zu „125“. Jetzt gelten Komma und Punkt als Dezimaltrenner, und auf Mobilgeräten erscheint die Dezimaltastatur.
