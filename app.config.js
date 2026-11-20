@@ -81,15 +81,6 @@ module.exports = {
       apiBase: apiBase
     },
     owner: 'devsven',
-    updates: {
-      enabled: true,
-      checkAutomatically: 'ON_LOAD',
-      fallbackToCacheTimeout: 0,
-      url: 'https://u.expo.dev/db5fda3f-4953-4286-8682-b0a4b31573f2'
-    },
-    runtimeVersion: {
-      policy: 'appVersion'
-    },
     plugins: [
       './plugins/withAndroidResizeableActivity.js',
       // R8 für Release-Builds (Play Console: „DEX-Codeoptimierung niedrig“).

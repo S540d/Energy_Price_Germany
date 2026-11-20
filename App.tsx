@@ -3,7 +3,6 @@ import { StyleSheet, Text, ScrollView, useColorScheme } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreenModule from 'expo-splash-screen';
-import * as Updates from 'expo-updates';
 
 import { getCurrentDataSource, energyDataManager } from './services/energyDataManager';
 import { AboutView } from './components/AboutView';
@@ -43,7 +42,7 @@ import {
 
 SplashScreenModule.preventAutoHideAsync().catch(() => {});
 
-const APP_VERSION = '1.12.1';
+const APP_VERSION = '1.12.2';
 const TRANSPARENT = 'transparent';
 
 function AppContent() {
@@ -291,23 +290,6 @@ function AppContent() {
     renewableFallback?.source === 'own'
       ? debouncedPostalCode
       : (countryConfig.fallbackPostalCodeLabel ?? '');
-
-  useEffect(() => {
-    async function checkAndApplyUpdates() {
-      if (!__DEV__) {
-        try {
-          const update = await Updates.checkForUpdateAsync();
-          if (update.isAvailable) {
-            await Updates.fetchUpdateAsync();
-            await Updates.reloadAsync();
-          }
-        } catch {
-          // Silently fail – app continues with current version
-        }
-      }
-    }
-    checkAndApplyUpdates();
-  }, []);
 
   const getDataSourceInfo = useCallback(() => {
     const source = getCurrentDataSource();

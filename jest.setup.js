@@ -156,13 +156,6 @@ jest.mock('expo-linear-gradient', () => ({
   LinearGradient: 'LinearGradient',
 }));
 
-// Mock expo-updates
-jest.mock('expo-updates', () => ({
-  checkForUpdateAsync: jest.fn(),
-  fetchUpdateAsync: jest.fn(),
-  reloadAsync: jest.fn(),
-}));
-
 // Mock expo-status-bar
 jest.mock('expo-status-bar', () => ({
   StatusBar: 'StatusBar',

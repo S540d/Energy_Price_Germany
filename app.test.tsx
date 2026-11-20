@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Updates from 'expo-updates';
 import { Platform, Linking } from 'react-native';
 import App from './App';
 import { fetchEnergyData, energyDataManager } from './services/energyDataManager';
@@ -40,11 +39,6 @@ jest.mock('./components/AboutView', () => {
   const mockComponent = () => 'AboutView';
   mockComponent.displayName = 'AboutView';
   return { AboutView: mockComponent };
-});
-jest.mock('./components/settings/BetaModeSection', () => {
-  const mockComponent = () => null;
-  mockComponent.displayName = 'BetaModeSection';
-  return { BetaModeSection: mockComponent };
 });
 jest.mock('./components/ui/SplashScreen', () => {
   const mockComponent = () => null;
@@ -112,9 +106,6 @@ describe('App', () => {
     // Reset AsyncStorage mocks
     (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
     (AsyncStorage.setItem as jest.Mock).mockResolvedValue(undefined);
-
-    // Reset Updates mocks
-    (Updates.checkForUpdateAsync as jest.Mock).mockResolvedValue({ isAvailable: false });
 
     // Reset Platform.OS to 'web' (default for tests)
     Platform.OS = 'web';
@@ -444,69 +435,6 @@ describe('App', () => {
 
       // Verify AsyncStorage setItem exists
       expect(AsyncStorage.setItem).toBeDefined();
-    });
-  });
-
-  describe('Updates Management', () => {
-    it('should check for updates on mount when not in dev mode', async () => {
-      global.__DEV__ = false;
-      (Updates.checkForUpdateAsync as jest.Mock).mockResolvedValue({ isAvailable: false });
-
-      renderWithProviders(<App />);
-
-      await waitFor(() => {
-        expect(Updates.checkForUpdateAsync).toHaveBeenCalled();
-      });
-
-      global.__DEV__ = true;
-    });
-
-    it('should not check for updates in dev mode', async () => {
-      global.__DEV__ = true;
-
-      renderWithProviders(<App />);
-
-      await waitFor(() => {
-        expect(mockFetchEnergyData).toHaveBeenCalled();
-      });
-
-      expect(Updates.checkForUpdateAsync).not.toHaveBeenCalled();
-    });
-
-    it('should fetch and reload when update is available', async () => {
-      global.__DEV__ = false;
-      (Updates.checkForUpdateAsync as jest.Mock).mockResolvedValue({ isAvailable: true });
-      (Updates.fetchUpdateAsync as jest.Mock).mockResolvedValue({});
-      (Updates.reloadAsync as jest.Mock).mockResolvedValue({});
-
-      renderWithProviders(<App />);
-
-      await waitFor(() => {
-        expect(Updates.fetchUpdateAsync).toHaveBeenCalled();
-        expect(Updates.reloadAsync).toHaveBeenCalled();
-      });
-
-      global.__DEV__ = true;
-    });
-
-    it('should handle update check errors gracefully', async () => {
-      global.__DEV__ = false;
-      (Updates.checkForUpdateAsync as jest.Mock).mockRejectedValue(
-        new Error('Update check failed')
-      );
-
-      renderWithProviders(<App />);
-
-      await waitFor(() => {
-        expect(Updates.checkForUpdateAsync).toHaveBeenCalled();
-      });
-
-      // App should still render despite update error
-      await waitFor(() => {
-        expect(mockFetchEnergyData).toHaveBeenCalled();
-      });
-
-      global.__DEV__ = true;
     });
   });
 
