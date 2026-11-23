@@ -1,33 +1,33 @@
 {
-  "generatedAt": "2026-11-23T13:02:07.557Z",
+  "generatedAt": "2026-11-23T16:02:41.938Z",
   "berlinDay": "2026-11-23",
   "countries": {
     "de": {
       "available": true,
       "source": "energy-charts",
-      "points": 767,
+      "points": 795,
       "renewablePointsToday": 96,
-      "coverageFrom": "2026-11-16T13:15:00.000Z",
-      "coverageUntil": "2026-11-24T12:45:00.000Z",
-      "coverageAgeHours": -23.7
+      "coverageFrom": "2026-11-16T16:15:00.000Z",
+      "coverageUntil": "2026-11-24T22:45:00.000Z",
+      "coverageAgeHours": -30.7
     },
     "nl": {
       "available": true,
       "source": "energy-charts",
-      "points": 783,
+      "points": 795,
       "renewablePointsToday": 96,
-      "coverageFrom": "2026-11-15T19:15:00.000Z",
-      "coverageUntil": "2026-11-23T22:45:00.000Z",
-      "coverageAgeHours": -9.7
+      "coverageFrom": "2026-11-16T16:15:00.000Z",
+      "coverageUntil": "2026-11-24T22:45:00.000Z",
+      "coverageAgeHours": -30.7
     },
     "at": {
       "available": true,
       "source": "energy-charts",
-      "points": 903,
+      "points": 891,
       "renewablePointsToday": 96,
-      "coverageFrom": "2026-11-15T13:15:00.000Z",
-      "coverageUntil": "2026-11-24T22:45:00.000Z",
-      "coverageAgeHours": -33.7
+      "coverageFrom": "2026-11-16T16:15:00.000Z",
+      "coverageUntil": "2026-11-25T22:45:00.000Z",
+      "coverageAgeHours": -54.7
     },
     "ch": {
       "available": true,
@@ -36,7 +36,7 @@
       "renewablePointsToday": 24,
       "coverageFrom": "2026-11-16T03:15:00.000Z",
       "coverageUntil": "2026-11-23T22:45:00.000Z",
-      "coverageAgeHours": -9.7
+      "coverageAgeHours": -6.7
     },
     "fr": {
       "available": true,
@@ -45,16 +45,16 @@
       "renewablePointsToday": 96,
       "coverageFrom": "2026-11-15T19:15:00.000Z",
       "coverageUntil": "2026-11-23T22:45:00.000Z",
-      "coverageAgeHours": -9.7
+      "coverageAgeHours": -6.7
     },
     "be": {
       "available": true,
       "source": "energy-charts",
-      "points": 751,
+      "points": 723,
       "renewablePointsToday": 24,
-      "coverageFrom": "2026-11-16T03:15:00.000Z",
-      "coverageUntil": "2026-11-23T22:45:00.000Z",
-      "coverageAgeHours": -9.7
+      "coverageFrom": "2026-11-16T16:15:00.000Z",
+      "coverageUntil": "2026-11-24T22:00:00.000Z",
+      "coverageAgeHours": -30
     },
     "dk": {
       "available": true,
@@ -63,7 +63,7 @@
       "renewablePointsToday": 96,
       "coverageFrom": "2026-11-15T19:15:00.000Z",
       "coverageUntil": "2026-11-23T22:45:00.000Z",
-      "coverageAgeHours": -9.7
+      "coverageAgeHours": -6.7
     }
   }
 }
